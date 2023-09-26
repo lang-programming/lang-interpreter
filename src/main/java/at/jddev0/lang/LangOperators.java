@@ -1498,7 +1498,7 @@ final class LangOperators {
 						if(rightSideOperand.getInt() == 0)
 							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
 						
-						return new DataObject().setLong(Math.floorDiv(leftSideOperand.getLong(), rightSideOperand.getInt()));
+						return new DataObject().setLong(Math.floorDiv(leftSideOperand.getLong(), (long)rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
 							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
@@ -1679,7 +1679,7 @@ final class LangOperators {
 						if(rightSideOperand.getInt() == 0)
 							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
 						
-						return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getLong(), rightSideOperand.getInt()));
+						return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getLong(), (long)rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
 							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
