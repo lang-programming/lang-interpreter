@@ -130,10 +130,7 @@ public class LangNativeFunction implements LangPredefinedFunctionObject {
 		
 		return langNativeFunction;
 	}
-	
-	/**
-	 * @param instance Null for static method
-	 */
+
 	private LangNativeFunction(LangInterpreter interpreter, String functionName, String functionInfo,
 			boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion, String deprecatedReplacementFunction) {
 		this.interpreter = interpreter;
