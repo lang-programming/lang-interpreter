@@ -1,11 +1,12 @@
 plugins {
-    id 'java'
+    id 'java-library'
 
     id 'maven-publish'
+    id 'signing'
 }
 
 group = 'at.jddev0.lang'
-version = '1.0.0-beta-03-dev'
+version = '1.0.0-beta-03'
 
 repositories {
     mavenCentral()
@@ -20,14 +21,76 @@ test {
     useJUnitPlatform()
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 publishing {
     publications {
-        maven(MavenPublication) {
-            groupId = 'at.jddev0.lang'
+        mavenJava(MavenPublication) {
             artifactId = 'lang-interpreter'
-            version = this.version
+            groupId = 'at.jddev0.lang'
 
             from components.java
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            pom {
+                packaging = 'jar'
+
+                name = 'Lang Interpreter'
+                description = 'The Java reference implementation of the Lang Interpreter'
+                url = 'https://github.com/lang-programming/lang-interpreter'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'http://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'jddev0'
+                        name = 'JDDev0'
+                        email = 'jddev0@dorneger.at'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/lang-programming/lang-interpreter.git'
+                    developerConnection = 'scm:git:ssh://github.com:lang-programming/lang-interpreter.git'
+                    url = 'https://github.com/lang-programming/lang-interpreter'
+                }
+            }
         }
+    }
+
+    repositories {
+        maven {
+            def releasesRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/releases'
+            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+            credentials {
+                username = getProperty('publishMavenUsername')
+                password = getProperty('publishMavenPassword')
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
+javadoc {
+    if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
     }
 }

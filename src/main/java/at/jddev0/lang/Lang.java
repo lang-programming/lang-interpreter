@@ -178,7 +178,7 @@ public final class Lang {
 	 * Call getCached... methods afterwards for retrieving certain Lang translations
 	 * @return Returns all translations of <b>langFile</b> with a timeout
 	 * @param timeout Will cancel the execution of the Lang file after timeout milliseconds
-	 * @throws StoppedException if the execution of the Lang file was force stopped
+	 * @throws LangInterpreter.StoppedException if the execution of the Lang file was force stopped
 	 */
 	public static Map<String, String> getTranslationMapTimeout(String langFile, boolean reloadNotFromChache, int timeout, TerminalIO term, ILangPlatformAPI langPlatformAPI)
 	throws IOException, LangInterpreter.StoppedException {
@@ -189,7 +189,7 @@ public final class Lang {
 	 * Call getCached... methods afterwards for retrieving certain Lang translations
 	 * @return Returns all translations of <b>langFile</b> with a timeout
 	 * @param timeout Will cancel the execution of the Lang file after timeout milliseconds
-	 * @throws StoppedException if the execution of the Lang file was force stopped
+	 * @throws LangInterpreter.StoppedException if the execution of the Lang file was force stopped
 	 */
 	public static Map<String, String> getTranslationMapTimeout(String langFile, boolean reloadNotFromChache, int timeout, TerminalIO term, ILangPlatformAPI langPlatformAPI, String[] langArgs)
 	throws IOException, LangInterpreter.StoppedException {
