@@ -686,7 +686,7 @@ public class LangNativeFunction implements LangPredefinedFunctionObject {
 		return deprecatedReplacementFunction;
 	}
 	
-	public List<InternalFunction> getInteralFunctions() {
+	public List<InternalFunction> getInternalFunctions() {
 		return new ArrayList<>(internalFunctions);
 	}
 	
