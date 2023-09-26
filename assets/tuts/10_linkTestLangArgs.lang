@@ -1,6 +1,0 @@
-lang.name = Link Test LangArgs
-lang.version = v1.0.0
-
-func.printTerminal(1, X - Translation)
-func.println(&LANG_ARGS)
-func.printTerminal(1, X - Finished)
