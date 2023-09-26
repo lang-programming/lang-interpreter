@@ -19,3 +19,15 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'at.jddev0.lang'
+            artifactId = 'lang-interpreter'
+            version = this.version
+
+            from components.java
+        }
+    }
+}
