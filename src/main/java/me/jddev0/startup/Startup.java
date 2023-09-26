@@ -11,16 +11,16 @@ import java.util.Map;
 
 import me.jddev0.module.graphics.LangShellWindow;
 import me.jddev0.module.graphics.TerminalWindow;
-import me.jddev0.module.io.ReaderActionObject;
-import me.jddev0.module.io.TerminalIO;
-import me.jddev0.module.io.TerminalIO.Level;
-import me.jddev0.module.lang.DataObject;
-import me.jddev0.module.lang.Lang;
-import me.jddev0.module.lang.LangInterpreter;
-import me.jddev0.module.lang.LangInterpreter.LangInterpreterInterface;
+import at.jddev0.io.ReaderActionObject;
+import at.jddev0.io.TerminalIO;
+import at.jddev0.io.TerminalIO.Level;
+import at.jddev0.lang.DataObject;
+import at.jddev0.lang.Lang;
+import at.jddev0.lang.LangInterpreter;
+import at.jddev0.lang.LangInterpreter.LangInterpreterInterface;
 import me.jddev0.platform.desktop.swing.LangPlatformAPI;
-import me.jddev0.module.lang.LangParser;
-import me.jddev0.module.lang.ILangPlatformAPI;
+import at.jddev0.lang.LangParser;
+import at.jddev0.lang.ILangPlatformAPI;
 
 public class Startup {
 	private static boolean is4k;

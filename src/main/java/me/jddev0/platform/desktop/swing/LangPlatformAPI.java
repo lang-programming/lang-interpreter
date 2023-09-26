@@ -16,8 +16,8 @@ import java.util.Map;
 
 import javax.swing.JOptionPane;
 
-import me.jddev0.module.io.TerminalIO;
-import me.jddev0.module.lang.ILangPlatformAPI;
+import at.jddev0.io.TerminalIO;
+import at.jddev0.lang.ILangPlatformAPI;
 
 /**
  * Lang-Module<br>

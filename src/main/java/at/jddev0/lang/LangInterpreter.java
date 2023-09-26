@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,22 +20,22 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import me.jddev0.module.io.TerminalIO;
-import me.jddev0.module.io.TerminalIO.Level;
-import me.jddev0.module.lang.AbstractSyntaxTree.*;
-import me.jddev0.module.lang.AbstractSyntaxTree.OperationNode.Operator;
-import me.jddev0.module.lang.AbstractSyntaxTree.OperationNode.OperatorType;
-import me.jddev0.module.lang.DataObject.DataType;
-import me.jddev0.module.lang.DataObject.DataTypeConstraint;
-import me.jddev0.module.lang.DataObject.DataTypeConstraintException;
-import me.jddev0.module.lang.DataObject.DataTypeConstraintViolatedException;
-import me.jddev0.module.lang.DataObject.ErrorObject;
-import me.jddev0.module.lang.DataObject.FunctionPointerObject;
-import me.jddev0.module.lang.DataObject.StructObject;
-import me.jddev0.module.lang.DataObject.VarPointerObject;
-import me.jddev0.module.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
-import me.jddev0.module.lang.regex.InvalidPaternSyntaxException;
-import me.jddev0.module.lang.regex.LangRegEx;
+import at.jddev0.io.TerminalIO;
+import at.jddev0.io.TerminalIO.Level;
+import at.jddev0.lang.AbstractSyntaxTree.*;
+import at.jddev0.lang.AbstractSyntaxTree.OperationNode.Operator;
+import at.jddev0.lang.AbstractSyntaxTree.OperationNode.OperatorType;
+import at.jddev0.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.DataTypeConstraint;
+import at.jddev0.lang.DataObject.DataTypeConstraintException;
+import at.jddev0.lang.DataObject.DataTypeConstraintViolatedException;
+import at.jddev0.lang.DataObject.ErrorObject;
+import at.jddev0.lang.DataObject.FunctionPointerObject;
+import at.jddev0.lang.DataObject.StructObject;
+import at.jddev0.lang.DataObject.VarPointerObject;
+import at.jddev0.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
+import at.jddev0.lang.regex.InvalidPaternSyntaxException;
+import at.jddev0.lang.regex.LangRegEx;
 
 /**
  * Lang-Module<br>
@@ -4009,7 +4009,7 @@ public final class LangInterpreter {
 		/**
 		 * Can be called in a different thread<br>
 		 * Any execution method which was previously called and are still running and any future call of execution methods will throw a
-		 * {@link me.jddev0.module.lang.LangInterpreter.StoppedException StoppedException} exception if the stop flag is set
+		 * {@link at.jddev0.lang.LangInterpreter.StoppedException StoppedException} exception if the stop flag is set
 		 */
 		public void stop() {
 			interpreter.executionState.forceStopExecutionFlag = true;

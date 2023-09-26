@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
-import me.jddev0.module.io.TerminalIO;
+import at.jddev0.io.TerminalIO;
 
 /**
  * Lang-Module<br>

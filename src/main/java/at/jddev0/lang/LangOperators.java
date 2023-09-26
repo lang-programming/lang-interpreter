@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -6,15 +6,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import me.jddev0.module.lang.DataObject.DataType;
-import me.jddev0.module.lang.DataObject.DataTypeConstraintException;
-import me.jddev0.module.lang.DataObject.FunctionPointerObject;
-import me.jddev0.module.lang.DataObject.StructObject;
-import me.jddev0.module.lang.LangFunction.AllowedTypes;
-import me.jddev0.module.lang.LangFunction.LangParameter;
-import me.jddev0.module.lang.LangFunction.LangParameter.RawVarArgs;
-import me.jddev0.module.lang.LangFunction.LangParameter.VarArgs;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.DataTypeConstraintException;
+import at.jddev0.lang.DataObject.FunctionPointerObject;
+import at.jddev0.lang.DataObject.StructObject;
+import at.jddev0.lang.LangFunction.AllowedTypes;
+import at.jddev0.lang.LangFunction.LangParameter;
+import at.jddev0.lang.LangFunction.LangParameter.RawVarArgs;
+import at.jddev0.lang.LangFunction.LangParameter.VarArgs;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
 
 /**
  * Lang-Module<br>

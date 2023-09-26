@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -14,14 +14,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import me.jddev0.module.lang.DataObject.DataType;
-import me.jddev0.module.lang.DataObject.DataTypeConstraint;
-import me.jddev0.module.lang.DataObject.DataTypeConstraintException;
-import me.jddev0.module.lang.DataObject.FunctionPointerObject;
-import me.jddev0.module.lang.DataObject.VarPointerObject;
-import me.jddev0.module.lang.LangFunction.*;
-import me.jddev0.module.lang.LangFunction.LangParameter.*;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.DataTypeConstraint;
+import at.jddev0.lang.DataObject.DataTypeConstraintException;
+import at.jddev0.lang.DataObject.FunctionPointerObject;
+import at.jddev0.lang.DataObject.VarPointerObject;
+import at.jddev0.lang.LangFunction.*;
+import at.jddev0.lang.LangFunction.LangParameter.*;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
 
 public class LangNativeFunction implements LangPredefinedFunctionObject {
 	//TODO remove and add as parameter to call Function instance to call

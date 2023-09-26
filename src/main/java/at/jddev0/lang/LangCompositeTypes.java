@@ -1,10 +1,10 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.Arrays;
 
-import me.jddev0.module.lang.DataObject.DataType;
-import me.jddev0.module.lang.DataObject.DataTypeConstraint;
-import me.jddev0.module.lang.DataObject.StructObject;
+import at.jddev0.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.DataTypeConstraint;
+import at.jddev0.lang.DataObject.StructObject;
 
 /**
  * Lang-Module<br>

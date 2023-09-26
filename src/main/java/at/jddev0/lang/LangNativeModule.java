@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.LinkedList;
 import java.util.List;

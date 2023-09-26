@@ -23,9 +23,9 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.ScrollPaneConstants;
 
-import me.jddev0.module.io.ReaderActionObject;
-import me.jddev0.module.io.TerminalIO;
-import me.jddev0.module.io.TerminalIO.Level;
+import at.jddev0.io.ReaderActionObject;
+import at.jddev0.io.TerminalIO;
+import at.jddev0.io.TerminalIO.Level;
 
 /**
  * Uses the io module<br>

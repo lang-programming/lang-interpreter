@@ -1,9 +1,9 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
-import me.jddev0.module.lang.DataObject.DataType;
-import me.jddev0.module.lang.DataObject.ErrorObject;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
-import me.jddev0.module.lang.LangInterpreter.StackElement;
+import at.jddev0.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.ErrorObject;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.LangInterpreter.StackElement;
 
 /**
  * Lang-Module<br>

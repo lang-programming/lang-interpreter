@@ -48,23 +48,23 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
-import me.jddev0.module.io.TerminalIO;
-import me.jddev0.module.io.TerminalIO.Level;
-import me.jddev0.module.lang.DataObject;
-import me.jddev0.module.lang.Lang;
-import me.jddev0.module.lang.LangFunction;
-import me.jddev0.module.lang.LangInterpreter;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
-import me.jddev0.module.lang.LangNativeFunction;
+import at.jddev0.io.TerminalIO;
+import at.jddev0.io.TerminalIO.Level;
+import at.jddev0.lang.DataObject;
+import at.jddev0.lang.Lang;
+import at.jddev0.lang.LangFunction;
+import at.jddev0.lang.LangInterpreter;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.LangNativeFunction;
 import me.jddev0.platform.desktop.swing.LangPlatformAPI;
-import me.jddev0.module.lang.ILangPlatformAPI;
-import me.jddev0.module.lang.LangPredefinedFunctionObject;
-import me.jddev0.module.lang.LangUtils;
-import me.jddev0.module.lang.LangFunction.AllowedTypes;
-import me.jddev0.module.lang.LangFunction.LangParameter;
-import me.jddev0.module.lang.LangFunction.LangParameter.CallByPointer;
-import me.jddev0.module.lang.LangFunction.LangParameter.NumberValue;
-import me.jddev0.module.lang.LangFunction.LangParameter.VarArgs;
+import at.jddev0.lang.ILangPlatformAPI;
+import at.jddev0.lang.LangPredefinedFunctionObject;
+import at.jddev0.lang.LangUtils;
+import at.jddev0.lang.LangFunction.AllowedTypes;
+import at.jddev0.lang.LangFunction.LangParameter;
+import at.jddev0.lang.LangFunction.LangParameter.CallByPointer;
+import at.jddev0.lang.LangFunction.LangParameter.NumberValue;
+import at.jddev0.lang.LangFunction.LangParameter.VarArgs;
 
 /**
  * Uses the io module<br>

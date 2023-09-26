@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -19,23 +19,23 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import me.jddev0.module.io.TerminalIO.Level;
-import me.jddev0.module.lang.DataObject.DataType;
-import me.jddev0.module.lang.DataObject.DataTypeConstraintException;
-import me.jddev0.module.lang.DataObject.ErrorObject;
-import me.jddev0.module.lang.DataObject.FunctionPointerObject;
-import me.jddev0.module.lang.DataObject.StructObject;
-import me.jddev0.module.lang.LangFunction.AllowedTypes;
-import me.jddev0.module.lang.LangFunction.LangParameter;
-import me.jddev0.module.lang.LangFunction.LangParameter.NumberValue;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
-import me.jddev0.module.lang.LangInterpreter.StackElement;
-import me.jddev0.module.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
-import me.jddev0.module.lang.regex.InvalidPaternSyntaxException;
-import me.jddev0.module.lang.regex.LangRegEx;
+import at.jddev0.io.TerminalIO.Level;
+import at.jddev0.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.DataTypeConstraintException;
+import at.jddev0.lang.DataObject.ErrorObject;
+import at.jddev0.lang.DataObject.FunctionPointerObject;
+import at.jddev0.lang.DataObject.StructObject;
+import at.jddev0.lang.LangFunction.AllowedTypes;
+import at.jddev0.lang.LangFunction.LangParameter;
+import at.jddev0.lang.LangFunction.LangParameter.NumberValue;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.LangInterpreter.StackElement;
+import at.jddev0.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
+import at.jddev0.lang.regex.InvalidPaternSyntaxException;
+import at.jddev0.lang.regex.LangRegEx;
 
-import static me.jddev0.module.lang.LangFunction.*;
-import static me.jddev0.module.lang.LangFunction.LangParameter.*;
+import static at.jddev0.lang.LangFunction.*;
+import static at.jddev0.lang.LangFunction.LangParameter.*;
 
 /**
  * Lang-Module<br>

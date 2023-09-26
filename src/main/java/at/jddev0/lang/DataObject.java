@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,8 +11,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import me.jddev0.module.lang.AbstractSyntaxTree.VariableNameNode;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.AbstractSyntaxTree.VariableNameNode;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
 
 /**
  * Lang-Module<br>

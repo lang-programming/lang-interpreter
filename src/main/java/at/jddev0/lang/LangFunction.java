@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

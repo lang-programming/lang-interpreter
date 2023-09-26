@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import me.jddev0.module.lang.DataObject.DataType;
+import at.jddev0.lang.DataObject.DataType;
 
 /**
  * Lang-Module<br>

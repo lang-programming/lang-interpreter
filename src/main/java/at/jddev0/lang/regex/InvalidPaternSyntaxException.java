@@ -1,4 +1,4 @@
-package me.jddev0.module.lang.regex;
+package at.jddev0.lang.regex;
 
 /**
  * Lang-Module<br>

@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -18,9 +18,9 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
-import me.jddev0.module.lang.LangInterpreter.StackElement;
-import me.jddev0.module.lang.LangModuleConfiguration.ModuleType;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.LangInterpreter.StackElement;
+import at.jddev0.lang.LangModuleConfiguration.ModuleType;
 
 /**
  * Lang-Module<br>

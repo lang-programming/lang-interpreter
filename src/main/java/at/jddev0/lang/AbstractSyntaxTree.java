@@ -1,11 +1,11 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-import me.jddev0.module.lang.LangParser.ParsingError;
+import at.jddev0.lang.LangParser.ParsingError;
 
 /**
  * Lang-Module<br>

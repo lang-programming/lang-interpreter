@@ -1,4 +1,4 @@
-package me.jddev0.module.lang;
+package at.jddev0.lang;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -7,9 +7,9 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import me.jddev0.module.io.TerminalIO;
-import me.jddev0.module.io.TerminalIO.Level;
-import me.jddev0.module.lang.LangInterpreter.InterpretingError;
+import at.jddev0.io.TerminalIO;
+import at.jddev0.io.TerminalIO.Level;
+import at.jddev0.lang.LangInterpreter.InterpretingError;
 
 /**
  * Lang-Module<br>
