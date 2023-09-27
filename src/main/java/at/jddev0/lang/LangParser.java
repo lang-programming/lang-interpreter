@@ -2362,7 +2362,6 @@ public final class LangParser {
 	 * @param line (The line read by lines)
 	 * @param errorNodes Will be used to add error nodes
 	 * @return The next line to be executed or null if error
-	 * @throws IOException
 	 */
 	private String parseMultilineTextAndLineContinuation(String line, BufferedReader lines, List<AbstractSyntaxTree.Node> errorNodes) throws IOException {
 		StringBuilder lineTmp = new StringBuilder();

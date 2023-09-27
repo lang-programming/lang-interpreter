@@ -59,23 +59,23 @@ public @interface LangFunction {
 		@Target(ElementType.PARAMETER)
 		public static @interface RawVarArgs {}
 	}
-	
-	@Documented
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target({ElementType.METHOD, ElementType.PARAMETER})
+
 	/**
 	 * If used in method -> return value type constraint
 	 */
+	@Documented
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ElementType.METHOD, ElementType.PARAMETER})
 	public static @interface AllowedTypes {
 		DataObject.DataType[] value();
 	}
-	
-	@Documented
-	@Retention(RetentionPolicy.RUNTIME)
-	@Target({ElementType.METHOD, ElementType.PARAMETER})
+
 	/**
 	 * If used in method -> return value type constraint
 	 */
+	@Documented
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target({ElementType.METHOD, ElementType.PARAMETER})
 	public static @interface NotAllowedTypes {
 		DataObject.DataType[] value();
 	}

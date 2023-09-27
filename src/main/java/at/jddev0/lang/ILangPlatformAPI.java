@@ -38,14 +38,12 @@ public interface ILangPlatformAPI {
 	/**
 	 * @param langFile Path to the file
 	 * @return Return a reader for the file
-	 * @throws IOException
 	 */
 	BufferedReader getLangReader(String langFile) throws IOException;
 	
 	/**
 	 * @param langFile Path to the file
 	 * @return Return an input stream for the file
-	 * @throws IOException
 	 */
 	InputStream getInputStream(String langFile) throws IOException;
 	
