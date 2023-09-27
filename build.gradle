@@ -78,8 +78,8 @@ publishing {
             url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
 
             credentials {
-                username = hasProperty('publishMavenUsername')?getProperty('publishMavenUsername'):''
-                password = hasProperty('publishMavenPassword')?getProperty('publishMavenPassword'):''
+                username = project.hasProperty('publishMavenUsername')?getProperty('publishMavenUsername'):''
+                password = project.hasProperty('publishMavenPassword')?getProperty('publishMavenPassword'):''
             }
         }
     }
@@ -95,4 +95,4 @@ javadoc {
     }
 }
 
-tasks.withType(Sign)*.enabled = hasProperty('publishMavenUsername')
+tasks.withType(Sign)*.enabled = project.hasProperty('publishMavenUsername')
