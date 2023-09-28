@@ -246,6 +246,51 @@ public abstract class LangNativeModule {
 	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList, final int SCOPE_ID) {
 		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList, SCOPE_ID);
 	}
+
+	/**
+	 * @param obj An object which contains a single LangFunction
+	 *             The function name of the LangFunction will be used as the function name
+	 */
+	protected final void exportNativeFunction(Object obj) {
+		exportNativeFunction(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, obj));
+	}
+
+	/**
+	 * @param functionName The name of the function
+	 * @param obj An object which contains a single LangFunction
+	 */
+	protected final void exportNativeFunction(String functionName, Object obj) {
+		exportNativeFunction(functionName, LangNativeFunction.getSingleLangFunctionFromObject(interpreter, obj));
+	}
+
+	/**
+	 * @param func A LangNativeFunction can be a normal function or a linker function
+	 *             The function name of the LangFunction will be used as the function name
+	 */
+	protected final void exportNativeFunction(LangNativeFunction func) {
+		exportNativeFunction(func.getFunctionName(), func);
+	}
+
+	/**
+	 * @param functionName The name of the function
+	 * @param func A LangNativeFunction can be a normal function or a linker function
+	 */
+	protected final void exportNativeFunction(String functionName, LangNativeFunction func) {
+		if(!module.isLoad())
+			throw new RuntimeException("This method may only be used inside a module which is in the \"load\" state");
+
+		for(int i = 0;i < functionName.length();i++) {
+			char c = functionName.charAt(i);
+			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
+				continue;
+
+			throw new RuntimeException("The function name may only contain alphanumeric characters and underscores (_)");
+		}
+
+		module.getExportedFunctions().add(functionName);
+
+		interpreter.funcs.put(functionName, func);
+	}
 	
 	protected final void exportFunction(String functionName, LangPredefinedFunctionObject func) {
 		if(!module.isLoad())
