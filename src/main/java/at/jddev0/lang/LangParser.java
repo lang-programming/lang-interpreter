@@ -471,7 +471,7 @@ public final class LangParser {
 				}
 			}else if(token.startsWith("!==") || token.startsWith("!=~") || token.startsWith("!=") || token.startsWith("===") || token.startsWith("=~") || token.startsWith("==") ||
 			token.startsWith("<=") || token.startsWith(">=") || token.startsWith("<") || token.startsWith(">") || token.startsWith("|||") || token.startsWith("&&") || token.startsWith("||") ||
-			token.startsWith("!") || token.startsWith("&") || token.startsWith("~~") || token.startsWith("~/") || token.startsWith("~") || token.startsWith("▲") || token.startsWith("▼") ||
+			token.startsWith("!") || token.startsWith("&") || token.startsWith("~~") || token.startsWith("~/") || token.startsWith("~") || token.startsWith("\u25b2") || token.startsWith("\u25bc") ||
 			token.startsWith("*") || token.startsWith("//") || token.startsWith("^/") || token.startsWith("/") || token.startsWith("%") || token.startsWith("^") || token.startsWith("|") ||
 			token.startsWith("<<") || token.startsWith(">>>") || token.startsWith(">>") || token.startsWith("+|") || token.startsWith("-|") || token.startsWith("+") || token.startsWith("-") ||
 			token.startsWith("@") || token.startsWith("?:") || token.startsWith("??") || token.startsWith(",") || token.startsWith("?::") || token.startsWith("::")) {
@@ -550,9 +550,9 @@ public final class LangParser {
 					operator = AbstractSyntaxTree.OperationNode.Operator.TRUNC_DIV;
 				}else if(token.startsWith("~") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
 					operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_NOT;
-				}else if(token.startsWith("▲") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+				}else if(token.startsWith("\u25b2") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
 					operator = AbstractSyntaxTree.OperationNode.Operator.INC;
-				}else if(token.startsWith("▼") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+				}else if(token.startsWith("\u25bc") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
 					operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
 				}else if(token.startsWith("+|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
 					operatorLength = 2;
