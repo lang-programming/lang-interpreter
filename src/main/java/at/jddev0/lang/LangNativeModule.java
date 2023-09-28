@@ -116,6 +116,8 @@ public abstract class LangNativeModule {
 			return new DataObject().setVarPointer((DataObject.VarPointerObject)objectValue);
 		}else if(objectValue instanceof DataObject.FunctionPointerObject) {
 			return new DataObject().setFunctionPointer((DataObject.FunctionPointerObject)objectValue);
+		}else if(objectValue instanceof LangNativeFunction) {
+			return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject((LangNativeFunction)objectValue));
 		}else if(objectValue instanceof LangPredefinedFunctionObject) {
 			return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject((LangPredefinedFunctionObject)objectValue));
 		}else if(objectValue instanceof LangExternalFunctionObject) {
@@ -159,6 +161,7 @@ public abstract class LangNativeModule {
 			}else if(DataObject.VarPointerObject.class.isAssignableFrom(classValue)) {
 				return new DataObject().setTypeValue(DataObject.DataType.VAR_POINTER);
 			}else if(DataObject.FunctionPointerObject.class.isAssignableFrom(classValue) ||
+					LangNativeFunction.class.isAssignableFrom(classValue) ||
 					LangPredefinedFunctionObject.class.isAssignableFrom(classValue) ||
 					LangExternalFunctionObject.class.isAssignableFrom(classValue)) {
 				return new DataObject().setTypeValue(DataObject.DataType.FUNCTION_POINTER);
