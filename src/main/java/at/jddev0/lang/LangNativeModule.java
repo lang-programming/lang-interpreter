@@ -294,7 +294,8 @@ public abstract class LangNativeModule {
 
 		interpreter.funcs.put(functionName, func);
 	}
-	
+
+	@Deprecated
 	protected final void exportFunction(String functionName, LangPredefinedFunctionObject func) {
 		if(!module.isLoad())
 			throw new RuntimeException("This method may only be used inside a module which is in the \"load\" state");
@@ -314,7 +315,8 @@ public abstract class LangNativeModule {
 			return func.callFunc(argumentList, SCOPE_ID);
 		});
 	}
-	
+
+	@Deprecated
 	protected final void exportLinkerFunction(String functionName, LangPredefinedFunctionObject func) {
 		if(!module.isLoad())
 			throw new RuntimeException("This method may only be used inside a module which is in the \"load\" state");

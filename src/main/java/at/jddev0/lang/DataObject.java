@@ -2044,10 +2044,12 @@ public class DataObject {
 		/**
 		 * Pointer to a predefined function
 		 */
+		@Deprecated
 		public static final int PREDEFINED = 2;
 		/**
 		 * Function which is defined in the language
 		 */
+		@Deprecated
 		public static final int EXTERNAL = 3;
 		
 		/**
@@ -2068,7 +2070,9 @@ public class DataObject {
 		private final DataTypeConstraint returnValueTypeConstraint;
 		private final AbstractSyntaxTree functionBody;
 		private final LangNativeFunction nativeFunction;
+		@Deprecated
 		private final LangPredefinedFunctionObject predefinedFunction;
+		@Deprecated
 		private final LangExternalFunctionObject externalFunction;
 		private final int functionPointerType;
 		
@@ -2174,6 +2178,7 @@ public class DataObject {
 		/**
 		 * For pointer to predefined function/linker function
 		 */
+		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, String functionName, LangPredefinedFunctionObject predefinedFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
@@ -2189,18 +2194,21 @@ public class DataObject {
 		/**
 		 * For pointer to predefined function/linker function
 		 */
+		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, LangPredefinedFunctionObject predefinedFunction) {
 			this(langPath, langFile, null, predefinedFunction);
 		}
 		/**
 		 * For pointer to predefined function/linker function
 		 */
+		@Deprecated
 		public FunctionPointerObject(String functionName, LangPredefinedFunctionObject predefinedFunction) {
 			this(null, null, functionName, predefinedFunction);
 		}
 		/**
 		 * For pointer to predefined function/linker function
 		 */
+		@Deprecated
 		public FunctionPointerObject(LangPredefinedFunctionObject predefinedFunction) {
 			this(null, predefinedFunction);
 		}
@@ -2208,6 +2216,7 @@ public class DataObject {
 		/**
 		 * For pointer to external function
 		 */
+		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, String functionName, LangExternalFunctionObject externalFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
@@ -2223,18 +2232,21 @@ public class DataObject {
 		/**
 		 * For pointer to external function
 		 */
+		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, LangExternalFunctionObject externalFunction) {
 			this(langPath, langFile, null, externalFunction);
 		}
 		/**
 		 * For pointer to external function
 		 */
+		@Deprecated
 		public FunctionPointerObject(String functionName, LangExternalFunctionObject externalFunction) {
 			this(null, null, functionName, externalFunction);
 		}
 		/**
 		 * For pointer to external function
 		 */
+		@Deprecated
 		public FunctionPointerObject(LangExternalFunctionObject externalFunction) {
 			this(null, externalFunction);
 		}
@@ -2282,11 +2294,13 @@ public class DataObject {
 		public LangNativeFunction getNativeFunction() {
 			return nativeFunction;
 		}
-		
+
+		@Deprecated
 		public LangPredefinedFunctionObject getPredefinedFunction() {
 			return predefinedFunction;
 		}
-		
+
+		@Deprecated
 		public LangExternalFunctionObject getExternalFunction() {
 			return externalFunction;
 		}

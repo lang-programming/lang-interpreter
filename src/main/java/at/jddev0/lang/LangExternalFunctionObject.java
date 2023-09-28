@@ -10,6 +10,7 @@ import java.util.List;
  * @version v1.0.0
  */
 @FunctionalInterface
+@Deprecated
 public interface LangExternalFunctionObject {
 	DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList, final int SCOPE_ID);
 }
