@@ -2043,11 +2043,15 @@ public class DataObject {
 		public static final int NATIVE = 1;
 		/**
 		 * Pointer to a predefined function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public static final int PREDEFINED = 2;
 		/**
 		 * Function which is defined in the language
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public static final int EXTERNAL = 3;
@@ -2177,6 +2181,8 @@ public class DataObject {
 		
 		/**
 		 * For pointer to predefined function/linker function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, String functionName, LangPredefinedFunctionObject predefinedFunction) {
@@ -2193,6 +2199,8 @@ public class DataObject {
 		}
 		/**
 		 * For pointer to predefined function/linker function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, LangPredefinedFunctionObject predefinedFunction) {
@@ -2200,6 +2208,8 @@ public class DataObject {
 		}
 		/**
 		 * For pointer to predefined function/linker function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(String functionName, LangPredefinedFunctionObject predefinedFunction) {
@@ -2207,6 +2217,8 @@ public class DataObject {
 		}
 		/**
 		 * For pointer to predefined function/linker function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(LangPredefinedFunctionObject predefinedFunction) {
@@ -2215,6 +2227,8 @@ public class DataObject {
 		
 		/**
 		 * For pointer to external function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, String functionName, LangExternalFunctionObject externalFunction) {
@@ -2231,6 +2245,8 @@ public class DataObject {
 		}
 		/**
 		 * For pointer to external function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(String langPath, String langFile, LangExternalFunctionObject externalFunction) {
@@ -2238,6 +2254,8 @@ public class DataObject {
 		}
 		/**
 		 * For pointer to external function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(String functionName, LangExternalFunctionObject externalFunction) {
@@ -2245,6 +2263,8 @@ public class DataObject {
 		}
 		/**
 		 * For pointer to external function
+		 *
+		 * @deprecated Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public FunctionPointerObject(LangExternalFunctionObject externalFunction) {
@@ -2295,11 +2315,17 @@ public class DataObject {
 			return nativeFunction;
 		}
 
+		/**
+		 * @deprecated Use the new LangNativeFunction system instead
+		 */
 		@Deprecated
 		public LangPredefinedFunctionObject getPredefinedFunction() {
 			return predefinedFunction;
 		}
 
+		/**
+		 * @deprecated Use the new LangNativeFunction system instead
+		 */
 		@Deprecated
 		public LangExternalFunctionObject getExternalFunction() {
 			return externalFunction;
