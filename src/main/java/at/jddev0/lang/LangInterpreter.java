@@ -3947,6 +3947,12 @@ public final class LangInterpreter {
 		public void setVar(final int SCOPE_ID, String varName, LangExternalFunctionObject function, boolean ignoreFinal) {
 			setVar(SCOPE_ID, varName, new DataObject().setFunctionPointer(new FunctionPointerObject(varName, function)), ignoreFinal);
 		}
+		public void setVar(final int SCOPE_ID, String varName, LangNativeFunction function) {
+			setVar(SCOPE_ID, varName, function, false);
+		}
+		public void setVar(final int SCOPE_ID, String varName, LangNativeFunction function, boolean ignoreFinal) {
+			setVar(SCOPE_ID, varName, new DataObject().setFunctionPointer(new FunctionPointerObject(varName, function)), ignoreFinal);
+		}
 		public void setVar(final int SCOPE_ID, String varName, InterpretingError error) {
 			setVar(SCOPE_ID, varName, error, false);
 		}
@@ -3983,15 +3989,15 @@ public final class LangInterpreter {
 		}
 		
 		/**
-		 * Creates an function which is accessible globally in the Interpreter (= in all SCOPE_IDs)<br>
+		 * Creates a function which is accessible globally in the Interpreter (= in all SCOPE_IDs)<br>
 		 * If function already exists, it will be overridden<br>
 		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
 		 */
-		public void addNativeFunction(String funcName, LangNativeFunction function) {
+		public void addPredefinedFunction(String funcName, LangNativeFunction function) {
 			interpreter.funcs.put(funcName, function);
 		}
 		/**
-		 * Creates an function which is accessible globally in the Interpreter (= in all SCOPE_IDs)<br>
+		 * Creates a function which is accessible globally in the Interpreter (= in all SCOPE_IDs)<br>
 		 * If function already exists, it will be overridden<br>
 		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
 		 *
@@ -4068,7 +4074,7 @@ public final class LangInterpreter {
 			getAndResetReturnValue(); //Reset returned value else the interpreter would stop immediately
 			interpreter.interpretAST(ast, SCOPE_ID);
 		}
-		public DataObject inerpretNode(final int SCOPE_ID, Node node) throws StoppedException {
+		public DataObject interpretNode(final int SCOPE_ID, Node node) throws StoppedException {
 			return interpreter.interpretNode(null, node, SCOPE_ID);
 		}
 		public DataObject interpretFunctionCallNode(final int SCOPE_ID, FunctionCallNode node) throws StoppedException {
