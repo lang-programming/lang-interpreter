@@ -408,6 +408,7 @@ public class LangNativeFunction implements LangPredefinedFunctionObject {
 			this.returnValueTypeConstraint = returnValueTypeConstraint;
 			this.instance = instance;
 			this.functionBody = functionBody;
+			functionBody.setAccessible(true);
 			this.hasInterpreterParameter = hasInterpreterParameter;
 			this.combinatorFunction = combinatorFunction;
 			this.combinatorFunctionCallCount = combinatorFunctionCallCount;
