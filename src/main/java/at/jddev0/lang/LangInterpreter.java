@@ -3934,14 +3934,14 @@ public final class LangInterpreter {
 			setVar(SCOPE_ID, varName, new DataObject().setArray(arr), ignoreFinal);
 		}
 		/**
-		 * @deprecated Use the new LangNativeFunction system instead
+		 * @deprecated [Will be removed in 1.0.0-beta-06] Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public void setVar(final int SCOPE_ID, String varName, LangExternalFunctionObject function) {
 			setVar(SCOPE_ID, varName, function, false);
 		}
 		/**
-		 * @deprecated Use the new LangNativeFunction system instead
+		 * @deprecated [Will be removed in 1.0.0-beta-06] Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public void setVar(final int SCOPE_ID, String varName, LangExternalFunctionObject function, boolean ignoreFinal) {
@@ -4001,14 +4001,14 @@ public final class LangInterpreter {
 		 * If function already exists, it will be overridden<br>
 		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
 		 *
-		 * @deprecated Use the new LangNativeFunction system instead
+		 * @deprecated [Will be removed in 1.0.0-beta-06] Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public void addPredefinedFunction(String funcName, LangPredefinedFunctionObject function) {
 			interpreter.funcs.put(funcName, function);
 		}
 		/**
-		 * @deprecated Use the new LangNativeFunction system instead
+		 * @deprecated [Will be removed in 1.0.0-beta-06] Use the new LangNativeFunction system instead
 		 */
 		@Deprecated
 		public void addPredefinedFunctions(Map<String, ? extends LangPredefinedFunctionObject> funcs) {
