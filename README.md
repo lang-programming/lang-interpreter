@@ -7,6 +7,13 @@ The Java reference implementation of the Lang Interpreter
 - All Lang standard language features
 - Support for Java Native Modules and Native Functions
 
+## Getting started with Lang
+
+- Checkout the [Standard Lang](https://github.com/JDDev0/lang) project
+  - This project provides an CLI and a GUI interface for execution and development of Lang programs
+  - The Lang Shell REPL environment aids the development of Lang programs with code highlighting,
+    code autocompletion, loading and saving of lang files, additional debug functions, and more
+
 ## Use as dependency
 
 **Maven**
