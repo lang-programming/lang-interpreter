@@ -1,6 +1,6 @@
 # Lang Interpreter
 
-The Java reference implementation of the Lang Interpreter
+The Standard Lang reference implementation of the Lang Programming language
 
 ## Features
 
@@ -9,7 +9,7 @@ The Java reference implementation of the Lang Interpreter
 
 ## Getting started with Lang
 
-- Checkout the [Standard Lang](https://github.com/JDDev0/lang) project
+- Checkout the [Lang](https://github.com/JDDev0/lang) project
   - This project provides an CLI and a GUI interface for execution and development of Lang programs
   - The Lang Shell REPL environment aids the development of Lang programs with code highlighting,
     code autocompletion, loading and saving of lang files, additional debug functions, and more

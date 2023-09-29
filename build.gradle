@@ -50,7 +50,7 @@ publishing {
                 packaging = 'jar'
 
                 name = 'Lang Interpreter'
-                description = 'The Java reference implementation of the Lang Interpreter'
+                description = 'The Standard Lang reference implementation of the Lang Programming language'
                 url = 'https://github.com/lang-programming/lang-interpreter'
                 licenses {
                     license {
