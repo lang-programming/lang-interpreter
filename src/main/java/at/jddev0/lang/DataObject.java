@@ -2048,13 +2048,6 @@ public class DataObject {
 		 */
 		@Deprecated
 		public static final int PREDEFINED = 2;
-		/**
-		 * Function which is defined in the language
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public static final int EXTERNAL = 3;
 		
 		/**
 		 * If langPath is set, the Lang path from the stack frame element which is created for the function call will be overridden
@@ -2076,8 +2069,6 @@ public class DataObject {
 		private final LangNativeFunction nativeFunction;
 		@Deprecated
 		private final LangPredefinedFunctionObject predefinedFunction;
-		@Deprecated
-		private final LangExternalFunctionObject externalFunction;
 		private final int functionPointerType;
 		
 		/**
@@ -2093,7 +2084,6 @@ public class DataObject {
 			this.functionBody = functionBody;
 			this.nativeFunction = null;
 			this.predefinedFunction = null;
-			this.externalFunction = null;
 			this.functionPointerType = NORMAL;
 		}
 		/**
@@ -2157,7 +2147,6 @@ public class DataObject {
 			this.functionBody = null;
 			this.nativeFunction = nativeFunction;
 			this.predefinedFunction = null;
-			this.externalFunction = null;
 			this.functionPointerType = NATIVE;
 		}
 		/**
@@ -2194,7 +2183,6 @@ public class DataObject {
 			this.functionBody = null;
 			this.nativeFunction = null;
 			this.predefinedFunction = predefinedFunction;
-			this.externalFunction = null;
 			this.functionPointerType = PREDEFINED;
 		}
 		/**
@@ -2225,52 +2213,6 @@ public class DataObject {
 			this(null, predefinedFunction);
 		}
 		
-		/**
-		 * For pointer to external function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(String langPath, String langFile, String functionName, LangExternalFunctionObject externalFunction) {
-			this.langPath = langPath;
-			this.langFile = langFile;
-			this.functionName = functionName;
-			this.parameterList = null;
-			this.returnValueTypeConstraint = null;
-			this.functionBody = null;
-			this.nativeFunction = null;
-			this.predefinedFunction = null;
-			this.externalFunction = externalFunction;
-			this.functionPointerType = EXTERNAL;
-		}
-		/**
-		 * For pointer to external function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(String langPath, String langFile, LangExternalFunctionObject externalFunction) {
-			this(langPath, langFile, null, externalFunction);
-		}
-		/**
-		 * For pointer to external function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(String functionName, LangExternalFunctionObject externalFunction) {
-			this(null, null, functionName, externalFunction);
-		}
-		/**
-		 * For pointer to external function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(LangExternalFunctionObject externalFunction) {
-			this(null, externalFunction);
-		}
-		
 		public FunctionPointerObject withFunctionName(String functionName) {
 			switch(functionPointerType) {
 				case NORMAL:
@@ -2280,8 +2222,6 @@ public class DataObject {
 					return new FunctionPointerObject(langPath, langFile, functionName, nativeFunction);
 				case PREDEFINED:
 					return new FunctionPointerObject(langPath, langFile, functionName, predefinedFunction);
-				case EXTERNAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, externalFunction);
 			}
 			
 			return null;
@@ -2322,14 +2262,6 @@ public class DataObject {
 		public LangPredefinedFunctionObject getPredefinedFunction() {
 			return predefinedFunction;
 		}
-
-		/**
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public LangExternalFunctionObject getExternalFunction() {
-			return externalFunction;
-		}
 		
 		public int getFunctionPointerType() {
 			return functionPointerType;
@@ -2347,8 +2279,6 @@ public class DataObject {
 					return "<Native Function>";
 				case PREDEFINED:
 					return "<Predefined Function>";
-				case EXTERNAL:
-					return "<External Function>";
 				default:
 					return "Error";
 			}
@@ -2368,12 +2298,12 @@ public class DataObject {
 			FunctionPointerObject that = (FunctionPointerObject)obj;
 			return this.functionPointerType == that.functionPointerType && Objects.equals(this.parameterList, that.parameterList) &&
 			Objects.equals(this.functionBody, that.functionBody) && Objects.equals(this.nativeFunction, that.nativeFunction) &&
-			Objects.equals(this.predefinedFunction, that.predefinedFunction) && Objects.equals(this.externalFunction, that.externalFunction);
+			Objects.equals(this.predefinedFunction, that.predefinedFunction);
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(functionPointerType, parameterList, functionBody, nativeFunction, predefinedFunction, externalFunction);
+			return Objects.hash(functionPointerType, parameterList, functionBody, nativeFunction, predefinedFunction);
 		}
 	}
 	public static final class VarPointerObject {

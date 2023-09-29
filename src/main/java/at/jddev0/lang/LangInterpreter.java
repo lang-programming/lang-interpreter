@@ -2407,17 +2407,10 @@ public final class LangInterpreter {
 						function.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + function.getDeprecatedReplacementFunction() + "\" instead!"));
 						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentLineNumber, SCOPE_ID);
 					}
-					
+
 					//Return non copy if copyStaticAndFinalModifiers flag is set for "func.asStatic()" and "func.asFinal()"
 					return ret == null?new DataObject().setVoid():(ret.isCopyStaticAndFinalModifiers()?ret:new DataObject(ret));
-				
-				case FunctionPointerObject.EXTERNAL:
-					LangExternalFunctionObject externalFunction = fp.getExternalFunction();
-					if(externalFunction == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber, SCOPE_ID);
-					ret = externalFunction.callFunc(this, argumentValueList, SCOPE_ID);
-					return ret == null?new DataObject().setVoid():new DataObject(ret);
-				
+
 				default:
 					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP type", parentLineNumber, SCOPE_ID);
 			}
@@ -3932,20 +3925,6 @@ public final class LangInterpreter {
 		}
 		public void setVar(final int SCOPE_ID, String varName, DataObject[] arr, boolean ignoreFinal) {
 			setVar(SCOPE_ID, varName, new DataObject().setArray(arr), ignoreFinal);
-		}
-		/**
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public void setVar(final int SCOPE_ID, String varName, LangExternalFunctionObject function) {
-			setVar(SCOPE_ID, varName, function, false);
-		}
-		/**
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public void setVar(final int SCOPE_ID, String varName, LangExternalFunctionObject function, boolean ignoreFinal) {
-			setVar(SCOPE_ID, varName, new DataObject().setFunctionPointer(new FunctionPointerObject(varName, function)), ignoreFinal);
 		}
 		public void setVar(final int SCOPE_ID, String varName, LangNativeFunction function) {
 			setVar(SCOPE_ID, varName, function, false);
