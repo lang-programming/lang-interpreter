@@ -2041,13 +2041,6 @@ public class DataObject {
 		 * Pointer to a native function
 		 */
 		public static final int NATIVE = 1;
-		/**
-		 * Pointer to a predefined function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public static final int PREDEFINED = 2;
 		
 		/**
 		 * If langPath is set, the Lang path from the stack frame element which is created for the function call will be overridden
@@ -2067,8 +2060,6 @@ public class DataObject {
 		private final DataTypeConstraint returnValueTypeConstraint;
 		private final AbstractSyntaxTree functionBody;
 		private final LangNativeFunction nativeFunction;
-		@Deprecated
-		private final LangPredefinedFunctionObject predefinedFunction;
 		private final int functionPointerType;
 		
 		/**
@@ -2083,7 +2074,6 @@ public class DataObject {
 			this.returnValueTypeConstraint = returnValueTypeConstraint;
 			this.functionBody = functionBody;
 			this.nativeFunction = null;
-			this.predefinedFunction = null;
 			this.functionPointerType = NORMAL;
 		}
 		/**
@@ -2146,7 +2136,6 @@ public class DataObject {
 			this.returnValueTypeConstraint = null;
 			this.functionBody = null;
 			this.nativeFunction = nativeFunction;
-			this.predefinedFunction = null;
 			this.functionPointerType = NATIVE;
 		}
 		/**
@@ -2168,51 +2157,6 @@ public class DataObject {
 			this(nativeFunction.getFunctionName(), nativeFunction);
 		}
 		
-		/**
-		 * For pointer to predefined function/linker function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(String langPath, String langFile, String functionName, LangPredefinedFunctionObject predefinedFunction) {
-			this.langPath = langPath;
-			this.langFile = langFile;
-			this.functionName = functionName;
-			this.parameterList = null;
-			this.returnValueTypeConstraint = null;
-			this.functionBody = null;
-			this.nativeFunction = null;
-			this.predefinedFunction = predefinedFunction;
-			this.functionPointerType = PREDEFINED;
-		}
-		/**
-		 * For pointer to predefined function/linker function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(String langPath, String langFile, LangPredefinedFunctionObject predefinedFunction) {
-			this(langPath, langFile, null, predefinedFunction);
-		}
-		/**
-		 * For pointer to predefined function/linker function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(String functionName, LangPredefinedFunctionObject predefinedFunction) {
-			this(null, null, functionName, predefinedFunction);
-		}
-		/**
-		 * For pointer to predefined function/linker function
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public FunctionPointerObject(LangPredefinedFunctionObject predefinedFunction) {
-			this(null, predefinedFunction);
-		}
-		
 		public FunctionPointerObject withFunctionName(String functionName) {
 			switch(functionPointerType) {
 				case NORMAL:
@@ -2220,8 +2164,6 @@ public class DataObject {
 							returnValueTypeConstraint, functionBody);
 				case NATIVE:
 					return new FunctionPointerObject(langPath, langFile, functionName, nativeFunction);
-				case PREDEFINED:
-					return new FunctionPointerObject(langPath, langFile, functionName, predefinedFunction);
 			}
 			
 			return null;
@@ -2254,14 +2196,6 @@ public class DataObject {
 		public LangNativeFunction getNativeFunction() {
 			return nativeFunction;
 		}
-
-		/**
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public LangPredefinedFunctionObject getPredefinedFunction() {
-			return predefinedFunction;
-		}
 		
 		public int getFunctionPointerType() {
 			return functionPointerType;
@@ -2274,11 +2208,9 @@ public class DataObject {
 			
 			switch(functionPointerType) {
 				case NORMAL:
-					return "<Normal FP>";
+					return "<Normal Function>";
 				case NATIVE:
 					return "<Native Function>";
-				case PREDEFINED:
-					return "<Predefined Function>";
 				default:
 					return "Error";
 			}
@@ -2297,13 +2229,12 @@ public class DataObject {
 			
 			FunctionPointerObject that = (FunctionPointerObject)obj;
 			return this.functionPointerType == that.functionPointerType && Objects.equals(this.parameterList, that.parameterList) &&
-			Objects.equals(this.functionBody, that.functionBody) && Objects.equals(this.nativeFunction, that.nativeFunction) &&
-			Objects.equals(this.predefinedFunction, that.predefinedFunction);
+			Objects.equals(this.functionBody, that.functionBody) && Objects.equals(this.nativeFunction, that.nativeFunction);
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(functionPointerType, parameterList, functionBody, nativeFunction, predefinedFunction);
+			return Objects.hash(functionPointerType, parameterList, functionBody, nativeFunction);
 		}
 	}
 	public static final class VarPointerObject {

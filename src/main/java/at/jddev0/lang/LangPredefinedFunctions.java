@@ -47,7 +47,7 @@ import static at.jddev0.lang.LangFunction.LangParameter.*;
 final class LangPredefinedFunctions {
 	private LangPredefinedFunctions() {}
 	
-	static void addPredefinedFunctions(LangInterpreter interpreter, Map<String, LangPredefinedFunctionObject> funcs) {
+	static void addPredefinedFunctions(LangInterpreter interpreter, Map<String, LangNativeFunction> funcs) {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedResetFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedErrorFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedLangFunctions.class));
@@ -71,10 +71,10 @@ final class LangPredefinedFunctions {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedLangTestFunctions.class));
 	}
 	
-	static void addLinkerFunctions(LangInterpreter interpreter, Map<String, LangPredefinedFunctionObject> funcs) {
+	static void addLinkerFunctions(LangInterpreter interpreter, Map<String, LangNativeFunction> funcs) {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedLinkerFunctions.class));
 	}
-	
+
 	public static final class LangPredefinedResetFunctions {
 		private LangPredefinedResetFunctions() {}
 		

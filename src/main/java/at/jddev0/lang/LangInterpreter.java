@@ -76,7 +76,7 @@ public final class LangInterpreter {
 	final Map<Integer, Data> data = new HashMap<>();
 	
 	//Predefined functions & linker functions (= Predefined functions)
-	Map<String, LangPredefinedFunctionObject> funcs = new HashMap<>();
+	Map<String, LangNativeFunction> funcs = new HashMap<>();
 	{
 		LangPredefinedFunctions.addPredefinedFunctions(this, funcs);
 		LangPredefinedFunctions.addLinkerFunctions(this, funcs);
@@ -541,7 +541,7 @@ public final class LangInterpreter {
 		return convertVariableNameToVariableNameNodeOrComposition(node.getLineNumberFrom(), node.getLineNumberTo(),
 		null, variableName, funcs.entrySet().stream().filter(entry -> {
 			return entry.getValue().isLinkerFunction() == isLinkerFunction;
-		}).map(Entry<String, LangPredefinedFunctionObject>::getKey).collect(Collectors.toSet()), prefix, false, node.getLineNumberFrom(), SCOPE_ID);
+		}).map(Entry<String, LangNativeFunction>::getKey).collect(Collectors.toSet()), prefix, false, node.getLineNumberFrom(), SCOPE_ID);
 	}
 	
 	private Node processFunctionCallPreviousNodeValueNode(FunctionCallPreviousNodeValueNode node, DataObject previousValue, final int SCOPE_ID) {
@@ -1818,7 +1818,7 @@ public final class LangInterpreter {
 							
 							if(variableName.startsWith("fp.")) {
 								final String functionNameCopy = variableName.substring(3);
-								Optional<Map.Entry<String, LangPredefinedFunctionObject>> ret = funcs.entrySet().stream().filter(entry -> {
+								Optional<Map.Entry<String, LangNativeFunction>> ret = funcs.entrySet().stream().filter(entry -> {
 									return functionNameCopy.equals(entry.getKey());
 								}).findFirst();
 								
@@ -2050,7 +2050,7 @@ public final class LangInterpreter {
 		}
 		
 		final String variableNameCopy = variableName;
-		Optional<Map.Entry<String, LangPredefinedFunctionObject>> ret = funcs.entrySet().stream().filter(entry -> {
+		Optional<Map.Entry<String, LangNativeFunction>> ret = funcs.entrySet().stream().filter(entry -> {
 			return entry.getValue().isLinkerFunction() == isLinkerFunction;
 		}).filter(entry -> {
 			return variableNameCopy.equals(entry.getKey());
@@ -2058,13 +2058,9 @@ public final class LangInterpreter {
 		
 		if(!ret.isPresent())
 			return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + variableName + "\" was not found", node.getLineNumberFrom(), SCOPE_ID);
-		
-		LangPredefinedFunctionObject funcObj = ret.get().getValue();
-		
-		if(funcObj instanceof LangNativeFunction)
-			return new DataObject().setFunctionPointer(new FunctionPointerObject(node.getVariableName(), (LangNativeFunction)funcObj)).setVariableName(node.getVariableName());
-		
-		return new DataObject().setFunctionPointer(new FunctionPointerObject(node.getVariableName(), funcObj)).setVariableName(node.getVariableName());
+
+		LangNativeFunction func = ret.get().getValue();
+		return new DataObject().setFunctionPointer(new FunctionPointerObject(node.getVariableName(), func)).setVariableName(node.getVariableName());
 	}
 	
 	/**
@@ -2394,22 +2390,6 @@ public final class LangInterpreter {
 					
 					//Return non copy if copyStaticAndFinalModifiers flag is set for "func.asStatic()" and "func.asFinal()"
 					return ret == null?new DataObject().setVoid():(ret.isCopyStaticAndFinalModifiers()?ret:new DataObject(ret));
-				
-				case FunctionPointerObject.PREDEFINED:
-					LangPredefinedFunctionObject function = fp.getPredefinedFunction();
-					if(function == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber, SCOPE_ID);
-					
-					ret = function.callFunc(argumentValueList, SCOPE_ID);
-					if(function.isDeprecated()) {
-						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
-						function.getDeprecatedRemoveVersion() == null?"the future":function.getDeprecatedRemoveVersion(),
-						function.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + function.getDeprecatedReplacementFunction() + "\" instead!"));
-						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentLineNumber, SCOPE_ID);
-					}
-
-					//Return non copy if copyStaticAndFinalModifiers flag is set for "func.asStatic()" and "func.asFinal()"
-					return ret == null?new DataObject().setVoid():(ret.isCopyStaticAndFinalModifiers()?ret:new DataObject(ret));
 
 				default:
 					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP type", parentLineNumber, SCOPE_ID);
@@ -2602,7 +2582,7 @@ public final class LangInterpreter {
 			}
 			
 			final String functionNameCopy = functionName;
-			Optional<Map.Entry<String, LangPredefinedFunctionObject>> ret = funcs.entrySet().stream().filter(entry -> {
+			Optional<Map.Entry<String, LangNativeFunction>> ret = funcs.entrySet().stream().filter(entry -> {
 				return entry.getValue().isLinkerFunction() == isLinkerFunction && functionNameCopy.equals(entry.getKey());
 			}).findFirst();
 			
@@ -2633,7 +2613,7 @@ public final class LangInterpreter {
 				//Predefined/External function
 				
 				final String functionNameCopy = functionName;
-				Optional<Map.Entry<String, LangPredefinedFunctionObject>> retPredefinedFunction = funcs.entrySet().stream().filter(entry -> {
+				Optional<Map.Entry<String, LangNativeFunction>> retPredefinedFunction = funcs.entrySet().stream().filter(entry -> {
 					return !entry.getValue().isLinkerFunction() && functionNameCopy.equals(entry.getKey());
 				}).findFirst();
 				
@@ -3987,25 +3967,10 @@ public final class LangInterpreter {
 		public void addPredefinedFunctions(Object obj) {
 			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsFromObject(interpreter, obj));
 		}
-		/**
-		 * Creates a function which is accessible globally in the Interpreter (= in all SCOPE_IDs)<br>
-		 * If function already exists, it will be overridden<br>
-		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
-		 *
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public void addPredefinedFunction(String funcName, LangPredefinedFunctionObject function) {
-			interpreter.funcs.put(funcName, function);
-		}
-		/**
-		 * @deprecated [Will be removed in 1.0.0-beta-07] Use the new LangNativeFunction system instead
-		 */
-		@Deprecated
-		public void addPredefinedFunctions(Map<String, ? extends LangPredefinedFunctionObject> funcs) {
+		public void addPredefinedFunctions(Map<String, LangNativeFunction> funcs) {
 			interpreter.funcs.putAll(funcs);
 		}
-		public Map<String, LangPredefinedFunctionObject> getPredefinedFunctions() {
+		public Map<String, LangNativeFunction> getPredefinedFunctions() {
 			return interpreter.funcs;
 		}
 		

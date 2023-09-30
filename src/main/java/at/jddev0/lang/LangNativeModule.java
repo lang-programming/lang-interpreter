@@ -118,8 +118,6 @@ public abstract class LangNativeModule {
 			return new DataObject().setFunctionPointer((DataObject.FunctionPointerObject)objectValue);
 		}else if(objectValue instanceof LangNativeFunction) {
 			return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject((LangNativeFunction)objectValue));
-		}else if(objectValue instanceof LangPredefinedFunctionObject) {
-			return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject((LangPredefinedFunctionObject)objectValue));
 		}else if(objectValue instanceof Void) {
 			return new DataObject().setVoid();
 		}else if(objectValue instanceof Integer) {
@@ -159,8 +157,7 @@ public abstract class LangNativeModule {
 			}else if(DataObject.VarPointerObject.class.isAssignableFrom(classValue)) {
 				return new DataObject().setTypeValue(DataObject.DataType.VAR_POINTER);
 			}else if(DataObject.FunctionPointerObject.class.isAssignableFrom(classValue) ||
-					LangNativeFunction.class.isAssignableFrom(classValue) ||
-					LangPredefinedFunctionObject.class.isAssignableFrom(classValue)) {
+					LangNativeFunction.class.isAssignableFrom(classValue)) {
 				return new DataObject().setTypeValue(DataObject.DataType.FUNCTION_POINTER);
 			}else if(Void.class.isAssignableFrom(classValue)) {
 				return new DataObject().setTypeValue(DataObject.DataType.VOID);
@@ -213,17 +210,13 @@ public abstract class LangNativeModule {
 	}
 	
 	protected final DataObject getPredefinedFunctionAsDataObject(String name) {
-		LangPredefinedFunctionObject funcObj = interpreter.funcs.get(name);
-		if(funcObj == null)
+		LangNativeFunction func = interpreter.funcs.get(name);
+		if(func == null)
 			return null;
 		
-		String functionName = (funcObj.isLinkerFunction()?"linker.":"func.") + name;
-		
-		if(funcObj instanceof LangNativeFunction)
-			return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject(functionName, (LangNativeFunction)funcObj)).
-					setVariableName(functionName);
-		
-		return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject(functionName, funcObj)).
+		String functionName = (func.isLinkerFunction()?"linker.":"func.") + name;
+
+		return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject(functionName, func)).
 				setVariableName(functionName);
 	}
 	
@@ -290,56 +283,6 @@ public abstract class LangNativeModule {
 		module.getExportedFunctions().add(functionName);
 
 		interpreter.funcs.put(functionName, func);
-	}
-
-	@Deprecated
-	protected final void exportFunction(String functionName, LangPredefinedFunctionObject func) {
-		if(!module.isLoad())
-			throw new RuntimeException("This method may only be used inside a module which is in the \"load\" state");
-		
-		for(int i = 0;i < functionName.length();i++) {
-			char c = functionName.charAt(i);
-			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
-				continue;
-			
-			throw new RuntimeException("The function name may only contain alphanumeric characters and underscores (_)");
-		}
-		
-		module.getExportedFunctions().add(functionName);
-		
-		//Create function object container to force function to be a normal function
-		interpreter.funcs.put(functionName, (argumentList, SCOPE_ID) -> {
-			return func.callFunc(argumentList, SCOPE_ID);
-		});
-	}
-
-	@Deprecated
-	protected final void exportLinkerFunction(String functionName, LangPredefinedFunctionObject func) {
-		if(!module.isLoad())
-			throw new RuntimeException("This method may only be used inside a module which is in the \"load\" state");
-		
-		for(int i = 0;i < functionName.length();i++) {
-			char c = functionName.charAt(i);
-			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
-				continue;
-			
-			throw new RuntimeException("The function name may only contain alphanumeric characters and underscores (_)");
-		}
-		
-		module.getExportedFunctions().add(functionName);
-		
-		//Create function object container to force function to be a linker function
-		interpreter.funcs.put(functionName, new LangPredefinedFunctionObject() {
-			@Override
-			public DataObject callFunc(List<DataObject> argumentList, final int SCOPE_ID) {
-				return func.callFunc(argumentList, SCOPE_ID);
-			}
-			
-			@Override
-			public boolean isLinkerFunction() {
-				return true;
-			}
-		});
 	}
 	
 	protected final void exportNormalVariableFinal(String variableName, DataObject value) {

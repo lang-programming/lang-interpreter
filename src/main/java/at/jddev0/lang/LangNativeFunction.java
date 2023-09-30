@@ -23,7 +23,7 @@ import at.jddev0.lang.LangFunction.*;
 import at.jddev0.lang.LangFunction.LangParameter.*;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 
-public class LangNativeFunction implements LangPredefinedFunctionObject {
+public class LangNativeFunction {
 	//TODO remove and add as parameter to call Function instance to call
 	private final LangInterpreter interpreter;
 	
@@ -150,8 +150,7 @@ public class LangNativeFunction implements LangPredefinedFunctionObject {
 		
 		internalFunctions.add(internalFunction);
 	}
-	
-	@Override
+
 	public DataObject callFunc(List<DataObject> argumentList, int SCOPE_ID) {
 		//TODO remove checks from this method and move to directly to interpreter
 		
@@ -164,7 +163,7 @@ public class LangNativeFunction implements LangPredefinedFunctionObject {
 		
 		if(index == -1) {
 			return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-					" Available function singauters:\n    " + functionName + internalFunctions.stream().map(InternalFunction::toFunctionSignatureSyntax).
+					" Available function signatures:\n    " + functionName + internalFunctions.stream().map(InternalFunction::toFunctionSignatureSyntax).
 					collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 		}
 		
@@ -667,22 +666,18 @@ public class LangNativeFunction implements LangPredefinedFunctionObject {
 		return functionInfo;
 	}
 	
-	@Override
 	public boolean isLinkerFunction() {
 		return linkerFunction;
 	}
 	
-	@Override
 	public boolean isDeprecated() {
 		return deprecated;
 	}
 	
-	@Override
 	public String getDeprecatedRemoveVersion() {
 		return deprecatedRemoveVersion;
 	}
 	
-	@Override
 	public String getDeprecatedReplacementFunction() {
 		return deprecatedReplacementFunction;
 	}
