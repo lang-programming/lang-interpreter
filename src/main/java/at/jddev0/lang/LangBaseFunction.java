@@ -63,16 +63,23 @@ public class LangBaseFunction {
             String variableName = parameterList.get(i).getVariableName();
 
             builder.append(variableName);
-            if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS)
+            if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
+                if(!parameterDataTypeConstraintList.get(i).equals(DataObject.CONSTRAINT_NORMAL))
+                    builder.append(parameterDataTypeConstraintList.get(i).toTypeConstraintSyntax());
+
                 builder.append("...");
-            else if(parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS)
+            }else if(parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS) {
+                if(!parameterDataTypeConstraintList.get(i).equals(DataObject.CONSTRAINT_NORMAL))
+                    builder.append(parameterDataTypeConstraintList.get(i).toTypeConstraintSyntax());
+
                 builder.append("...{raw}");
-            else if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER)
+            }else if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER) {
                 builder.append("{number}");
-            else if(parameterAnnotationList.get(i) == ParameterAnnotation.BOOLEAN)
+            }else if(parameterAnnotationList.get(i) == ParameterAnnotation.BOOLEAN) {
                 builder.append("{boolean}");
-            else if(!parameterDataTypeConstraintList.get(i).equals(DataObject.getTypeConstraintFor(variableName)))
+            }else if(!parameterDataTypeConstraintList.get(i).equals(DataObject.getTypeConstraintFor(variableName))) {
                 builder.append(parameterDataTypeConstraintList.get(i).toTypeConstraintSyntax());
+            }
 
             builder.append(", ");
         }
