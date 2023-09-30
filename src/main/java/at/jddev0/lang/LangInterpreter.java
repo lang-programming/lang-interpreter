@@ -477,7 +477,7 @@ public final class LangInterpreter {
 			}
 			
 			moduleName = variableName.substring(2, indexModuleIdientifierEnd);
-			if(!isAlphaNummericWithUnderline(moduleName)) {
+			if(!isAlphaNumericWithUnderline(moduleName)) {
 				setErrno(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom(), SCOPE_ID);
 				
 				return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
@@ -1780,7 +1780,7 @@ public final class LangInterpreter {
 						}
 						
 						moduleName = variableName.substring(2, indexModuleIdientifierEnd);
-						if(!isAlphaNummericWithUnderline(moduleName)) {
+						if(!isAlphaNumericWithUnderline(moduleName)) {
 							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom(), SCOPE_ID);
 						}
 						
@@ -2011,7 +2011,7 @@ public final class LangInterpreter {
 			}
 			
 			moduleName = variableName.substring(2, indexModuleIdientifierEnd);
-			if(!isAlphaNummericWithUnderline(moduleName)) {
+			if(!isAlphaNumericWithUnderline(moduleName)) {
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom(), SCOPE_ID);
 			}
 			
@@ -2190,10 +2190,16 @@ public final class LangInterpreter {
 			
 			switch(fp.getFunctionPointerType()) {
 				case FunctionPointerObject.NORMAL:
-					List<VariableNameNode> parameterList = fp.getParameterList();
-					AbstractSyntaxTree functionBody = fp.getFunctionBody();
-					if(parameterList == null || functionBody == null)
+					LangNormalFunction normalFunction = fp.getNormalFunction();
+					if(normalFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber, SCOPE_ID);
+
+					List<DataObject> parameterList = normalFunction.getParameterList();
+					List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList = normalFunction.getParameterDataTypeConstraintList();
+					List<LangBaseFunction.ParameterAnnotation> parameterAnnotationList = normalFunction.getParameterAnnotationList();
+					List<Integer> lineNumberFromList = normalFunction.getLineNumberFromList();
+
+					AbstractSyntaxTree functionBody = normalFunction.getFunctionBody();
 					
 					final int NEW_SCOPE_ID = SCOPE_ID + 1;
 					
@@ -2210,48 +2216,43 @@ public final class LangInterpreter {
 					
 					//Set arguments
 					DataObject lastDataObject = new DataObject().setVoid();
-					Iterator<VariableNameNode> parameterListIterator = parameterList.iterator();
+					Iterator<DataObject> parameterListIterator = parameterList.iterator();
+					Iterator<DataObject.DataTypeConstraint> parameterDataTypeConstraintListIterator = parameterDataTypeConstraintList.iterator();
+					Iterator<LangBaseFunction.ParameterAnnotation> parameterAnnotationListIterator = parameterAnnotationList.iterator();
+					Iterator<Integer> lineNumberFromListIterator = lineNumberFromList.iterator();
 					boolean isLastDataObjectArgumentSeparator = argumentValueList.size() > 0 && argumentValueList.get(argumentValueList.size() - 1).getType() == DataType.ARGUMENT_SEPARATOR;
 					while(parameterListIterator.hasNext()) {
-						VariableNameNode parameter = parameterListIterator.next();
-						String variableName = parameter.getVariableName();
-						String rawTypeConstraint = parameter.getTypeConstraint();
-						DataTypeConstraint typeConstraint;
-						if(rawTypeConstraint == null) {
-							typeConstraint = null;
-						}else {
-							DataObject errorOut = new DataObject().setVoid();
-							typeConstraint = interpretTypeConstraint(rawTypeConstraint, errorOut, parameter.getLineNumberFrom(), SCOPE_ID);
-							
-							if(errorOut.getType() == DataType.ERROR)
-								return errorOut;
-						}
+						final DataObject parameter = parameterListIterator.next();
+						final DataObject.DataTypeConstraint typeConstraint = parameterDataTypeConstraintListIterator.next();
+						final LangBaseFunction.ParameterAnnotation parameterAnnotation = parameterAnnotationListIterator.next();
+						final int lineNumberFrom = lineNumberFromListIterator.next();
+
+						final String variableName = parameter.getVariableName();
 						
-						if(!parameterListIterator.hasNext() && !isLangVarWithoutPrefix(variableName) && isFuncCallVarArgs(variableName)) {
+						if(!parameterListIterator.hasNext() && parameterAnnotation == LangBaseFunction.ParameterAnnotation.VAR_ARGS) {
 							//Varargs (only the last parameter can be a varargs parameter)
-							variableName = variableName.substring(0, variableName.length() - 3); //Remove "..."
 							if(variableName.startsWith("$")) {
 								//Text varargs
-								if(typeConstraint != null) {
+								if(!typeConstraint.equals(DataObject.CONSTRAINT_NORMAL)) {
 									return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 											"function parameter \"" + variableName + "\": Text var args argument must not have a type constraint definition",
-											parameter.getLineNumberFrom(), SCOPE_ID);
+											lineNumberFrom, SCOPE_ID);
 								}
-								
+
 								DataObject dataObject = LangUtils.combineDataObjects(argumentValueList);
 								try {
 									DataObject newDataObject = new DataObject(dataObject != null?dataObject.getText():
 										new DataObject().setVoid().getText()).setVariableName(variableName);
-									
-									
+
+
 									DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 									if(old != null && old.isStaticData())
 										setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-												parameter.getLineNumberFrom(), NEW_SCOPE_ID);
+												lineNumberFrom, NEW_SCOPE_ID);
 								}catch(DataTypeConstraintException e) {
 									return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 											"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-											parameter.getLineNumberFrom(), SCOPE_ID);
+											lineNumberFrom, SCOPE_ID);
 								}
 							}else {
 								//Array varargs
@@ -2259,89 +2260,79 @@ public final class LangInterpreter {
 										map(DataObject::new).collect(Collectors.toList());
 								if(varArgsTmpList.isEmpty() && isLastDataObjectArgumentSeparator)
 									varArgsTmpList.add(new DataObject().setVoid());
-								
-								if(typeConstraint != null) {
-									for(int i = 0;i < varArgsTmpList.size();i++) {
-										DataObject varArgsArgument = varArgsTmpList.get(i);
-										if(!typeConstraint.isTypeAllowed(varArgsArgument.getType()))
-											return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-													"Invalid argument (Var args argument " + (i + 1) + ") value for var args function parameter \"" +
-															variableName + "\": Value must be one of " + typeConstraint.getAllowedTypes(),
-													parameter.getLineNumberFrom(), SCOPE_ID);
-									}
+
+								for(int i = 0;i < varArgsTmpList.size();i++) {
+									DataObject varArgsArgument = varArgsTmpList.get(i);
+									if(!typeConstraint.isTypeAllowed(varArgsArgument.getType()))
+										return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+												"Invalid argument (Var args argument " + (i + 1) + ") value for var args function parameter \"" +
+														variableName + "\": Value must be one of " + typeConstraint.getAllowedTypes(),
+												lineNumberFrom, SCOPE_ID);
 								}
-								
+
 								try {
 									DataObject newDataObject = new DataObject().
 											setArray(varArgsTmpList.toArray(new DataObject[0])).
 											setVariableName(variableName);
-									
+
 									DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 									if(old != null && old.isStaticData())
 										setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-												parameter.getLineNumberFrom(), NEW_SCOPE_ID);
+												lineNumberFrom, NEW_SCOPE_ID);
 								}catch(DataTypeConstraintException e) {
 									return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 											"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-											parameter.getLineNumberFrom(), SCOPE_ID);
+											lineNumberFrom, SCOPE_ID);
 								}
 							}
-							
+
 							break;
 						}
-						
-						if(isFuncCallCallByPtr(variableName) && !isFuncCallCallByPtrLangVar(variableName)) {
-							//Call by pointer
-							variableName = "$" + variableName.substring(2, variableName.length() - 1); //Remove '[' and ']' from variable name
+
+						if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER) {
 							if(argumentValueList.size() > 0)
 								lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true);
 							else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
 								lastDataObject = new DataObject().setVoid();
-							
+
 							try {
 								DataObject newDataObject = new DataObject().
 										setVarPointer(new VarPointerObject(lastDataObject)).
 										setVariableName(variableName);
-								if(typeConstraint != null)
-									newDataObject.setTypeConstraint(typeConstraint);
-								
+								newDataObject.setTypeConstraint(typeConstraint);
+
 								DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 								if(old != null && old.isStaticData())
 									setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-											parameter.getLineNumberFrom(), NEW_SCOPE_ID);
+											lineNumberFrom, NEW_SCOPE_ID);
 							}catch(DataTypeConstraintException e) {
 								return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 										"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-										parameter.getLineNumberFrom(), SCOPE_ID);
+										lineNumberFrom, SCOPE_ID);
 							}
-							
+
 							continue;
 						}
-						
-						if(!isVarNameWithoutPrefix(variableName) || isLangVarWithoutPrefix(variableName))
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-									"Invalid parameter variable name: \"" + variableName + "\"",
-									parameter.getLineNumberFrom(), NEW_SCOPE_ID);
-						
+
 						if(argumentValueList.size() > 0)
 							lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true);
 						else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
 							lastDataObject = new DataObject().setVoid();
-						
+
 						try {
 							DataObject newDataObject = new DataObject(lastDataObject).
 									setVariableName(variableName);
 							if(typeConstraint != null)
 								newDataObject.setTypeConstraint(typeConstraint);
-							
+
 							DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 							if(old != null && old.isStaticData())
 								setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-										parameter.getLineNumberFrom(), NEW_SCOPE_ID);
+										lineNumberFrom, NEW_SCOPE_ID);
 						}catch(DataTypeConstraintViolatedException e) {
 							return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 									"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-									parameter.getLineNumberFrom(), SCOPE_ID);
+									lineNumberFrom, SCOPE_ID);
 						}
 					}
 					
@@ -2354,7 +2345,7 @@ public final class LangInterpreter {
 					//Remove data map
 					data.remove(NEW_SCOPE_ID);
 					
-					DataTypeConstraint returnValueTypeConstraint = fp.getReturnValueTypeConstraint();
+					DataTypeConstraint returnValueTypeConstraint = normalFunction.getReturnValueTypeConstraint();
 					
 					boolean isReturnValueThrownError = executionState.isThrownValue ||
 							(executionState.tryThrownError != null && executionState.tryBlockLevel > 0 &&
@@ -2440,7 +2431,7 @@ public final class LangInterpreter {
 							}
 							
 							moduleName = variableName.substring(2, indexModuleIdientifierEnd);
-							if(!isAlphaNummericWithUnderline(moduleName)) {
+							if(!isAlphaNumericWithUnderline(moduleName)) {
 								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", argument.getLineNumberFrom(), SCOPE_ID));
 								
 								continue;
@@ -2524,7 +2515,7 @@ public final class LangInterpreter {
 			}
 			
 			String moduleName = functionName.substring(2, indexModuleIdientifierEnd);
-			if(!isAlphaNummericWithUnderline(moduleName)) {
+			if(!isAlphaNumericWithUnderline(moduleName)) {
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom(), SCOPE_ID);
 			}
 			
@@ -2694,9 +2685,18 @@ public final class LangInterpreter {
 	}
 	
 	private DataObject interpretFunctionDefinitionNode(FunctionDefinitionNode node, final int SCOPE_ID) {
-		List<VariableNameNode> parameterList = new ArrayList<>();
 		List<Node> children = node.getChildren();
+
+		List<DataObject> parameterList = new ArrayList<>(children.size());
+		List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList = new ArrayList<>(children.size());
+		List<LangBaseFunction.ParameterAnnotation> parameterAnnotationList = new ArrayList<>(children.size());
+		int varArgsParameterIndex = -1;
+		boolean textVarArgsParameter = false;
+		List<Integer> lineNumberFromList = new ArrayList<>(children.size());
+		List<Integer> lineNumberToList = new ArrayList<>(children.size());
+
 		Iterator<Node> childrenIterator = children.listIterator();
+		int index = 0;
 		while(childrenIterator.hasNext()) {
 			Node child = childrenIterator.next();
 			try {
@@ -2709,39 +2709,88 @@ public final class LangInterpreter {
 				}
 				
 				VariableNameNode parameter = (VariableNameNode)child;
-				String variableName = parameter.getVariableName();
-				if(!childrenIterator.hasNext() && !isLangVarWithoutPrefix(variableName) && isFuncCallVarArgs(variableName)) {
-					//Varargs (only the last parameter can be a varargs parameter)
-					parameterList.add(parameter);
-					break;
+				String rawVariableName = parameter.getVariableName();
+
+				String rawParameterTypeConstraint = parameter.getTypeConstraint();
+				DataTypeConstraint parameterTypeConstraint;
+				if(rawParameterTypeConstraint == null) {
+					parameterTypeConstraint = null;
+				}else {
+					DataObject errorOut = new DataObject().setVoid();
+					parameterTypeConstraint = interpretTypeConstraint(rawParameterTypeConstraint, errorOut, parameter.getLineNumberFrom(), SCOPE_ID);
+
+					if(errorOut.getType() == DataType.ERROR)
+						return errorOut;
 				}
-				
-				if((!isVarNameWithoutPrefix(variableName) && !isFuncCallCallByPtr(variableName)) ||
-						isLangVarWithoutPrefix(variableName))
+
+				if(!childrenIterator.hasNext() && !isLangVarWithoutPrefix(rawVariableName) && isFuncCallVarArgs(rawVariableName)) {
+					//Varargs (only the last parameter can be a varargs parameter)
+
+					varArgsParameterIndex = index;
+
+					String variableName = rawVariableName.substring(0, rawVariableName.length() - 3); //Remove "..."
+
+					textVarArgsParameter = variableName.charAt(0) == '$';
+
+					parameterList.add(new DataObject().setVariableName(variableName));
+					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.CONSTRAINT_NORMAL:parameterTypeConstraint);
+					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.VAR_ARGS);
+					lineNumberFromList.add(node.getLineNumberFrom());
+					lineNumberToList.add(node.getLineNumberTo());
+
+					continue;
+				}
+
+				if(isFuncCallCallByPtr(rawVariableName) && !isFuncCallCallByPtrLangVar(rawVariableName)) {
+					String variableName = "$" + rawVariableName.substring(2, rawVariableName.length() - 1); //Remove '[' and ']' from variable name;
+
+					parameterList.add(new DataObject().setVariableName(variableName));
+					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
+					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER);
+					lineNumberFromList.add(node.getLineNumberFrom());
+					lineNumberToList.add(node.getLineNumberTo());
+
+					continue;
+				}
+
+				if(!isVarNameWithoutPrefix(rawVariableName) || isLangVarWithoutPrefix(rawVariableName))
 					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-							"Invalid parameter: \"" + variableName + "\"", node.getLineNumberFrom(), SCOPE_ID);
-				
-				parameterList.add(parameter);
+							"Invalid parameter: \"" + rawVariableName + "\"", node.getLineNumberFrom(), SCOPE_ID);
+
+				String variableName = rawVariableName;
+
+				parameterList.add(new DataObject().setVariableName(variableName));
+				parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
+				parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.NORMAL);
+				lineNumberFromList.add(node.getLineNumberFrom());
+				lineNumberToList.add(node.getLineNumberTo());
 			}catch(ClassCastException e) {
 				setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
 			}
+
+			index++;
 		}
 		
-		String rawTypeConstraint = node.getReturnValueTypeConstraint();
-		DataTypeConstraint typeConstraint;
-		if(rawTypeConstraint == null) {
-			typeConstraint = null;
+		String rawReturnTypeConstraint = node.getReturnValueTypeConstraint();
+		DataTypeConstraint returnValueTypeConstraint;
+		if(rawReturnTypeConstraint == null) {
+			returnValueTypeConstraint = DataObject.CONSTRAINT_NORMAL;
 		}else {
 			DataObject errorOut = new DataObject().setVoid();
-			typeConstraint = interpretTypeConstraint(rawTypeConstraint, errorOut, node.getLineNumberFrom(), SCOPE_ID);
+			returnValueTypeConstraint = interpretTypeConstraint(rawReturnTypeConstraint, errorOut, node.getLineNumberFrom(), SCOPE_ID);
 			
 			if(errorOut.getType() == DataType.ERROR)
 				return errorOut;
 		}
-		
+
 		StackElement currentStackElement = getCurrentCallStackElement();
+
+		LangNormalFunction normalFunction = new LangNormalFunction(parameterList, parameterDataTypeConstraintList,
+				parameterAnnotationList, varArgsParameterIndex, textVarArgsParameter, false,
+				returnValueTypeConstraint, lineNumberFromList, lineNumberToList, node.getFunctionBody());
+
 		return new DataObject().setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
-				currentStackElement.getLangFile(), parameterList, typeConstraint, node.getFunctionBody()));
+				currentStackElement.getLangFile(), normalFunction));
 	}
 	
 	private DataObject interpretArrayNode(ArrayNode node, final int SCOPE_ID) {
@@ -3269,7 +3318,7 @@ public final class LangInterpreter {
 	/**
 	 * LangPatterns: Regex: \w+
 	 */
-	private boolean isAlphaNummericWithUnderline(String token) {
+	private boolean isAlphaNumericWithUnderline(String token) {
 		if(token.length() == 0)
 			return false;
 		

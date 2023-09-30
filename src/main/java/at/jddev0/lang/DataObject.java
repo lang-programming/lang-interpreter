@@ -2056,73 +2056,38 @@ public class DataObject {
 		 * If functionName is set, the function name from the stack frame element which is created for the function call will be overridden
 		 */
 		private final String functionName;
-		private final List<VariableNameNode> parameterList;
-		private final DataTypeConstraint returnValueTypeConstraint;
-		private final AbstractSyntaxTree functionBody;
+		private final LangNormalFunction normalFunction;
 		private final LangNativeFunction nativeFunction;
 		private final int functionPointerType;
 		
 		/**
 		 * For normal function pointer definition
 		 */
-		public FunctionPointerObject(String langPath, String langFile, String functionName,
-				List<VariableNameNode> parameterList, DataTypeConstraint returnValueTypeConstraint, AbstractSyntaxTree functionBody) {
+		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNormalFunction normalFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.functionName = functionName;
-			this.parameterList = parameterList == null?null:new ArrayList<>(parameterList);
-			this.returnValueTypeConstraint = returnValueTypeConstraint;
-			this.functionBody = functionBody;
+			this.normalFunction = normalFunction;
 			this.nativeFunction = null;
 			this.functionPointerType = NORMAL;
 		}
 		/**
 		 * For normal function pointer definition
 		 */
-		public FunctionPointerObject(String langPath, String langFile, String functionName,
-				List<VariableNameNode> parameterList, AbstractSyntaxTree functionBody) {
-			this(langPath, langFile, functionName, parameterList, null, functionBody);
+		public FunctionPointerObject(String langPath, String langFile, LangNormalFunction normalFunction) {
+			this(langPath, langFile, null, normalFunction);
 		}
 		/**
 		 * For normal function pointer definition
 		 */
-		public FunctionPointerObject(String langPath, String langFile, List<VariableNameNode> parameterList,
-				DataTypeConstraint returnValueTypeConstraint, AbstractSyntaxTree functionBody) {
-			this(langPath, langFile, null, parameterList, returnValueTypeConstraint, functionBody);
+		public FunctionPointerObject(String functionName, LangNormalFunction normalFunction) {
+			this(null, null, functionName, normalFunction);
 		}
 		/**
 		 * For normal function pointer definition
 		 */
-		public FunctionPointerObject(String langPath, String langFile, List<VariableNameNode> parameterList,
-				AbstractSyntaxTree functionBody) {
-			this(langPath, langFile, null, parameterList, functionBody);
-		}
-		/**
-		 * For normal function pointer definition
-		 */
-		public FunctionPointerObject(String functionName, List<VariableNameNode> parameterList,
-				DataTypeConstraint returnValueTypeConstraint, AbstractSyntaxTree functionBody) {
-			this(null, null, functionName, parameterList, returnValueTypeConstraint, functionBody);
-		}
-		/**
-		 * For normal function pointer definition
-		 */
-		public FunctionPointerObject(String functionName, List<VariableNameNode> parameterList,
-				AbstractSyntaxTree functionBody) {
-			this(null, null, functionName, parameterList, functionBody);
-		}
-		/**
-		 * For normal function pointer definition
-		 */
-		public FunctionPointerObject(List<VariableNameNode> parameterList, DataTypeConstraint returnValueTypeConstraint,
-				AbstractSyntaxTree functionBody) {
-			this(null, parameterList, returnValueTypeConstraint, functionBody);
-		}
-		/**
-		 * For normal function pointer definition
-		 */
-		public FunctionPointerObject(List<VariableNameNode> parameterList, AbstractSyntaxTree functionBody) {
-			this(null, parameterList, functionBody);
+		public FunctionPointerObject(LangNormalFunction normalFunction) {
+			this(null, normalFunction);
 		}
 		
 		/**
@@ -2132,9 +2097,7 @@ public class DataObject {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.functionName = functionName == null?nativeFunction.getFunctionName():functionName;
-			this.parameterList = null;
-			this.returnValueTypeConstraint = null;
-			this.functionBody = null;
+			this.normalFunction = null;
 			this.nativeFunction = nativeFunction;
 			this.functionPointerType = NATIVE;
 		}
@@ -2160,8 +2123,7 @@ public class DataObject {
 		public FunctionPointerObject withFunctionName(String functionName) {
 			switch(functionPointerType) {
 				case NORMAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, parameterList,
-							returnValueTypeConstraint, functionBody);
+					return new FunctionPointerObject(langPath, langFile, functionName, normalFunction);
 				case NATIVE:
 					return new FunctionPointerObject(langPath, langFile, functionName, nativeFunction);
 			}
@@ -2180,19 +2142,11 @@ public class DataObject {
 		public String getFunctionName() {
 			return functionName;
 		}
-		
-		public List<VariableNameNode> getParameterList() {
-			return parameterList;
+
+		public LangNormalFunction getNormalFunction() {
+			return normalFunction;
 		}
-		
-		public DataTypeConstraint getReturnValueTypeConstraint() {
-			return returnValueTypeConstraint;
-		}
-		
-		public AbstractSyntaxTree getFunctionBody() {
-			return functionBody;
-		}
-		
+
 		public LangNativeFunction getNativeFunction() {
 			return nativeFunction;
 		}
@@ -2228,13 +2182,13 @@ public class DataObject {
 				return false;
 			
 			FunctionPointerObject that = (FunctionPointerObject)obj;
-			return this.functionPointerType == that.functionPointerType && Objects.equals(this.parameterList, that.parameterList) &&
-			Objects.equals(this.functionBody, that.functionBody) && Objects.equals(this.nativeFunction, that.nativeFunction);
+			return this.functionPointerType == that.functionPointerType && Objects.equals(this.normalFunction, that.normalFunction) &&
+					Objects.equals(this.nativeFunction, that.nativeFunction);
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(functionPointerType, parameterList, functionBody, nativeFunction);
+			return Objects.hash(functionPointerType, normalFunction, nativeFunction);
 		}
 	}
 	public static final class VarPointerObject {

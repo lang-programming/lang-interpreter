@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import at.jddev0.lang.DataObject.DataType;
 
@@ -117,7 +118,20 @@ public final class LangUtils {
 		
 		return argumentList;
 	}
-	
+
+	/**
+	 * @param functionSignatures Function signatures will be extracted from the LangBaseFunctions
+	 * @param argumentList The combined argument list
+	 *
+	 * @return Returns the index of the most restrictive function signature for the provided arguments
+	 */
+	public static int getMostRestrictiveFunctionSignatureIndex(List<? extends LangBaseFunction> functionSignatures,
+															   List<DataObject> argumentList) {
+		return getMostRestrictiveFunctionSignatureIndex(functionSignatures.stream().
+				map(LangBaseFunction::getParameterDataTypeConstraintList).collect(Collectors.toList()),
+				functionSignatures.stream().map(LangBaseFunction::getVarArgsParameterIndex).
+				collect(Collectors.toList()), argumentList);
+	}
 	/**
 	 * @param varArgsParameterIndices Index of the var args argument of the function signature, if there is no var args argument the value must be set to -1
 	 * @param argumentList The combined argument list

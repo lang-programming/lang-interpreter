@@ -6,12 +6,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import at.jddev0.lang.DataObject.DataType;
@@ -22,6 +17,8 @@ import at.jddev0.lang.DataObject.VarPointerObject;
 import at.jddev0.lang.LangFunction.*;
 import at.jddev0.lang.LangFunction.LangParameter.*;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
+
+import static at.jddev0.lang.LangBaseFunction.ParameterAnnotation;
 
 public class LangNativeFunction {
 	//TODO remove and add as parameter to call Function instance to call
@@ -158,8 +155,7 @@ public class LangNativeFunction {
 		if(internalFunctions.size() == 1)
 			return internalFunctions.get(0).callFunc(interpreter, argumentList, combinedArgumentList, SCOPE_ID);
 		
-		int index = LangUtils.getMostRestrictiveFunctionSignatureIndex(internalFunctions.stream().map(InternalFunction::getParamaterDataTypeConstraintList).
-				collect(Collectors.toList()), internalFunctions.stream().map(InternalFunction::getVarArgsParameterIndex).collect(Collectors.toList()), combinedArgumentList);
+		int index = LangUtils.getMostRestrictiveFunctionSignatureIndex(internalFunctions, combinedArgumentList);
 		
 		if(index == -1) {
 			return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
@@ -180,8 +176,6 @@ public class LangNativeFunction {
 			throw new IllegalArgumentException("Method must be annotated with @LangFunction must return a DataObject");
 		
 		boolean combinatorFunction = functionBody.isAnnotationPresent(CombinatorFunction.class);
-		
-		LangInfo langInfo = functionBody.getAnnotation(LangInfo.class);
 		
 		DataTypeConstraint returnValueTypeConstraint = DataObject.CONSTRAINT_NORMAL;
 		
@@ -213,9 +207,9 @@ public class LangNativeFunction {
 		int diff = hasInterpreterParameter?2:1;
 		List<Class<?>> methodParameterTypeList = new ArrayList<>(parameters.length - diff);
 		List<DataObject> parameterList = new ArrayList<>(parameters.length - diff);
-		List<DataTypeConstraint> paramaterDataTypeConstraintList = new ArrayList<>(parameters.length - diff);
+		List<DataTypeConstraint> parameterDataTypeConstraintList = new ArrayList<>(parameters.length - diff);
 		List<ParameterAnnotation> parameterAnnotationList = new ArrayList<>();
-		List<String> paramaterInfoList = new ArrayList<>(parameters.length - diff);
+		List<String> parameterInfoList = new ArrayList<>(parameters.length - diff);
 		int varArgsParameterIndex = -1;
 		boolean textVarArgsParameter = false;
 		boolean rawVarArgsParameter = false;
@@ -348,9 +342,9 @@ public class LangNativeFunction {
 			
 			if(typeConstraintingParameterCount > 1)
 				throw new IllegalArgumentException("DataObject parameter must be annotated with at most one of @RawVarArgs, @AllowedTypes, @NotAllowedTypes, @NumberValue, or @BooleanValue");
-			
-			langInfo = parameter.getAnnotation(LangInfo.class);
-			String paramaterInfo = langInfo == null?null:langInfo.value();
+
+			LangInfo langInfo = parameter.getAnnotation(LangInfo.class);
+			String parameterInfo = langInfo == null?null:langInfo.value();
 			
 			//Allow all types for var args parameters
 			if(typeConstraint == null)
@@ -358,29 +352,22 @@ public class LangNativeFunction {
 			
 			methodParameterTypeList.add(parameter.getType());
 			parameterList.add(new DataObject().setVariableName(variableName));
-			paramaterDataTypeConstraintList.add(typeConstraint);
-			paramaterInfoList.add(paramaterInfo);
+			parameterDataTypeConstraintList.add(typeConstraint);
+			parameterInfoList.add(parameterInfo);
 			parameterAnnotationList.add(parameterAnnotation);
 		}
 		
 		if(rawVarArgsParameter && parameterList.size() != 1)
 			throw new IllegalArgumentException("If @RawVarArgs is used there must be exactly one lang parameter");
 		
-		return new InternalFunction(methodParameterTypeList, parameterList, paramaterDataTypeConstraintList,
-				parameterAnnotationList, paramaterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
+		return new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
+				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
 				returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, combinatorFunction, 0, new ArrayList<>());
 	}
 	
-	public class InternalFunction {
+	public class InternalFunction extends LangBaseFunction {
 		private final List<Class<?>> methodParameterTypeList;
-		private final List<DataObject> parameterList;
-		private final List<DataTypeConstraint> paramaterDataTypeConstraintList;
-		private final List<ParameterAnnotation> parameterAnnotationList;
-		private final List<String> paramaterInfoList;
-		private final int varArgsParameterIndex;
-		private final boolean textVarArgsParameter;
-		private final boolean rawVarArgsParameter;
-		private final DataTypeConstraint returnValueTypeConstraint;
+		private final List<String> parameterInfoList;
 		private final Object instance;
 		private final Method functionBody;
 		private final boolean hasInterpreterParameter;
@@ -390,21 +377,17 @@ public class LangNativeFunction {
 		private final List<DataObject> combinatorProvidedArgumentList;
 		
 		private InternalFunction(List<Class<?>> methodParameterTypeList, List<DataObject> parameterList,
-				List<DataTypeConstraint> paramaterDataTypeConstraintList,
-				List<ParameterAnnotation> parameterAnnotationList, List<String> paramaterInfoList,
+				List<DataTypeConstraint> parameterDataTypeConstraintList,
+				List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
 				int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
 				DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody,
 				boolean hasInterpreterParameter, boolean combinatorFunction, int combinatorFunctionCallCount,
 				List<DataObject> combinatorProvidedArgumentList) {
+			super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, varArgsParameterIndex,
+					textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
+
 			this.methodParameterTypeList = methodParameterTypeList;
-			this.parameterList = parameterList;
-			this.paramaterDataTypeConstraintList = paramaterDataTypeConstraintList;
-			this.parameterAnnotationList = parameterAnnotationList;
-			this.paramaterInfoList = paramaterInfoList;
-			this.varArgsParameterIndex = varArgsParameterIndex;
-			this.textVarArgsParameter = textVarArgsParameter;
-			this.rawVarArgsParameter = rawVarArgsParameter;
-			this.returnValueTypeConstraint = returnValueTypeConstraint;
+			this.parameterInfoList = parameterInfoList;
 			this.instance = instance;
 			this.functionBody = functionBody;
 			functionBody.setAccessible(true);
@@ -452,9 +435,9 @@ public class LangNativeFunction {
 				boolean ignoreTypeCheck = parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER || parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS ||
 						parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS;
 				
-				if(!ignoreTypeCheck && !paramaterDataTypeConstraintList.get(i).isTypeAllowed(combinedArgumentList.get(argumentIndex).getType()))
+				if(!ignoreTypeCheck && !parameterDataTypeConstraintList.get(i).isTypeAllowed(combinedArgumentList.get(argumentIndex).getType()))
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("The type of argument %d (\"%s\") must be one of %s", argumentIndex + 1,
-							variableName, paramaterDataTypeConstraintList.get(i).getAllowedTypes()), SCOPE_ID);
+							variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()), SCOPE_ID);
 				
 				Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?combinedArgumentList.get(argumentIndex).toNumber():null;
 				if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
@@ -474,7 +457,7 @@ public class LangNativeFunction {
 						List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
 								map(DataObject::new).collect(Collectors.toList());
 						if(!textVarArgsParameter) {
-							DataTypeConstraint typeConstraint = paramaterDataTypeConstraintList.get(i);
+							DataTypeConstraint typeConstraint = parameterDataTypeConstraintList.get(i);
 							
 							for(int j = 0;j < varArgsArgumentList.size();j++) {
 								DataObject varArgsArgument = varArgsArgumentList.get(j);
@@ -519,10 +502,10 @@ public class LangNativeFunction {
 						if(parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER) {
 							argument = new DataObject().setVariableName(variableName).
 									setVarPointer(new VarPointerObject(combinedArgumentList.get(argumentIndex))).
-									setTypeConstraint(paramaterDataTypeConstraintList.get(i));
+									setTypeConstraint(parameterDataTypeConstraintList.get(i));
 						}else {
 							argument = new DataObject(combinedArgumentList.get(argumentIndex)).setVariableName(variableName).
-									setTypeConstraint(paramaterDataTypeConstraintList.get(i));
+									setTypeConstraint(parameterDataTypeConstraintList.get(i));
 						}
 					}else if(methodParameterType.isAssignableFrom(Number.class)) {
 						argument = argumentNumberValue;
@@ -561,8 +544,8 @@ public class LangNativeFunction {
 			LangNativeFunction langNativeFunction = new LangNativeFunction(interpreter, LangNativeFunction.this.functionName, functionInfo,
 					linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
 			
-			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList, paramaterDataTypeConstraintList,
-							parameterAnnotationList, paramaterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
+			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
+							parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
 							returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, combinatorFunction,
 							combinatorFunctionCallCount + 1, combinedArgumentList);
 			
@@ -582,67 +565,8 @@ public class LangNativeFunction {
 			return new DataObject().setFunctionPointer(new FunctionPointerObject(functionName, langNativeFunction));
 		}
 		
-		public String toFunctionSignatureSyntax() {
-			StringBuilder builder = new StringBuilder();
-			builder.append("(");
-			
-			for(int i = 0;i < parameterList.size();i++) {
-				//TODO add $[x] for CALL_BY_POINTER
-				
-				String variableName = parameterList.get(i).getVariableName();
-				
-				builder.append(variableName);
-				if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS)
-					builder.append("...");
-				else if(parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS)
-					builder.append("...{raw}");
-				else if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER)
-					builder.append("{number}");
-				else if(parameterAnnotationList.get(i) == ParameterAnnotation.BOOLEAN)
-					builder.append("{boolean}");
-				else if(!paramaterDataTypeConstraintList.get(i).equals(DataObject.getTypeConstraintFor(variableName)))
-					builder.append(paramaterDataTypeConstraintList.get(i).toTypeConstraintSyntax());
-				
-				builder.append(", ");
-			}
-			
-			if(parameterList.size() > 0)
-				builder.delete(builder.length() - 2, builder.length());
-			
-			builder.append(")");
-			return builder.toString();
-		}
-		
-		public List<DataObject> getParameterList() {
-			return new ArrayList<>(parameterList);
-		}
-		
-		public List<DataTypeConstraint> getParamaterDataTypeConstraintList() {
-			return new ArrayList<>(paramaterDataTypeConstraintList);
-		}
-		
-		public List<String> getParamaterInfoList() {
-			return new ArrayList<>(paramaterInfoList);
-		}
-		
-		public List<ParameterAnnotation> getParameterAnnotationList() {
-			return new ArrayList<>(parameterAnnotationList);
-		}
-		
-		public int getVarArgsParameterIndex() {
-			return varArgsParameterIndex;
-		}
-		
-		public boolean isTextVarArgsParameter() {
-			return textVarArgsParameter;
-		}
-		
-		public boolean isRawVarArgsParameter() {
-			return rawVarArgsParameter;
-		}
-		
-		public DataTypeConstraint getReturnValueTypeConstraint() {
-			return returnValueTypeConstraint;
+		public List<String> getParameterInfoList() {
+			return new ArrayList<>(parameterInfoList);
 		}
 		
 		public boolean isCombinatorFunction() {
@@ -655,6 +579,24 @@ public class LangNativeFunction {
 		
 		public List<DataObject> getCombinatorProvidedArgumentList() {
 			return new ArrayList<>(combinatorProvidedArgumentList);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (this == o) return true;
+			if (o == null || getClass() != o.getClass()) return false;
+			if (!super.equals(o)) return false;
+			InternalFunction that = (InternalFunction) o;
+			return hasInterpreterParameter == that.hasInterpreterParameter && combinatorFunction == that.combinatorFunction &&
+					combinatorFunctionCallCount == that.combinatorFunctionCallCount && Objects.equals(methodParameterTypeList, that.methodParameterTypeList) &&
+					Objects.equals(instance, that.instance) && Objects.equals(functionBody, that.functionBody) &&
+					Objects.equals(combinatorProvidedArgumentList, that.combinatorProvidedArgumentList);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(super.hashCode(), methodParameterTypeList, instance, functionBody, hasInterpreterParameter,
+					combinatorFunction, combinatorFunctionCallCount, combinatorProvidedArgumentList);
 		}
 	}
 	
@@ -684,9 +626,5 @@ public class LangNativeFunction {
 	
 	public List<InternalFunction> getInternalFunctions() {
 		return new ArrayList<>(internalFunctions);
-	}
-	
-	public static enum ParameterAnnotation {
-		NORMAL, NUMBER, BOOLEAN, CALL_BY_POINTER, VAR_ARGS, RAW_VAR_ARGS;
 	}
 }
