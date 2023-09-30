@@ -2039,12 +2039,25 @@ public final class LangParser {
 						
 						continue;
 					}
+
+					if(token.contains("...{")) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT,
+								"Invalid syntax for type constraint on var args parameter (\"<varName>{<types>}...\" expected): \"" + token + "\""));
+
+						continue;
+					}
 					
 					String typeConstraint = null;
 					int braceIndex = token.indexOf('{');
 					if(braceIndex != -1) {
 						String rawTypeConstraint = token.substring(braceIndex);
+
 						token = token.substring(0, braceIndex);
+						if(rawTypeConstraint.endsWith("...")) {
+							rawTypeConstraint = rawTypeConstraint.substring(0, rawTypeConstraint.length() - 3);
+
+							token += "...";
+						}
 						
 						if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
