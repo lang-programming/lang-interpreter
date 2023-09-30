@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'at.jddev0.lang'
-version = '1.0.0-beta-08-SNAPSHOT'
+version = '1.0.0-beta-08'
 
 repositories {
     mavenCentral()
