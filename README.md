@@ -21,12 +21,12 @@ The Standard Lang reference implementation of the Lang Programming language
 <dependency>
     <groupId>at.jddev0.lang</groupId>
     <artifactId>lang-interpreter</artifactId>
-    <version>1.0.0-beta-03</version>
+    <version>1.0.0-beta-08</version>
 </dependency>
 ```
 **Gradle**
 ```groovy
-implementation 'at.jddev0.lang:lang-interpreter:1.0.0-beta-03'
+implementation 'at.jddev0.lang:lang-interpreter:1.0.0-beta-08'
 ```
 
 ### Lang Platform API
