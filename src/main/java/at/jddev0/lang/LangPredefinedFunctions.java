@@ -80,8 +80,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("freeVar")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject freeVarFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$pointer") @AllowedTypes(DataObject.DataType.VAR_POINTER) DataObject pointerObject) {
+		public static DataObject freeVarFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$pointer") @AllowedTypes(DataObject.DataType.VAR_POINTER) DataObject pointerObject
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			if(dereferencedVarPointer == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, SCOPE_ID);
@@ -100,7 +102,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("freeAllVars")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject freeAllVarsFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject freeAllVarsFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			interpreter.resetVars(SCOPE_ID);
 			
 			return null;
@@ -108,7 +112,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("resetErrno")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject resetErrnoFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject resetErrnoFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			interpreter.getAndClearErrnoErrorObject(SCOPE_ID);
 			
 			return null;
@@ -120,37 +126,47 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getErrorText")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject getErrorTextFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject getErrorTextFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject(interpreter.getAndClearErrnoErrorObject(SCOPE_ID).getErrorText());
 		}
 		
 		@LangFunction("errorText")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject errorTextFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject) {
+		public static DataObject errorTextFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
+		) {
 			return new DataObject(errorObject.getError().getErrtxt());
 		}
 		
 		@LangFunction("errorCode")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject errorCodeFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject) {
+		public static DataObject errorCodeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
+		) {
 			return new DataObject().setInt(errorObject.getError().getErrno());
 		}
 		
 		@LangFunction("errorMessage")
 		@AllowedTypes({DataObject.DataType.NULL, DataObject.DataType.TEXT})
-		public static DataObject errorMessageFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject) {
+		public static DataObject errorMessageFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
+		) {
 			String msg = errorObject.getError().getMessage();
 			return msg == null?new DataObject().setNull():new DataObject().setText(msg);
 		}
 		
 		@LangFunction("withErrorMessage")
 		@AllowedTypes(DataObject.DataType.ERROR)
-		public static DataObject withErrorMessageFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject withErrorMessageFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject,
-				@LangParameter("$text") DataObject textObject) {
+				@LangParameter("$text") DataObject textObject
+		) {
 			return new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(), textObject.getText()));
 		}
 	}
@@ -160,7 +176,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isLangVersionNewer")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isLangVersionNewerFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject isLangVersionNewerFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			String langVer = interpreter.data.get(SCOPE_ID).lang.getOrDefault("lang.version", LangInterpreter.VERSION); //If lang.version = null -> return false
 			Integer compVer = LangUtils.compareVersions(LangInterpreter.VERSION, langVer);
 			if(compVer == null)
@@ -170,7 +188,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isLangVersionOlder")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isLangVersionOlderFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject isLangVersionOlderFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			String langVer = interpreter.data.get(SCOPE_ID).lang.getOrDefault("lang.version", LangInterpreter.VERSION); //If lang.version = null -> return false
 			Integer compVer = LangUtils.compareVersions(LangInterpreter.VERSION, langVer);
 			if(compVer == null)
@@ -184,8 +204,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("sleep")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject sleepFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$milliSeconds") @NumberValue Number milliSeconds) {
+		public static DataObject sleepFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$milliSeconds") @NumberValue Number milliSeconds
+		) {
 			if(milliSeconds.longValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$milliSeconds\") must be >= 0", SCOPE_ID);
 			
@@ -200,36 +222,45 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("nanoTime")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject nanoTimeFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject nanoTimeFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setLong(System.nanoTime());
 		}
 		
 		@LangFunction("currentTimeMillis")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject currentTimeMillisFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject currentTimeMillisFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setLong(System.currentTimeMillis());
 		}
 		
 		@LangFunction("currentUnixTime")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject currentUnixTimeFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject currentUnixTimeFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setLong(Instant.now().getEpochSecond());
 		}
 		
 		@LangFunction(value="repeat", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject repeatFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.loop") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject loopFunctionObject,
-				@LangParameter("$repeatCount") @NumberValue Number repeatCountNumber) {
+				@LangParameter("$repeatCount") @NumberValue Number repeatCountNumber
+		) {
 			return repeatFunction(interpreter, SCOPE_ID, loopFunctionObject, repeatCountNumber, false);
 		}
 		@LangFunction("repeat")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject repeatFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.loop") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject loopFunctionObject,
 				@LangParameter("$repeatCount") @NumberValue Number repeatCountNumber,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
-			
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			FunctionPointerObject loopFunc = loopFunctionObject.getFunctionPointer();
 			
 			long repeatCount = repeatCountNumber.longValue();
@@ -242,7 +273,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -273,17 +306,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="repeatWhile", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject repeatWhileFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatWhileFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.loop") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject loopFunctionObject,
-				@LangParameter("fp.check") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject checkFunctionObject) {
+				@LangParameter("fp.check") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject checkFunctionObject
+		) {
 			return repeatWhileFunction(interpreter, SCOPE_ID, loopFunctionObject, checkFunctionObject, false);
 		}
 		@LangFunction("repeatWhile")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject repeatWhileFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatWhileFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.loop") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject loopFunctionObject,
 				@LangParameter("fp.check") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject checkFunctionObject,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			FunctionPointerObject loopFunc = loopFunctionObject.getFunctionPointer();
 			FunctionPointerObject checkFunc = checkFunctionObject.getFunctionPointer();
 			
@@ -293,7 +330,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -318,17 +357,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="repeatUntil", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject repeatUntilFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatUntilFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.loop") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject loopFunctionObject,
-				@LangParameter("fp.check") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject checkFunctionObject) {
+				@LangParameter("fp.check") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject checkFunctionObject
+		) {
 			return repeatUntilFunction(interpreter, SCOPE_ID, loopFunctionObject, checkFunctionObject, false);
 		}
 		@LangFunction("repeatUntil")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject repeatUntilFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatUntilFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.loop") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject loopFunctionObject,
 				@LangParameter("fp.check") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject checkFunctionObject,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			FunctionPointerObject loopFunc = loopFunctionObject.getFunctionPointer();
 			FunctionPointerObject checkFunc = checkFunctionObject.getFunctionPointer();
 			
@@ -338,7 +381,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -363,8 +408,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getTranslationValue")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject getTranslationValueFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$translationKey") @VarArgs DataObject translationKeyObject) {
+		public static DataObject getTranslationValueFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$translationKey") @VarArgs DataObject translationKeyObject
+		) {
 			String translationValue = interpreter.data.get(SCOPE_ID).lang.get(translationKeyObject.getText());
 			if(translationValue == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.TRANS_KEY_NOT_FOUND, SCOPE_ID);
@@ -374,9 +421,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getTranslationValueTemplatePluralization")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject getTranslationValueTemplatePluralizationFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject getTranslationValueTemplatePluralizationFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$count") @NumberValue Number count,
-				@LangParameter("$translationKey") @VarArgs DataObject translationKeyObject) {
+				@LangParameter("$translationKey") @VarArgs DataObject translationKeyObject
+		) {
 			if(count.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$count\") must be >= 0", SCOPE_ID);
 			
@@ -395,8 +444,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("makeFinal")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject makeFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$ptr") @AllowedTypes(DataType.VAR_POINTER) DataObject pointerObject) {
+		public static DataObject makeFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$ptr") @AllowedTypes(DataType.VAR_POINTER) DataObject pointerObject
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			
 			String variableName = dereferencedVarPointer.getVariableName();
@@ -412,15 +463,19 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("asFinal")
-		public static DataObject asFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject asFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			return new DataObject(valueObject).setCopyStaticAndFinalModifiers(true).setFinalData(true);
 		}
 		
 		@LangFunction("isFinal")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") @CallByPointer DataObject pointerObject) {
+		public static DataObject isFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") @CallByPointer DataObject pointerObject
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			
 			return new DataObject().setBoolean(dereferencedVarPointer.isFinalData());
@@ -428,8 +483,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("makeStatic")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject makeStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$ptr") @AllowedTypes(DataType.VAR_POINTER) DataObject pointerObject) {
+		public static DataObject makeStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$ptr") @AllowedTypes(DataType.VAR_POINTER) DataObject pointerObject
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			
 			String variableName = dereferencedVarPointer.getVariableName();
@@ -445,15 +502,19 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("asStatic")
-		public static DataObject asStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject asStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			return new DataObject(valueObject).setCopyStaticAndFinalModifiers(true).setStaticData(true);
 		}
 		
 		@LangFunction("isStatic")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") @CallByPointer DataObject pointerObject) {
+		public static DataObject isStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") @CallByPointer DataObject pointerObject
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			
 			return new DataObject().setBoolean(dereferencedVarPointer.isStaticData());
@@ -461,9 +522,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("constrainVariableAllowedTypes")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject constrainVariableAllowedTypesFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject constrainVariableAllowedTypesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$ptr") @AllowedTypes(DataType.VAR_POINTER) DataObject pointerObject,
-				@LangParameter("&types") @AllowedTypes(DataType.TYPE) @VarArgs List<DataObject> typeObjects) {
+				@LangParameter("&types") @AllowedTypes(DataType.TYPE) @VarArgs List<DataObject> typeObjects
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			
 			String variableName = dereferencedVarPointer.getVariableName();
@@ -486,9 +549,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("constrainVariableNotAllowedTypes")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject constrainVariableNotAllowedTypesFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject constrainVariableNotAllowedTypesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$ptr") @AllowedTypes(DataType.VAR_POINTER) DataObject pointerObject,
-				@LangParameter("&types") @AllowedTypes(DataType.TYPE) @VarArgs List<DataObject> typeObjects) {
+				@LangParameter("&types") @AllowedTypes(DataType.TYPE) @VarArgs List<DataObject> typeObjects
+		) {
 			DataObject dereferencedVarPointer = pointerObject.getVarPointer().getVar();
 			
 			String variableName = dereferencedVarPointer.getVariableName();
@@ -511,14 +576,18 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("pointerTo")
 		@AllowedTypes(DataObject.DataType.VAR_POINTER)
-		public static DataObject pointerToFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") @CallByPointer DataObject pointerObject) {
+		public static DataObject pointerToFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") @CallByPointer DataObject pointerObject
+		) {
 			return new DataObject(pointerObject);
 		}
 		
 		@LangFunction("exec")
-		public static DataObject execFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject execFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			//Update call stack
 			StackElement currentStackElement = interpreter.getCurrentCallStackElement();
 			interpreter.pushStackElement(new StackElement(currentStackElement.getLangPath(),
@@ -542,22 +611,28 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isTerminalAvailable")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isTerminalAvailableFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject isTerminalAvailableFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setBoolean(interpreter.term != null);
 		}
 		
 		@LangFunction(value="isInstanceOf", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isInstanceOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject isInstanceOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") DataObject valueObject,
-				@LangParameter("$type") @AllowedTypes(DataObject.DataType.TYPE) DataObject typeObject) {
+				@LangParameter("$type") @AllowedTypes(DataObject.DataType.TYPE) DataObject typeObject
+		) {
 			return new DataObject().setBoolean(valueObject.getType() == typeObject.getTypeValue());
 		}
 		@LangFunction("isInstanceOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isInstanceOfWithStructParametersFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject isInstanceOfWithStructParametersFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") @AllowedTypes(DataObject.DataType.STRUCT) DataObject valueObject,
-				@LangParameter("$type") @AllowedTypes(DataObject.DataType.STRUCT) DataObject typeObject) {
+				@LangParameter("$type") @AllowedTypes(DataObject.DataType.STRUCT) DataObject typeObject
+		) {
 			StructObject valueStruct = valueObject.getStruct();
 			StructObject typeStruct = typeObject.getStruct();
 			
@@ -572,14 +647,18 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("typeOf")
 		@AllowedTypes(DataObject.DataType.TYPE)
-		public static DataObject typeOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject typeOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			return new DataObject().setTypeValue(valueObject.getType());
 		}
 		
 		@LangFunction("getCurrentStackTraceElement")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject getCurrentStackTraceElementFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject getCurrentStackTraceElementFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			StackElement currentStackElement = interpreter.getCallStackElements().get(interpreter.getCallStackElements().size() - 1);
 			
 			String modulePath = null;
@@ -601,7 +680,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getStackTraceElements")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject getStackTraceElementsElementFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject getStackTraceElementsElementFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			List<StackElement> stackTraceElements = interpreter.getCallStackElements();
 			
 			return new DataObject().setArray(stackTraceElements.stream().map(ele -> {
@@ -624,7 +705,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getStackTrace")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject getStackTraceFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject getStackTraceFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject(interpreter.printStackTrace(-1));
 		}
 	}
@@ -634,8 +717,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("readTerminal")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject readTerminalFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$message") @VarArgs DataObject messageObject) {
+		public static DataObject readTerminalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$message") @VarArgs DataObject messageObject
+		) {
 			if(interpreter.term == null && !interpreter.executionFlags.allowTermRedirect)
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_TERMINAL, SCOPE_ID);
 			
@@ -668,9 +753,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("printTerminal")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject printTerminalFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject printTerminalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$logLevel") @NumberValue Number logLevelNumber,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			if(interpreter.term == null && !interpreter.executionFlags.allowTermRedirect)
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_TERMINAL, SCOPE_ID);
 			
@@ -705,8 +792,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("printError")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject printErrorFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject printErrorFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			if(interpreter.term == null && !interpreter.executionFlags.allowTermRedirect)
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_TERMINAL, SCOPE_ID);
 			
@@ -736,13 +825,17 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="input", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject inputFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject inputFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return inputFunction(interpreter, SCOPE_ID, null);
 		}
 		@LangFunction("input")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject inputFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$maxCharCount") @NumberValue Number maxCharCount) {
+		public static DataObject inputFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$maxCharCount") @NumberValue Number maxCharCount
+		) {
 			if(maxCharCount != null && maxCharCount.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$maxCharCount\") must be >= 0", SCOPE_ID);
 			
@@ -767,8 +860,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("print")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject printFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject printFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			System.out.print(textObject.getText());
 			
 			return null;
@@ -776,8 +871,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("println")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject printlnFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject printlnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			System.out.println(textObject.getText());
 			
 			return null;
@@ -785,9 +882,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("printf")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject printfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject printfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$format") DataObject formatObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			DataObject out = interpreter.formatText(formatObject.getText(), args, SCOPE_ID);
 			if(out.getType() == DataType.ERROR)
 				return out;
@@ -799,8 +898,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("error")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject errorFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject errorFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			System.err.print(textObject.getText());
 			
 			return null;
@@ -808,8 +909,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("errorln")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject errorlnFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject errorlnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			System.err.println(textObject.getText());
 			
 			return null;
@@ -817,9 +920,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("errorf")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject errorfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject errorfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$format") DataObject formatObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			DataObject out = interpreter.formatText(formatObject.getText(), args, SCOPE_ID);
 			if(out.getType() == DataType.ERROR)
 				return out;
@@ -835,8 +940,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("binToDec")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject binToDecFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$bin") DataObject binObject) {
+		public static DataObject binToDecFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$bin") DataObject binObject
+		) {
 			String binString = binObject.getText();
 			if(!binString.startsWith("0b") && !binString.startsWith("0B"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_BIN_NUM, "Wrong prefix (Should be 0b or 0B)", SCOPE_ID);
@@ -850,8 +957,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("octToDec")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject octToDecFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$oct") DataObject octObject) {
+		public static DataObject octToDecFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$oct") DataObject octObject
+		) {
 			String octString = octObject.getText();
 			if(!octString.startsWith("0o") && !octString.startsWith("0O"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_OCT_NUM, "Wrong prefix (Should be 0o or 0O)", SCOPE_ID);
@@ -865,8 +974,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("hexToDec")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject hexToDecFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$hex") DataObject hexObject) {
+		public static DataObject hexToDecFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$hex") DataObject hexObject
+		) {
 			String hexString = hexObject.getText();
 			if(!hexString.startsWith("0x") && !hexString.startsWith("0X"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_HEX_NUM, "Wrong prefix (Should be 0x or 0X)", SCOPE_ID);
@@ -880,9 +991,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("toNumberBase")
 		@AllowedTypes({DataObject.DataType.INT, DataObject.DataType.LONG})
-		public static DataObject toNumberBaseFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject toNumberBaseFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$number") DataObject numberObject,
-				@LangParameter("$base") @NumberValue Number base) {
+				@LangParameter("$base") @NumberValue Number base
+		) {
 			String numberString = numberObject.getText();
 			
 			if(base.intValue() < 2 || base.intValue() > 36)
@@ -903,9 +1016,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("toTextBase")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject toTextBaseFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject toTextBaseFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$number") @NumberValue Number number,
-				@LangParameter("$base") @NumberValue Number base) {
+				@LangParameter("$base") @NumberValue Number base
+		) {
 			if(base.intValue() < 2 || base.intValue() > 36)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_NUMBER_BASE,
 						"Argument 2 (\"$base\") must be between 2 (inclusive) and 36 (inclusive)", SCOPE_ID);
@@ -924,64 +1039,82 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("toIntBits")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject toIntBitsFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toIntBitsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setInt(Float.floatToRawIntBits(number.floatValue()));
 		}
 		
 		@LangFunction("toFloatBits")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject toFloatBitsFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toFloatBitsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setFloat(Float.intBitsToFloat(number.intValue()));
 		}
 		
 		@LangFunction("toLongBits")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject toLongBitsFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toLongBitsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong(Double.doubleToRawLongBits(number.doubleValue()));
 		}
 		
 		@LangFunction("toDoubleBits")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject toDoubleBitsFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toDoubleBitsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Double.longBitsToDouble(number.longValue()));
 		}
 		
 		@LangFunction("toInt")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject toIntFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toIntFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setInt(number.intValue());
 		}
 		
 		@LangFunction("toLong")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject toLongFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toLongFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong(number.longValue());
 		}
 		
 		@LangFunction("toFloat")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject toFloatFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toFloatFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setFloat(number.floatValue());
 		}
 		
 		@LangFunction("toDouble")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject toDoubleFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toDoubleFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(number.doubleValue());
 		}
 		
 		@LangFunction("toNumber")
 		@AllowedTypes({DataObject.DataType.INT, DataObject.DataType.LONG, DataObject.DataType.FLOAT, DataObject.DataType.DOUBLE})
-		public static DataObject toNumberFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") DataObject numberObject) {
+		public static DataObject toNumberFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") DataObject numberObject
+		) {
 			numberObject = numberObject.convertToNumberAndCreateNewDataObject();
 			if(numberObject.getType() == DataType.NULL)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$number\") can not be converted to a number value", SCOPE_ID);
@@ -991,8 +1124,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("ttoi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject ttoiFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") DataObject textObject) {
+		public static DataObject ttoiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") DataObject textObject
+		) {
 			String str = textObject.getText();
 			try {
 				return new DataObject().setInt(Integer.parseInt(str));
@@ -1003,8 +1138,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("ttol")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject ttolFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") DataObject textObject) {
+		public static DataObject ttolFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") DataObject textObject
+		) {
 			String str = textObject.getText();
 			try {
 				return new DataObject().setLong(Long.parseLong(str));
@@ -1015,8 +1152,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("ttof")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject ttofFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") DataObject textObject) {
+		public static DataObject ttofFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") DataObject textObject
+		) {
 			String str = textObject.getText();
 			
 			if(str.isEmpty())
@@ -1036,8 +1175,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("ttod")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject ttodFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") DataObject textObject) {
+		public static DataObject ttodFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") DataObject textObject
+		) {
 			String str = textObject.getText();
 			
 			if(str.isEmpty())
@@ -1057,8 +1198,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isNaN")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isNaNFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject isNaNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			if(number instanceof Float)
 				return new DataObject().setBoolean(Float.isNaN(number.floatValue()));
 			
@@ -1070,8 +1213,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isInfinite")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isInfiniteFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject isInfiniteFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			if(number instanceof Float)
 				return new DataObject().setBoolean(Float.isInfinite(number.floatValue()));
 			
@@ -1083,8 +1228,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isFinite")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isFiniteFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject isFiniteFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			if(number instanceof Float)
 				return new DataObject().setBoolean(Float.isFinite(number.floatValue()));
 			
@@ -1096,15 +1243,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("isEven")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isEvenFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject isEvenFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setBoolean(number.longValue() % 2 == 0);
 		}
 		
 		@LangFunction("isOdd")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isOddFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject isOddFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setBoolean(number.longValue() % 2 == 1);
 		}
 	}
@@ -1114,22 +1265,28 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("toValue")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject toValueFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$char") @AllowedTypes(DataObject.DataType.CHAR) DataObject charObject) {
+		public static DataObject toValueFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$char") @AllowedTypes(DataObject.DataType.CHAR) DataObject charObject
+		) {
 			return new DataObject().setInt(charObject.getChar());
 		}
 		
 		@LangFunction("toChar")
 		@AllowedTypes(DataObject.DataType.CHAR)
-		public static DataObject toCharFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$asciiValue") @NumberValue Number asciiValue) {
+		public static DataObject toCharFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$asciiValue") @NumberValue Number asciiValue
+		) {
 			return new DataObject().setChar((char)asciiValue.intValue());
 		}
 		
 		@LangFunction("ttoc")
 		@AllowedTypes(DataObject.DataType.CHAR)
-		public static DataObject ttocFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") DataObject textObject) {
+		public static DataObject ttocFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") DataObject textObject
+		) {
 			String str = textObject.getText();
 			if(str.length() == 1)
 				return new DataObject().setChar(str.charAt(0));
@@ -1143,66 +1300,84 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("strlen")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject strlenFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject strlenFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setInt(textObject.getText().length());
 		}
 		
 		@LangFunction("isEmpty")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isEmptyFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject isEmptyFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setBoolean(textObject.getText().isEmpty());
 		}
 		
 		@LangFunction("isNotEmpty")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isNotEmptyFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject isNotEmptyFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setBoolean(!textObject.getText().isEmpty());
 		}
 		
 		@LangFunction("isBlank")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isBlankFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject isBlankFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setBoolean(textObject.getText().trim().isEmpty());
 		}
 		
 		@LangFunction("isNotBlank")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isNotBlankFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject isNotBlankFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setBoolean(!textObject.getText().trim().isEmpty());
 		}
 		
 		@LangFunction("toUpper")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject toUpperFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject toUpperFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setText(textObject.getText().toUpperCase());
 		}
 		
 		@LangFunction("toLower")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject toLowerFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject toLowerFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setText(textObject.getText().toLowerCase());
 		}
 		
 		@LangFunction("trim")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject trimFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject trimFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			return new DataObject().setText(textObject.getText().trim());
 		}
 		
 		@LangFunction("replace")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject replaceFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject replaceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$regex") DataObject regexObject,
-				@LangParameter("$replacement") @VarArgs DataObject replacementObject) {
+				@LangParameter("$replacement") @VarArgs DataObject replacementObject
+		) {
 			try {
 				return new DataObject(LangRegEx.replace(textObject.getText(), regexObject.getText(), replacementObject.getText()));
 			}catch(InvalidPaternSyntaxException e) {
@@ -1212,17 +1387,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="substring", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject substringFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject substringFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$startIndex") @NumberValue Number startIndex) {
+				@LangParameter("$startIndex") @NumberValue Number startIndex
+		) {
 			return substringFunction(interpreter, SCOPE_ID, textObject, startIndex, null);
 		}
 		@LangFunction("substring")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject substringFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject substringFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$startIndex") @NumberValue Number startIndex,
-				@LangParameter("$endIndex") @NumberValue Number endIndex) {
+				@LangParameter("$endIndex") @NumberValue Number endIndex
+		) {
 			try {
 				if(endIndex == null)
 					return new DataObject(textObject.getText().substring(startIndex.intValue()));
@@ -1235,9 +1414,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("charAt")
 		@AllowedTypes(DataObject.DataType.CHAR)
-		public static DataObject charAtFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject charAtFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$index") @NumberValue Number indexNumber) {
+				@LangParameter("$index") @NumberValue Number indexNumber
+		) {
 			String txt = textObject.getText();
 			int len = txt.length();
 			
@@ -1254,10 +1435,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("lpad")
 		@LangInfo("Adds padding to the left of the $text value if needed")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject lpadFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject lpadFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$paddingText") DataObject paddingTextObject,
-				@LangParameter("$len") @NumberValue Number lenNum) {
+				@LangParameter("$len") @NumberValue Number lenNum
+		) {
 			int len = lenNum.intValue();
 			
 			String text = textObject.getText();
@@ -1282,10 +1465,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("rpad")
 		@LangInfo("Adds padding to the right of the $text value if needed")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject rpadFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rpadFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$paddingText") DataObject paddingTextObject,
-				@LangParameter("$len") @NumberValue Number lenNum) {
+				@LangParameter("$len") @NumberValue Number lenNum
+		) {
 			int len = lenNum.intValue();
 			
 			String text = textObject.getText();
@@ -1309,17 +1494,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("format")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject formatFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject formatFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$format") DataObject formatObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			return interpreter.formatText(formatObject.getText(), args, SCOPE_ID);
 		}
 		
 		@LangFunction("formatTemplatePluralization")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject formatTemplatePluralizationFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject formatTemplatePluralizationFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$count") @NumberValue Number count,
-				@LangParameter("$translationValue") @VarArgs DataObject translationValueObject) {
+				@LangParameter("$translationValue") @VarArgs DataObject translationValueObject
+		) {
 			if(count.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Count must be >= 0", SCOPE_ID);
 			
@@ -1336,25 +1525,31 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("contains")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject containsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject containsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$haystack") DataObject haystackObject,
-				@LangParameter("$needle") DataObject needleObject) {
+				@LangParameter("$needle") DataObject needleObject
+		) {
 			return new DataObject().setBoolean(haystackObject.getText().contains(needleObject.getText()));
 		}
 		
 		@LangFunction(value="indexOf", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject indexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject indexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$searchText") DataObject searchTextObject) {
+				@LangParameter("$searchText") DataObject searchTextObject
+		) {
 			return new DataObject().setInt(textObject.getText().indexOf(searchTextObject.getText()));
 		}
 		@LangFunction("indexOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject indexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject indexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$searchText") DataObject searchTextObject,
-				@LangParameter("$fromIndex") @NumberValue Number fromIndexNumber) {
+				@LangParameter("$fromIndex") @NumberValue Number fromIndexNumber
+		) {
 			String txt = textObject.getText();
 			int len = txt.length();
 			int fromIndex = fromIndexNumber.intValue();
@@ -1369,17 +1564,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="lastIndexOf", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject lastIndexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject lastIndexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$searchText") DataObject searchTextObject) {
+				@LangParameter("$searchText") DataObject searchTextObject
+		) {
 			return new DataObject().setInt(textObject.getText().lastIndexOf(searchTextObject.getText()));
 		}
 		@LangFunction("lastIndexOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject lastIndexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject lastIndexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$searchText") DataObject searchTextObject,
-				@LangParameter("$toIndex") @NumberValue Number toIndexNumber) {
+				@LangParameter("$toIndex") @NumberValue Number toIndexNumber
+		) {
 			String txt = textObject.getText();
 			int len = txt.length();
 			int toIndex = toIndexNumber.intValue();
@@ -1394,25 +1593,31 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("startsWith")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject startsWithFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject startsWithFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$prefix") DataObject prefixObject) {
+				@LangParameter("$prefix") DataObject prefixObject
+		) {
 			return new DataObject().setBoolean(textObject.getText().startsWith(prefixObject.getText()));
 		}
 		
 		@LangFunction("endsWith")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject endsWithFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject endsWithFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$suffix") DataObject suffixObject) {
+				@LangParameter("$suffix") DataObject suffixObject
+		) {
 			return new DataObject().setBoolean(textObject.getText().endsWith(suffixObject.getText()));
 		}
 		
 		@LangFunction("matches")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject matchesFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject matchesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$regex") DataObject regexObject) {
+				@LangParameter("$regex") DataObject regexObject
+		) {
 			try {
 				return new DataObject().setBoolean(LangRegEx.matches(textObject.getText(), regexObject.getText()));
 			}catch(InvalidPaternSyntaxException e) {
@@ -1422,9 +1627,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("repeatText")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject repeatTextFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject repeatTextFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$count") @NumberValue Number count,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			if(count.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Count must be >= 0", SCOPE_ID);
 			
@@ -1439,8 +1646,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("charsOf")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject charsOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject charsOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			String text = textObject.getText();
 			char[] chars = text.toCharArray();
 			DataObject[] arr = new DataObject[chars.length];
@@ -1453,9 +1662,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("join")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject joinFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject joinFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject,
-				@LangParameter("&collection") @AllowedTypes({DataObject.DataType.ARRAY, DataObject.DataType.LIST}) DataObject collectionObject) {
+				@LangParameter("&collection") @AllowedTypes({DataObject.DataType.ARRAY, DataObject.DataType.LIST}) DataObject collectionObject
+		) {
 			String text = textObject.getText();
 			Stream<DataObject> dataObjectStream = collectionObject.getType() == DataType.ARRAY?Arrays.stream(collectionObject.getArray()):collectionObject.getList().stream();
 			
@@ -1464,17 +1675,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="split", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject splitFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject splitFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
-				@LangParameter("$regex") DataObject regexObject) {
+				@LangParameter("$regex") DataObject regexObject
+		) {
 			return splitFunction(interpreter, SCOPE_ID, textObject, regexObject, null);
 		}
 		@LangFunction("split")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject splitFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject splitFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$regex") DataObject regexObject,
-				@LangParameter("$maxSplitCount") @NumberValue Number maxSplitCount) {
+				@LangParameter("$maxSplitCount") @NumberValue Number maxSplitCount
+		) {
 			String[] arrTmp;
 			try {
 				if(maxSplitCount == null) {
@@ -1499,8 +1714,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("text")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject textFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject textFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			String value = valueObject.toText();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1511,8 +1728,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("char")
 		@AllowedTypes(DataObject.DataType.CHAR)
-		public static DataObject charFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject charFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			Character value = valueObject.toChar();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1523,8 +1742,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("int")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject intFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject intFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			Integer value = valueObject.toInt();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1535,8 +1756,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("long")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject longFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject longFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			Long value = valueObject.toLong();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1547,8 +1770,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("float")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject floatFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject floatFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			Float value = valueObject.toFloat();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1559,8 +1784,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("double")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject doubleFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject doubleFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			Double value = valueObject.toDouble();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1571,8 +1798,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBuffer")
 		@AllowedTypes(DataObject.DataType.BYTE_BUFFER)
-		public static DataObject byteBufferFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject byteBufferFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			byte[] value = valueObject.toByteBuffer();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1583,8 +1812,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("array")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject arrayFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] value = valueObject.toArray();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1595,8 +1826,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("list")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject listFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			LinkedList<DataObject> value = valueObject.toList();
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1607,15 +1840,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("bool")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject boolFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject boolFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			return new DataObject().setBoolean(valueObject.toBoolean());
 		}
 		
 		@LangFunction("number")
 		@AllowedTypes({DataObject.DataType.INT, DataObject.DataType.LONG, DataObject.DataType.FLOAT, DataObject.DataType.DOUBLE})
-		public static DataObject numberFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject) {
+		public static DataObject numberFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject value = valueObject.convertToNumberAndCreateNewDataObject();
 			if(value.getType() == DataType.NULL)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1629,8 +1866,10 @@ final class LangPredefinedFunctions {
 		private LangPredefinedOperationFunctions() {}
 		
 		@LangFunction("len")
-		public static DataObject lenFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject lenFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opLen(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1640,8 +1879,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("deepCopy")
-		public static DataObject deepCopyFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject deepCopyFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opDeepCopy(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1651,9 +1892,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("concat")
-		public static DataObject concatFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject concatFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opConcat(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1663,9 +1906,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("spaceship")
-		public static DataObject spaceshipFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject spaceshipFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opSpaceship(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1675,30 +1920,38 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("elvis")
-		public static DataObject elvisFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject elvisFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject(leftSideOperand.getBoolean()?leftSideOperand:rightSideOperand);
 		}
 		
 		@LangFunction("nullCoalescing")
-		public static DataObject nullCoalescingFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject nullCoalescingFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject((leftSideOperand.getType() != DataType.NULL && leftSideOperand.getType() != DataType.VOID)?leftSideOperand:rightSideOperand);
 		}
 		
 		@LangFunction("inlineIf")
-		public static DataObject inlineIfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject inlineIfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$middleOperand") DataObject middleOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject(leftSideOperand.getBoolean()?middleOperand:rightSideOperand);
 		}
 		
 		@LangFunction("inc")
-		public static DataObject incFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject incFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opInc(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1708,8 +1961,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("dec")
-		public static DataObject decFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject decFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opDec(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1719,8 +1974,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("pos")
-		public static DataObject posFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject posFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opPos(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1730,8 +1987,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("inv")
-		public static DataObject invFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject invFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opInv(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1741,9 +2000,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("add")
-		public static DataObject addFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject addFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opAdd(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1753,9 +2014,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("sub")
-		public static DataObject subFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject subFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opSub(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1765,9 +2028,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("mul")
-		public static DataObject mulFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject mulFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opMul(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1777,9 +2042,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("pow")
-		public static DataObject powFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject powFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opPow(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1789,9 +2056,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("div")
-		public static DataObject divFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject divFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opDiv(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1801,9 +2070,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("truncDiv")
-		public static DataObject truncDivFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject truncDivFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opTruncDiv(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1813,9 +2084,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("floorDiv")
-		public static DataObject floorDivFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject floorDivFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opFloorDiv(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1825,9 +2098,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("ceilDiv")
-		public static DataObject ceilDivFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject ceilDivFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opCeilDiv(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1837,9 +2112,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("mod")
-		public static DataObject modFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject modFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opMod(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1849,9 +2126,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("and")
-		public static DataObject andFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject andFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opAnd(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1861,9 +2140,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("or")
-		public static DataObject orFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject orFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opOr(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1873,9 +2154,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("xor")
-		public static DataObject xorFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject xorFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opXor(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1885,8 +2168,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("not")
-		public static DataObject notFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject notFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			DataObject ret = interpreter.operators.opNot(operand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1896,9 +2181,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("lshift")
-		public static DataObject lshiftFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject lshiftFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opLshift(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1908,9 +2195,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("rshift")
-		public static DataObject rshiftFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rshiftFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opRshift(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1920,9 +2209,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("rzshift")
-		public static DataObject rzshiftFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rzshiftFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opRzshift(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1932,9 +2223,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("cast")
-		public static DataObject castFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject castFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opCast(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1944,9 +2237,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("getItem")
-		public static DataObject getItemFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject getItemFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opGetItem(leftSideOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1956,10 +2251,12 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("setItem")
-		public static DataObject setItemFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject setItemFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$middleOperand") DataObject middleOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			DataObject ret = interpreter.operators.opSetItem(leftSideOperand, middleOperand, rightSideOperand, -1, SCOPE_ID);
 			if(ret == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -1971,78 +2268,100 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("conNot")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject conNotFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$operand") DataObject operand) {
+		public static DataObject conNotFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$operand") DataObject operand
+		) {
 			return new DataObject().setBoolean(!operand.toBoolean());
 		}
 		
 		@LangFunction("conAnd")
-		public static DataObject conAndFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conAndFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.toBoolean() && rightSideOperand.toBoolean());
 		}
 		
 		@LangFunction("conOr")
-		public static DataObject conOrFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conOrFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.toBoolean() || rightSideOperand.toBoolean());
 		}
 		
 		@LangFunction("conEquals")
-		public static DataObject conEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.isEquals(rightSideOperand));
 		}
 		
 		@LangFunction("conNotEquals")
-		public static DataObject conNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(!leftSideOperand.isEquals(rightSideOperand));
 		}
 		
 		@LangFunction("conStrictEquals")
-		public static DataObject conStrictEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conStrictEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.isStrictEquals(rightSideOperand));
 		}
 		
 		@LangFunction("conStrictNotEquals")
-		public static DataObject conStrictNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conStrictNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(!leftSideOperand.isStrictEquals(rightSideOperand));
 		}
 		
 		@LangFunction("conLessThan")
-		public static DataObject conLessThanFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conLessThanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.isLessThan(rightSideOperand));
 		}
 		
 		@LangFunction("conGreaterThan")
-		public static DataObject conGreaterThanFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conGreaterThanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.isGreaterThan(rightSideOperand));
 		}
 		
 		@LangFunction("conLessThanOrEquals")
-		public static DataObject conLessThanOrEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conLessThanOrEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.isLessThanOrEquals(rightSideOperand));
 		}
 		
 		@LangFunction("conGreaterThanOrEquals")
-		public static DataObject conGreaterThanOrEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject conGreaterThanOrEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
-				@LangParameter("$rightSideOperand") DataObject rightSideOperand) {
+				@LangParameter("$rightSideOperand") DataObject rightSideOperand
+		) {
 			return new DataObject().setBoolean(leftSideOperand.isGreaterThanOrEquals(rightSideOperand));
 		}
 	}
@@ -2052,44 +2371,58 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("rand")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject randFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject randFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setInt(interpreter.RAN.nextInt(interpreter.data.get(SCOPE_ID).var.get("$LANG_RAND_MAX").getInt()));
 		}
 		
 		@LangFunction("randi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject randiFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject randiFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setInt(interpreter.RAN.nextInt());
 		}
 		
 		@LangFunction("randl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject randlFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject randlFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setLong(interpreter.RAN.nextLong());
 		}
 		
 		@LangFunction("randf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject randfFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject randfFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setFloat(interpreter.RAN.nextFloat());
 		}
 		
 		@LangFunction("randd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject randdFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject randdFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setDouble(interpreter.RAN.nextDouble());
 		}
 		
 		@LangFunction("randb")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject randbFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject randbFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setBoolean(interpreter.RAN.nextBoolean());
 		}
 		
 		@LangFunction("randRange")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject randRangeFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$bound") @NumberValue Number boundNumber) {
+		public static DataObject randRangeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$bound") @NumberValue Number boundNumber
+		) {
 			int bound = boundNumber.intValue();
 			if(bound <= 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$bound\") must be positive", SCOPE_ID);
@@ -2098,20 +2431,26 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="randChoice", hasInfo=true)
-		public static DataObject randChoiceWithArrayParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&arr") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject randChoiceWithArrayParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&arr") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			return arr.length == 0?null:new DataObject(arr[interpreter.RAN.nextInt(arr.length)]);
 		}
 		@LangFunction("randChoice")
-		public static DataObject randChoiceWithListParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject randChoiceWithListParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			List<DataObject> list = listObject.getList();
 			return list.size() == 0?null:new DataObject(list.get(interpreter.RAN.nextInt(list.size())));
 		}
 		@LangFunction("randChoice")
-		public static DataObject randChoiceWithStructParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject randChoiceWithStructParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			String[] memberNames = struct.getMemberNames();
 			
@@ -2121,15 +2460,19 @@ final class LangPredefinedFunctions {
 			return memberNames.length == 0?null:new DataObject(struct.getMember(memberNames[interpreter.RAN.nextInt(memberNames.length)]));
 		}
 		@LangFunction("randChoice")
-		public static DataObject randChoiceFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+		public static DataObject randChoiceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			return args.size() == 0?null:args.get(interpreter.RAN.nextInt(args.size()));
 		}
 		
 		@LangFunction("setSeed")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject setSeedFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$seed") @NumberValue Number seedNumber) {
+		public static DataObject setSeedFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$seed") @NumberValue Number seedNumber
+		) {
 			interpreter.RAN.setSeed(seedNumber.longValue());
 			
 			return null;
@@ -2137,29 +2480,37 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("inci")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject inciFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject inciFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setInt(number.intValue() + 1);
 		}
 		
 		@LangFunction("deci")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject deciFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject deciFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setInt(number.intValue() - 1);
 		}
 		
 		@LangFunction("invi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject inviFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject inviFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setInt(-number.intValue());
 		}
 		
 		@LangFunction("addi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject addiFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject addiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			int sum = 0;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2177,16 +2528,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("subi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject subiFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject subiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() - rightNumber.intValue());
 		}
 		
 		@LangFunction("muli")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject muliFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject muliFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			int prod = 1;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2204,9 +2559,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("divi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject diviFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject diviFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			if(rightNumber.intValue() == 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, SCOPE_ID);
 			
@@ -2215,9 +2572,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("modi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject modiFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject modiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			if(rightNumber.intValue() == 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, SCOPE_ID);
 			
@@ -2226,84 +2585,106 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("andi")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject andiFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject andiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() & rightNumber.intValue());
 		}
 		
 		@LangFunction("ori")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject oriFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject oriFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() | rightNumber.intValue());
 		}
 		
 		@LangFunction("xori")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject xoriFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject xoriFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() ^ rightNumber.intValue());
 		}
 		
 		@LangFunction("noti")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject notiFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject notiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setInt(~number.intValue());
 		}
 		
 		@LangFunction("lshifti")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject lshiftiFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject lshiftiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() << rightNumber.intValue());
 		}
 		
 		@LangFunction("rshifti")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject rshiftiFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rshiftiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() >> rightNumber.intValue());
 		}
 		
 		@LangFunction("rzshifti")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject rzshiftiFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rzshiftiFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setInt(leftNumber.intValue() >>> rightNumber.intValue());
 		}
 		
 		@LangFunction("incl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject inclFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject inclFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong(number.longValue() + 1);
 		}
 		
 		@LangFunction("decl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject declFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject declFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong(number.longValue() - 1);
 		}
 		
 		@LangFunction("invl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject invlFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject invlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong(-number.longValue());
 		}
 		
 		@LangFunction("addl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject addlFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject addlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			long sum = 0;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2321,16 +2702,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("subl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject sublFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject sublFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() - rightNumber.longValue());
 		}
 		
 		@LangFunction("mull")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject mullFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject mullFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			long prod = 1;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2348,9 +2733,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("divl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject divlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject divlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			if(rightNumber.longValue() == 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, SCOPE_ID);
 			
@@ -2359,9 +2746,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("modl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject modlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject modlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			if(rightNumber.longValue() == 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, SCOPE_ID);
 			
@@ -2370,84 +2759,106 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("andl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject andlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject andlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() & rightNumber.longValue());
 		}
 		
 		@LangFunction("orl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject orlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject orlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() | rightNumber.longValue());
 		}
 		
 		@LangFunction("xorl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject xorlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject xorlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() ^ rightNumber.longValue());
 		}
 		
 		@LangFunction("notl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject notlFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject notlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong(~number.longValue());
 		}
 		
 		@LangFunction("lshiftl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject lshiftlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject lshiftlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() << rightNumber.longValue());
 		}
 		
 		@LangFunction("rshiftl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject rshiftlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rshiftlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() >> rightNumber.longValue());
 		}
 		
 		@LangFunction("rzshiftl")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject rzshiftlFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject rzshiftlFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setLong(leftNumber.longValue() >>> rightNumber.longValue());
 		}
 		
 		@LangFunction("incf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject incfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject incfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setFloat(number.floatValue() + 1.f);
 		}
 		
 		@LangFunction("decf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject decfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject decfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setFloat(number.floatValue() - 1.f);
 		}
 		
 		@LangFunction("invf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject invfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject invfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setFloat(-number.floatValue());
 		}
 		
 		@LangFunction("addf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject addfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject addfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			float sum = 0.f;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2465,16 +2876,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("subf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject subfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject subfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setFloat(leftNumber.floatValue() - rightNumber.floatValue());
 		}
 		
 		@LangFunction("mulf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject mulfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject mulfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			float prod = 1.f;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2492,37 +2907,47 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("divf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject divfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject divfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setFloat(leftNumber.floatValue() / rightNumber.floatValue());
 		}
 		
 		@LangFunction("incd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject incdFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject incdFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(number.doubleValue() + 1.d);
 		}
 		
 		@LangFunction("decd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject decdFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject decdFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(number.doubleValue() - 1.d);
 		}
 		
 		@LangFunction("invd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject invdFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject invdFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(-number.doubleValue());
 		}
 		
 		@LangFunction("addd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject adddFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject adddFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			double sum = 0.d;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2540,16 +2965,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("subd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject subdFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject subdFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setDouble(leftNumber.doubleValue() - rightNumber.doubleValue());
 		}
 		
 		@LangFunction("muld")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject muldFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject muldFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			double prod = 1.d;
 			
 			for(int i = 0;i < numberObjects.size();i++) {
@@ -2567,190 +2996,244 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("divd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject divdFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject divdFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setDouble(leftNumber.doubleValue() / rightNumber.doubleValue());
 		}
 		
 		@LangFunction("sqrt")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject sqrtFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject sqrtFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.sqrt(number.doubleValue()));
 		}
 		
 		@LangFunction("cbrt")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject cbrtFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject cbrtFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.cbrt(number.doubleValue()));
 		}
 		
 		@LangFunction("hypot")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject hypotFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject hypotFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setDouble(Math.hypot(leftNumber.doubleValue(), rightNumber.doubleValue()));
 		}
 		
 		@LangFunction("toRadians")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject toRadiansFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toRadiansFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.toRadians(number.doubleValue()));
 		}
 		
 		@LangFunction("toDegrees")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject toDegreesFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject toDegreesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.toDegrees(number.doubleValue()));
 		}
 		
 		@LangFunction("sin")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject sinFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject sinFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.sin(number.doubleValue()));
 		}
 		
 		@LangFunction("cos")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject cosFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject cosFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.cos(number.doubleValue()));
 		}
 		
 		@LangFunction("tan")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject tanFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject tanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.tan(number.doubleValue()));
 		}
 		
 		@LangFunction("asin")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject asinFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject asinFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.asin(number.doubleValue()));
 		}
 		
 		@LangFunction("acos")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject acosFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject acosFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.acos(number.doubleValue()));
 		}
 		
 		@LangFunction("atan")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject atanFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject atanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.atan(number.doubleValue()));
 		}
 		
 		@LangFunction("atan2")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject atan2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject atan2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber) {
+				@LangParameter("$b") @NumberValue Number rightNumber
+		) {
 			return new DataObject().setDouble(Math.atan2(leftNumber.doubleValue(), rightNumber.doubleValue()));
 		}
 		
 		@LangFunction("sinh")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject sinhFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject sinhFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.sinh(number.doubleValue()));
 		}
 		
 		@LangFunction("cosh")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject coshFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject coshFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.cosh(number.doubleValue()));
 		}
 		
 		@LangFunction("tanh")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject tanhFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject tanhFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.tanh(number.doubleValue()));
 		}
 		
 		@LangFunction("exp")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject expFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject expFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.exp(number.doubleValue()));
 		}
 		
 		@LangFunction("loge")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject logeFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject logeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.log(number.doubleValue()));
 		}
 		
 		@LangFunction("log10")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject log10Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject log10Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setDouble(Math.log10(number.doubleValue()));
 		}
 		
 		@LangFunction("round")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject roundFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject roundFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong((Math.signum(number.doubleValue()) < 0?-1:1) * Math.round(Math.abs(number.doubleValue())));
 		}
 		
 		@LangFunction("ceil")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject ceilFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @NumberValue Number number) {
+		public static DataObject ceilFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @NumberValue Number number
+		) {
 			return new DataObject().setLong((long)Math.ceil(number.doubleValue()));
 		}
 		
 		@LangFunction("floor")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject floorFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$floor") @NumberValue Number number) {
+		public static DataObject floorFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$floor") @NumberValue Number number
+		) {
 			return new DataObject().setLong((long)Math.floor(number.doubleValue()));
 		}
 		
 		@LangFunction(value="abs", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject absWithIntParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.INT) DataObject numberObject) {
+		public static DataObject absWithIntParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @AllowedTypes(DataObject.DataType.INT) DataObject numberObject
+		) {
 			return new DataObject().setInt(Math.abs(numberObject.getInt()));
 		}
 		@LangFunction("abs")
 		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject absWithLongParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.LONG) DataObject numberObject) {
+		public static DataObject absWithLongParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @AllowedTypes(DataObject.DataType.LONG) DataObject numberObject
+		) {
 			return new DataObject().setLong(Math.abs(numberObject.getLong()));
 		}
 		@LangFunction("abs")
 		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject absWithFloatParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.FLOAT) DataObject numberObject) {
+		public static DataObject absWithFloatParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @AllowedTypes(DataObject.DataType.FLOAT) DataObject numberObject
+		) {
 			return new DataObject().setFloat(Math.abs(numberObject.getFloat()));
 		}
 		@LangFunction("abs")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject absWithDoubleParameterFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.DOUBLE) DataObject numberObject) {
+		public static DataObject absWithDoubleParameterFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$number") @AllowedTypes(DataObject.DataType.DOUBLE) DataObject numberObject
+		) {
 			return new DataObject().setDouble(Math.abs(numberObject.getDouble()));
 		}
 		
 		@LangFunction("min")
-		public static DataObject minFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject minFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$firstArg") DataObject firstArg,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			DataObject min = new DataObject(firstArg);
 			for(int i = 0;i < args.size();i++) {
 				DataObject dataObject = args.get(i);
@@ -2762,9 +3245,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("max")
-		public static DataObject maxFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject maxFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$firstArg") DataObject firstArg,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			DataObject max = new DataObject(firstArg);
 			for(int i = 0;i < args.size();i++) {
 				DataObject dataObject = args.get(i);
@@ -2782,8 +3267,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("combA0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()")
-		public static DataObject combA0Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a) {
+		public static DataObject combA0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -2792,9 +3279,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combA")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)")
-		public static DataObject combAFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combAFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -2805,10 +3294,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combA2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c)")
-		public static DataObject combA2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combA2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -2821,11 +3312,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combA3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c, d)")
-		public static DataObject combA3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combA3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -2838,12 +3331,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combA4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c, d, e)")
-		public static DataObject combA4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combA4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -2856,9 +3351,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combAE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()")
-		public static DataObject combAEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combAEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -2867,9 +3364,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combAN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(args[0], args[1], ...)")
-		public static DataObject combANFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combANFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			List<DataObject> argsA = LangUtils.separateArgumentsWithArgumentSeparators(args);
@@ -2879,9 +3378,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combAV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(args[0], args[1], ...)")
-		public static DataObject combAVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combAVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args) {
+				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			List<DataObject> argsA = LangUtils.separateArgumentsWithArgumentSeparators(Arrays.asList(args));
@@ -2891,11 +3392,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combAX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, d, c)")
-		public static DataObject combAXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combAXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -2908,9 +3411,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combAZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(..., args[1], args[0])")
-		public static DataObject combAZFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combAZFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			List<DataObject> argsA = new LinkedList<>();
@@ -2924,9 +3429,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combB0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b())")
-		public static DataObject combB0Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combB0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b) {
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -2940,10 +3447,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combB")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c))")
-		public static DataObject combBFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combBFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -2959,11 +3468,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combB2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), b(d))")
-		public static DataObject combB2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combB2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -2986,12 +3497,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combB3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), b(d), b(e))")
-		public static DataObject combB3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combB3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3019,10 +3532,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combBE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b())")
-		public static DataObject combBEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combBEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3036,10 +3551,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combBN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(args[0]), b(args[1]), ...)")
-		public static DataObject combBNFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combBNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3058,10 +3575,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combBV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(args[0]), b(args[1]), ...)")
-		public static DataObject combBVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combBVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args) {
+				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3080,11 +3599,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combBX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c, d))")
-		public static DataObject combBXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combBXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3102,10 +3623,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combBZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(..., b(args[1]), b(args[0]))")
-		public static DataObject combBZFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combBZFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3124,10 +3647,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combC0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)")
-		public static DataObject combC0Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combC0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -3138,10 +3663,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combC1")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c)")
-		public static DataObject combC1Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combC1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -3152,10 +3679,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combC")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b)")
-		public static DataObject combCFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combCFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3168,11 +3697,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combC3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(d, c, b)")
-		public static DataObject combC3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combC3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3185,12 +3716,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combC4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(e, d, c, b)")
-		public static DataObject combC4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combC4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3203,10 +3736,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combCE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()")
-		public static DataObject combCEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combCEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -3215,11 +3750,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combCX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, d, b)")
-		public static DataObject combCXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combCXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3232,11 +3769,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combD")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c(d))")
-		public static DataObject combDFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combDFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
@@ -3255,11 +3794,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combDE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c())")
-		public static DataObject combDEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combDEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
@@ -3273,12 +3814,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c(d, e))")
-		public static DataObject combEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
@@ -3299,12 +3842,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combEE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c())")
-		public static DataObject combEEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combEEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
@@ -3321,12 +3866,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combEX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b(d, e))")
-		public static DataObject combEXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combEXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3347,10 +3894,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combF1")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c(b)")
-		public static DataObject combF1Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combF1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
@@ -3361,10 +3910,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combF")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c(b, a)")
-		public static DataObject combFFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combFFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(cFunc, c.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3377,11 +3928,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combF3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: d(c, b, a)")
-		public static DataObject combF3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combF3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject d) {
+				@LangParameter("$d") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject d
+		) {
 			FunctionPointerObject dFunc = d.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(dFunc, d.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3394,12 +3947,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combF4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: e(d, c, b, a)")
-		public static DataObject combF4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combF4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject e) {
+				@LangParameter("$e") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject e
+		) {
 			FunctionPointerObject eFunc = e.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(eFunc, e.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3412,10 +3967,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combFE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c()")
-		public static DataObject combFEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combFEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(cFunc, c.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -3424,11 +3981,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combG")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(d, b(c))")
-		public static DataObject combGFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combGFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3447,11 +4006,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combGE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(d, b())")
-		public static DataObject combGEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combGEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3468,11 +4029,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combGX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d), c)")
-		public static DataObject combGXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combGXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3491,10 +4054,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combH")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, c, b)")
-		public static DataObject combHFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combHFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3507,11 +4072,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combHB")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), b(d), b(c))")
-		public static DataObject combHBFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combHBFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3539,10 +4106,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combHE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(), c(), b())")
-		public static DataObject combHEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combHEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -3565,10 +4134,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combHX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b, c)")
-		public static DataObject combHXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combHXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3581,19 +4152,23 @@ final class LangPredefinedFunctions {
 		@LangFunction("combI")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a")
-		public static DataObject combIFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") DataObject a) {
+		public static DataObject combIFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") DataObject a
+		) {
 			return new DataObject(a);
 		}
 		
 		@LangFunction("combJ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, a(d, c))")
-		public static DataObject combJFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combJFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject retA2 = interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3613,11 +4188,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combJX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, a(c, d))")
-		public static DataObject combJXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combJXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject retA2 = interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3637,11 +4214,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combJE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, a())")
-		public static DataObject combJEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combJEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject retA2 = interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -3657,94 +4236,112 @@ final class LangPredefinedFunctions {
 		@LangFunction("combK")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a")
-		public static DataObject combKFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combKFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			return new DataObject(a);
 		}
 		
 		@LangFunction("combK3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a")
-		public static DataObject combK3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combK3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			return new DataObject(a);
 		}
 		
 		@LangFunction("combK4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a")
-		public static DataObject combK4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combK4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			return new DataObject(a);
 		}
 		
 		@LangFunction("combK5")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a")
-		public static DataObject combK5Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combK5Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			return new DataObject(a);
 		}
 		
 		@LangFunction("combKD")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: d")
-		public static DataObject combKDFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combKDFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			return new DataObject(d);
 		}
 		
 		@LangFunction("combKE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: e")
-		public static DataObject combKEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combKEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			return new DataObject(e);
 		}
 		
 		@LangFunction("combKI")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b")
-		public static DataObject combKIFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combKIFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			return new DataObject(b);
 		}
 		
 		@LangFunction("combKX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c")
-		public static DataObject combKXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combKXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			return new DataObject(c);
 		}
 		
 		@LangFunction("combL")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(b))")
-		public static DataObject combLFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combLFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b) {
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3760,10 +4357,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combL2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(b, c))")
-		public static DataObject combL2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combL2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3781,11 +4380,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combL3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(b, c, d))")
-		public static DataObject combL3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combL3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3803,12 +4404,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combL4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(b, c, d, e))")
-		public static DataObject combL4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combL4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -3826,8 +4429,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("combM")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(a)")
-		public static DataObject combMFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a) {
+		public static DataObject combMFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -3838,9 +4443,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combM2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(a, b)")
-		public static DataObject combM2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combM2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3853,10 +4460,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combM3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(a, b, c)")
-		public static DataObject combM3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combM3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3869,11 +4478,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combM4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(a, b, c, d)")
-		public static DataObject combM4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combM4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3886,12 +4497,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combM5")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(a, b, c, d, e)")
-		public static DataObject combM5Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combM5Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -3904,8 +4517,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("combN0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()()")
-		public static DataObject combN0Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a) {
+		public static DataObject combN0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -3920,10 +4535,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combN1")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()(c)")
-		public static DataObject combN1Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combN1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -3940,10 +4557,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)(c)")
-		public static DataObject combNFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -3962,11 +4581,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combN3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)(c)(d)")
-		public static DataObject combN3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combN3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -3993,12 +4614,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combN4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)(c)(d)(e)")
-		public static DataObject combN4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combN4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -4033,10 +4656,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()()")
-		public static DataObject combNEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -4051,9 +4676,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(args[0])(args[1])(...)")
-		public static DataObject combNNFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			DataObject ret = new DataObject(a);
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
@@ -4074,8 +4701,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNM")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(a)(a)")
-		public static DataObject combNMFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a) {
+		public static DataObject combNMFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -4094,9 +4723,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(args[0])(args[1])(...)")
-		public static DataObject combNVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args) {
+				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
+		) {
 			DataObject ret = new DataObject(a);
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
@@ -4117,9 +4748,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNW")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)(b)")
-		public static DataObject combNWFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNWFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -4138,10 +4771,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c)(b)")
-		public static DataObject combNXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
@@ -4160,9 +4795,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combNZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(...)(args[1])(args[0])")
-		public static DataObject combNZFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combNZFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			DataObject ret = new DataObject(a);
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
@@ -4183,9 +4820,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combO")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a(b))")
-		public static DataObject combOFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combOFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b) {
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4201,10 +4840,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combO2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a(b, c))")
-		public static DataObject combO2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combO2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4222,11 +4863,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combO3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a(b, c, d))")
-		public static DataObject combO3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combO3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4244,12 +4887,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combO4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a(b, c, d, e))")
-		public static DataObject combO4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combO4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4267,11 +4912,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combP")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d), c(d))")
-		public static DataObject combPFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combPFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -4295,12 +4942,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combP3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(e), c(e), d(e))")
-		public static DataObject combP3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combP3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
 				@LangParameter("$d") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -4330,11 +4979,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combPE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(), c())")
-		public static DataObject combPEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combPEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -4354,10 +5005,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combPN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(args[0](b), args[1](b), ...)")
-		public static DataObject combPNFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combPNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			List<DataObject> argsA = new LinkedList<>();
@@ -4379,10 +5032,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combPV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(args[0](b), args[1](b), ...)")
-		public static DataObject combPVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combPVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args) {
+				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			List<DataObject> argsA = new LinkedList<>();
@@ -4408,11 +5063,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combPX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c(d), b(d))")
-		public static DataObject combPXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combPXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -4436,10 +5093,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combPZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(..., args[1](b), args[0](b))")
-		public static DataObject combPZFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combPZFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			List<DataObject> argsA = new LinkedList<>();
@@ -4461,10 +5120,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combQ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a(c))")
-		public static DataObject combQFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combQFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4480,10 +5141,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combQE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a())")
-		public static DataObject combQEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combQEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4497,9 +5160,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combQN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: ...(args[1](args[0](a)))")
-		public static DataObject combQNFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combQNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+		) {
 			DataObject ret = new DataObject(a);
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
@@ -4518,9 +5183,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combQV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: ...(args[1](args[0](a)))")
-		public static DataObject combQVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combQVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args) {
+				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
+		) {
 			DataObject ret = new DataObject(a);
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
@@ -4543,10 +5210,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combQX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c(b(a))")
-		public static DataObject combQXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combQXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
@@ -4562,9 +5231,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combQZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: args[0](args[1](...(a)))")
-		public static DataObject combQZFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combQZFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+		) {
 			DataObject ret = new DataObject(a);
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
@@ -4583,10 +5254,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combR0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a)")
-		public static DataObject combR0Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combR0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
@@ -4597,10 +5270,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combR1")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(c)")
-		public static DataObject combR1Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combR1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
@@ -4611,10 +5286,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combR")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(c, a)")
-		public static DataObject combRFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combRFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4627,11 +5304,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combR3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(d, c, a)")
-		public static DataObject combR3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combR3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4644,12 +5323,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combR4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(e, d, c, a)")
-		public static DataObject combR4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combR4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4662,10 +5343,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combRE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b()")
-		public static DataObject combREFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combREFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -4674,10 +5357,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combRX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a, c)")
-		public static DataObject combRXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combRXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4690,10 +5375,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combS")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b(c))")
-		public static DataObject combSFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combSFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4712,10 +5399,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combSE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b())")
-		public static DataObject combSEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combSEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4732,10 +5421,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combSX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), c)")
-		public static DataObject combSXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combSXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -4754,9 +5445,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combT")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a)")
-		public static DataObject combTFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combTFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b) {
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
@@ -4767,11 +5460,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combT3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a, c, d)")
-		public static DataObject combT3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combT3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4784,12 +5479,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combT4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a, c, d, e)")
-		public static DataObject combT4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combT4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4802,9 +5499,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combTE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b()")
-		public static DataObject combTEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combTEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b) {
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), new LinkedList<>(), SCOPE_ID);
@@ -4813,9 +5512,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combTN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: ...(args[1](args[0](z)))")
-		public static DataObject combTNFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combTNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args,
-				@LangParameter("$z") DataObject z) {
+				@LangParameter("$z") DataObject z
+		) {
 			DataObject ret = new DataObject(z);
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
@@ -4834,9 +5535,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combTV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: ...(args[1](args[0](z)))")
-		public static DataObject combTVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combTVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args,
-				@LangParameter("$z") DataObject z) {
+				@LangParameter("$z") DataObject z
+		) {
 			DataObject ret = new DataObject(z);
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
@@ -4859,11 +5562,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combTX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(d, c, a)")
-		public static DataObject combTXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combTXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -4876,9 +5581,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combTZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: args[0](args[1](...(z)))")
-		public static DataObject combTZFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combTZFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args,
-				@LangParameter("$z") DataObject z) {
+				@LangParameter("$z") DataObject z
+		) {
 			DataObject ret = new DataObject(z);
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
@@ -4897,12 +5604,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combU")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d), c(e))")
-		public static DataObject combUFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combUFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -4926,12 +5635,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combUE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(), c())")
-		public static DataObject combUEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combUEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			FunctionPointerObject cFunc = c.getFunctionPointer();
@@ -4951,12 +5662,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combUX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(d(b), e(c))")
-		public static DataObject combUXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combUXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject d,
-				@LangParameter("$e") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject e) {
+				@LangParameter("$e") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject dFunc = d.getFunctionPointer();
 			FunctionPointerObject eFunc = e.getFunctionPointer();
@@ -4980,10 +5693,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combV1")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c(a)")
-		public static DataObject combV1Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combV1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
@@ -4994,10 +5709,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combV")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: c(a, b)")
-		public static DataObject combVFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c) {
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
 			FunctionPointerObject cFunc = c.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(cFunc, c.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -5010,11 +5727,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combV3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: d(a, b, c)")
-		public static DataObject combV3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combV3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject d) {
+				@LangParameter("$d") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject d
+		) {
 			FunctionPointerObject dFunc = d.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(dFunc, d.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -5027,9 +5746,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combW")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, b)")
-		public static DataObject combWFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combWFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -5042,9 +5763,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combW3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, b, b)")
-		public static DataObject combW3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combW3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -5057,9 +5780,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combW4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b, b, b, b)")
-		public static DataObject combW4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combW4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b) {
+				@LangParameter("$b") DataObject b
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -5072,10 +5797,12 @@ final class LangPredefinedFunctions {
 		@LangFunction("combWB")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), b(c))")
-		public static DataObject combWBFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combWBFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c) {
+				@LangParameter("$c") DataObject c
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5098,9 +5825,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("combWX")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a, a)")
-		public static DataObject combWXFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combWXFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b) {
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
 			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
@@ -5113,11 +5842,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX1")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), d)")
-		public static DataObject combX1Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5136,11 +5867,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b(d))")
-		public static DataObject combX2Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5159,11 +5892,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX3")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c, d), c)")
-		public static DataObject combX3Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5184,11 +5919,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX4")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d, c), d)")
-		public static DataObject combX4Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5209,11 +5946,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX5")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b(d, c))")
-		public static DataObject combX5Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX5Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5234,11 +5973,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX6")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(d, b(c, d))")
-		public static DataObject combX6Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX6Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5259,11 +6000,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX7")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c, d), b(d, c))")
-		public static DataObject combX7Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX7Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5290,11 +6033,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX8")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c, c), b(d, d))")
-		public static DataObject combX8Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX8Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5321,11 +6066,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combX9")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d, d), b(c, c))")
-		public static DataObject combX9Function(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combX9Function(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5352,11 +6099,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combXA")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c, d, c), b(d, c, d))")
-		public static DataObject combXAFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combXAFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5383,11 +6132,13 @@ final class LangPredefinedFunctions {
 		@LangFunction("combXB")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d, c, d), b(c, d, c))")
-		public static DataObject combXBFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combXBFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d) {
+				@LangParameter("$d") DataObject d
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5414,12 +6165,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combXC")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c, e), b(d, e))")
-		public static DataObject combXCFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combXCFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5446,12 +6199,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combXD")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(e, c), b(e, d))")
-		public static DataObject combXDFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combXDFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5478,12 +6233,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combXE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(e, d), c)")
-		public static DataObject combXEFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combXEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5504,12 +6261,14 @@ final class LangPredefinedFunctions {
 		@LangFunction("combXF")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(d, e), c)")
-		public static DataObject combXFFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject combXFFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
 				@LangParameter("$c") DataObject c,
 				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e) {
+				@LangParameter("$e") DataObject e
+		) {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 			
@@ -5530,22 +6289,28 @@ final class LangPredefinedFunctions {
 		@LangFunction("combY")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: (x -> f(x(x)))(x -> f(x(x)))")
-		public static DataObject combYFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$f") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject f) {
+		public static DataObject combYFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$f") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject f
+		) {
 			FunctionPointerObject fFunc = f.getFunctionPointer();
 			
 			LangNativeFunction anonFunc = LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("combY:anon")
 				@CombinatorFunction
 				@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-				public DataObject combYAnonFunction(int SCOPE_ID,
-						@LangParameter("$x") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject x) {
+				public DataObject combYAnonFunction(
+						int SCOPE_ID,
+						@LangParameter("$x") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject x
+				) {
 					FunctionPointerObject xFunc = x.getFunctionPointer();
 					
 					LangNativeFunction func = LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 						@LangFunction("combY:anon:inner")
-						public DataObject combYAnonInnerFunction(int SCOPE_ID,
-								@LangParameter("&args") @VarArgs List<DataObject> args) {
+						public DataObject combYAnonInnerFunction(
+								int SCOPE_ID,
+								@LangParameter("&args") @VarArgs List<DataObject> args
+						) {
 							DataObject retX = interpreter.callFunctionPointer(xFunc, x.getVariableName(), Arrays.asList(
 									x
 							), SCOPE_ID);
@@ -5584,13 +6349,17 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("argCnt0")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-		public static DataObject argCnt0Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject) {
+		public static DataObject argCnt0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 			
 			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt0(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("argCnt0-func")
-				public DataObject argCnt0FuncFunction(int SCOPE_ID) {
+				public DataObject argCnt0FuncFunction(
+						int SCOPE_ID
+				) {
 					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), new LinkedList<>(), SCOPE_ID));
 				}
 			})));
@@ -5598,14 +6367,18 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("argCnt1")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-		public static DataObject argCnt1Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject) {
+		public static DataObject argCnt1Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 			
 			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt1(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("argCnt1-func")
-				public DataObject argCnt1FuncFunction(int SCOPE_ID,
-						@LangParameter("$a") DataObject a) {
+				public DataObject argCnt1FuncFunction(
+						int SCOPE_ID,
+						@LangParameter("$a") DataObject a
+				) {
 					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), Arrays.asList(
 							a
 					), SCOPE_ID));
@@ -5615,15 +6388,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("argCnt2")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-		public static DataObject argCnt2Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject) {
+		public static DataObject argCnt2Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 			
 			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt2(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("argCnt2-func")
-				public DataObject argCnt2FuncFunction(int SCOPE_ID,
+				public DataObject argCnt2FuncFunction(
+						int SCOPE_ID,
 						@LangParameter("$a") DataObject a,
-						@LangParameter("$b") DataObject b) {
+						@LangParameter("$b") DataObject b
+				) {
 					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
 									a, b
@@ -5635,16 +6412,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("argCnt3")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-		public static DataObject argCnt3Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject) {
+		public static DataObject argCnt3Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 			
 			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt3(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("argCnt3-func")
-				public DataObject argCnt3FuncFunction(int SCOPE_ID,
+				public DataObject argCnt3FuncFunction(
+						int SCOPE_ID,
 						@LangParameter("$a") DataObject a,
 						@LangParameter("$b") DataObject b,
-						@LangParameter("$c") DataObject c) {
+						@LangParameter("$c") DataObject c
+				) {
 					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
 									a, b, c
@@ -5656,17 +6437,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("argCnt4")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-		public static DataObject argCnt4Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject) {
+		public static DataObject argCnt4Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 			
 			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt4(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("argCnt4-func")
-				public DataObject argCnt4FuncFunction(int SCOPE_ID,
+				public DataObject argCnt4FuncFunction(
+						int SCOPE_ID,
 						@LangParameter("$a") DataObject a,
 						@LangParameter("$b") DataObject b,
 						@LangParameter("$c") DataObject c,
-						@LangParameter("$d") DataObject d) {
+						@LangParameter("$d") DataObject d
+				) {
 					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
 									a, b, c, d
@@ -5678,18 +6463,22 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("argCnt5")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
-		public static DataObject argCnt5Function(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject) {
+		public static DataObject argCnt5Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 			
 			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt5(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("argCnt5-func")
-				public DataObject argCnt5FuncFunction(int SCOPE_ID,
+				public DataObject argCnt5FuncFunction(
+						int SCOPE_ID,
 						@LangParameter("$a") DataObject a,
 						@LangParameter("$b") DataObject b,
 						@LangParameter("$c") DataObject c,
 						@LangParameter("$d") DataObject d,
-						@LangParameter("$e") DataObject e) {
+						@LangParameter("$e") DataObject e
+				) {
 					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
 									a, b, c, d, e
@@ -5705,8 +6494,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBufferCreate")
 		@AllowedTypes(DataObject.DataType.BYTE_BUFFER)
-		public static DataObject byteBufferCreateFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$length") @NumberValue Number lengthNumber) {
+		public static DataObject byteBufferCreateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$length") @NumberValue Number lengthNumber
+		) {
 			int length = lengthNumber.intValue();
 			
 			if(length < 0)
@@ -5717,8 +6508,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBufferOf")
 		@AllowedTypes(DataObject.DataType.BYTE_BUFFER)
-		public static DataObject byteBufferOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects) {
+		public static DataObject byteBufferOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&numbers") @VarArgs List<DataObject> numberObjects
+		) {
 			byte[] byteBuf = new byte[numberObjects.size()];
 			for(int i = 0;i < byteBuf.length;i++) {
 				Number number = numberObjects.get(i).toNumber();
@@ -5734,10 +6527,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBufferPartialCopy")
 		@AllowedTypes(DataObject.DataType.BYTE_BUFFER)
-		public static DataObject byteBufferCreateFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject byteBufferCreateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$byteBuffer") @AllowedTypes(DataObject.DataType.BYTE_BUFFER) DataObject byteBufferObject,
 				@LangParameter("$fromIndex") @LangInfo("Inclusive") @NumberValue Number fromIndexNumber,
-				@LangParameter("$toIndex") @LangInfo("Inclusive") @NumberValue Number toIndexNumber) {
+				@LangParameter("$toIndex") @LangInfo("Inclusive") @NumberValue Number toIndexNumber
+		) {
 			int fromIndex = fromIndexNumber.intValue();
 			int toIndex = toIndexNumber.intValue();
 			
@@ -5770,10 +6565,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBufferSet")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject byteBufferSetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject byteBufferSetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$byteBuffer") @AllowedTypes(DataObject.DataType.BYTE_BUFFER) DataObject byteBufferObject,
 				@LangParameter("$index") @NumberValue Number indexNumber,
-				@LangParameter("$value") @NumberValue Number valueNumber) {
+				@LangParameter("$value") @NumberValue Number valueNumber
+		) {
 			int index = indexNumber.intValue();
 			byte value = valueNumber.byteValue();
 			
@@ -5793,9 +6590,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBufferGet")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject byteBufferSetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject byteBufferSetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$byteBuffer") @AllowedTypes(DataObject.DataType.BYTE_BUFFER) DataObject byteBufferObject,
-				@LangParameter("$index") @NumberValue Number indexNumber) {
+				@LangParameter("$index") @NumberValue Number indexNumber
+		) {
 			int index = indexNumber.intValue();
 			
 			byte[] byteBuf = byteBufferObject.getByteBuffer();
@@ -5812,8 +6611,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("byteBufferLength")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject byteBufferSetFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$byteBuffer") @AllowedTypes(DataObject.DataType.BYTE_BUFFER) DataObject byteBufferObject) {
+		public static DataObject byteBufferSetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$byteBuffer") @AllowedTypes(DataObject.DataType.BYTE_BUFFER) DataObject byteBufferObject
+		) {
 			return new DataObject().setInt(byteBufferObject.getByteBuffer().length);
 		}
 	}
@@ -5823,8 +6624,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayCreate")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayCreateFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$length") @NumberValue Number lengthNumber) {
+		public static DataObject arrayCreateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$length") @NumberValue Number lengthNumber
+		) {
 			int length = lengthNumber.intValue();
 			
 			if(length < 0)
@@ -5839,8 +6642,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayOf")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&elements") @VarArgs List<DataObject> elements) {
+		public static DataObject arrayOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&elements") @VarArgs List<DataObject> elements
+		) {
 			elements = elements.stream().map(DataObject::new).collect(Collectors.toList());
 			
 			return new DataObject().setArray(elements.toArray(new DataObject[0]));
@@ -5848,9 +6653,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayGenerateFrom")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayGenerateFromFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayGenerateFromFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcPointerObject,
-				@LangParameter("$count") @NumberValue Number countNumber) {
+				@LangParameter("$count") @NumberValue Number countNumber
+		) {
 			List<DataObject> elements = IntStream.range(0, countNumber.intValue()).mapToObj(i -> {
 				return new DataObject(interpreter.callFunctionPointer(funcPointerObject.getFunctionPointer(), funcPointerObject.getVariableName(), Arrays.asList(
 						new DataObject().setInt(i)
@@ -5861,8 +6668,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayZip")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayZipFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) @VarArgs List<DataObject> arrays) {
+		public static DataObject arrayZipFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) @VarArgs List<DataObject> arrays
+		) {
 			int len = -1;
 			for(int i = 0;i < arrays.size();i++) {
 				int lenTest = arrays.get(i).getArray().length;
@@ -5894,10 +6703,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arraySet")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arraySetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arraySetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("$index") @NumberValue Number indexNumber,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			int index = indexNumber.intValue();
 			
 			DataObject[] arr = arrayObject.getArray();
@@ -5916,9 +6727,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arraySetAll", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arraySetAllFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arraySetAllFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			for(int i = 0;i < arr.length;i++)
@@ -5928,9 +6741,11 @@ final class LangPredefinedFunctions {
 		}
 		@LangFunction("arraySetAll")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arraySetAllFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arraySetAllFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("&values") @VarArgs List<DataObject> values) {
+				@LangParameter("&values") @VarArgs List<DataObject> values
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			if(values.size() < arr.length)
@@ -5948,9 +6763,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("arrayGet")
-		public static DataObject arrayGetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayGetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$index") @NumberValue Number indexNumber) {
+				@LangParameter("$index") @NumberValue Number indexNumber
+		) {
 			int index = indexNumber.intValue();
 			
 			DataObject[] arr = arrayObject.getArray();
@@ -5967,16 +6784,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayGetAll")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject arrayGetAllFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject arrayGetAllFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			return new DataObject(Arrays.stream(arrayObject.getArray()).map(DataObject::getText).collect(Collectors.joining(", ")));
 		}
 		
 		@LangFunction("arrayRead")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayReadFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayReadFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&arraySetAll") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("&pointers") @AllowedTypes(DataObject.DataType.VAR_POINTER) @VarArgs List<DataObject> pointers) {
+				@LangParameter("&pointers") @AllowedTypes(DataObject.DataType.VAR_POINTER) @VarArgs List<DataObject> pointers
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			if(pointers.size() < arr.length)
@@ -6001,9 +6822,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayFill")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayFillFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayFillFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = 0;i < arr.length;i++)
 				arr[i] = new DataObject(valueObject);
@@ -6013,10 +6836,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayFillFrom")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayFillFromFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayFillFromFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("$startIndex") @NumberValue Number startIndexNumber,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			int startIndex = startIndexNumber.intValue();
 			
 			DataObject[] arr = arrayObject.getArray();
@@ -6036,10 +6861,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayFillTo")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayFillToFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayFillToFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("$endIndex") @NumberValue Number endIndexNumber,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			int endIndex = endIndexNumber.intValue();
 			
 			DataObject[] arr = arrayObject.getArray();
@@ -6059,9 +6886,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayCountOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayCountOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayCountOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			long count = Arrays.stream(arr).filter(ele -> ele.isStrictEquals(valueObject)).count();
 			return new DataObject().setInt((int)count);
@@ -6069,9 +6898,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayIndexOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayIndexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayIndexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = 0;i < arr.length;i++)
 				if(arr[i].isStrictEquals(valueObject))
@@ -6082,9 +6913,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayLastIndexOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayLastIndexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayLastIndexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = arr.length - 1;i >= 0;i--)
 				if(arr[i].isStrictEquals(valueObject))
@@ -6095,9 +6928,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayCountLike")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayCountLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayCountLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			long count = Arrays.stream(arr).filter(ele -> ele.isEquals(valueObject)).count();
 			return new DataObject().setInt((int)count);
@@ -6105,9 +6940,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayIndexLike")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayIndexLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayIndexLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = 0;i < arr.length;i++)
 				if(arr[i].isEquals(valueObject))
@@ -6118,9 +6955,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayLastIndexLike")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayLastIndexLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayLastIndexLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = arr.length - 1;i >= 0;i--)
 				if(arr[i].isEquals(valueObject))
@@ -6131,15 +6970,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayLength")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayLengthFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject arrayLengthFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			return new DataObject().setInt(arrayObject.getArray().length);
 		}
 		
 		@LangFunction("arrayDistinctValuesOf")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayDistinctValuesOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject arrayDistinctValuesOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			List<DataObject> distinctValues = new LinkedList<>();
@@ -6161,8 +7004,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayDistinctValuesLike")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayDistinctValuesLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject arrayDistinctValuesLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			List<DataObject> distinctValues = new LinkedList<>();
@@ -6184,9 +7029,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arraySorted")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arraySortedFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arraySortedFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.comparator") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject comparatorObject) {
+				@LangParameter("fp.comparator") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject comparatorObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			List<DataObject> elements = Arrays.stream(arr).map(DataObject::new).sorted((a, b) -> {
@@ -6210,9 +7057,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayFiltered")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayFilteredFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayFilteredFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject) {
+				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			List<DataObject> elements = Arrays.stream(arr).map(DataObject::new).filter(dataObject -> {
@@ -6225,9 +7074,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayFilteredCount")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayFilteredCountFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayFilteredCountFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject) {
+				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			long count = Arrays.stream(arr).map(DataObject::new).filter(dataObject -> {
@@ -6240,9 +7091,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayMap")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayMapFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayMapFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction) {
+				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			for(int i = 0;i < arr.length;i++) {
@@ -6256,9 +7109,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayMapToNew")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayMapToNewFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayMapToNewFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction) {
+				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			DataObject[] newArr = new DataObject[arr.length];
@@ -6273,30 +7128,38 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arrayMapToOne", hasInfo=true)
 		@LangInfo("Alias for \"func.arrayReduce()\"")
-		public static DataObject arrayMapToOneFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayMapToOneFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			return arrayReduceFunction(interpreter, SCOPE_ID, arrayObject, combineFunction);
 		}
 		@LangFunction("arrayMapToOne")
-		public static DataObject arrayMapToOneFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayMapToOneFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("$initialValue") DataObject initialValueObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			return arrayReduceFunction(interpreter, SCOPE_ID, arrayObject, initialValueObject, combineFunction);
 		}
 		
 		@LangFunction(value="arrayReduce", hasInfo=true)
-		public static DataObject arrayReduceFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayReduceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			return arrayReduceFunction(interpreter, SCOPE_ID, arrayObject, null, combineFunction);
 		}
 		@LangFunction("arrayReduce")
-		public static DataObject arrayReduceFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayReduceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("$initialValue") DataObject initialValueObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			DataObject currentValueObject = initialValueObject;
@@ -6324,17 +7187,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arrayReduceColumn", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayReduceColumnFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayReduceColumnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObjects,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			return arrayReduceColumnFunction(interpreter, SCOPE_ID, arrayObjects, null, combineFunction);
 		}
 		@LangFunction("arrayReduceColumn")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayReduceColumnFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayReduceColumnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObjects,
 				@LangParameter("$initialValue") DataObject initialValueObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			DataObject[] arrayOfArrays = arrayObjects.getArray();
 			
 			int len = -1;
@@ -6393,17 +7260,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arrayForEach", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayForEachFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayForEachFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			return arrayForEachFunction(interpreter, SCOPE_ID, arrayObject, functionObject, false);
 		}
 		@LangFunction("arrayForEach")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayForEachFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayForEachFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			if(breakable) {
@@ -6412,7 +7283,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -6444,17 +7317,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arrayEnumerate", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayEnumerateFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayEnumerateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			return arrayEnumerateFunction(interpreter, SCOPE_ID, arrayObject, functionObject, false);
 		}
 		@LangFunction("arrayEnumerate")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayEnumerateFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayEnumerateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			if(breakable) {
@@ -6463,7 +7340,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -6500,9 +7379,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayAllMatch")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayAllMatchFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayAllMatchFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction) {
+				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).allMatch(ele -> {
@@ -6514,9 +7395,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayAnyMatch")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayAnyMatchFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayAnyMatchFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction) {
+				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).anyMatch(ele -> {
@@ -6528,9 +7411,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayNoneMatch")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject arrayNoneMatchFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayNoneMatchFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction) {
+				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).noneMatch(ele -> {
@@ -6542,8 +7427,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayCombine")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayCombineFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) @VarArgs List<DataObject> arrayObjects) {
+		public static DataObject arrayCombineFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) @VarArgs List<DataObject> arrayObjects
+		) {
 			List<DataObject> combinedArrays = new LinkedList<>();
 			
 			for(DataObject arrayObject:arrayObjects)
@@ -6555,17 +7442,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arrayPermutations", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayPermutationsFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject arrayPermutationsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			return arrayPermutationsFunction(interpreter, SCOPE_ID, arrayObject, arrayObject.getArray().length);
 		}
 		@LangFunction("arrayPermutations")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject arrayPermutationsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayPermutationsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("$r")
 					@LangInfo("The amount of selected items per permutation")
-					@NumberValue Number countNumber) {
+					@NumberValue Number countNumber
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			int count = countNumber.intValue();
@@ -6625,23 +7516,27 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="arrayPermutationsForEach", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayPermutationsForEachFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayPermutationsForEachFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("fp.func")
 					@LangInfo("If the value returned by fp.func evaluates to true, this function will stop the execution early.")
-					@AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+					@AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			return arrayPermutationsForEachFunction(interpreter, SCOPE_ID, arrayObject, functionObject, arrayObject.getArray().length);
 		}
 		@LangFunction("arrayPermutationsForEach")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayPermutationsForEachFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject arrayPermutationsForEachFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
 				@LangParameter("fp.func")
 					@LangInfo("If the value returned by fp.func evaluates to true, this function will stop the execution early.")
 					@AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject,
 				@LangParameter("$r")
 					@LangInfo("The amount of selected items per permutation")
-					@NumberValue Number countNumber) {
+					@NumberValue Number countNumber
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			
 			int count = countNumber.intValue();
@@ -6710,8 +7605,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("arrayReset")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject arrayResetFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+		public static DataObject arrayResetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(DataObject ele:arr)
 				ele.setNull();
@@ -6725,14 +7622,18 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listCreate")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listCreateFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject listCreateFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setList(new LinkedList<>());
 		}
 		
 		@LangFunction("listOf")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&elements") @VarArgs List<DataObject> elements) {
+		public static DataObject listOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&elements") @VarArgs List<DataObject> elements
+		) {
 			elements = elements.stream().map(DataObject::new).collect(Collectors.toList());
 			
 			return new DataObject().setList(new LinkedList<>(elements));
@@ -6740,9 +7641,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listGenerateFrom")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listGenerateFromFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listGenerateFromFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcPointerObject,
-				@LangParameter("$count") @NumberValue Number countNumber) {
+				@LangParameter("$count") @NumberValue Number countNumber
+		) {
 			List<DataObject> elements = IntStream.range(0, countNumber.intValue()).mapToObj(i -> {
 				return new DataObject(interpreter.callFunctionPointer(funcPointerObject.getFunctionPointer(), funcPointerObject.getVariableName(), Arrays.asList(
 						new DataObject().setInt(i)
@@ -6753,8 +7656,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listZip")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listZipFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&lists") @AllowedTypes(DataObject.DataType.LIST) @VarArgs List<DataObject> lists) {
+		public static DataObject listZipFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&lists") @AllowedTypes(DataObject.DataType.LIST) @VarArgs List<DataObject> lists
+		) {
 			int len = -1;
 			for(int i = 0;i < lists.size();i++) {
 				int lenTest = lists.get(i).getList().size();
@@ -6786,9 +7691,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listAdd")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listAddFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listAddFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			listObject.getList().add(new DataObject(valueObject));
 			
 			return null;
@@ -6796,10 +7703,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listSet")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listSetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listSetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
 				@LangParameter("$index") @NumberValue Number indexNumber,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			int index = indexNumber.intValue();
 			
 			List<DataObject> list = listObject.getList();
@@ -6817,8 +7726,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("listShift")
-		public static DataObject listShiftFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listShiftFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			if(list.size() == 0)
 				return null;
@@ -6828,17 +7739,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listUnshift")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listUnshiftFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listUnshiftFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			list.addFirst(new DataObject(valueObject));
 			return null;
 		}
 		
 		@LangFunction("listPeekFirst")
-		public static DataObject listPeekFirstFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listPeekFirstFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			if(list.size() == 0)
 				return null;
@@ -6847,8 +7762,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("listPop")
-		public static DataObject listPopFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listPopFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			if(list.size() == 0)
 				return null;
@@ -6858,17 +7775,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listPush")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listPushFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listPushFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			list.addLast(new DataObject(valueObject));
 			return null;
 		}
 		
 		@LangFunction("listPeekLast")
-		public static DataObject listPeekLastFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listPeekLastFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			if(list.size() == 0)
 				return null;
@@ -6877,9 +7798,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("listRemove")
-		public static DataObject listRemoveFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listRemoveFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++) {
 				DataObject dataObject = list.get(i);
@@ -6894,9 +7817,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("listRemoveLike")
-		public static DataObject listRemoveLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listRemoveLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			LinkedList<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++) {
 				DataObject dataObject = list.get(i);
@@ -6911,9 +7836,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("listRemoveAt")
-		public static DataObject listRemoveAtFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listRemoveAtFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$index") @NumberValue Number indexNumber) {
+				@LangParameter("$index") @NumberValue Number indexNumber
+		) {
 			int index = indexNumber.intValue();
 			
 			List<DataObject> list = listObject.getList();
@@ -6929,9 +7856,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("listGet")
-		public static DataObject listGetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listGetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$index") @NumberValue Number indexNumber) {
+				@LangParameter("$index") @NumberValue Number indexNumber
+		) {
 			int index = indexNumber.intValue();
 			
 			List<DataObject> list = listObject.getList();
@@ -6948,16 +7877,20 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listGetAll")
 		@AllowedTypes(DataObject.DataType.TEXT)
-		public static DataObject listGetAllFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listGetAllFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			return new DataObject(listObject.getList().stream().map(DataObject::getText).collect(Collectors.joining(", ")));
 		}
 		
 		@LangFunction("listFill")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listFillFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listFillFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++)
 				list.set(i, new DataObject(valueObject));
@@ -6967,10 +7900,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listFillFrom")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listFillFromFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listFillFromFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
 				@LangParameter("$startIndex") @NumberValue Number startIndexNumber,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			int startIndex = startIndexNumber.intValue();
 			
 			List<DataObject> list = listObject.getList();
@@ -6990,10 +7925,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listFillTo")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listFillToFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listFillToFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
 				@LangParameter("$endIndex") @NumberValue Number endIndexNumber,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			int endIndex = endIndexNumber.intValue();
 			
 			List<DataObject> list = listObject.getList();
@@ -7013,9 +7950,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listCountOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listCountOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listCountOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			long count = list.stream().filter(ele -> ele.isStrictEquals(valueObject)).count();
 			return new DataObject().setInt((int)count);
@@ -7023,9 +7962,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listIndexOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listIndexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listIndexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++)
 				if(list.get(i).isStrictEquals(valueObject))
@@ -7036,9 +7977,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listLastIndexOf")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listLastIndexOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listLastIndexOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = list.size() - 1;i >= 0;i--)
 				if(list.get(i).isStrictEquals(valueObject))
@@ -7049,9 +7992,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listCountLike")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listCountLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listCountLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			long count = list.stream().filter(ele -> ele.isEquals(valueObject)).count();
 			return new DataObject().setInt((int)count);
@@ -7059,9 +8004,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listIndexLike")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listIndexLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listIndexLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++)
 				if(list.get(i).isEquals(valueObject))
@@ -7072,9 +8019,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listLastIndexLike")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listLastIndexLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listLastIndexLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("$value") DataObject valueObject) {
+				@LangParameter("$value") DataObject valueObject
+		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = list.size() - 1;i >= 0;i--)
 				if(list.get(i).isEquals(valueObject))
@@ -7085,15 +8034,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listLength")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listLengthFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listLengthFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			return new DataObject().setInt(listObject.getList().size());
 		}
 		
 		@LangFunction("listDistinctValuesOf")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listDistinctValuesOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listDistinctValuesOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			LinkedList<DataObject> distinctValues = new LinkedList<>();
 			for(DataObject ele:listObject.getList()) {
 				boolean flag = true;
@@ -7113,8 +8066,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listDistinctValuesLike")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listDistinctValuesLikeFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listDistinctValuesLikeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			LinkedList<DataObject> distinctValues = new LinkedList<>();
 			for(DataObject ele:listObject.getList()) {
 				boolean flag = true;
@@ -7134,9 +8089,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listSorted")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listSortedFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listSortedFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.comparator") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject comparatorObject) {
+				@LangParameter("fp.comparator") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject comparatorObject
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			List<DataObject> elements = list.stream().map(DataObject::new).sorted((a, b) -> {
@@ -7160,9 +8117,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listFiltered")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listFilteredFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listFilteredFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject) {
+				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			List<DataObject> elements = list.stream().map(DataObject::new).filter(dataObject -> {
@@ -7175,9 +8134,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listFilteredCount")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listFilteredCountFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listFilteredCountFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject) {
+				@LangParameter("fp.filter") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject filterObject
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			long count = list.stream().map(DataObject::new).filter(dataObject -> {
@@ -7190,9 +8151,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listMap")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listMapFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listMapFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction) {
+				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			for(int i = 0;i < list.size();i++) {
@@ -7206,9 +8169,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listMapToNew")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listMapToNewFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listMapToNewFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction) {
+				@LangParameter("fp.map") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject mapFunction
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			LinkedList<DataObject> newList = new LinkedList<>();
@@ -7222,16 +8187,20 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="listReduce", hasInfo=true)
-		public static DataObject listReduceFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listReduceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			return listReduceFunction(interpreter, SCOPE_ID, listObject, null, combineFunction);
 		}
 		@LangFunction("listReduce")
-		public static DataObject listReduceFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listReduceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
 				@LangParameter("$initialValue") DataObject initialValueObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			DataObject currentValueObject = initialValueObject;
@@ -7259,17 +8228,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="listReduceColumn", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listReduceColumnFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listReduceColumnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&lists") @AllowedTypes(DataObject.DataType.LIST) DataObject listObjects,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			return listReduceColumnFunction(interpreter, SCOPE_ID, listObjects, null, combineFunction);
 		}
 		@LangFunction("listReduceColumn")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listReduceColumnFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listReduceColumnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&lists") @AllowedTypes(DataObject.DataType.LIST) DataObject listObjects,
 				@LangParameter("$initialValue") DataObject initialValueObject,
-				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction) {
+				@LangParameter("fp.combine") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject combineFunction
+		) {
 			LinkedList<DataObject> listOfLists = listObjects.getList();
 			
 			int len = -1;
@@ -7328,17 +8301,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="listForEach", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listForEachFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listForEachFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			return listForEachFunction(interpreter, SCOPE_ID, listObject, functionObject, false);
 		}
 		@LangFunction("listForEach")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listForEachFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listForEachFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
 				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			if(breakable) {
@@ -7347,7 +8324,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -7379,17 +8358,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="listEnumerate", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listEnumerateFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listEnumerateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			return listEnumerateFunction(interpreter, SCOPE_ID, listObject, functionObject, false);
 		}
 		@LangFunction("listEnumerate")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listEnumerateFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listEnumerateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
 				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject,
-				@LangParameter("$breakable") @BooleanValue boolean breakable) {
+				@LangParameter("$breakable") @BooleanValue boolean breakable
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			if(breakable) {
@@ -7398,7 +8381,9 @@ final class LangPredefinedFunctions {
 				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
-					public DataObject breakFunction(int SCOPE_ID) {
+					public DataObject breakFunction(
+							int SCOPE_ID
+					) {
 						shouldBreak[0] = true;
 						
 						return null;
@@ -7435,9 +8420,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listAllMatch")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listAllMatchFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listAllMatchFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction) {
+				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			return new DataObject().setBoolean(list.stream().map(DataObject::new).allMatch(ele -> {
@@ -7449,9 +8436,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listAnyMatch")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listAnyMatchFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listAnyMatchFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction) {
+				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			return new DataObject().setBoolean(list.stream().map(DataObject::new).anyMatch(ele -> {
@@ -7463,9 +8452,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listNoneMatch")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject listNoneMatchFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject listNoneMatchFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction) {
+				@LangParameter("fp.predicate") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject predicateFunction
+		) {
 			List<DataObject> list = listObject.getList();
 			
 			return new DataObject().setBoolean(list.stream().map(DataObject::new).noneMatch(ele -> {
@@ -7477,8 +8468,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listCombine")
 		@AllowedTypes(DataObject.DataType.LIST)
-		public static DataObject listCombineFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&lists") @AllowedTypes(DataObject.DataType.LIST) @VarArgs List<DataObject> listObjects) {
+		public static DataObject listCombineFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&lists") @AllowedTypes(DataObject.DataType.LIST) @VarArgs List<DataObject> listObjects
+		) {
 			LinkedList<DataObject> combinedLists = new LinkedList<>();
 			
 			for(DataObject listObject:listObjects)
@@ -7490,8 +8483,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("listClear")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject listClearFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject) {
+		public static DataObject listClearFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
+		) {
 			listObject.getList().clear();
 			
 			return null;
@@ -7506,8 +8501,10 @@ final class LangPredefinedFunctions {
 				" This function is not compatible with all struct types," +
 				" because all values will be set to null - use \"func.structOf()\" for those struct types instead.")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject structCreateFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&Struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structCreateFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&Struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(!struct.isDefinition())
@@ -7523,9 +8520,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structOf")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject structOfFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject structOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&Struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(!struct.isDefinition())
@@ -7546,10 +8545,12 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structSet")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject structSetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject structSetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject,
 				@LangParameter("$memberName") @AllowedTypes(DataObject.DataType.TEXT) DataObject memberNameObject,
-				@LangParameter("$memberObject") DataObject memberObject) {
+				@LangParameter("$memberObject") DataObject memberObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(struct.isDefinition())
@@ -7569,9 +8570,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structSetAll")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject structSetAllFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject structSetAllFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(struct.isDefinition())
@@ -7595,9 +8598,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("structGet")
-		public static DataObject structGetFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject structGetFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject,
-				@LangParameter("$memberName") @AllowedTypes(DataObject.DataType.TEXT) DataObject memberNameObject) {
+				@LangParameter("$memberName") @AllowedTypes(DataObject.DataType.TEXT) DataObject memberNameObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(struct.isDefinition())
@@ -7615,8 +8620,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structGetAll")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject structGetAllFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structGetAllFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(struct.isDefinition())
@@ -7633,8 +8640,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structGetMemberNames")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject structGetMemberNamesFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structGetMemberNamesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			try {
@@ -7646,8 +8655,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structGetMemberCount")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject structGetMemberCountFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structGetMemberCountFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			try {
@@ -7659,8 +8670,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structIsDefinition")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject structIsDefinitionFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structIsDefinitionFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			try {
@@ -7672,8 +8685,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("structIsInstance")
 		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject structIsInstanceFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structIsInstanceFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			try {
@@ -7684,8 +8699,10 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("structDefinitionTypeOf")
-		public static DataObject structDefinitionTypeOfFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject) {
+		public static DataObject structDefinitionTypeOfFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
+		) {
 			StructObject struct = structObject.getStruct();
 			
 			if(struct.isDefinition())
@@ -7705,9 +8722,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("complex")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject complexFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject complexFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$real") @NumberValue Number realNumber,
-				@LangParameter("$imag") @NumberValue Number imagNumber) {
+				@LangParameter("$imag") @NumberValue Number imagNumber
+		) {
 			try {
 				return new DataObject().setStruct(LangCompositeTypes.createComplex(realNumber.doubleValue(), imagNumber.doubleValue()));
 			}catch(DataTypeConstraintException e) {
@@ -7718,8 +8737,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("creal")
 		@LangInfo("Returns the real value of &z")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject crealFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject) {
+		public static DataObject crealFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
+		) {
 			StructObject complexStruct = complexStructObject.getStruct();
 			
 			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
@@ -7736,8 +8757,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("cimag")
 		@LangInfo("Returns the imaginary value of &z")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject cimagFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject) {
+		public static DataObject cimagFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
+		) {
 			StructObject complexStruct = complexStructObject.getStruct();
 			
 			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
@@ -7754,8 +8777,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("cabs")
 		@LangInfo("Returns the absolute value of &z")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject cabsFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject) {
+		public static DataObject cabsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
+		) {
 			StructObject complexStruct = complexStructObject.getStruct();
 			
 			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
@@ -7773,8 +8798,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("conj")
 		@LangInfo("Returns a conjugated copy of &z")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject conjFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject) {
+		public static DataObject conjFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
+		) {
 			StructObject complexStruct = complexStructObject.getStruct();
 			
 			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
@@ -7792,8 +8819,10 @@ final class LangPredefinedFunctions {
 		@LangFunction("cinv")
 		@LangInfo("Returns a negated copy of &z")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject cinvFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject) {
+		public static DataObject cinvFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
+		) {
 			StructObject complexStruct = complexStructObject.getStruct();
 			
 			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
@@ -7811,9 +8840,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("cadd")
 		@LangInfo("Returns &a + &b")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject caddFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject caddFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject) {
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
+		) {
 			StructObject complexStructA = complexStructAObject.getStruct();
 			StructObject complexStructB = complexStructBObject.getStruct();
 			
@@ -7841,9 +8872,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("csub")
 		@LangInfo("Returns &a - &b")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject csubFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject csubFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject) {
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
+		) {
 			StructObject complexStructA = complexStructAObject.getStruct();
 			StructObject complexStructB = complexStructBObject.getStruct();
 			
@@ -7871,9 +8904,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("cmul")
 		@LangInfo("Returns &a * &b")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject cmulFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject cmulFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject) {
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
+		) {
 			StructObject complexStructA = complexStructAObject.getStruct();
 			StructObject complexStructB = complexStructBObject.getStruct();
 			
@@ -7901,9 +8936,11 @@ final class LangPredefinedFunctions {
 		@LangFunction("cdiv")
 		@LangInfo("Returns &a / &b")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject cdivFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject cdivFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject) {
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
+		) {
 			StructObject complexStructA = complexStructAObject.getStruct();
 			StructObject complexStructB = complexStructBObject.getStruct();
 			
@@ -7939,9 +8976,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("pair")
 		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject pairFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject pairFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$first") DataObject firstObject,
-				@LangParameter("$second") DataObject secondObject) {
+				@LangParameter("$second") DataObject secondObject
+		) {
 			try {
 				return new DataObject().setStruct(LangCompositeTypes.createPair(firstObject, secondObject));
 			}catch(DataTypeConstraintException e) {
@@ -7951,8 +8990,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("pfirst")
 		@LangInfo("Returns the first value of &pair")
-		public static DataObject pfirstFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&pair") @AllowedTypes(DataObject.DataType.STRUCT) DataObject pairStructObject) {
+		public static DataObject pfirstFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&pair") @AllowedTypes(DataObject.DataType.STRUCT) DataObject pairStructObject
+		) {
 			StructObject pairStruct = pairStructObject.getStruct();
 			
 			if(pairStruct.isDefinition() || !pairStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_PAIR))
@@ -7968,8 +9009,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("psecond")
 		@LangInfo("Returns the second value of &pair")
-		public static DataObject psecondFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&pair") @AllowedTypes(DataObject.DataType.STRUCT) DataObject pairStructObject) {
+		public static DataObject psecondFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&pair") @AllowedTypes(DataObject.DataType.STRUCT) DataObject pairStructObject
+		) {
 			StructObject pairStruct = pairStructObject.getStruct();
 			
 			if(pairStruct.isDefinition() || !pairStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_PAIR))
@@ -8001,14 +9044,18 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getLoadedModules")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject getLoadedModulesFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject getLoadedModulesFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return new DataObject().setArray(interpreter.modules.keySet().stream().map(DataObject::new).toArray(DataObject[]::new));
 		}
 		
 		@LangFunction("getModuleVariableNames")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject getModuleVariableNamesFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$moduleName") DataObject moduleNameObject) {
+		public static DataObject getModuleVariableNamesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$moduleName") DataObject moduleNameObject
+		) {
 			String moduleName = moduleNameObject.getText();
 			
 			if(containsNonWordChars(moduleName))
@@ -8023,8 +9070,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("getModuleFunctionNames")
 		@AllowedTypes(DataObject.DataType.ARRAY)
-		public static DataObject getModuleFunctionNamesFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$moduleName") DataObject moduleNameObject) {
+		public static DataObject getModuleFunctionNamesFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$moduleName") DataObject moduleNameObject
+		) {
 			String moduleName = moduleNameObject.getText();
 			
 			if(containsNonWordChars(moduleName))
@@ -8038,9 +9087,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("getModuleVariable")
-		public static DataObject getModuleVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject getModuleVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject,
-				@LangParameter("$variableName") DataObject variableNameObject) {
+				@LangParameter("$variableName") DataObject variableNameObject
+		) {
 			String moduleName = moduleNameObject.getText();
 			String variableName = variableNameObject.getText();
 			
@@ -8073,9 +9124,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("getModuleVariableNormal")
-		public static DataObject getModuleVariableNormalFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject getModuleVariableNormalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject,
-				@LangParameter("$variableName") DataObject variableNameObject) {
+				@LangParameter("$variableName") DataObject variableNameObject
+		) {
 			String moduleName = moduleNameObject.getText();
 			String variableName = variableNameObject.getText();
 			
@@ -8100,9 +9153,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("getModuleVariableComposite")
-		public static DataObject getModuleVariableCompositeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject getModuleVariableCompositeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject,
-				@LangParameter("$variableName") DataObject variableNameObject) {
+				@LangParameter("$variableName") DataObject variableNameObject
+		) {
 			String moduleName = moduleNameObject.getText();
 			String variableName = variableNameObject.getText();
 			
@@ -8127,9 +9182,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction("getModuleVariableFunctionPointer")
-		public static DataObject getModuleVariableFunctionPointerFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject getModuleVariableFunctionPointerFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject,
-				@LangParameter("$variableName") DataObject variableNameObject) {
+				@LangParameter("$variableName") DataObject variableNameObject
+		) {
 			String moduleName = moduleNameObject.getText();
 			String variableName = variableNameObject.getText();
 			
@@ -8155,9 +9212,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("moduleExportFunction")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportFunctionFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportFunctionFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$functionName") DataObject functionNameObject,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || !module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportFunction\" can only be used inside a module which "
@@ -8174,8 +9233,10 @@ final class LangPredefinedFunctions {
 			
 			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction("module-wrapped-func")
-				public DataObject breakFunction(LangInterpreter interpreter, int SCOPE_ID,
-						@LangParameter("&args") @RawVarArgs List<DataObject> argumentList) {
+				public DataObject breakFunction(
+						LangInterpreter interpreter, int SCOPE_ID,
+						@LangParameter("&args") @RawVarArgs List<DataObject> argumentList
+				) {
 					return interpreter.callFunctionPointer(function, functionName, argumentList, SCOPE_ID);
 				}
 			}));
@@ -8185,9 +9246,11 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("moduleExportLinkerFunction")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportLinkerFunctionFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportLinkerFunctionFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$functionName") DataObject functionNameObject,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject) {
+				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || !module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportLinkerFunction\" can only be used inside a module which "
@@ -8204,8 +9267,10 @@ final class LangPredefinedFunctions {
 			
 			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 				@LangFunction(value="module-wrapped-linker-func", isLinkerFunction=true)
-				public DataObject breakFunction(LangInterpreter interpreter, int SCOPE_ID,
-						@LangParameter("&args") @RawVarArgs List<DataObject> argumentList) {
+				public DataObject breakFunction(
+						LangInterpreter interpreter, int SCOPE_ID,
+						@LangParameter("&args") @RawVarArgs List<DataObject> argumentList
+				) {
 					return interpreter.callFunctionPointer(function, functionName, argumentList, SCOPE_ID);
 				}
 			}));
@@ -8215,17 +9280,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="moduleExportNormalVariable", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportNormalVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportNormalVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$variableName") DataObject variableNameObject,
-				@LangParameter("$variable") DataObject variableObject) {
+				@LangParameter("$variable") DataObject variableObject
+		) {
 			return moduleExportNormalVariableFunction(interpreter, SCOPE_ID, variableNameObject, variableObject, false);
 		}
 		@LangFunction("moduleExportNormalVariable")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportNormalVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportNormalVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$variableName") DataObject variableNameObject,
 				@LangParameter("$variable") DataObject variableObject,
-				@LangParameter("$final") @BooleanValue boolean finalData) {
+				@LangParameter("$final") @BooleanValue boolean finalData
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || !module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
@@ -8245,17 +9314,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="moduleExportCompositeVariable", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportCompositeVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportCompositeVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$variableName") DataObject variableNameObject,
-				@LangParameter("$variable") DataObject variableObject) {
+				@LangParameter("$variable") DataObject variableObject
+		) {
 			return moduleExportCompositeVariableFunction(interpreter, SCOPE_ID, variableNameObject, variableObject, false);
 		}
 		@LangFunction("moduleExportCompositeVariable")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportCompositeVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportCompositeVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$variableName") DataObject variableNameObject,
 				@LangParameter("$variable") DataObject variableObject,
-				@LangParameter("$final") @BooleanValue boolean finalData) {
+				@LangParameter("$final") @BooleanValue boolean finalData
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || !module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
@@ -8275,17 +9348,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="moduleExportFunctionPointerVariable", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportFunctionPointerVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportFunctionPointerVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$variableName") DataObject variableNameObject,
-				@LangParameter("$variable") DataObject variableObject) {
+				@LangParameter("$variable") DataObject variableObject
+		) {
 			return moduleExportFunctionPointerVariableFunction(interpreter, SCOPE_ID, variableNameObject, variableObject, false);
 		}
 		@LangFunction("moduleExportFunctionPointerVariable")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject moduleExportFunctionPointerVariableFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleExportFunctionPointerVariableFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$variableName") DataObject variableNameObject,
 				@LangParameter("$variable") DataObject variableObject,
-				@LangParameter("$final") @BooleanValue boolean finalData) {
+				@LangParameter("$final") @BooleanValue boolean finalData
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || !module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
@@ -8309,8 +9386,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("testUnit")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testUnitFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject testUnitFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8321,8 +9400,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("testSubUnit")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testSubUnitFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$text") @VarArgs DataObject textObject) {
+		public static DataObject testSubUnitFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$text") @VarArgs DataObject textObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8337,15 +9418,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertError", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertErrorFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject) {
+		public static DataObject testAssertErrorFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
+		) {
 			return testAssertErrorFunction(interpreter, SCOPE_ID, errorObject, null);
 		}
 		@LangFunction("testAssertError")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertErrorFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertErrorFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8361,17 +9446,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8384,17 +9473,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNotEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertNotEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertNotEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8407,17 +9500,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertLessThan", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertLessThanFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertLessThanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertLessThanFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertLessThan")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertLessThanFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertLessThanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8430,17 +9527,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertLessThanOrEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertLessThanOrEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertLessThanOrEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertLessThanOrEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertLessThanOrEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertLessThanOrEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertLessThanOrEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8453,17 +9554,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertGreaterThan", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertGreaterThanFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertGreaterThanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertGreaterThanFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertGreaterThan")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertGreaterThanFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertGreaterThanFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8476,17 +9581,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertGreaterThanOrEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertGreaterThanOrEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertGreaterThanOrEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertGreaterThanOrEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertGreaterThanOrEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertGreaterThanOrEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertGreaterThanOrEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8499,17 +9608,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertStrictEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertStrictEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertStrictEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertStrictEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertStrictEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertStrictEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertStrictEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8522,17 +9635,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertStrictNotEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertStrictNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertStrictNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertStrictNotEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertStrictNotEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertStrictNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertStrictNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8545,17 +9662,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertTranslationValueEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationValueEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTranslationValueEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") DataObject translationKeyObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertTranslationValueEqualsFunction(interpreter, SCOPE_ID, translationKeyObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertTranslationValueEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationValueEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTranslationValueEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") DataObject translationKeyObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8570,17 +9691,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertTranslationValueNotEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationValueNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTranslationValueNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") DataObject translationKeyObject,
-				@LangParameter("$expectedValue") DataObject expectedValueObject) {
+				@LangParameter("$expectedValue") DataObject expectedValueObject
+		) {
 			return testAssertTranslationValueNotEqualsFunction(interpreter, SCOPE_ID, translationKeyObject, expectedValueObject, null);
 		}
 		@LangFunction("testAssertTranslationValueNotEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationValueNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTranslationValueNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") DataObject translationKeyObject,
 				@LangParameter("$expectedValue") DataObject expectedValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8595,15 +9720,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertTranslationKeyFound", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationKeyFoundFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$translationKey") DataObject translationKeyObject) {
+		public static DataObject testAssertTranslationKeyFoundFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$translationKey") DataObject translationKeyObject
+		) {
 			return testAssertTranslationKeyFoundFunction(interpreter, SCOPE_ID, translationKeyObject, null);
 		}
 		@LangFunction("testAssertTranslationKeyFound")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationKeyFoundFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTranslationKeyFoundFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") DataObject translationKeyObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8617,15 +9746,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertTranslationKeyNotFound", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationKeyNotFoundFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$translationKey") DataObject translationKeyObject) {
+		public static DataObject testAssertTranslationKeyNotFoundFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$translationKey") DataObject translationKeyObject
+		) {
 			return testAssertTranslationKeyNotFoundFunction(interpreter, SCOPE_ID, translationKeyObject, null);
 		}
 		@LangFunction("testAssertTranslationKeyNotFound")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTranslationKeyNotFoundFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTranslationKeyNotFoundFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") DataObject translationKeyObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8639,17 +9772,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertTypeEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTypeEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTypeEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedType") @AllowedTypes(DataObject.DataType.TYPE) DataObject expectedTypeObject) {
+				@LangParameter("$expectedType") @AllowedTypes(DataObject.DataType.TYPE) DataObject expectedTypeObject
+		) {
 			return testAssertTypeEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedTypeObject, null);
 		}
 		@LangFunction("testAssertTypeEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTypeEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTypeEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedType") @AllowedTypes(DataObject.DataType.TYPE) DataObject expectedTypeObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8664,17 +9801,21 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertTypeNotEquals", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTypeNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTypeNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$expectedType") @AllowedTypes(DataObject.DataType.TYPE) DataObject expectedTypeObject) {
+				@LangParameter("$expectedType") @AllowedTypes(DataObject.DataType.TYPE) DataObject expectedTypeObject
+		) {
 			return testAssertTypeNotEqualsFunction(interpreter, SCOPE_ID, actualValueObject, expectedTypeObject, null);
 		}
 		@LangFunction("testAssertTypeNotEquals")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertTypeNotEqualsFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertTypeNotEqualsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
 				@LangParameter("$expectedType") @AllowedTypes(DataObject.DataType.TYPE) DataObject expectedTypeObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8689,15 +9830,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNull", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNullFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertNullFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertNullFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertNull")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNullFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNullFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8710,15 +9855,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNotNull", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotNullFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertNotNullFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertNotNullFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertNotNull")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotNullFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNotNullFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8731,15 +9880,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertVoid", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertVoidFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertVoidFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertVoidFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertVoid")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertVoidFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertVoidFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8752,15 +9905,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNotVoid", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotVoidFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertNotVoidFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertNotVoidFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertNotVoid")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotVoidFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNotVoidFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8773,15 +9930,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertFinal", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertFinalFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertFinal")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8794,15 +9955,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNotFinal", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertNotFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertNotFinalFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertNotFinal")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotFinalFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNotFinalFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8815,15 +9980,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertStatic", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertStaticFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertStatic")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8836,15 +10005,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNotStatic", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$actualValue") DataObject actualValueObject) {
+		public static DataObject testAssertNotStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$actualValue") DataObject actualValueObject
+		) {
 			return testAssertNotStaticFunction(interpreter, SCOPE_ID, actualValueObject, null);
 		}
 		@LangFunction("testAssertNotStatic")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNotStaticFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertNotStaticFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$actualValue") DataObject actualValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8857,15 +10030,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertThrow", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertThrowFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$expectedThrownValue") @AllowedTypes(DataObject.DataType.ERROR) DataObject expectedThrownValueObject) {
+		public static DataObject testAssertThrowFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$expectedThrownValue") @AllowedTypes(DataObject.DataType.ERROR) DataObject expectedThrownValueObject
+		) {
 			return testAssertThrowFunction(interpreter, SCOPE_ID, expectedThrownValueObject, null);
 		}
 		@LangFunction("testAssertThrow")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertThrowFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertThrowFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$expectedThrownValue") @AllowedTypes(DataObject.DataType.ERROR) DataObject expectedThrownValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8880,15 +10057,19 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertReturn", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertReturnFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$expectedReturnValue") DataObject expectedReturnValueObject) {
+		public static DataObject testAssertReturnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$expectedReturnValue") DataObject expectedReturnValueObject
+		) {
 			return testAssertReturnFunction(interpreter, SCOPE_ID, expectedReturnValueObject, null);
 		}
 		@LangFunction("testAssertReturn")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertReturnFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject testAssertReturnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$expectedReturnValue") DataObject expectedReturnValueObject,
-				@LangParameter("$message") DataObject messageObject) {
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8901,13 +10082,17 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction(value="testAssertNoReturn", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNoReturnFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject testAssertNoReturnFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			return testAssertNoReturnFunction(interpreter, SCOPE_ID, null);
 		}
 		@LangFunction("testAssertNoReturn")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertNoReturnFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$message") DataObject messageObject) {
+		public static DataObject testAssertNoReturnFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8920,8 +10105,10 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("testAssertFail")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testAssertFailFunction(LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$message") DataObject messageObject) {
+		public static DataObject testAssertFailFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$message") DataObject messageObject
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8933,7 +10120,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("testClearAllTranslations")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testClearAllTranslationsFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject testClearAllTranslationsFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -8947,7 +10136,9 @@ final class LangPredefinedFunctions {
 		
 		@LangFunction("testPrintResults")
 		@AllowedTypes(DataObject.DataType.VOID)
-		public static DataObject testPrintResultsFunction(LangInterpreter interpreter, int SCOPE_ID) {
+		public static DataObject testPrintResultsFunction(
+				LangInterpreter interpreter, int SCOPE_ID
+		) {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 			
@@ -9029,9 +10220,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="bindLibrary", isLinkerFunction=true)
-		public static DataObject bindLibraryFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject bindLibraryFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$fileName") DataObject fileNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			return executeLinkerFunction(interpreter, fileNameObject.getText(), args, NEW_SCOPE_ID -> {
 				//Copy all vars, arrPtrs and funcPtrs
 				interpreter.data.get(NEW_SCOPE_ID).var.forEach((name, val) -> {
@@ -9044,9 +10237,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="link", isLinkerFunction=true)
-		public static DataObject linkFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject linkFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$fileName") DataObject fileNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			return executeLinkerFunction(interpreter, fileNameObject.getText(), args, NEW_SCOPE_ID -> {
 				//Copy linked translation map (except "lang.* = *") to the "link caller"'s translation map
 				interpreter.data.get(NEW_SCOPE_ID).lang.forEach((k, v) -> {
@@ -9058,9 +10253,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="include", isLinkerFunction=true)
-		public static DataObject includeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject includeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$fileName") DataObject fileNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			return executeLinkerFunction(interpreter, fileNameObject.getText(), args, NEW_SCOPE_ID -> {
 				//Copy linked translation map (except "lang.* = *") to the "link caller"'s translation map
 				interpreter.data.get(NEW_SCOPE_ID).lang.forEach((k, v) -> {
@@ -9080,9 +10277,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="loadModule", isLinkerFunction=true)
-		public static DataObject loadModuleFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject loadModuleFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleFile") DataObject moduleFileObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			String moduleFile = moduleFileObject.getText();
 			
 			if(!moduleFile.endsWith(".lm"))
@@ -9095,9 +10294,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="unloadModule", isLinkerFunction=true)
-		public static DataObject unloadModuleFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject unloadModuleFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			String moduleName = moduleNameObject.getText();
 			for(int i = 0;i < moduleName.length();i++) {
 				char c = moduleName.charAt(i);
@@ -9111,9 +10312,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="moduleLoadNative", isLinkerFunction=true)
-		public static DataObject moduleLoadNativeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleLoadNativeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$entryPoint") DataObject entryPointObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || !module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"moduleLoadNative\" can only be used inside a module which "
@@ -9125,9 +10328,11 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="moduleUnloadNative", isLinkerFunction=true)
-		public static DataObject moduleUnloadNativeFunction(LangInterpreter interpreter, int SCOPE_ID,
+		public static DataObject moduleUnloadNativeFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$entryPoint") DataObject entryPointObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args) {
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
 			LangModule module = interpreter.getCurrentCallStackElement().getModule();
 			if(module == null || module.isLoad())
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"moduleUnloadNative\" can only be used inside a module which "

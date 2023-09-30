@@ -197,8 +197,10 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<concat-func(" + aFunc + ", " + bFunc + ")>",
 						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("concat-func")
-					public DataObject concatFuncFunction(LangInterpreter interpreter, int SCOPE_ID,
-							@LangParameter("&args") @RawVarArgs List<DataObject> args) {
+					public DataObject concatFuncFunction(
+							LangInterpreter interpreter, int SCOPE_ID,
+							@LangParameter("&args") @RawVarArgs List<DataObject> args
+					) {
 						DataObject retA = interpreter.callFunctionPointer(aFunc, leftSideOperand.getVariableName(), args, SCOPE_ID);
 						
 						return interpreter.callFunctionPointer(bFunc, rightSideOperand.getVariableName(), Arrays.asList(
@@ -255,8 +257,10 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-unpack-func(" + func + ")>",
 						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("auto-unpack-func")
-					public DataObject autoUnpackFuncFunction(LangInterpreter interpreter, int SCOPE_ID,
-							@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject) {
+					public DataObject autoUnpackFuncFunction(
+							LangInterpreter interpreter, int SCOPE_ID,
+							@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
+					) {
 						return interpreter.callFunctionPointer(func, operand.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 								Arrays.stream(arrayObject.getArray()).map(DataObject::new).collect(Collectors.toList())
 						), SCOPE_ID);
@@ -300,8 +304,10 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-pack-func(" + func + ")>",
 						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("auto-pack-func")
-					public DataObject autopackFuncFunction(LangInterpreter interpreter, int SCOPE_ID,
-							@LangParameter("&args") @VarArgs List<DataObject> args) {
+					public DataObject autopackFuncFunction(
+							LangInterpreter interpreter, int SCOPE_ID,
+							@LangParameter("&args") @VarArgs List<DataObject> args
+					) {
 						return interpreter.callFunctionPointer(func, operand.getVariableName(), Arrays.asList(
 								new DataObject().setArray(args.stream().map(DataObject::new).toArray(DataObject[]::new))
 						), SCOPE_ID);
@@ -1009,8 +1015,10 @@ final class LangOperators {
 					return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
 							LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 						@LangFunction("pow-func")
-						public DataObject powFuncFunction(LangInterpreter interpreter, int SCOPE_ID,
-								@LangParameter("&args") @RawVarArgs List<DataObject> args) {
+						public DataObject powFuncFunction(
+								LangInterpreter interpreter, int SCOPE_ID,
+								@LangParameter("&args") @RawVarArgs List<DataObject> args
+						) {
 							return new DataObject().setVoid();
 						}
 					})));
@@ -1018,8 +1026,10 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
 						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
 					@LangFunction("pow-func")
-					public DataObject powFuncFunction(LangInterpreter interpreter, int SCOPE_ID,
-							@LangParameter("&args") @RawVarArgs List<DataObject> args) {
+					public DataObject powFuncFunction(
+							LangInterpreter interpreter, int SCOPE_ID,
+							@LangParameter("&args") @RawVarArgs List<DataObject> args
+					) {
 						DataObject retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), args, SCOPE_ID);
 						DataObject ret = retN == null?new DataObject().setVoid():new DataObject(retN);
 						
