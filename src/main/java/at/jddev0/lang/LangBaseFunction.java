@@ -58,11 +58,14 @@ public class LangBaseFunction {
         builder.append("(");
 
         for(int i = 0;i < parameterList.size();i++) {
-            //TODO add $[x] for CALL_BY_POINTER
-
             String variableName = parameterList.get(i).getVariableName();
 
-            builder.append(variableName);
+            if(parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER) {
+                builder.append("$[").append(variableName.substring(variableName.isEmpty()?0:1)).append("]");
+            }else {
+                builder.append(variableName);
+            }
+
             if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
                 if(!parameterDataTypeConstraintList.get(i).equals(DataObject.CONSTRAINT_NORMAL))
                     builder.append(parameterDataTypeConstraintList.get(i).toTypeConstraintSyntax());
