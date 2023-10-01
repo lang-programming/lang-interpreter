@@ -10220,13 +10220,18 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="bindLibrary", isLinkerFunction=true)
+		@LangInfo("Executes a lang file and copy all variables to the current scope")
 		public static DataObject bindLibraryFunction(
 				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$fileName") DataObject fileNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args
+				@LangParameter("$fileName")
+					@LangInfo("The path of the lang file")
+					DataObject fileNameObject,
+				@LangParameter("&args")
+					@LangInfo("Arguments which are set as &LANG_ARGS of the executed lang file")
+					@VarArgs List<DataObject> args
 		) {
 			return executeLinkerFunction(interpreter, fileNameObject.getText(), args, NEW_SCOPE_ID -> {
-				//Copy all vars, arrPtrs and funcPtrs
+				//Copy all vars
 				interpreter.data.get(NEW_SCOPE_ID).var.forEach((name, val) -> {
 					DataObject oldData = interpreter.data.get(SCOPE_ID).var.get(name);
 					if(oldData == null || (!oldData.isFinalData() && !oldData.isLangVar())) { //No LANG data vars nor final data
@@ -10237,10 +10242,15 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="link", isLinkerFunction=true)
+		@LangInfo("Executes a lang file and copy all translation to the main scope")
 		public static DataObject linkFunction(
 				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$fileName") DataObject fileNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args
+				@LangParameter("$fileName")
+					@LangInfo("The path of the lang file")
+					DataObject fileNameObject,
+				@LangParameter("&args")
+					@LangInfo("Arguments which are set as &LANG_ARGS of the executed lang file")
+					@VarArgs List<DataObject> args
 		) {
 			return executeLinkerFunction(interpreter, fileNameObject.getText(), args, NEW_SCOPE_ID -> {
 				//Copy linked translation map (except "lang.* = *") to the "link caller"'s translation map
@@ -10253,10 +10263,15 @@ final class LangPredefinedFunctions {
 		}
 		
 		@LangFunction(value="include", isLinkerFunction=true)
+		@LangInfo("Executes a lang file and copy all variables to the current scope and all translations to the main scope")
 		public static DataObject includeFunction(
 				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$fileName") DataObject fileNameObject,
-				@LangParameter("&args") @VarArgs List<DataObject> args
+				@LangParameter("$fileName")
+					@LangInfo("The path of the lang file")
+					DataObject fileNameObject,
+				@LangParameter("&args")
+					@LangInfo("Arguments which are set as &LANG_ARGS of the executed lang file")
+					@VarArgs List<DataObject> args
 		) {
 			return executeLinkerFunction(interpreter, fileNameObject.getText(), args, NEW_SCOPE_ID -> {
 				//Copy linked translation map (except "lang.* = *") to the "link caller"'s translation map
@@ -10266,7 +10281,7 @@ final class LangPredefinedFunctions {
 					}
 				});
 				
-				//Copy all vars, arrPtrs and funcPtrs
+				//Copy all vars
 				interpreter.data.get(NEW_SCOPE_ID).var.forEach((name, val) -> {
 					DataObject oldData = interpreter.data.get(SCOPE_ID).var.get(name);
 					if(oldData == null || (!oldData.isFinalData() && !oldData.isLangVar())) { //No LANG data vars nor final data
