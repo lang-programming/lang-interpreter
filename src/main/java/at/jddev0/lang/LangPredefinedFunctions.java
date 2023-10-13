@@ -5814,6 +5814,23 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 		}
 
+		@LangFunction("combW5")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b, b, b, b, b)")
+		public static DataObject combW5Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							b, b, b, b, b
+					)
+			), SCOPE_ID);
+		}
+
 		@LangFunction("combWB")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c), b(c))")
