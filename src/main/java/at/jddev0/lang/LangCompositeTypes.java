@@ -77,6 +77,26 @@ public class LangCompositeTypes {
 				second
 		});
 	}
+
+	public static final StructObject STRUCT_MAYBE = new StructObject(new String[] {
+			"$value",
+			"$present"
+	}, new DataTypeConstraint[] {
+			DataObject.CONSTRAINT_NORMAL,
+			TYPE_CONSTRAINT_INT_ONLY
+	});
+	public static StructObject createMaybeJust(DataObject value) {
+		return new StructObject(LangCompositeTypes.STRUCT_MAYBE, new DataObject[] {
+				value,
+				new DataObject().setBoolean(true)
+		});
+	}
+	public static StructObject createMaybeNothing() {
+		return new StructObject(LangCompositeTypes.STRUCT_MAYBE, new DataObject[] {
+				new DataObject().setVoid(),
+				new DataObject().setBoolean(false)
+		});
+	}
 	
 	private LangCompositeTypes() {}
 }
