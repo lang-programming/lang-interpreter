@@ -135,6 +135,7 @@ public class DataObject {
 		this.list = null;
 		this.vp = null;
 		this.fp = null;
+		this.sp = null;
 		this.intValue = 0;
 		this.longValue = 0;
 		this.floatValue = 0;
