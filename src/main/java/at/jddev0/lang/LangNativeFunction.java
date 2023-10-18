@@ -21,9 +21,6 @@ import at.jddev0.lang.LangInterpreter.InterpretingError;
 import static at.jddev0.lang.LangBaseFunction.ParameterAnnotation;
 
 public class LangNativeFunction {
-	//TODO remove and add as parameter to call Function instance to call
-	private final LangInterpreter interpreter;
-	
 	private final String functionName;
 	private final String functionInfo;
 	
@@ -34,9 +31,9 @@ public class LangNativeFunction {
 	
 	private final List<InternalFunction> internalFunctions;
 	
-	public static LangNativeFunction getSingleLangFunctionFromObject(LangInterpreter interpreter, Object obj)
+	public static LangNativeFunction getSingleLangFunctionFromObject(Object obj)
 			throws IllegalArgumentException, DataTypeConstraintException {
-		Map<String, LangNativeFunction> functions = getLangFunctionsFromObject(interpreter, obj);
+		Map<String, LangNativeFunction> functions = getLangFunctionsFromObject(obj);
 		if(functions.size() == 0)
 			throw new IllegalArgumentException("No methods which are annotated with @LangFunctions are defined in " + obj);
 		
@@ -46,17 +43,17 @@ public class LangNativeFunction {
 		return functions.values().iterator().next();
 	}
 	
-	public static Map<String, LangNativeFunction> getLangFunctionsFromObject(LangInterpreter interpreter, Object obj)
+	public static Map<String, LangNativeFunction> getLangFunctionsFromObject(Object obj)
 			throws IllegalArgumentException, DataTypeConstraintException {
-		return getLangFunctionsOfClass(interpreter, obj, obj.getClass());
+		return getLangFunctionsOfClass(obj, obj.getClass());
 	}
 	
-	public static Map<String, LangNativeFunction> getLangFunctionsOfClass(LangInterpreter interpreter, Class<?> clazz)
+	public static Map<String, LangNativeFunction> getLangFunctionsOfClass(Class<?> clazz)
 			throws IllegalArgumentException, DataTypeConstraintException {
-		return getLangFunctionsOfClass(interpreter, null, clazz);
+		return getLangFunctionsOfClass(null, clazz);
 	}
 	
-	public static Map<String, LangNativeFunction> getLangFunctionsOfClass(LangInterpreter interpreter, Object instance, Class<?> clazz)
+	private static Map<String, LangNativeFunction> getLangFunctionsOfClass(Object instance, Class<?> clazz)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		Map<String, List<Method>> methodsByLangFunctionName = new HashMap<>();
 		
@@ -84,7 +81,7 @@ public class LangNativeFunction {
 			if(methods.size() >= 2 && (!methods.get(0).getAnnotation(LangFunction.class).hasInfo() || methods.get(1).getAnnotation(LangFunction.class).hasInfo()))
 				throw new IllegalArgumentException("The value of hasInfo() must be true for exactly one overloaded @LangFunction");
 			
-			LangNativeFunction langNativeFunction = create(interpreter, instance, methods.get(0));
+			LangNativeFunction langNativeFunction = create(instance, methods.get(0));
 			for(int i = 1;i < methods.size();i++)
 				langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, methods.get(i)));
 			
@@ -96,7 +93,7 @@ public class LangNativeFunction {
 		return langNativeFunctions;
 	}
 	
-	public static LangNativeFunction create(LangInterpreter interpreter, Object instance, Method functionBody)
+	public static LangNativeFunction create(Object instance, Method functionBody)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		LangFunction langFunction = functionBody.getAnnotation(LangFunction.class);
 		if(langFunction == null)
@@ -120,7 +117,7 @@ public class LangNativeFunction {
 		LangInfo langInfo = functionBody.getAnnotation(LangInfo.class);
 		String functionInfo = langInfo == null?null:langInfo.value();
 		
-		LangNativeFunction langNativeFunction = new LangNativeFunction(interpreter, functionName, functionInfo,
+		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo,
 				linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
 		
 		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody));
@@ -128,9 +125,8 @@ public class LangNativeFunction {
 		return langNativeFunction;
 	}
 
-	private LangNativeFunction(LangInterpreter interpreter, String functionName, String functionInfo,
-			boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion, String deprecatedReplacementFunction) {
-		this.interpreter = interpreter;
+	private LangNativeFunction(String functionName, String functionInfo, boolean linkerFunction, boolean deprecated,
+							   String deprecatedRemoveVersion, String deprecatedReplacementFunction) {
 		this.functionName = functionName;
 		this.functionInfo = functionInfo;
 		this.linkerFunction = linkerFunction;
@@ -148,7 +144,7 @@ public class LangNativeFunction {
 		internalFunctions.add(internalFunction);
 	}
 
-	public DataObject callFunc(List<DataObject> argumentList, int SCOPE_ID) {
+	public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList, int SCOPE_ID) {
 		//TODO remove checks from this method and move to directly to interpreter
 		
 		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
@@ -541,7 +537,7 @@ public class LangNativeFunction {
 		}
 		
 		private DataObject combinatorCall(LangInterpreter interpreter, List<DataObject> combinedArgumentList, int SCOPE_ID) {
-			LangNativeFunction langNativeFunction = new LangNativeFunction(interpreter, LangNativeFunction.this.functionName, functionInfo,
+			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
 					linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
 			
 			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,

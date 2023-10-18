@@ -245,7 +245,7 @@ public abstract class LangNativeModule {
 	 *             The function name of the LangFunction will be used as the function name
 	 */
 	protected final void exportNativeFunction(Object obj) {
-		exportNativeFunction(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, obj));
+		exportNativeFunction(LangNativeFunction.getSingleLangFunctionFromObject(obj));
 	}
 
 	/**
@@ -253,7 +253,7 @@ public abstract class LangNativeModule {
 	 * @param obj An object which contains a single LangFunction
 	 */
 	protected final void exportNativeFunction(String functionName, Object obj) {
-		exportNativeFunction(functionName, LangNativeFunction.getSingleLangFunctionFromObject(interpreter, obj));
+		exportNativeFunction(functionName, LangNativeFunction.getSingleLangFunctionFromObject(obj));
 	}
 
 	/**

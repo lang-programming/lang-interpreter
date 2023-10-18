@@ -195,7 +195,7 @@ final class LangOperators {
 				final FunctionPointerObject aFunc = leftSideOperand.getFunctionPointer();
 				final FunctionPointerObject bFunc = rightSideOperand.getFunctionPointer();
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<concat-func(" + aFunc + ", " + bFunc + ")>",
-						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("concat-func")
 					public DataObject concatFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,
@@ -255,7 +255,7 @@ final class LangOperators {
 			case FUNCTION_POINTER:
 				final FunctionPointerObject func = operand.getFunctionPointer();
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-unpack-func(" + func + ")>",
-						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("auto-unpack-func")
 					public DataObject autoUnpackFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,
@@ -302,9 +302,9 @@ final class LangOperators {
 			case FUNCTION_POINTER:
 				final FunctionPointerObject func = operand.getFunctionPointer();
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-pack-func(" + func + ")>",
-						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("auto-pack-func")
-					public DataObject autopackFuncFunction(
+					public DataObject autoPackFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,
 							@LangParameter("&args") @VarArgs List<DataObject> args
 					) {
@@ -1013,7 +1013,7 @@ final class LangOperators {
 				
 				if(count == 0)
 					return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
-							LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+							LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction("pow-func")
 						public DataObject powFuncFunction(
 								LangInterpreter interpreter, int SCOPE_ID,
@@ -1024,7 +1024,7 @@ final class LangOperators {
 					})));
 				
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
-						LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("pow-func")
 					public DataObject powFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,

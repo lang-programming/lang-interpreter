@@ -2371,7 +2371,7 @@ public final class LangInterpreter {
 					if(nativeFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber, SCOPE_ID);
 					
-					DataObject ret = nativeFunction.callFunc(argumentValueList, SCOPE_ID);
+					DataObject ret = nativeFunction.callFunc(this, argumentValueList, SCOPE_ID);
 					if(nativeFunction.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 						nativeFunction.getDeprecatedRemoveVersion() == null?"the future":nativeFunction.getDeprecatedRemoveVersion(),
@@ -4008,13 +4008,13 @@ public final class LangInterpreter {
 		 * Adds all static methods which are annotated with @LangFunction the object contains
 		 */
 		public void addPredefinedFunctions(Class<?> clazz) {
-			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, clazz));
+			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(clazz));
 		}
 		/**
 		 * Adds all non-static methods which are annotated with @LangFunction the object contains
 		 */
 		public void addPredefinedFunctions(Object obj) {
-			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsFromObject(interpreter, obj));
+			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsFromObject(obj));
 		}
 		public void addPredefinedFunctions(Map<String, LangNativeFunction> funcs) {
 			interpreter.funcs.putAll(funcs);

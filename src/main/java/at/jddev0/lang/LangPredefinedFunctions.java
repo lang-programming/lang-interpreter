@@ -42,32 +42,32 @@ final class LangPredefinedFunctions {
 	private LangPredefinedFunctions() {}
 
 	static void addPredefinedFunctions(LangInterpreter interpreter, Map<String, LangNativeFunction> funcs) {
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedResetFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedErrorFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedLangFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedSystemFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedIOFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedNumberFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedCharacterFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedTextFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedConversionFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedOperationFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedMathFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedCombinatorFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedFuncPtrFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedByteBufferFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedArrayFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedListFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedStructFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedComplexStructFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedPairStructFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedMaybeStructFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedModuleFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedLangTestFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedResetFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedErrorFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLangFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedSystemFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedIOFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedNumberFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedCharacterFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedTextFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedConversionFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedOperationFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedMathFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedCombinatorFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedFuncPtrFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedByteBufferFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedArrayFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedListFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedStructFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedComplexStructFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedPairStructFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedMaybeStructFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedModuleFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLangTestFunctions.class));
 	}
 
 	static void addLinkerFunctions(LangInterpreter interpreter, Map<String, LangNativeFunction> funcs) {
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(interpreter, LangPredefinedLinkerFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLinkerFunctions.class));
 	}
 
 	public static final class LangPredefinedResetFunctions {
@@ -265,7 +265,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -322,7 +322,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -373,7 +373,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -6327,7 +6327,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject fFunc = f.getFunctionPointer();
 
-			LangNativeFunction anonFunc = LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			LangNativeFunction anonFunc = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("combY:anon")
 				@CombinatorFunction
 				@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
@@ -6337,7 +6337,7 @@ final class LangPredefinedFunctions {
 				) {
 					FunctionPointerObject xFunc = x.getFunctionPointer();
 
-					LangNativeFunction func = LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+					LangNativeFunction func = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction("combY:anon:inner")
 						public DataObject combYAnonInnerFunction(
 								int SCOPE_ID,
@@ -6365,10 +6365,10 @@ final class LangPredefinedFunctions {
 				}
 			});
 
-			DataObject retAnonFunc1 = anonFunc.callFunc(new LinkedList<>(), SCOPE_ID);
+			DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, new LinkedList<>(), SCOPE_ID);
 			FunctionPointerObject retAnonFunc1Func = retAnonFunc1.getFunctionPointer();
 
-			DataObject retAnonFunc2 = anonFunc.callFunc(new LinkedList<>(), SCOPE_ID);
+			DataObject retAnonFunc2 = anonFunc.callFunc(interpreter, new LinkedList<>(), SCOPE_ID);
 
 			return interpreter.callFunctionPointer(retAnonFunc1Func, retAnonFunc1.getFunctionPointer().getFunctionName(), Arrays.asList(
 					retAnonFunc2
@@ -6387,7 +6387,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 
-			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt0(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt0(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt0-func")
 				public DataObject argCnt0FuncFunction(
 						int SCOPE_ID
@@ -6405,7 +6405,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 
-			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt1(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt1(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt1-func")
 				public DataObject argCnt1FuncFunction(
 						int SCOPE_ID,
@@ -6426,7 +6426,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 
-			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt2(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt2(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt2-func")
 				public DataObject argCnt2FuncFunction(
 						int SCOPE_ID,
@@ -6450,7 +6450,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 
-			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt3(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt3(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt3-func")
 				public DataObject argCnt3FuncFunction(
 						int SCOPE_ID,
@@ -6475,7 +6475,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 
-			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt4(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt4(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt4-func")
 				public DataObject argCnt4FuncFunction(
 						int SCOPE_ID,
@@ -6501,7 +6501,7 @@ final class LangPredefinedFunctions {
 		) {
 			FunctionPointerObject func = funcObject.getFunctionPointer();
 
-			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt5(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			return new DataObject().setFunctionPointer(new FunctionPointerObject("<argCnt5(" + func + ")>", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt5-func")
 				public DataObject argCnt5FuncFunction(
 						int SCOPE_ID,
@@ -7312,7 +7312,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -7369,7 +7369,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -8353,7 +8353,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -8410,7 +8410,7 @@ final class LangPredefinedFunctions {
 			if(breakable) {
 				boolean[] shouldBreak = new boolean[] {false};
 
-				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+				DataObject breakFunc = new DataObject().setFunctionPointer(new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("break")
 					@AllowedTypes(DataObject.DataType.VOID)
 					public DataObject breakFunction(
@@ -9372,7 +9372,7 @@ final class LangPredefinedFunctions {
 
 			FunctionPointerObject function = functionObject.getFunctionPointer();
 
-			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("module-wrapped-func")
 				public DataObject breakFunction(
 						LangInterpreter interpreter, int SCOPE_ID,
@@ -9406,7 +9406,7 @@ final class LangPredefinedFunctions {
 
 			FunctionPointerObject function = functionObject.getFunctionPointer();
 
-			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(interpreter, new Object() {
+			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="module-wrapped-linker-func", isLinkerFunction=true)
 				public DataObject breakFunction(
 						LangInterpreter interpreter, int SCOPE_ID,
