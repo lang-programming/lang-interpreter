@@ -66,8 +66,8 @@ final class LangOperators {
 			return null;
 
 		DataObject ret = interpreter.callFunctionPointer(fp, methodName, argumentList, lineNumber, SCOPE_ID);
-		if(ret == null || ret.getType() == DataType.VOID)
-			return null;
+		if(ret == null)
+			return new DataObject().setVoid();
 
 		return ret;
 	}
