@@ -36,7 +36,7 @@ final class LangOperators {
 										  DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
 		DataObject ret = callOperatorMethod(leftSideOperand, "op:" + operatorName, Arrays.asList(rightSideOperand),
 				lineNumber, SCOPE_ID);
-		if(ret != null && ret.getType() != DataType.VOID)
+		if(ret != null)
 			return ret;
 
 		return hasReverse?callOperatorMethod(rightSideOperand, "op:r-" + operatorName, Arrays.asList(leftSideOperand),
