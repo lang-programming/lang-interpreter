@@ -1553,7 +1553,7 @@ public final class LangInterpreter {
 						break;
 					}
 					
-					if(typeObject.getType() == DataType.STRUCT) {
+					if(dataObject.getType() == DataType.STRUCT && typeObject.getType() == DataType.STRUCT) {
 						StructObject dataStruct = dataObject.getStruct();
 						StructObject typeStruct = typeObject.getStruct();
 						
@@ -1570,7 +1570,7 @@ public final class LangInterpreter {
 						break;
 					}
 
-					if(typeObject.getType() == DataType.OBJECT) {
+					if(dataObject.getType() == DataType.OBJECT && typeObject.getType() == DataType.OBJECT) {
 						LangObject langObject = dataObject.getObject();
 						LangObject typeClass = typeObject.getObject();
 
