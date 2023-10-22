@@ -2446,21 +2446,19 @@ public class DataObject {
 	public static final class LangObject {
 		public static final LangObject OBJECT_CLASS;
 		static {
-			Map<String, LangNativeFunction> nativeMethods = LangNativeFunction.getLangFunctionsFromObject(new Object() {
-				@LangFunction(value="mp.getClass", isMethod=true)
-				@LangFunction.AllowedTypes(DataType.OBJECT)
-				@SuppressWarnings("unused")
-				public DataObject getClassMethod(
-						LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
-				) {
-					return new DataObject().setObject(thisObject.getClassBaseDefinition());
-				}
-			});
-
 			Map<String, FunctionPointerObject[]> methods = new HashMap<>();
-			nativeMethods.forEach((name, nativeFunction) -> methods.put(name, new FunctionPointerObject[] {
-					new FunctionPointerObject(nativeFunction)
-			}));
+			methods.put("mp.getClass", new FunctionPointerObject[] {
+					new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+						@LangFunction(value="mp.getClass", isMethod=true)
+						@LangFunction.AllowedTypes(DataType.OBJECT)
+						@SuppressWarnings("unused")
+						public DataObject getClassMethod(
+								LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+						) {
+							return new DataObject().setObject(thisObject.getClassBaseDefinition());
+						}
+					}))
+			});
 
 			FunctionPointerObject[] constructors = new FunctionPointerObject[] {
 					new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
@@ -2747,8 +2745,6 @@ public class DataObject {
 			this.constructors = Arrays.copyOf(classBaseDefinition.constructors, classBaseDefinition.constructors.length);
 			for(int i = 0;i < this.constructors.length;i++)
 				this.constructors[i] = new FunctionPointerObject(this.constructors[i], this);
-
-			//TODO bind this-object on inherited methods
 
 			this.parentClasses = Arrays.copyOf(classBaseDefinition.parentClasses, classBaseDefinition.parentClasses.length);
 		}
