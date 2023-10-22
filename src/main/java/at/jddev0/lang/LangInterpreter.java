@@ -3140,14 +3140,14 @@ public final class LangInterpreter {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
 
 		for(String methodName:methodNames)
-			if(!isMethodName(methodName))
+			if(!isMethodName(methodName) && !isOperatorMethodName(methodName))
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
 						node.getLineNumberFrom(), SCOPE_ID);
 
 		Map<String, List<FunctionPointerObject>> rawMethods = new HashMap<>();
 		for(int i = 0;i < methodNames.size();i++) {
 			if(methodOverrideFlag.get(i) == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for member at index " + i,
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for method at index " + i,
 						node.getLineNumberFrom(), SCOPE_ID);
 
 			boolean override = methodOverrideFlag.get(i);
@@ -3796,6 +3796,48 @@ public final class LangInterpreter {
 		}
 
 		return hasVarName;
+	}
+
+	/**
+	 * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not)|
+	 * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|
+	 * (getItem|setItem)))</code>
+	 */
+	private static final String[] OPERATOR_METHOD_NAMES = new String[] {
+			"op:len",
+			"op:deepCopy",
+			"op:inc",
+			"op:dec",
+			"op:pos",
+			"op:inv",
+			"op:not",
+
+			"op:concat", "op:r-concat",
+			"op:add", "op:r-add",
+			"op:sub", "op:r-sub",
+			"op:mul", "op:r-mul",
+			"op:pow", "op:r-pow",
+			"op:div", "op:r-div",
+			"op:truncDiv", "op:r-truncDiv",
+			"op:floorDiv", "op:r-floorDiv",
+			"op:ceilDiv", "op:r-ceilDiv",
+			"op:mod", "op:r-mod",
+			"op:and", "op:r-and",
+			"op:or", "op:r-or",
+			"op:xor", "op:r-xor",
+			"op:lshift", "op:r-lshift",
+			"op:rshift", "op:r-rshift",
+			"op:rzshift", "op:r-rzshift",
+
+			"op:getItem",
+			"op:setItem"
+	};
+	private boolean isOperatorMethodName(String token) {
+		for(String operator:OPERATOR_METHOD_NAMES)
+			if(operator.equals(token))
+				return true;
+
+		return false;
 	}
 	
 	/**

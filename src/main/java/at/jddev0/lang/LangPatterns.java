@@ -89,6 +89,12 @@ final class LangPatterns {
 	 */
 	public static final Pattern METHOD_NAME = Pattern.compile("mp\\.\\w+");
 	/**
+	 * RegEx: "<code>op:((len|deepCopy|inc|dec|pos|inv|not)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|(getItem|setItem))</code>"
+	 */
+	public static final Pattern OPERATOR_METHOD_NAME = Pattern.compile("op:((len|deepCopy|inc|dec|pos|inv|not)|" +
+			"((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|" +
+			"(getItem|setItem))");
+	/**
 	 * RegEx: "<code>\{[?!]?([A-Z]+\|)*[A-Z]+\}</code>"
 	 */
 	public static final Pattern TYPE_CONSTRAINT = Pattern.compile("\\{[?!]?([A-Z_]+\\|)*[A-Z_]+\\}");
@@ -153,9 +159,15 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_STARTS_WITH_VAR_NAME_PTR_OR_DEREFERENCE = Pattern.compile("(\\[\\[\\w+\\]\\]::)?\\$(\\*+\\w+|\\[+\\w+\\]+|\\*+\\[+\\w+\\]+).*");
 	/**
+	 * RegEx: "<code>(override:)?op:((len|deepCopy|inc|dec|pos|inv|not)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|(getItem|setItem)).*</code>"
+	 */
+	public static final Pattern PARSING_STARTS_WITH_OPERATOR_METHOD = Pattern.compile("(override:)?op:((len|deepCopy|inc|dec|pos|inv|not)|" +
+			"((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|" +
+			"(getItem|setItem)).*");
+	/**
 	 * RegEx: "<code>(override:)?mp\.\w+.*</code>"
 	 */
-	public static final Pattern PARSING_STARTS_WITH_METHOD_IDENTIFIER = Pattern.compile("(override:)?mp\\.\\w+.*");
+	public static final Pattern PARSING_STARTS_WITH_METHOD_NAME = Pattern.compile("(override:)?mp\\.\\w+.*");
 	/**
 	 * RegEx: "<code>.*(\[\[\w+\]\]::)</code>"
 	 */

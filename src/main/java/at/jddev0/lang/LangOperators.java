@@ -1,9 +1,6 @@
 package at.jddev0.lang;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import at.jddev0.lang.DataObject.DataType;
@@ -29,12 +26,61 @@ final class LangOperators {
 	public LangOperators(LangInterpreter interpreter) {
 		this.interpreter = interpreter;
 	}
+
+	private DataObject callOperatorMethod(String operatorName, DataObject operand, int lineNumber, final int SCOPE_ID) {
+		return callOperatorMethod(operand, "op:" + operatorName, new ArrayList<>(0),
+				lineNumber, SCOPE_ID);
+	}
+
+	private DataObject callOperatorMethod(String operatorName, boolean hasReverse, DataObject leftSideOperand,
+										  DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod(leftSideOperand, "op:" + operatorName, Arrays.asList(rightSideOperand),
+				lineNumber, SCOPE_ID);
+		if(ret != null && ret.getType() != DataType.VOID)
+			return ret;
+
+		return hasReverse?callOperatorMethod(rightSideOperand, "op:r-" + operatorName, Arrays.asList(leftSideOperand),
+				lineNumber, SCOPE_ID):null;
+	}
+
+	private DataObject callOperatorMethod(String operatorName, DataObject leftSideOperand, DataObject middleOperand,
+										  DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		return callOperatorMethod(leftSideOperand, "op:" + operatorName,
+				LangUtils.separateArgumentsWithArgumentSeparators(Arrays.asList(
+						middleOperand, rightSideOperand
+				)), lineNumber, SCOPE_ID);
+	}
+
+	private DataObject callOperatorMethod(DataObject langObject, String methodName, List<DataObject> argumentList,
+										  int lineNumber, final int SCOPE_ID) {
+		if(langObject.getType() != DataType.OBJECT || langObject.getObject().isClass())
+			return null;
+
+		FunctionPointerObject[] method = langObject.getObject().getMethods().get(methodName);
+		if(method == null)
+			return null;
+
+		FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method,
+				LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+		if(fp == null)
+			return null;
+
+		DataObject ret = interpreter.callFunctionPointer(fp, methodName, argumentList, lineNumber, SCOPE_ID);
+		if(ret == null || ret.getType() == DataType.VOID)
+			return null;
+
+		return ret;
+	}
 	
 	//General operation functions
 	/**
 	 * For "@"
 	 */
 	public DataObject opLen(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("len", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(operand.getType()) {
 			case BYTE_BUFFER:
 				return new DataObject().setInt(operand.getByteBuffer().length);
@@ -70,6 +116,10 @@ final class LangOperators {
 	 * For "^"
 	 */
 	public DataObject opDeepCopy(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("deepCopy", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(operand.getType()) {
 			case BYTE_BUFFER:
 				return new DataObject().setByteBuffer(Arrays.copyOf(operand.getByteBuffer(), operand.getByteBuffer().length));
@@ -131,6 +181,10 @@ final class LangOperators {
 	 * For "|||"
 	 */
 	public DataObject opConcat(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("concat", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				return new DataObject(leftSideOperand.getInt() + rightSideOperand.getText());
@@ -245,6 +299,10 @@ final class LangOperators {
 	 * For "+|"
 	 */
 	public DataObject opInc(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("inc", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(operand.getType()) {
 			case INT:
 				return new DataObject().setInt(operand.getInt() + 1);
@@ -293,6 +351,10 @@ final class LangOperators {
 	 * For "-|"
 	 */
 	public DataObject opDec(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("dec", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(operand.getType()) {
 			case INT:
 				return new DataObject().setInt(operand.getInt() - 1);
@@ -342,12 +404,20 @@ final class LangOperators {
 	 * For "+"
 	 */
 	public DataObject opPos(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("pos", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		return new DataObject(operand);
 	}
 	/**
 	 * For "-"
 	 */
 	public DataObject opInv(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("inv", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(operand.getType()) {
 			case INT:
 				return new DataObject().setInt(-operand.getInt());
@@ -398,6 +468,10 @@ final class LangOperators {
 	 * For "+"
 	 */
 	public DataObject opAdd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("add", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -577,6 +651,10 @@ final class LangOperators {
 	 * For "-"
 	 */
 	public DataObject opSub(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("sub", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -746,6 +824,10 @@ final class LangOperators {
 	 * For "*"
 	 */
 	public DataObject opMul(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("mul", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -915,14 +997,18 @@ final class LangOperators {
 	 * For "**"
 	 */
 	public DataObject opPow(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("pow", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
 					case INT:
-						double ret = Math.pow(leftSideOperand.getInt(), rightSideOperand.getInt());
-						if(Math.abs(ret) > Integer.MAX_VALUE || rightSideOperand.getInt() < 0)
-							return new DataObject().setDouble(ret);
-						return new DataObject().setInt((int)ret);
+						double d = Math.pow(leftSideOperand.getInt(), rightSideOperand.getInt());
+						if(Math.abs(d) > Integer.MAX_VALUE || rightSideOperand.getInt() < 0)
+							return new DataObject().setDouble(d);
+						return new DataObject().setInt((int)d);
 					case LONG:
 						return new DataObject().setDouble(Math.pow(leftSideOperand.getInt(), rightSideOperand.getLong()));
 					case FLOAT:
@@ -1099,6 +1185,10 @@ final class LangOperators {
 	 * For "/"
 	 */
 	public DataObject opDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("div", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -1260,6 +1350,10 @@ final class LangOperators {
 	 * For "~/"
 	 */
 	public DataObject opTruncDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("truncDiv", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -1506,6 +1600,10 @@ final class LangOperators {
 	 * For "//"
 	 */
 	public DataObject opFloorDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("floorDiv", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -1692,6 +1790,10 @@ final class LangOperators {
 	 * For "^/"
 	 */
 	public DataObject opCeilDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("ceilDiv", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -1878,6 +1980,10 @@ final class LangOperators {
 	 * For "%"
 	 */
 	public DataObject opMod(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("mod", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -1974,6 +2080,10 @@ final class LangOperators {
 	 * For "&"
 	 */
 	public DataObject opAnd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("and", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -2053,6 +2163,10 @@ final class LangOperators {
 	 * For "|"
 	 */
 	public DataObject opOr(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("or", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		if(rightSideOperand.getType() == DataType.FUNCTION_POINTER) {
 			FunctionPointerObject func = rightSideOperand.getFunctionPointer();
 			
@@ -2140,6 +2254,10 @@ final class LangOperators {
 	 * For "^"
 	 */
 	public DataObject opXor(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("xor", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -2219,6 +2337,10 @@ final class LangOperators {
 	 * For "~"
 	 */
 	public DataObject opNot(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("not", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(operand.getType()) {
 			case INT:
 				return new DataObject().setInt(~operand.getInt());
@@ -2249,6 +2371,10 @@ final class LangOperators {
 	 * For "&lt;&lt;"
 	 */
 	public DataObject opLshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("lshift", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case INT:
 				switch(rightSideOperand.getType()) {
@@ -2328,6 +2454,10 @@ final class LangOperators {
 	 * For "&gt;&gt;"
 	 */
 	public DataObject opRshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("rshift", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		if(rightSideOperand.getType() == DataType.FUNCTION_POINTER) {
 			FunctionPointerObject func = rightSideOperand.getFunctionPointer();
 			
@@ -2415,6 +2545,10 @@ final class LangOperators {
 	 * For "&gt;&gt;&gt;"
 	 */
 	public DataObject opRzshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("rzshift", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		if(rightSideOperand.getType() == DataType.FUNCTION_POINTER && leftSideOperand.getType() == DataType.ARRAY) {
 			FunctionPointerObject func = rightSideOperand.getFunctionPointer();
 			
@@ -2578,6 +2712,10 @@ final class LangOperators {
 	 * For "[...]"
 	 */
 	public DataObject opGetItem(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("getItem", false, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case BYTE_BUFFER:
 				if(rightSideOperand.getType() == DataType.INT) {
@@ -2686,6 +2824,10 @@ final class LangOperators {
 		return opGetItem(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
 	}
 	public DataObject opSetItem(DataObject leftSideOperand, DataObject middleOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("setItem", leftSideOperand, middleOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
 		switch(leftSideOperand.getType()) {
 			case BYTE_BUFFER:
 				if(middleOperand.getType() == DataType.INT) {

@@ -1861,7 +1861,7 @@ public final class LangParser {
 				continue;
 			}
 
-			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_METHOD_IDENTIFIER)) {
+			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_METHOD_NAME)) {
 				boolean override = line.startsWith("override:");
 				if(override)
 					line = line.substring(9);
@@ -1878,6 +1878,36 @@ public final class LangParser {
 
 				if(!LangPatterns.matches(methodName, LangPatterns.METHOD_NAME)) {
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid method name: \"" + line + "\""));
+
+					return ast;
+				}
+
+				AbstractSyntaxTree.Node rvalueNode = parseLRvalue(rvalue, lines, true).convertToNode();
+
+				methodNames.add(methodName);
+				methodDefinitions.add(rvalueNode);
+				methodOverrideFlag.add(override);
+
+				continue;
+			}
+
+			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_OPERATOR_METHOD)) {
+				boolean override = line.startsWith("override:");
+				if(override)
+					line = line.substring(9);
+
+				String[] tokens = line.split(" = ", 2);
+				if(tokens.length < 2) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for operator method (only \" = \" is allowed): \"" + line + "\""));
+
+					return ast;
+				}
+
+				String methodName = tokens[0];
+				String rvalue = tokens[1];
+
+				if(!LangPatterns.matches(methodName, LangPatterns.OPERATOR_METHOD_NAME)) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid operator method name: \"" + line + "\""));
 
 					return ast;
 				}
