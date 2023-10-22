@@ -570,6 +570,9 @@ public final class LangInterpreter {
 			
 			if(previousValue.getType() == DataType.STRUCT && previousValue.getStruct().isDefinition())
 				return node;
+
+			if(previousValue.getType() == DataType.OBJECT && previousValue.getObject().isClass())
+				return node;
 		}
 		
 		//Previous node value wasn't a function -> return children of node in between "(" and ")" as ListNode
@@ -2873,6 +2876,36 @@ public final class LangInterpreter {
 			}catch(DataTypeConstraintException e) {
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 			}
+		}
+
+		if(previousValue.getType() == DataType.OBJECT && previousValue.getObject().isClass()) {
+			DataObject createdObject = new DataObject().setObject(new LangObject(previousValue.getObject()));
+
+			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+
+			List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			if(constructorFunction == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
+						collect(Collectors.joining("\n    construct")), SCOPE_ID);
+
+			DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
+			if(ret == null)
+				ret = new DataObject().setVoid();
+
+			if(ret.getType() != DataType.VOID)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+
+			try {
+				createdObject.getObject().postConstructor();
+			}catch(DataTypeConstraintException e) {
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+						"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+			}
+
+			return createdObject;
 		}
 		
 		return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid data type", node.getLineNumberFrom(), SCOPE_ID);
