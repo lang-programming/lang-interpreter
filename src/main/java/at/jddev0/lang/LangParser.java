@@ -1892,6 +1892,12 @@ public final class LangParser {
 			}
 
 			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_OPERATOR_METHOD)) {
+				if(visibility != '+') {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid visibility for operator method (only \"+\" is allowed): \"" + line + "\""));
+
+					return ast;
+				}
+
 				boolean override = line.startsWith("override:");
 				if(override)
 					line = line.substring(9);
