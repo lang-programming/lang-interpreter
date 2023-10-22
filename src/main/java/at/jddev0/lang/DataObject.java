@@ -2836,6 +2836,22 @@ public class DataObject {
 			return classBaseDefinition;
 		}
 
+		public boolean isInstanceOf(LangObject classObject) throws DataTypeConstraintException {
+			if(!classObject.isClass())
+				return false;
+
+			if(!isClass())
+				return classBaseDefinition.isInstanceOf(classObject);
+
+			if(this.equals(classObject))
+				return true;
+
+			for(LangObject parentClass:parentClasses)
+				return parentClass.isInstanceOf(classObject);
+
+			return false;
+		}
+
 		@Override
 		public String toString() {
 			return classBaseDefinition == null?"<Class>":"<Object>";

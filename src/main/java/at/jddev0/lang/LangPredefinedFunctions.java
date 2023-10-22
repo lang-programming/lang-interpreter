@@ -659,7 +659,7 @@ final class LangPredefinedFunctions {
 			if(!typeClass.isClass())
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a class", SCOPE_ID);
 
-			return new DataObject().setBoolean(langObject.getClassBaseDefinition().equals(typeClass));
+			return new DataObject().setBoolean(langObject.isInstanceOf(typeClass));
 		}
 
 		@LangFunction("typeOf")

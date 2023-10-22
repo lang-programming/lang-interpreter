@@ -1582,7 +1582,7 @@ public final class LangInterpreter {
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
 									node.getOperator().getSymbol() + "\" operator must be a class", node.getLineNumberFrom(), SCOPE_ID);
 
-						conditionOutput = langObject.getClassBaseDefinition().equals(typeClass);
+						conditionOutput = langObject.isInstanceOf(typeClass);
 
 						break;
 					}
