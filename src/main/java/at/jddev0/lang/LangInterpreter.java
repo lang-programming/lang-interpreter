@@ -1559,7 +1559,7 @@ public final class LangInterpreter {
 						
 						if(dataStruct.isDefinition())
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The first operand of the \"" +
-									node.getOperator().getSymbol() + "\" operator may not be a definition struct", node.getLineNumberFrom(), SCOPE_ID);
+									node.getOperator().getSymbol() + "\" operator must not be a definition struct", node.getLineNumberFrom(), SCOPE_ID);
 						
 						if(!typeStruct.isDefinition())
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
@@ -1569,10 +1569,27 @@ public final class LangInterpreter {
 						
 						break;
 					}
+
+					if(typeObject.getType() == DataType.OBJECT) {
+						LangObject langObject = dataObject.getObject();
+						LangObject typeClass = typeObject.getObject();
+
+						if(langObject.isClass())
+							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The first operand of the \"" +
+									node.getOperator().getSymbol() + "\" operator must be an object", node.getLineNumberFrom(), SCOPE_ID);
+
+						if(!typeClass.isClass())
+							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
+									node.getOperator().getSymbol() + "\" operator must be a class", node.getLineNumberFrom(), SCOPE_ID);
+
+						conditionOutput = langObject.getClassBaseDefinition().equals(typeClass);
+
+						break;
+					}
 					
 					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
-							node.getOperator().getSymbol() + "\" operator must be of type " + DataType.TYPE + " or " +
-							DataType.STRUCT, node.getLineNumberFrom(), SCOPE_ID);
+							node.getOperator().getSymbol() + "\" operator must be of type " + DataType.TYPE + ", " +
+							DataType.STRUCT + ", or " + DataType.OBJECT, node.getLineNumberFrom(), SCOPE_ID);
 				case EQUALS:
 				case NOT_EQUALS:
 					conditionOutput = leftSideOperand.isEquals(rightSideOperand);
