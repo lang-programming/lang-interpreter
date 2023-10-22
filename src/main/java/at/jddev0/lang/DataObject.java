@@ -1,17 +1,9 @@
 package at.jddev0.lang;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import at.jddev0.lang.AbstractSyntaxTree.VariableNameNode;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 
 /**
@@ -23,7 +15,7 @@ import at.jddev0.lang.LangInterpreter.InterpretingError;
  */
 public class DataObject {
 	public final static DataTypeConstraint CONSTRAINT_NORMAL = DataTypeConstraint.fromNotAllowedTypes(new ArrayList<>());
-	public final static DataTypeConstraint CONSTRAINT_COMPOSITE = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.ARRAY, DataType.LIST, DataType.STRUCT, DataType.NULL));
+	public final static DataTypeConstraint CONSTRAINT_COMPOSITE = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.ARRAY, DataType.LIST, DataType.STRUCT, DataType.OBJECT, DataType.NULL));
 	public final static DataTypeConstraint CONSTRAINT_FUNCTION_POINTER = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.FUNCTION_POINTER, DataType.NULL));
 
 	//Value
@@ -34,6 +26,7 @@ public class DataObject {
 	private VarPointerObject vp;
 	private FunctionPointerObject fp;
 	private StructObject sp;
+	private LangObject op;
 	private int intValue;
 	private long longValue;
 	private float floatValue;
@@ -62,7 +55,8 @@ public class DataObject {
 		if(variableName.startsWith("&"))
 			return CONSTRAINT_COMPOSITE;
 
-		if(variableName.startsWith("fp.") || variableName.startsWith("func.") || variableName.startsWith("fn.") || variableName.startsWith("linker.") || variableName.startsWith("ln."))
+		if(variableName.startsWith("mp.") || variableName.startsWith("fp.") || variableName.startsWith("func.") ||
+				variableName.startsWith("fn.") || variableName.startsWith("linker.") || variableName.startsWith("ln."))
 			return CONSTRAINT_FUNCTION_POINTER;
 
 		return CONSTRAINT_NORMAL;
@@ -106,6 +100,7 @@ public class DataObject {
 				dataObject.fp.withFunctionName(getVariableName()):dataObject.fp;
 
 		this.sp = dataObject.sp; //Struct: copy reference only
+		this.op = dataObject.op; //Object: copy reference only
 
 		this.intValue = dataObject.intValue;
 		this.longValue = dataObject.longValue;
@@ -136,6 +131,7 @@ public class DataObject {
 		this.vp = null;
 		this.fp = null;
 		this.sp = null;
+		this.op = null;
 		this.intValue = 0;
 		this.longValue = 0;
 		this.floatValue = 0;
@@ -276,6 +272,23 @@ public class DataObject {
 
 	public StructObject getStruct() {
 		return sp;
+	}
+
+	public DataObject setObject(LangObject op) throws DataTypeConstraintViolatedException {
+		if(finalData)
+			return this;
+		if(op == null)
+			return setNull();
+
+		this.type = checkAndRetType(DataType.OBJECT);
+		resetValue();
+		this.op = op;
+
+		return this;
+	}
+
+	public LangObject getObject() {
+		return op;
 	}
 
 	public DataObject setNull() throws DataTypeConstraintViolatedException {
@@ -630,6 +643,8 @@ public class DataObject {
 				return fp.toString();
 			case STRUCT:
 				return convertStructToText();
+			case OBJECT:
+				return op.toString();
 			case VOID:
 				return "";
 			case NULL:
@@ -654,25 +669,6 @@ public class DataObject {
 	}
 	public Character toChar() {
 		switch(type) {
-			case TEXT:
-			case ARGUMENT_SEPARATOR:
-				return null;
-			case BYTE_BUFFER:
-				return null;
-			case ARRAY:
-				return null;
-			case LIST:
-				return null;
-			case VAR_POINTER:
-				return null;
-			case FUNCTION_POINTER:
-				return null;
-			case STRUCT:
-				return null;
-			case VOID:
-				return null;
-			case NULL:
-				return null;
 			case INT:
 				return (char)intValue;
 			case LONG:
@@ -683,8 +679,18 @@ public class DataObject {
 				return (char)doubleValue;
 			case CHAR:
 				return charValue;
+			case TEXT:
+			case ARGUMENT_SEPARATOR:
+			case BYTE_BUFFER:
+			case ARRAY:
+			case LIST:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case STRUCT:
+			case OBJECT:
+			case NULL:
+			case VOID:
 			case ERROR:
-				return null;
 			case TYPE:
 				return null;
 		}
@@ -724,6 +730,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -766,6 +773,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -813,6 +821,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -860,6 +869,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -886,6 +896,7 @@ public class DataObject {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -919,6 +930,7 @@ public class DataObject {
 			case ERROR:
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -952,6 +964,7 @@ public class DataObject {
 			case ERROR:
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -989,6 +1002,7 @@ public class DataObject {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case TYPE:
+			case OBJECT:
 				return true;
 
 			case NULL:
@@ -1058,6 +1072,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1138,6 +1153,12 @@ public class DataObject {
 
 				return number != null && sp.getMemberNames().length == number.intValue();
 
+			case OBJECT:
+				if(other.type == DataType.OBJECT)
+					return Objects.equals(op, other.op);
+
+				return false;
+
 			case VAR_POINTER:
 				return vp.equals(other.vp);
 
@@ -1167,6 +1188,7 @@ public class DataObject {
 
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1246,6 +1268,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1278,6 +1301,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1305,6 +1329,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1332,6 +1357,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1359,6 +1385,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1386,6 +1413,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1413,6 +1441,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1440,6 +1469,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1467,6 +1497,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1496,6 +1527,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1525,6 +1557,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1534,6 +1567,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1582,6 +1616,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1614,6 +1649,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1641,6 +1677,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1668,6 +1705,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1695,6 +1733,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1722,6 +1761,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1749,6 +1789,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1776,6 +1817,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1803,6 +1845,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1832,6 +1875,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1861,6 +1905,7 @@ public class DataObject {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1870,6 +1915,7 @@ public class DataObject {
 
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1926,7 +1972,7 @@ public class DataObject {
 	}
 
 	public static enum DataType {
-		TEXT, CHAR, INT, LONG, FLOAT, DOUBLE, BYTE_BUFFER, ARRAY, LIST, VAR_POINTER, FUNCTION_POINTER, STRUCT, ERROR, NULL, VOID, ARGUMENT_SEPARATOR, TYPE;
+		TEXT, CHAR, INT, LONG, FLOAT, DOUBLE, BYTE_BUFFER, ARRAY, LIST, VAR_POINTER, FUNCTION_POINTER, STRUCT, OBJECT, ERROR, NULL, VOID, ARGUMENT_SEPARATOR, TYPE;
 	}
 	public static final class DataTypeConstraint {
 		private final Set<DataType> types;
@@ -2054,6 +2100,10 @@ public class DataObject {
 		 */
 		private final String langFile;
 		/**
+		 * For methods "this" will be set to the object the method was called on
+		 */
+		private final LangObject thisObject;
+		/**
 		 * If functionName is set, the function name from the stack frame element which is created for the function call will be overridden
 		 */
 		private final String functionName;
@@ -2062,11 +2112,29 @@ public class DataObject {
 		private final int functionPointerType;
 
 		/**
+		 * For normal and native function pointer definition
+		 * Used for binding the this-object
+		 */
+		public FunctionPointerObject(FunctionPointerObject func, LangObject thisObject) throws DataTypeConstraintException {
+			if(thisObject.isClass())
+				throw new DataTypeConstraintException("The this-object must be an object");
+
+			this.langPath = func.langPath;
+			this.langFile = func.langFile;
+			this.thisObject = thisObject;
+			this.functionName = func.functionName;
+			this.normalFunction = func.normalFunction;
+			this.nativeFunction = func.nativeFunction;
+			this.functionPointerType = func.functionPointerType;
+		}
+
+		/**
 		 * For normal function pointer definition
 		 */
 		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNormalFunction normalFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
+			this.thisObject = null;
 			this.functionName = functionName;
 			this.normalFunction = normalFunction;
 			this.nativeFunction = null;
@@ -2097,6 +2165,7 @@ public class DataObject {
 		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNativeFunction nativeFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
+			this.thisObject = null;
 			this.functionName = functionName == null?nativeFunction.getFunctionName():functionName;
 			this.normalFunction = null;
 			this.nativeFunction = nativeFunction;
@@ -2140,6 +2209,10 @@ public class DataObject {
 			return langFile;
 		}
 
+		public LangObject getThisObject() {
+			return thisObject;
+		}
+
 		public String getFunctionName() {
 			return functionName;
 		}
@@ -2163,9 +2236,9 @@ public class DataObject {
 
 			switch(functionPointerType) {
 				case NORMAL:
-					return "<Normal Function>";
+					return "<Normal " + (thisObject == null?"Function":"Method") + ">";
 				case NATIVE:
-					return "<Native Function>";
+					return "<Native " + (thisObject == null?"Function":"Method") + ">";
 				default:
 					return "Error";
 			}
@@ -2183,13 +2256,13 @@ public class DataObject {
 				return false;
 
 			FunctionPointerObject that = (FunctionPointerObject)obj;
-			return this.functionPointerType == that.functionPointerType && Objects.equals(this.normalFunction, that.normalFunction) &&
-					Objects.equals(this.nativeFunction, that.nativeFunction);
+			return this.functionPointerType == that.functionPointerType && Objects.equals(this.thisObject, that.thisObject) &&
+					Objects.equals(this.normalFunction, that.normalFunction) && Objects.equals(this.nativeFunction, that.nativeFunction);
 		}
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(functionPointerType, normalFunction, nativeFunction);
+			return Objects.hash(functionPointerType, thisObject, normalFunction, nativeFunction);
 		}
 	}
 	public static final class VarPointerObject {
@@ -2266,6 +2339,9 @@ public class DataObject {
 			if(!structBaseDefinition.isDefinition())
 				throw new DataTypeConstraintException("No instance can be created of another struct instance");
 
+			//Must be set first for isDefinition checks
+			this.structBaseDefinition = structBaseDefinition;
+
 			this.memberNames = Arrays.copyOf(structBaseDefinition.memberNames, structBaseDefinition.memberNames.length);
 			this.typeConstraints = Arrays.copyOf(structBaseDefinition.typeConstraints, structBaseDefinition.typeConstraints.length);
 			this.members = new DataObject[this.memberNames.length];
@@ -2282,8 +2358,6 @@ public class DataObject {
 				if(this.typeConstraints[i] != null)
 					this.members[i].setTypeConstraint(this.typeConstraints[i]);
 			}
-
-			this.structBaseDefinition = structBaseDefinition;
 		}
 
 		public boolean isDefinition() {
@@ -2303,7 +2377,7 @@ public class DataObject {
 		}
 
 		/**
-		 * @return Will return null, if the member was not found
+		 * @return Will -1 null, if the member was not found
 		 */
 		public int getIndexOfMember(String memeberName) {
 			for(int i = 0;i < memberNames.length;i++)
@@ -2368,6 +2442,383 @@ public class DataObject {
 		public int hashCode() {
 			return Objects.hash(memberNames, members, typeConstraints, structBaseDefinition);
 		}
+	}
+	public static final class LangObject {
+		public static final LangObject OBJECT_CLASS;
+		static {
+			Map<String, LangNativeFunction> nativeMethods = LangNativeFunction.getLangFunctionsFromObject(new Object() {
+				@LangFunction(value="mp.getClass", isMethod=true)
+				@LangFunction.AllowedTypes(DataType.OBJECT)
+				@SuppressWarnings("unused")
+				public DataObject getClassMethod(
+						LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+				) {
+					return new DataObject().setObject(thisObject.getClassBaseDefinition());
+				}
+			});
+
+			Map<String, FunctionPointerObject[]> methods = new HashMap<>();
+			nativeMethods.forEach((name, nativeFunction) -> methods.put(name, new FunctionPointerObject[] {
+					new FunctionPointerObject(nativeFunction)
+			}));
+
+			FunctionPointerObject[] constructors = new FunctionPointerObject[] {
+					new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+						@LangFunction(value="construct", isMethod=true)
+						@LangFunction.AllowedTypes(DataType.VOID)
+						@SuppressWarnings("unused")
+						public DataObject defaultConstructMethod(
+								LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+						) {
+							return null;
+						}
+					}))
+			};
+
+			OBJECT_CLASS = new LangObject(true, new DataObject[0], new String[0], new DataTypeConstraint[0],
+					new boolean[0], methods, constructors, null);
+		}
+
+		private final DataObject[] staticMembers;
+		private final String[] memberNames;
+		private final DataTypeConstraint[] memberTypeConstraints;
+		private final boolean[] memberFinalFlags;
+		private final DataObject[] members;
+		private final Map<String, FunctionPointerObject[]> methods;
+		private final FunctionPointerObject[] constructors;
+		/**
+		 * If size = 0: This is the base object<br>
+		 * If size > 0: This is a normal object
+		 */
+		private final LangObject[] parentClasses;
+		/**
+		 * If null: This is a class<br>
+		 * If not null: This is an object (= instance of structClassDefinition)<br>
+		 * This is also been used for instance of checks
+		 */
+		private final LangObject classBaseDefinition;
+
+		public LangObject(DataObject[] staticMembers, String[] memberNames, DataTypeConstraint[] memberTypeConstraints,
+						  boolean[] memberFinalFlags, Map<String, FunctionPointerObject[]> methods,
+						  FunctionPointerObject[] constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
+			this(false, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, constructors, parentClasses);
+		}
+
+		private LangObject(boolean isBaseObject, DataObject[] staticMembers, String[] memberNames,
+						   DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
+						   Map<String, FunctionPointerObject[]> methods, FunctionPointerObject[] constructors,
+						   LangObject[] parentClasses) throws DataTypeConstraintException {
+			if(isBaseObject) {
+				this.parentClasses = parentClasses = new LangObject[0];
+			}else if(parentClasses == null || parentClasses.length == 0) {
+				this.parentClasses = parentClasses = new LangObject[] {
+						OBJECT_CLASS
+				};
+			}else {
+				for(LangObject parentClass:parentClasses)
+					if(!parentClass.isClass())
+						throw new DataTypeConstraintException("Parent classes must not be an object");
+
+				if(parentClasses.length == 1) {
+					this.parentClasses = Arrays.copyOf(parentClasses, parentClasses.length);
+				}else {
+					throw new DataTypeConstraintException("Multi-inheritance is not allowed");
+				}
+			}
+
+			for(DataObject staticMember:staticMembers) {
+				String staticMemberName = staticMember.getVariableName();
+
+				if(Arrays.stream(parentClasses).map(LangObject::getStaticMembers).
+						anyMatch(superStaticMembers -> Arrays.stream(superStaticMembers).map(DataObject::getVariableName).
+								anyMatch(superStaticMemberName -> superStaticMemberName.equals(staticMemberName))))
+					throw new DataTypeConstraintException("Super class static member must not be shadowed" +
+							" (For static member \"" + staticMemberName + "\")");
+			}
+
+			//TODO allow multi-inheritance (Check if a static member is in both super classes)
+			this.staticMembers = Arrays.copyOf(staticMembers, staticMembers.length + Arrays.stream(parentClasses).
+					mapToInt(parentClass -> parentClass.getStaticMembers().length).sum());
+			{
+				int staticMemberIndex = staticMembers.length;
+				for(LangObject parentClass:parentClasses) {
+					for(DataObject superStaticMember:parentClass.getStaticMembers()) {
+						//No copies (static members must be the same reference across all uses)
+						this.staticMembers[staticMemberIndex] = superStaticMember;
+
+						staticMemberIndex++;
+					}
+				}
+			}
+
+			if(memberNames.length != memberTypeConstraints.length)
+				throw new DataTypeConstraintException("The count of members must be equals to the count of member type constraints");
+
+			if(memberNames.length != memberFinalFlags.length)
+				throw new DataTypeConstraintException("The count of members must be equals to the count of member final flags");
+
+			for(String memberName:memberNames) {
+				if(Arrays.stream(parentClasses).map(LangObject::getStaticMembers).
+						anyMatch(superStaticMembers -> Arrays.stream(superStaticMembers).map(DataObject::getVariableName).
+								anyMatch(superStaticMemberName -> superStaticMemberName.equals(memberName))))
+					throw new DataTypeConstraintException("Static members of a super class must not be shadowed" +
+							" (For member \"" + memberName + "\")");
+
+				if(Arrays.stream(parentClasses).map(LangObject::getMemberNames).
+						anyMatch(members -> Arrays.asList(members).contains(memberName)))
+					throw new DataTypeConstraintException("Super class member must not be shadowed" +
+							" (For member \"" + memberName + "\")");
+
+				if(Arrays.stream(staticMembers).map(DataObject::getVariableName).
+						anyMatch(staticMemberName -> staticMemberName.equals(memberName)))
+					throw new DataTypeConstraintException("Static members must not be shadowed" +
+							" (For member \"" + memberName + "\")");
+			}
+
+			//TODO allow multi-inheritance (Check if a member is in both super classes)
+			int superClassMemberCount = Arrays.stream(parentClasses).
+					mapToInt(parentClass -> parentClass.getMemberNames().length).sum();
+			this.memberNames = Arrays.copyOf(memberNames, memberNames.length + superClassMemberCount);
+			this.memberTypeConstraints = Arrays.copyOf(memberTypeConstraints, memberTypeConstraints.length + superClassMemberCount);
+			this.memberFinalFlags = Arrays.copyOf(memberFinalFlags, memberFinalFlags.length + superClassMemberCount);
+			{
+				int memberIndex = memberNames.length;
+				for(LangObject parentClass:parentClasses) {
+					for(int i = 0;i < parentClass.getMemberNames().length;i++) {
+						this.memberNames[memberIndex] = parentClass.getMemberNames()[i];
+						this.memberTypeConstraints[memberIndex] = parentClass.getMemberTypeConstraints()[i];
+						this.memberFinalFlags[memberIndex] = parentClass.getMemberFinalFlags()[i];
+
+						memberIndex++;
+					}
+				}
+			}
+
+			this.methods = new HashMap<>(methods);
+            this.methods.replaceAll((k, v) -> Arrays.copyOf(v, v.length));
+			for(Map.Entry<String, FunctionPointerObject[]> method:methods.entrySet()) {
+				FunctionPointerObject[] overloadedMethods = method.getValue();
+
+				if(overloadedMethods.length == 0)
+					throw new DataTypeConstraintException("No method present for method \"" + method.getKey() + "\"");
+
+				List<LangBaseFunction> functionSignatures = new LinkedList<>();
+				for(FunctionPointerObject overloadedMethod:overloadedMethods) {
+					if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
+						functionSignatures.add(overloadedMethod.getNormalFunction());
+					}else if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
+						List<LangNativeFunction.InternalFunction> internalFunctions = overloadedMethod.getNativeFunction().getInternalFunctions();
+						functionSignatures.addAll(internalFunctions);
+					}else {
+						throw new DataTypeConstraintException("Invalid function type \"" + overloadedMethod.getFunctionPointerType() + "\"");
+					}
+				}
+
+				for(int i = 0;i < functionSignatures.size();i++) {
+					for(int j = 0;j < functionSignatures.size();j++) {
+						//Do not compare to same function signature
+						if(i == j)
+							continue;
+
+						if(LangUtils.areFunctionSignaturesEquals(functionSignatures.get(i), functionSignatures.get(j)))
+							throw new DataTypeConstraintException("Duplicated function signatures: " +
+									"\"" + method.getKey() + functionSignatures.get(i).toFunctionSignatureSyntax() + "\" and \"" +
+									method.getKey() + functionSignatures.get(j).toFunctionSignatureSyntax() + "\"");
+					}
+				}
+			}
+
+
+			for(String methodName:methods.keySet()) {
+				String functionVarName = "fp." + methodName.substring(3);
+
+				if(Arrays.stream(parentClasses).map(LangObject::getStaticMembers).
+						anyMatch(superStaticMembers -> Arrays.stream(superStaticMembers).map(DataObject::getVariableName).
+								anyMatch(superStaticMemberName -> superStaticMemberName.equals(functionVarName))))
+					throw new DataTypeConstraintException("\"fp.\" static members of a super class must not be shadowed by method " +
+							" (For method \"" + methodName + "\" and member \"" + functionVarName + "\")");
+
+				if(Arrays.stream(parentClasses).map(LangObject::getMemberNames).
+						anyMatch(members -> Arrays.asList(members).contains(functionVarName)))
+					throw new DataTypeConstraintException("\"fp.\" members of a super class not be shadowed by method " +
+							" (For method \"" + methodName + "\" and member \"" + functionVarName + "\")");
+
+				if(Arrays.stream(staticMembers).map(DataObject::getVariableName).
+						anyMatch(staticMemberName -> staticMemberName.equals(functionVarName)))
+					throw new DataTypeConstraintException("\"fp.\" static members must not be shadowed by method " +
+							" (For method \"" + methodName + "\" and member \"" + functionVarName + "\")");
+
+				if(Arrays.asList(memberNames).contains(functionVarName))
+					throw new DataTypeConstraintException("\"fp.\" members must not be shadowed by method " +
+							" (For method \"" + methodName + "\" and member \"" + functionVarName + "\")");
+			}
+
+			//TODO allow multi-inheritance (Check if a method with the same function signature is in both super classes)
+			{
+				for(LangObject parentClass:parentClasses) {
+					parentClass.getMethods().forEach((k, v) -> {
+						FunctionPointerObject[] overloadedMethods = this.methods.get(k);
+						if(overloadedMethods == null) {
+							this.methods.put(k, Arrays.copyOf(v, v.length));
+
+							return;
+						}
+
+						//TODO dynamically bind super methods to this for overridden methods [Same function signature] and check if method can be overridden
+						int overloadedMethodIndex = overloadedMethods.length;
+						overloadedMethods = Arrays.copyOf(overloadedMethods, overloadedMethods.length + v.length);
+                        for(FunctionPointerObject method:v) {
+
+							//TODO check for same function signature if not overridden
+
+                            overloadedMethods[overloadedMethodIndex] = method;
+                            overloadedMethodIndex++;
+                        }
+
+						this.methods.put(k, overloadedMethods);
+					});
+				}
+			}
+
+			this.constructors = Arrays.copyOf(constructors, constructors.length);
+			if(this.constructors.length < 1)
+				throw new DataTypeConstraintException("There must be at least one constructor");
+
+			//TODO allow super constructor call from constructor [Dynamically bind super constructors to this]
+
+			this.members = null;
+			this.classBaseDefinition = null;
+		}
+
+		/**
+		 * The constructor must be called separately, afterward postConstructor must be called
+		 */
+		public LangObject(LangObject classBaseDefinition) throws DataTypeConstraintException {
+			//Must be set first for isClass checks
+			this.classBaseDefinition = classBaseDefinition;
+
+			//No copies, because static members should be the same across all objects
+			this.staticMembers = Arrays.copyOf(classBaseDefinition.staticMembers, classBaseDefinition.staticMembers.length);
+
+			this.memberNames = Arrays.copyOf(classBaseDefinition.memberNames, classBaseDefinition.memberNames.length);
+			this.memberTypeConstraints = Arrays.copyOf(classBaseDefinition.memberTypeConstraints, classBaseDefinition.memberTypeConstraints.length);
+			this.memberFinalFlags = Arrays.copyOf(classBaseDefinition.memberFinalFlags, classBaseDefinition.memberFinalFlags.length);
+
+			this.members = new DataObject[classBaseDefinition.memberNames.length];
+			for(int i = 0;i < members.length;i++)
+				this.members[i] = new DataObject().setNull().setVariableName(memberNames[i]);
+
+			this.methods = new HashMap<>(classBaseDefinition.methods);
+			this.methods.replaceAll((k, v) -> {
+				FunctionPointerObject[] arrayCopy = Arrays.copyOf(v, v.length);
+				for(int i = 0;i < arrayCopy.length;i++)
+					arrayCopy[i] = new FunctionPointerObject(arrayCopy[i], this);
+
+				return arrayCopy;
+			});
+
+			this.constructors = Arrays.copyOf(classBaseDefinition.constructors, classBaseDefinition.constructors.length);
+			for(int i = 0;i < this.constructors.length;i++)
+				this.constructors[i] = new FunctionPointerObject(this.constructors[i], this);
+
+			//TODO bind this-object on inherited methods
+
+			this.parentClasses = Arrays.copyOf(classBaseDefinition.parentClasses, classBaseDefinition.parentClasses.length);
+		}
+
+		public void postConstructor() throws DataTypeConstraintException {
+			for(int i = 0;i < members.length;i++) {
+				if(memberTypeConstraints[i] != null)
+					this.members[i].setTypeConstraint(memberTypeConstraints[i]);
+
+				if(memberFinalFlags[i])
+					this.members[i].setFinalData(true);
+			}
+		}
+
+		public boolean isClass() {
+			return classBaseDefinition == null;
+		}
+
+		public DataObject[] getStaticMembers() {
+			return Arrays.copyOf(staticMembers, staticMembers.length);
+		}
+
+		/**
+		 * @return Will return -1, if the member was not found
+		 */
+		public int getIndexOfStaticMember(String memeberName) {
+			for(int i = 0;i < staticMembers.length;i++)
+				if(staticMembers[i].getVariableName().equals(memeberName))
+					return i;
+
+			return -1;
+		}
+
+		public DataObject getStaticMember(String memberName) throws DataTypeConstraintException {
+			int index = getIndexOfStaticMember(memberName);
+			if(index == -1)
+				throw new DataTypeConstraintException("The static member \"" + memberName + "\" is not part of this class or object");
+
+			return staticMembers[index];
+		}
+
+		public String[] getMemberNames() {
+			return Arrays.copyOf(memberNames, memberNames.length);
+		}
+
+		public DataTypeConstraint[] getMemberTypeConstraints() {
+			return Arrays.copyOf(memberTypeConstraints, memberTypeConstraints.length);
+		}
+
+		public boolean[] getMemberFinalFlags() {
+			return Arrays.copyOf(memberFinalFlags, memberFinalFlags.length);
+		}
+
+		/**
+		 * @return Will return -1, if the member was not found
+		 */
+		public int getIndexOfMember(String memeberName) {
+			for(int i = 0;i < members.length;i++)
+				if(members[i].getVariableName().equals(memeberName))
+					return i;
+
+			return -1;
+		}
+
+		public DataObject getMember(String memberName) throws DataTypeConstraintException {
+			if(isClass())
+				throw new DataTypeConstraintException("The class is no object and has no member values");
+
+			int index = getIndexOfMember(memberName);
+			if(index == -1)
+				throw new DataTypeConstraintException("The member \"" + memberName + "\" is not part of this object");
+
+			return members[index];
+		}
+
+		public Map<String, FunctionPointerObject[]> getMethods() {
+			return new HashMap<>(methods);
+		}
+
+		public FunctionPointerObject[] getConstructors() {
+			return Arrays.copyOf(constructors, constructors.length);
+		}
+
+		public LangObject[] getParentClasses() {
+			return Arrays.copyOf(parentClasses, parentClasses.length);
+		}
+
+		public LangObject getClassBaseDefinition() {
+			return classBaseDefinition;
+		}
+
+		@Override
+		public String toString() {
+			return classBaseDefinition == null?"<Class>":"<Object>";
+		}
+
+		//TODO equals and hashCode
 	}
 	public static final class ErrorObject {
 		private final InterpretingError err;

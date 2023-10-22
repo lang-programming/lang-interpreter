@@ -16,6 +16,8 @@ public @interface LangFunction {
 	 * @return true for the lang function which contains the function info if the function is overloaded
 	 */
 	boolean hasInfo() default false;
+
+	boolean isMethod() default false;
 	
 	boolean isLinkerFunction() default false;
 	

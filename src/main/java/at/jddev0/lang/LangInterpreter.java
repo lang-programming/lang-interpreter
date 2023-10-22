@@ -31,6 +31,7 @@ import at.jddev0.lang.DataObject.DataTypeConstraintException;
 import at.jddev0.lang.DataObject.DataTypeConstraintViolatedException;
 import at.jddev0.lang.DataObject.ErrorObject;
 import at.jddev0.lang.DataObject.FunctionPointerObject;
+import at.jddev0.lang.DataObject.LangObject;
 import at.jddev0.lang.DataObject.StructObject;
 import at.jddev0.lang.DataObject.VarPointerObject;
 import at.jddev0.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
@@ -78,8 +79,8 @@ public final class LangInterpreter {
 	//Predefined functions & linker functions (= Predefined functions)
 	Map<String, LangNativeFunction> funcs = new HashMap<>();
 	{
-		LangPredefinedFunctions.addPredefinedFunctions(this, funcs);
-		LangPredefinedFunctions.addLinkerFunctions(this, funcs);
+		LangPredefinedFunctions.addPredefinedFunctions(funcs);
+		LangPredefinedFunctions.addLinkerFunctions(funcs);
 	}
 	final LangOperators operators = new LangOperators(this);
 	final LangVars langVars = new LangVars(this);
@@ -329,6 +330,9 @@ public final class LangInterpreter {
 					
 					case STRUCT_DEFINITION:
 						return interpretStructDefinitionNode((StructDefinitionNode)node, SCOPE_ID);
+
+					case CLASS_DEFINITION:
+						return interpretClassDefinitionNode((ClassDefinitionNode)node, SCOPE_ID);
 					
 					case GENERAL:
 						setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
@@ -485,17 +489,32 @@ public final class LangInterpreter {
 			
 			variableName = variableName.substring(indexModuleIdientifierEnd + 4);
 		}
+
+		if(variableName.startsWith("mp.") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
+				!compositeType.getObject().isClass()) {
+			Set<String> variableNames = compositeType.getObject().getMethods().keySet().stream().
+					filter(key -> key.startsWith("mp.")).collect(Collectors.toSet());
+
+			return convertVariableNameToVariableNameNodeOrComposition(node.getLineNumberFrom(), node.getLineNumberTo(),
+					moduleName, variableName, variableNames, "", false, node.getLineNumberFrom(), SCOPE_ID);
+		}
 		
 		if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp.")) {
 			Set<String> variableNames;
 			if(compositeType != null) {
-				if(compositeType.getType() != DataType.STRUCT) {
+				if(compositeType.getType() == DataType.STRUCT) {
+					variableNames = new HashSet<>(Arrays.asList(compositeType.getStruct().getMemberNames()));
+				}else if(compositeType.getType() == DataType.OBJECT) {
+					variableNames = Arrays.stream(compositeType.getObject().getStaticMembers()).
+							map(DataObject::getVariableName).collect(Collectors.toSet());
+
+					if(!compositeType.getObject().isClass())
+						variableNames.addAll(Arrays.asList(compositeType.getObject().getMemberNames()));
+				}else {
 					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", node.getLineNumberFrom(), SCOPE_ID);
-					
+
 					return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
 				}
-				
-				variableNames = new HashSet<>(Arrays.asList(compositeType.getStruct().getMemberNames()));
 			}else {
 				variableNames = data.get(SCOPE_ID).var.keySet();
 			}
@@ -1270,7 +1289,7 @@ public final class LangInterpreter {
 	}
 	
 	private DataObject interpretOperationNode(OperationNode node, final int SCOPE_ID) {
-		DataObject leftSideOperand = interpretNode(null, node.getLeftSideOperand(), SCOPE_ID);
+		DataObject leftSideOperand = (node.getOperator().isUnary() && node.getOperator().isLazyEvaluation())?null:interpretNode(null, node.getLeftSideOperand(), SCOPE_ID);
 		DataObject middleOperand = (!node.getOperator().isTernary() || node.getOperator().isLazyEvaluation())?null:interpretNode(null, node.getMiddleOperand(), SCOPE_ID);
 		DataObject rightSideOperand = (node.getOperator().isUnary() || node.getOperator().isLazyEvaluation())?null:interpretNode(null, node.getRightSideOperand(), SCOPE_ID);
 		
@@ -1279,8 +1298,9 @@ public final class LangInterpreter {
 			return null;
 		}
 		
-		if(leftSideOperand == null || (!node.getOperator().isLazyEvaluation() && ((!node.getOperator().isUnary() && rightSideOperand == null) ||
-		(node.getOperator().isTernary() && middleOperand == null))))
+		if((leftSideOperand == null && (!node.getOperator().isUnary() || !node.getOperator().isLazyEvaluation())) ||
+				(!node.getOperator().isLazyEvaluation() && ((!node.getOperator().isUnary() && rightSideOperand == null) ||
+						(node.getOperator().isTernary() && middleOperand == null))))
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom(), SCOPE_ID);
 		
 		if(node.getOperatorType() == OperatorType.ALL) {
@@ -1307,24 +1327,32 @@ public final class LangInterpreter {
 					if(leftSideOperand == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_PTR, node.getLineNumberFrom(), SCOPE_ID);
 					
-					if(leftSideOperand.getType() != DataType.STRUCT)
+					if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access pointer operator (\"" + node.getOperator().getSymbol() + "\") must be a pointer pointing to a composite type",
 								node.getLineNumberFrom(), SCOPE_ID);
 					
 					return interpretNode(leftSideOperand, node.getRightSideOperand(), SCOPE_ID);
 				case MEMBER_ACCESS:
-					if(leftSideOperand.getType() != DataType.STRUCT)
+					if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
 								node.getLineNumberFrom(), SCOPE_ID);
 					
 					return interpretNode(leftSideOperand, node.getRightSideOperand(), SCOPE_ID);
+				case MEMBER_ACCESS_THIS:
+					DataObject compositeType = data.get(SCOPE_ID).var.get("&this");
+					if(compositeType == null || (compositeType.getType() != DataType.STRUCT && compositeType.getType() != DataType.OBJECT))
+						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+								"\"&this\" is not present or invalid for the member access this operator (\"" + node.getOperator().getSymbol() + "\")",
+								node.getLineNumberFrom(), SCOPE_ID);
+
+					return interpretNode(compositeType, node.getLeftSideOperand(), SCOPE_ID);
 				case OPTIONAL_MEMBER_ACCESS:
 					if(leftSideOperand.getType() == DataType.NULL || leftSideOperand.getType() == DataType.VOID)
 						return new DataObject().setVoid();
 					
-					if(leftSideOperand.getType() != DataType.STRUCT)
+					if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
 								node.getLineNumberFrom(), SCOPE_ID);
@@ -1709,7 +1737,7 @@ public final class LangInterpreter {
 		try {
 			if(lvalueNode.getNodeType() == NodeType.OPERATION || lvalueNode.getNodeType() == NodeType.CONDITION ||
 			lvalueNode.getNodeType() == NodeType.MATH) {
-				//Composite type lvalue assignment (MEMBER_ACCESS and GET_ITEM)
+				//Composite type lvalue assignment (MEMBER_ACCESS, MEMBER_ACCESS_THIS, and GET_ITEM)
 				OperationNode operationNode = (OperationNode)lvalueNode;
 				while((operationNode.getOperator() == Operator.NON ||
 				operationNode.getOperator() == Operator.CONDITIONAL_NON ||
@@ -1718,7 +1746,8 @@ public final class LangInterpreter {
 					operationNode = (OperationNode)operationNode.getLeftSideOperand();
 				
 				boolean isMemberAccessPointerOperator = operationNode.getOperator() == Operator.MEMBER_ACCESS_POINTER;
-				if(isMemberAccessPointerOperator || operationNode.getOperator() == Operator.MEMBER_ACCESS) {
+				if(isMemberAccessPointerOperator || operationNode.getOperator() == Operator.MEMBER_ACCESS ||
+						operationNode.getOperator() == Operator.MEMBER_ACCESS_THIS) {
 					DataObject lvalue = interpretOperationNode(operationNode, SCOPE_ID);
 					if(lvalue == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
@@ -1873,6 +1902,7 @@ public final class LangInterpreter {
 				case VOID_VALUE:
 				case ARRAY:
 				case STRUCT_DEFINITION:
+				case CLASS_DEFINITION:
 					DataObject translationKeyDataObject = interpretNode(null, lvalueNode, SCOPE_ID);
 					if(translationKeyDataObject == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getLineNumberFrom(), SCOPE_ID);
@@ -1905,15 +1935,57 @@ public final class LangInterpreter {
 	boolean supportsPointerDereferencing, boolean shouldCreateDataObject, final boolean[] flags, int lineNumber, final int SCOPE_ID) {
 		Map<String, DataObject> variables;
 		if(compositeType != null) {
-			if(compositeType.getType() != DataType.STRUCT)
+			if(compositeType.getType() == DataType.STRUCT) {
+				variables = new HashMap<>();
+				try {
+					for(String memberName:compositeType.getStruct().getMemberNames())
+						variables.put(memberName, compositeType.getStruct().getMember(memberName));
+				}catch(DataTypeConstraintException e) {
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
+				}
+			}else if(compositeType.getType() == DataType.OBJECT) {
+				variables = new HashMap<>();
+				try {
+					if(variableName.startsWith("mp.")) {
+						compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("mp.")).forEach(entry -> {
+							String functionName = entry.getKey();
+							FunctionPointerObject[] functions = entry.getValue();
+
+							variables.put(functionName, new DataObject().setFunctionPointer(
+									new FunctionPointerObject(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+										@LangFunction("<method-wrapper-func>")
+										@SuppressWarnings("unused")
+										public DataObject methodWrapperFuncFunction(
+												int SCOPE_ID,
+												@LangFunction.LangParameter("&args") @LangFunction.LangParameter.RawVarArgs List<DataObject> argumentList
+										) {
+											FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(functions,
+													LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+											if(fp == null)
+												return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+														" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(functions).stream().
+														collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+
+											return callFunctionPointer(fp, functionName, argumentList, SCOPE_ID);
+										}
+									}))
+							).setVariableName(functionName).setFinalData(true));
+						});
+					}else {
+						for(DataObject staticMember:compositeType.getObject().getStaticMembers())
+							variables.put(staticMember.getVariableName(), staticMember);
+
+						if(!compositeType.getObject().isClass()) {
+							//If a static member and a member have the same variable name, the static member will be shadowed
+							for(String memberName:compositeType.getObject().getMemberNames())
+								variables.put(memberName, compositeType.getObject().getMember(memberName));
+						}
+					}
+				}catch(DataTypeConstraintException e) {
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
+				}
+			}else {
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", lineNumber, SCOPE_ID);
-			
-			variables = new HashMap<>();
-			try {
-				for(String memberName:compositeType.getStruct().getMemberNames())
-					variables.put(memberName, compositeType.getStruct().getMember(memberName));
-			}catch(DataTypeConstraintException e) {
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
 			}
 		}else if(moduleName == null) {
 			variables = data.get(SCOPE_ID).var;
@@ -2020,7 +2092,13 @@ public final class LangInterpreter {
 		
 		if(!isVarNameFullWithFuncsWithoutPrefix(variableName) && !isVarNamePtrAndDereferenceWithoutPrefix(variableName))
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom(), SCOPE_ID);
-		
+
+		if(variableName.startsWith("mp.") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
+				!compositeType.getObject().isClass()) {
+			return getOrCreateDataObjectFromVariableName(compositeType, moduleName, variableName, false,
+					variableName.startsWith("$"), false, null, node.getLineNumberFrom(), SCOPE_ID);
+		}
+
 		if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp."))
 			return getOrCreateDataObjectFromVariableName(compositeType, moduleName, variableName, variableName.startsWith("$"),
 					variableName.startsWith("$"), true, null, node.getLineNumberFrom(), SCOPE_ID);
@@ -2179,6 +2257,8 @@ public final class LangInterpreter {
 		try {
 			String functionLangPath = fp.getLangPath();
 			String functionLangFile = fp.getLangFile();
+
+			LangObject thisObject = fp.getThisObject();
 			
 			functionName = (functionName == null || fp.getFunctionName() != null)?fp.toString():functionName;
 			
@@ -2213,6 +2293,15 @@ public final class LangInterpreter {
 						if(val.isStaticData()) //Static Lang vars should also be copied
 							data.get(NEW_SCOPE_ID).var.put(key, val);
 					});
+
+					//Set this-object
+					if(thisObject != null) {
+						DataObject old = data.get(NEW_SCOPE_ID).var.put("&this", new DataObject().setObject(thisObject).
+								setFinalData(true).setVariableName("&this"));
+						if(old != null && old.isStaticData())
+							setErrno(InterpretingError.VAR_SHADOWING_WARNING, "This-object \"&this\" shadows a static variable",
+									functionBody.getLineNumberFrom(), NEW_SCOPE_ID);
+					}
 					
 					//Set arguments
 					DataObject lastDataObject = new DataObject().setVoid();
@@ -2243,7 +2332,6 @@ public final class LangInterpreter {
 								try {
 									DataObject newDataObject = new DataObject(dataObject != null?dataObject.getText():
 										new DataObject().setVoid().getText()).setVariableName(variableName);
-
 
 									DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 									if(old != null && old.isStaticData())
@@ -2371,7 +2459,7 @@ public final class LangInterpreter {
 					if(nativeFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber, SCOPE_ID);
 					
-					DataObject ret = nativeFunction.callFunc(this, argumentValueList, SCOPE_ID);
+					DataObject ret = nativeFunction.callFunc(this, thisObject, argumentValueList, SCOPE_ID);
 					if(nativeFunction.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 						nativeFunction.getDeprecatedRemoveVersion() == null?"the future":nativeFunction.getDeprecatedRemoveVersion(),
@@ -2505,7 +2593,15 @@ public final class LangInterpreter {
 	private DataObject interpretFunctionCallNode(DataObject compositeType, FunctionCallNode node, final int SCOPE_ID) {
 		String functionName = node.getFunctionName();
 		final String originalFunctionName = functionName;
-		
+
+		if(functionName.startsWith("mp.")) {
+			if(compositeType == null || compositeType.getType() != DataType.OBJECT)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method call without object", node.getLineNumberFrom(), SCOPE_ID);
+
+			if(compositeType.getObject().isClass())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method can not be called on classes", node.getLineNumberFrom(), SCOPE_ID);
+		}
+
 		boolean isModuleVariable = compositeType == null && functionName.startsWith("[[");
 		Map<String, DataObject> variables;
 		if(isModuleVariable) {
@@ -2532,23 +2628,92 @@ public final class LangInterpreter {
 		}
 		
 		FunctionPointerObject fp;
+		FunctionPointerObject[] methods = null;
 		if(compositeType != null) {
-			if(compositeType.getType() != DataType.STRUCT)
+			if(compositeType.getType() == DataType.STRUCT) {
+				if(!functionName.startsWith("fp."))
+					functionName = "fp." + functionName;
+
+				try {
+					DataObject member = compositeType.getStruct().getMember(functionName);
+
+					if(member.getType() != DataType.FUNCTION_POINTER)
+						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
+								"\": Function pointer is invalid", node.getLineNumberFrom(), SCOPE_ID);
+
+					fp = member.getFunctionPointer();
+				}catch(DataTypeConstraintException e) {
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+				}
+			}else if(compositeType.getType() == DataType.OBJECT) {
+				//Constructor and destructor
+				if(functionName.equals("construct")) {
+					if(!compositeType.getObject().isClass())
+						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The constructor must be called from a class", SCOPE_ID);
+
+					DataObject createdObject = new DataObject().setObject(new LangObject(compositeType.getObject()));
+
+					FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+
+					List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+
+					FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+					if(constructorFunction == null)
+						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+								" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(constructors).stream().
+								collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+
+					DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
+					if(ret == null)
+						ret = new DataObject().setVoid();
+
+					if(ret.getType() != DataType.VOID)
+						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+
+					try {
+						createdObject.getObject().postConstructor();
+					}catch(DataTypeConstraintException e) {
+						return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+								"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+					}
+
+					return createdObject;
+				}
+
+				String methodName = (compositeType.getObject().isClass() || functionName.startsWith("fp."))?
+						null:((functionName.startsWith("mp.")?"":"mp.") + functionName);
+				try {
+					methods = methodName == null?null:compositeType.getObject().getMethods().get(methodName);
+					if(methods == null) {
+						if(functionName.startsWith("mp."))
+							throw new DataTypeConstraintException("The method \"" + functionName + "\" is not part of this object");
+
+						if(!functionName.startsWith("fp."))
+							functionName = "fp." + functionName;
+
+						DataObject member;
+						try {
+							member = compositeType.getObject().getStaticMember(functionName);
+						}catch(DataTypeConstraintException e) {
+							if(compositeType.getObject().isClass())
+								return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+
+							member = compositeType.getObject().getMember(functionName);
+						}
+
+						if(member.getType() != DataType.FUNCTION_POINTER)
+							return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
+									"\": Function pointer is invalid", node.getLineNumberFrom(), SCOPE_ID);
+
+						fp = member.getFunctionPointer();
+					}else {
+						fp = null;
+					}
+				}catch(DataTypeConstraintException e) {
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+				}
+			}else {
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", node.getLineNumberFrom(), SCOPE_ID);
-			
-			if(!functionName.startsWith("fp."))
-				functionName = "fp." + functionName;
-			
-			try {
-				DataObject member = compositeType.getStruct().getMember(functionName);
-				
-				if(member.getType() != DataType.FUNCTION_POINTER)
-					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
-							"\": Function pointer is invalid", node.getLineNumberFrom(), SCOPE_ID);
-				
-				fp = member.getFunctionPointer();
-			}catch(DataTypeConstraintException e) {
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 			}
 		}else if(!isModuleVariable && isFuncName(functionName)) {
 			final boolean isLinkerFunction;
@@ -2627,8 +2792,20 @@ public final class LangInterpreter {
 						"\": Normal, native, predfined, linker, or external function was not found", node.getLineNumberFrom(), SCOPE_ID);
 			}
 		}
-		
-		return callFunctionPointer(fp, functionName, interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID), node.getLineNumberFrom(), SCOPE_ID);
+
+		List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
+		if(fp == null) {
+			if(methods == null)
+				return setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "\"" + node.getFunctionName() +
+						"\": Invalid interpreter state", node.getLineNumberFrom(), SCOPE_ID);
+
+			fp = LangUtils.getMostRestrictiveFunction(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			if(fp == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+						" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
+						collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+		}
+		return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 	}
 	
 	private DataObject interpretFunctionCallPreviousNodeValueNode(FunctionCallPreviousNodeValueNode node, DataObject previousValue, final int SCOPE_ID) {
@@ -2836,6 +3013,176 @@ public final class LangInterpreter {
 		
 		try {
 			return new DataObject().setStruct(new StructObject(memberNames.toArray(new String[0]), typeConstraintsArray));
+		}catch(DataTypeConstraintException e) {
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+		}
+	}
+
+	private DataObject interpretClassDefinitionNode(ClassDefinitionNode node, final int SCOPE_ID) {
+		List<AbstractSyntaxTree.Node> parentClasses = node.getParentClasses();
+
+		List<DataObject> parentClassList = new LinkedList<>(interpretFunctionPointerArguments(parentClasses, SCOPE_ID));
+		List<DataObject> combinedParentClassList = LangUtils.combineArgumentsWithoutArgumentSeparators(parentClassList);
+
+		List<LangObject> parentClassObjectList = new LinkedList<>();
+		for(DataObject parentClass:combinedParentClassList) {
+			if(parentClass.getType() != DataType.OBJECT || !parentClass.getObject().isClass())
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Parent classes must be classes",
+						node.getLineNumberFrom(), SCOPE_ID);
+
+			parentClassObjectList.add(parentClass.getObject());
+		}
+
+		List<String> staticMemberNames = node.getStaticMemberNames();
+		List<String> staticMemberTypeConstraints = node.getStaticMemberTypeConstraints();
+		List<Node> staticMemberValues = node.getStaticMemberValues();
+
+		if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size())
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
+
+		for(String staticMemberName:staticMemberNames)
+			if(!isVarNameWithoutPrefix(staticMemberName))
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + staticMemberName + "\" is no valid static member name",
+						node.getLineNumberFrom(), SCOPE_ID);
+
+		if(new HashSet<>(staticMemberNames).size() < staticMemberNames.size())
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Static member name may not be duplicated",
+					node.getLineNumberFrom(), SCOPE_ID);
+
+		DataTypeConstraint[] staticMemberTypeConstraintsArray = new DataTypeConstraint[staticMemberTypeConstraints.size()];
+		for(int i = 0;i < staticMemberTypeConstraintsArray.length;i++) {
+			String typeConstraint = staticMemberTypeConstraints.get(i);
+			if(typeConstraint == null)
+				continue;
+
+			DataObject errorOut = new DataObject().setVoid();
+			staticMemberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getLineNumberFrom(), SCOPE_ID);
+
+			if(errorOut.getType() == DataType.ERROR)
+				return errorOut;
+		}
+
+		DataObject[] staticMembers = new DataObject[staticMemberNames.size()];
+		try {
+			for(int i = 0;i < staticMembers.length;i++) {
+				DataObject value = staticMemberValues.get(i) == null?new DataObject().setNull():interpretNode(null, staticMemberValues.get(i), SCOPE_ID);
+				if(value == null)
+					value = new DataObject().setVoid();
+				staticMembers[i] = new DataObject(value).setVariableName(staticMemberNames.get(i));
+
+				if(staticMemberTypeConstraintsArray[i] != null)
+					staticMembers[i].setTypeConstraint(staticMemberTypeConstraintsArray[i]);
+			}
+		}catch(DataTypeConstraintException e) {
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+		}
+
+		List<String> memberNames = node.getMemberNames();
+		List<String> memberTypeConstraints = node.getMemberTypeConstraints();
+		List<Boolean> memberFinalFlag = node.getMemberFinalFlag();
+
+		if(memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size())
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
+
+		for(String memberName:memberNames)
+			if(!isVarNameWithoutPrefix(memberName))
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + memberName + "\" is no valid member name",
+						node.getLineNumberFrom(), SCOPE_ID);
+
+		if(new HashSet<>(memberNames).size() < memberNames.size())
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Member name may not be duplicated",
+					node.getLineNumberFrom(), SCOPE_ID);
+
+		DataTypeConstraint[] memberTypeConstraintsArray = new DataTypeConstraint[memberTypeConstraints.size()];
+		for(int i = 0;i < memberTypeConstraintsArray.length;i++) {
+			String typeConstraint = memberTypeConstraints.get(i);
+			if(typeConstraint == null)
+				continue;
+
+			DataObject errorOut = new DataObject().setVoid();
+			memberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getLineNumberFrom(), SCOPE_ID);
+
+			if(errorOut.getType() == DataType.ERROR)
+				return errorOut;
+		}
+
+		boolean[] memberFinalFlagArray = new boolean[memberFinalFlag.size()];
+		for(int i = 0;i < memberFinalFlagArray.length;i++) {
+			if(memberFinalFlag.get(i) == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for member at index " + i,
+						node.getLineNumberFrom(), SCOPE_ID);
+
+			memberFinalFlagArray[i] = memberFinalFlag.get(i);
+		}
+
+		List<String> methodNames = node.getMethodNames();
+		List<Node> methodDefinitions = node.getMethodDefinitions();
+		List<Boolean> methodOverrideFlag = node.getMethodOverrideFlag();
+
+		if(methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size())
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
+
+		for(String methodName:methodNames)
+			if(!isMethodName(methodName))
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
+						node.getLineNumberFrom(), SCOPE_ID);
+
+		Map<String, List<FunctionPointerObject>> rawMethods = new HashMap<>();
+		for(int i = 0;i < methodNames.size();i++) {
+			if(methodOverrideFlag.get(i) == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for member at index " + i,
+						node.getLineNumberFrom(), SCOPE_ID);
+
+			boolean override = methodOverrideFlag.get(i);
+
+			String methodName = methodNames.get(i);
+			if(!rawMethods.containsKey(methodName))
+				rawMethods.put(methodName, new LinkedList<>());
+
+			List<FunctionPointerObject> functions = rawMethods.get(methodName);
+			DataObject methodDefinition = interpretNode(null, methodDefinitions.get(i), SCOPE_ID);
+			if(methodDefinition == null || methodDefinition.getType() != DataType.FUNCTION_POINTER)
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Methods must be of type \"" + DataType.FUNCTION_POINTER + "\"",
+						methodDefinitions.get(i).getLineNumberFrom(), SCOPE_ID);
+
+			//TODO use method override flag
+
+			functions.add(methodDefinition.getFunctionPointer());
+		}
+
+		Map<String, FunctionPointerObject[]> methods = new HashMap<>();
+		rawMethods.forEach((k, v) -> methods.put(k, v.toArray(new FunctionPointerObject[0])));
+
+		List<Node> constructorDefinitions = node.getConstructorDefinitions();
+
+		FunctionPointerObject[] constructors = new FunctionPointerObject[Math.max(1, constructorDefinitions.size())];
+		for(int i = 0;i < constructorDefinitions.size();i++) {
+			DataObject constructorDefinition = interpretNode(null, constructorDefinitions.get(i), SCOPE_ID);
+			if(constructorDefinition == null || constructorDefinition.getType() != DataType.FUNCTION_POINTER)
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Constructor must be of type \"" + DataType.FUNCTION_POINTER + "\"",
+						constructorDefinitions.get(i).getLineNumberFrom(), SCOPE_ID);
+
+			constructors[i] = constructorDefinition.getFunctionPointer();
+		}
+
+		//Set default constructor
+		if(constructorDefinitions.isEmpty()) {
+			constructors[0] = new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				@LangFunction(value="construct", isMethod=true)
+				@LangFunction.AllowedTypes(DataType.VOID)
+				@SuppressWarnings("unused")
+				public DataObject defaultConstructMethod(
+						LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+				) {
+					return null;
+				}
+			}));
+		}
+
+		try {
+			return new DataObject().setObject(new LangObject(staticMembers, memberNames.toArray(new String[0]),
+					memberTypeConstraintsArray, memberFinalFlagArray, methods, constructors,
+					parentClassObjectList.toArray(new LangObject[0])));
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 		}
@@ -3414,6 +3761,25 @@ public final class LangInterpreter {
 		
 		return hasVarName;
 	}
+
+	/**
+	 * LangPatterns: METHOD_NAME (mp\.\w+)
+	 */
+	private boolean isMethodName(String token) {
+		if(!token.startsWith("mp."))
+			return false;
+
+		boolean hasVarName = false;
+		for(int i = 3;i < token.length();i++) {
+			char c = token.charAt(i);
+			if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
+				hasVarName = true;
+			else
+				return false;
+		}
+
+		return hasVarName;
+	}
 	
 	/**
 	 * LangPatterns: VAR_NAME_FULL ((\$\**|&|fp\.)\w+)
@@ -3446,10 +3812,11 @@ public final class LangInterpreter {
 	}
 	
 	/**
-	 * LangPatterns: VAR_NAME_FULL_WITH_FUNCS ((\$\**|&|fp\.|func\.|fn\.|linker\.|ln\.)\w+)
+	 * LangPatterns: VAR_NAME_FULL_WITH_FUNCS ((\$\**|&|fp\.|mp\.|func\.|fn\.|linker\.|ln\.)\w+)
 	 */
 	private boolean isVarNameFullWithFuncsWithoutPrefix(String token) {
 		boolean funcPtr = token.startsWith("fp.");
+		boolean methodPtr = token.startsWith("mp.");
 		boolean func = token.startsWith("func.");
 		boolean fn = token.startsWith("fn.");
 		boolean linker = token.startsWith("linker.");
@@ -3457,10 +3824,10 @@ public final class LangInterpreter {
 		char firstChar = token.charAt(0);
 		boolean normalVar = firstChar == '$';
 		
-		if(!(funcPtr || func || fn || linker || ln || normalVar || firstChar == '&'))
+		if(!(funcPtr || methodPtr || func || fn || linker || ln || normalVar || firstChar == '&'))
 			return false;
 		
-		int i = (funcPtr || fn || ln)?3:(func?5:(linker?7:1));
+		int i = (funcPtr || methodPtr || fn || ln)?3:(func?5:(linker?7:1));
 		
 		if(normalVar)
 			for(;i < token.length();i++)
@@ -3629,7 +3996,7 @@ public final class LangInterpreter {
 			String langPathWithFile = langPath + (langPath.endsWith("/")?"":"/") + langFile;
 			String langFunctionName = currentStackElement.getLangFunctionName();
 			
-			String output = String.format("A%s %s occured in \"%s:%s\" (FUNCTION: \"%s\", SCOPE_ID: \"%d\")!\n%s: %s (%d)%s\nStack trace:\n%s",
+			String output = String.format("A%s %s occurred in \"%s:%s\" (FUNCTION: \"%s\", SCOPE_ID: \"%d\")!\n%s: %s (%d)%s\nStack trace:\n%s",
 					newErrno < 0?"":"n", newErrno < 0?"warning":"error", langPathWithFile, lineNumber > 0?lineNumber:"x",
 							langFunctionName == null?"<main>":langFunctionName, SCOPE_ID, newErrno < 0?"Warning":"Error",
 									error.getErrorText(), error.getErrorCode(), message.isEmpty()?"":"\nMessage: " + message,

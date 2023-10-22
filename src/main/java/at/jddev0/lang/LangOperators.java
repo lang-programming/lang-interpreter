@@ -56,6 +56,7 @@ final class LangOperators {
 			case ERROR:
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -105,6 +106,8 @@ final class LangOperators {
 				}catch(DataTypeConstraintException e) {
 					return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
 				}
+			case OBJECT:
+				return null;
 			
 			case TEXT:
 			case CHAR:
@@ -197,6 +200,7 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<concat-func(" + aFunc + ", " + bFunc + ")>",
 						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("concat-func")
+					@SuppressWarnings("unused")
 					public DataObject concatFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,
 							@LangParameter("&args") @RawVarArgs List<DataObject> args
@@ -210,6 +214,7 @@ final class LangOperators {
 				})));
 			
 			case STRUCT:
+			case OBJECT:
 			case ERROR:
 			case VAR_POINTER:
 			case NULL:
@@ -274,6 +279,7 @@ final class LangOperators {
 			case LIST:
 			case ERROR:
 			case VAR_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -304,6 +310,7 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-pack-func(" + func + ")>",
 						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("auto-pack-func")
+					@SuppressWarnings("unused")
 					public DataObject autoPackFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,
 							@LangParameter("&args") @VarArgs List<DataObject> args
@@ -321,6 +328,7 @@ final class LangOperators {
 			case STRUCT:
 			case ERROR:
 			case VAR_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -376,6 +384,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -411,6 +420,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -439,6 +449,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -467,6 +478,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -495,6 +507,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -523,6 +536,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -549,6 +563,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -584,6 +599,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -612,6 +628,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -640,6 +657,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -668,6 +686,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -696,6 +715,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -712,6 +732,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -746,6 +767,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -773,6 +795,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -800,6 +823,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -827,6 +851,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -859,6 +884,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -875,6 +901,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -912,6 +939,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -939,6 +967,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -966,6 +995,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -993,6 +1023,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1015,6 +1046,7 @@ final class LangOperators {
 					return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
 							LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction("pow-func")
+						@SuppressWarnings("unused")
 						public DataObject powFuncFunction(
 								LangInterpreter interpreter, int SCOPE_ID,
 								@LangParameter("&args") @RawVarArgs List<DataObject> args
@@ -1026,6 +1058,7 @@ final class LangOperators {
 				return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
 						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("pow-func")
+					@SuppressWarnings("unused")
 					public DataObject powFuncFunction(
 							LangInterpreter interpreter, int SCOPE_ID,
 							@LangParameter("&args") @RawVarArgs List<DataObject> args
@@ -1052,6 +1085,7 @@ final class LangOperators {
 			case ERROR:
 			case VAR_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1098,6 +1132,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1137,6 +1172,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1164,6 +1200,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1191,6 +1228,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1208,6 +1246,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1264,6 +1303,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1313,6 +1353,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1372,6 +1413,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1432,6 +1474,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1449,6 +1492,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1495,6 +1539,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1534,6 +1579,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1573,6 +1619,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1613,6 +1660,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1630,6 +1678,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1676,6 +1725,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1715,6 +1765,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1754,6 +1805,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1794,6 +1846,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1811,6 +1864,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1849,6 +1903,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1880,6 +1935,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1904,6 +1960,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -1936,6 +1993,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1961,6 +2019,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -1980,6 +2039,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2020,6 +2080,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2045,6 +2106,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2064,6 +2126,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2096,6 +2159,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2121,6 +2185,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2140,6 +2205,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2169,6 +2235,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2201,6 +2268,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2226,6 +2294,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2245,6 +2314,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2285,6 +2355,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2310,6 +2381,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2329,6 +2401,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2369,6 +2442,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2394,6 +2468,7 @@ final class LangOperators {
 					case VAR_POINTER:
 					case FUNCTION_POINTER:
 					case STRUCT:
+					case OBJECT:
 					case NULL:
 					case VOID:
 					case ARGUMENT_SEPARATOR:
@@ -2413,6 +2488,7 @@ final class LangOperators {
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case STRUCT:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2489,6 +2565,7 @@ final class LangOperators {
 			case FUNCTION_POINTER:
 			case NULL:
 			case STRUCT:
+			case OBJECT:
 			case TYPE:
 			case VAR_POINTER:
 			case VOID:
@@ -2589,6 +2666,7 @@ final class LangOperators {
 			case ERROR:
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:
@@ -2682,6 +2760,7 @@ final class LangOperators {
 			case ERROR:
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
+			case OBJECT:
 			case NULL:
 			case VOID:
 			case ARGUMENT_SEPARATOR:

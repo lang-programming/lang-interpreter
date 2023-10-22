@@ -502,7 +502,10 @@ public final class LangParser {
 					operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_MEMBER_ACCESS;
 				}else if(token.startsWith("::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
 					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS;
+					if(somethingBeforeOperator)
+						operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS;
+					else
+						operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_THIS;
 				}else if(token.startsWith("->") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
 					operatorLength = 2;
 					operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_POINTER;
@@ -971,7 +974,7 @@ public final class LangParser {
 				nodes.add(leftSideOperand);
 			
 			//Add argument separator
-			nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(lineNumber, ","));
+			nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(lineNumber, ", "));
 			
 			//Add right side operand
 			nodes.add(operatorNode.getRightSideOperand());
@@ -1126,7 +1129,7 @@ public final class LangParser {
 		if(isInnerAssignment)
 			return null;
 		
-		//Only for non multi assignments
+		//Only for non-multi assignments
 		isVariableAssignment = LangPatterns.matches(line, LangPatterns.VAR_NAME_FULL) || LangPatterns.matches(line, LangPatterns.VAR_NAME_PTR_AND_DEREFERENCE);
 		if(line.endsWith(" =") || isVariableAssignment) {
 			//Empty translation/assignment ("<var/translation key> =" or "$varName")
@@ -1692,72 +1695,24 @@ public final class LangParser {
 					
 					nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, lrvalue));
 					return ast;
-				}else if(lrvalue.trim().equals("{")) { 
+				}else if(lrvalue.equals("{")) {
 					//Struct definition
-					
-					int lineNumberFrom = lineNumber;
-					List<String> memberNames = new LinkedList<>();
-					List<String> typeConstraints = new LinkedList<>();
-					boolean hasEndBrace = false;
-					
-					while(lines != null && lines.ready()) {
-						String line = nextLine(lines).trim();
-						
-						List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
-						line = prepareNextLine(line, lines, errorNodes);
-						if(errorNodes.size() > 0) {
-							errorNodes.forEach(ast::addChild);
-							return ast;
-						}
-						
-						if(line == null || line.isEmpty())
-							continue;
-						
-						if(line.equals("}")) {
-							hasEndBrace = true;
-							
-							break;
-						}
-						
-						String typeConstraint = null;
-						int braceIndex = line.indexOf('{');
-						if(braceIndex != -1) {
-							String rawTypeConstraint = line.substring(braceIndex);
-							line = line.substring(0, braceIndex);
-							
-							if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
-								
-								return ast;
-							}
-							
-							typeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
-						}
-						
-						if(!LangPatterns.matches(line, LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid struct member name: \"" + line + "\""));
-							
-							return ast;
-						}
-						
-						if(memberNames.contains(line)) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Duplicated struct member name: \"" + line + "\""));
-							
-							return ast;
-						}
-						
-						memberNames.add(line);
-						typeConstraints.add(typeConstraint);
-					}
-					
-					if(!hasEndBrace) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "\"}\" is missing in struct definition"));
-						
+
+					nodes.addAll(parseStructDefinition(lines).getChildren());
+
+					return ast;
+				}else if(lrvalue.startsWith("<") && lrvalue.endsWith(">{")) {
+					//Class definition
+
+					int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(lrvalue, 0, Integer.MAX_VALUE, '<', '>');
+					if(parentClassesEndIndex != lrvalue.length() - 2) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
+
 						return ast;
 					}
-					
-					nodes.add(new AbstractSyntaxTree.StructDefinitionNode(lineNumberFrom, lineNumber, memberNames, typeConstraints));
-					
+
+					nodes.addAll(parseClassDefinition(lrvalue.substring(1, lrvalue.length() - 2), lines).getChildren());
+
 					return ast;
 				}
 			}
@@ -1767,7 +1722,302 @@ public final class LangParser {
 		
 		return ast;
 	}
-	
+
+	private AbstractSyntaxTree parseStructDefinition(BufferedReader lines) throws IOException {
+		AbstractSyntaxTree ast = new AbstractSyntaxTree();
+		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
+
+		int lineNumberFrom = lineNumber;
+		boolean hasEndBrace = false;
+
+		List<String> memberNames = new LinkedList<>();
+		List<String> typeConstraints = new LinkedList<>();
+
+		while(lines != null && lines.ready()) {
+			String line = nextLine(lines).trim();
+
+			List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
+			line = prepareNextLine(line, lines, errorNodes);
+			if(!errorNodes.isEmpty()) {
+				errorNodes.forEach(ast::addChild);
+				return ast;
+			}
+
+			if(line == null || line.isEmpty())
+				continue;
+
+			if(line.equals("}")) {
+				hasEndBrace = true;
+
+				break;
+			}
+
+			String typeConstraint = null;
+			int braceIndex = line.indexOf('{');
+			if(braceIndex != -1) {
+				String rawTypeConstraint = line.substring(braceIndex);
+				line = line.substring(0, braceIndex);
+
+				if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
+
+					return ast;
+				}
+
+				typeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
+			}
+
+			if(!LangPatterns.matches(line, LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid struct member name: \"" + line + "\""));
+
+				return ast;
+			}
+
+			if(memberNames.contains(line)) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Duplicated struct member name: \"" + line + "\""));
+
+				return ast;
+			}
+
+			memberNames.add(line);
+			typeConstraints.add(typeConstraint);
+		}
+
+		if(!hasEndBrace) {
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "\"}\" is missing in struct definition"));
+
+			return ast;
+		}
+
+		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(lineNumberFrom, lineNumber, memberNames, typeConstraints));
+
+		return ast;
+	}
+
+	private AbstractSyntaxTree parseClassDefinition(String parentClassesToken, BufferedReader lines) throws IOException {
+		AbstractSyntaxTree ast = new AbstractSyntaxTree();
+		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
+
+		List<AbstractSyntaxTree.Node> parentClasses = parseFunctionParameterList(parentClassesToken, false).getChildren();
+
+		int lineNumberFrom = lineNumber;
+		boolean hasEndBrace = false;
+
+		List<String> staticMemberNames = new LinkedList<>();
+		List<String> staticMemberTypeConstraints = new LinkedList<>();
+		List<AbstractSyntaxTree.Node> staticMemberValues = new LinkedList<>();
+
+		List<String> memberNames = new LinkedList<>();
+		List<String> memberTypeConstraints = new LinkedList<>();
+		List<Boolean> memberFinalFlag = new LinkedList<>();
+
+		List<String> methodNames = new LinkedList<>();
+		List<AbstractSyntaxTree.Node> methodDefinitions = new LinkedList<>();
+		List<Boolean> methodOverrideFlag = new LinkedList<>();
+
+		List<AbstractSyntaxTree.Node> constructorDefinitions = new LinkedList<>();
+
+		while(lines != null && lines.ready()) {
+			String line = nextLine(lines).trim();
+
+			List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
+			line = prepareNextLine(line, lines, errorNodes);
+			if(!errorNodes.isEmpty()) {
+				errorNodes.forEach(ast::addChild);
+				return ast;
+			}
+
+			if(line == null || line.isEmpty())
+				continue;
+
+			if(line.equals("}")) {
+				hasEndBrace = true;
+
+				break;
+			}
+
+			char visibility = line.charAt(0);
+			if(visibility != '-' && visibility != '~' && visibility != '+') {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid visibility specifier (One of [\"-\", \"~\", \"+\"] must be used)"));
+
+				return ast;
+			}
+
+			line = line.substring(1);
+
+			if(line.startsWith("construct")) {
+				line = line.substring(9);
+
+				if(!line.startsWith(" = ")) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for constructor (only \" = \" is allowed): \"constructor" + line + "\""));
+
+					return ast;
+				}
+
+				line = line.substring(3);
+
+				constructorDefinitions.add(parseLRvalue(line, lines, true).convertToNode());
+
+				continue;
+			}
+
+			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_METHOD_IDENTIFIER)) {
+				boolean override = line.startsWith("override:");
+				if(override)
+					line = line.substring(9);
+
+				String[] tokens = line.split(" = ", 2);
+				if(tokens.length < 2) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for method (only \" = \" is allowed): \"" + line + "\""));
+
+					return ast;
+				}
+
+				String methodName = tokens[0];
+				String rvalue = tokens[1];
+
+				if(!LangPatterns.matches(methodName, LangPatterns.METHOD_NAME)) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid method name: \"" + line + "\""));
+
+					return ast;
+				}
+
+				AbstractSyntaxTree.Node rvalueNode = parseLRvalue(rvalue, lines, true).convertToNode();
+
+				methodNames.add(methodName);
+				methodDefinitions.add(rvalueNode);
+				methodOverrideFlag.add(override);
+
+				continue;
+			}
+
+			boolean isStaticMember = line.startsWith("static:");
+			if(isStaticMember)
+				line = line.substring(7);
+
+			boolean isFinalMember = !isStaticMember && line.startsWith("final:");
+			if(isFinalMember)
+				line = line.substring(6);
+
+			String lvalue = line;
+			String assignmentOperator = null;
+			String rvalue = null;
+			if(isStaticMember && line.contains("=")) {
+				int index = line.indexOf('=');
+				if(index == line.length() - 1) {
+					assignmentOperator = (index > 0 && line.charAt(index - 1) == ' ')?" = ":"=";
+
+					lvalue = line.substring(0, index - ((index > 0 && line.charAt(index - 1) == ' ')?1:0));
+				}else {
+					String[] tokens = LangPatterns.PARSING_LIMITED_ASSIGNMENT_OPERATOR.split(line, 2);
+					if(tokens.length == 1) {
+						assignmentOperator = "=";
+
+						lvalue = line.substring(0, index);
+						if(index < line.length() - 1)
+							rvalue = line.substring(index + 1);
+					}else {
+						assignmentOperator = line.substring(tokens[0].length(), line.indexOf('=') + 2);
+
+						lvalue = tokens[0];
+						rvalue = tokens[1];
+					}
+				}
+			}
+
+			String typeConstraint = null;
+			int braceIndex = lvalue.indexOf('{');
+			if(braceIndex != -1) {
+				String rawTypeConstraint = lvalue.substring(braceIndex);
+				lvalue = lvalue.substring(0, braceIndex);
+
+				if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
+
+					return ast;
+				}
+
+				typeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
+			}
+
+			if(!LangPatterns.matches(lvalue, LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid " + (isStaticMember?"static ":"") + "member name: \"" + lvalue + "\""));
+
+				return ast;
+			}
+
+			if((isStaticMember?staticMemberNames:memberNames).contains(lvalue)) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Duplicated " + (isStaticMember?"static ":"") + " member name: \"" + lvalue + "\""));
+
+				return ast;
+			}
+
+			if(isStaticMember) {
+				if(assignmentOperator == null) {
+					staticMemberNames.add(lvalue);
+					staticMemberTypeConstraints.add(typeConstraint);
+					staticMemberValues.add(null);
+
+					continue;
+				}
+
+				if(rvalue == null) {
+					boolean isSimpleAssignmentOperator = assignmentOperator.equals("=");
+					if(isSimpleAssignmentOperator || assignmentOperator.equals(" = ")) {
+						staticMemberNames.add(lvalue);
+						staticMemberTypeConstraints.add(typeConstraint);
+						staticMemberValues.add(isSimpleAssignmentOperator?new AbstractSyntaxTree.TextValueNode(lineNumber, ""):
+								new AbstractSyntaxTree.NullValueNode(lineNumber));
+
+						continue;
+					}
+
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Rvalue is missing in member assignment: \"" + line + "\""));
+
+					return ast;
+				}
+
+				staticMemberNames.add(lvalue);
+				staticMemberTypeConstraints.add(typeConstraint);
+				switch(assignmentOperator) {
+					case "=":
+						staticMemberValues.add(parseSimpleAssignmentValue(rvalue).convertToNode());
+						break;
+					case " = ":
+						staticMemberValues.add(parseLRvalue(rvalue, lines, true).convertToNode());
+						break;
+					case " ?= ":
+						staticMemberValues.add(parseCondition(rvalue));
+						break;
+					case " := ":
+						staticMemberValues.add(parseMathExpr(rvalue));
+						break;
+					case " $= ":
+						staticMemberValues.add(parseOperationExpr(rvalue));
+						break;
+				}
+
+				continue;
+			}
+
+			memberNames.add(lvalue);
+			memberTypeConstraints.add(typeConstraint);
+			memberFinalFlag.add(isFinalMember);
+		}
+
+		if(!hasEndBrace) {
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "\"}\" is missing in class definition"));
+
+			return ast;
+		}
+
+		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(lineNumberFrom, lineNumber, staticMemberNames,
+				staticMemberTypeConstraints, staticMemberValues, memberNames, memberTypeConstraints, memberFinalFlag,
+				methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses));
+
+		return ast;
+	}
+
 	private AbstractSyntaxTree parseToken(String token, BufferedReader lines) throws IOException {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();

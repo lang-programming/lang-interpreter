@@ -67,7 +67,7 @@ public final class LangUtils {
 	}
 	
 	/**
-	 * @return Returns the the count of DataObjects in the with argument separated argumentList (Will return 1 for an empty list)
+	 * @return Returns the count of DataObjects in the with argument separated argumentList (Will return 1 for an empty list)
 	 */
 	public static int countDataObjects(List<DataObject> argumentList) {
 		return (int)argumentList.stream().filter(dataObject -> dataObject.getType() == DataType.ARGUMENT_SEPARATOR).count() + 1;
@@ -119,6 +119,82 @@ public final class LangUtils {
 		return argumentList;
 	}
 
+	/**
+	 * @param funcA Function A
+	 * @param funcB Function B
+	 * @return Returns true if the function signature of funcA and funcB are equals
+	 */
+	public static boolean areFunctionSignaturesEquals(LangBaseFunction funcA, LangBaseFunction funcB) {
+		List<DataObject.DataTypeConstraint> typeConstraintsA = funcA.getParameterDataTypeConstraintList();
+		int varArgsParameterIndexA = funcA.getVarArgsParameterIndex();
+
+		List<DataObject.DataTypeConstraint> typeConstraintsB = funcB.getParameterDataTypeConstraintList();
+		int varArgsParameterIndexB = funcB.getVarArgsParameterIndex();
+
+		return varArgsParameterIndexA == varArgsParameterIndexB && typeConstraintsA.equals(typeConstraintsB);
+	}
+
+	/**
+	 * @param functions Functions
+	 * @return All function signatures of functions
+	 */
+	public static List<String> getFunctionSignatures(DataObject.FunctionPointerObject[] functions) {
+		List<String> functionSignatures = new LinkedList<>();
+
+		for(DataObject.FunctionPointerObject function:functions) {
+			if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
+				functionSignatures.add(function.getNormalFunction().toFunctionSignatureSyntax());
+			}else if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
+				function.getNativeFunction().getInternalFunctions().stream().
+						map(LangBaseFunction::toFunctionSignatureSyntax).forEach(functionSignatures::add);
+			}else {
+				functionSignatures.add("<INVALID FUNCTION TYPE>");
+			}
+		}
+
+		return functionSignatures;
+	}
+
+	/**
+	 * @param functions Function signatures will be extracted from the FunctionPointerObject
+	 * @param argumentList The combined argument list
+	 *
+	 * @return Returns the most restrictive function for the provided arguments or null if no function signature matches the arguments
+	 */
+	public static DataObject.FunctionPointerObject getMostRestrictiveFunction(DataObject.FunctionPointerObject[] functions,
+																	   List<DataObject> argumentList) {
+		int[] langBaseFunctionCounts = new int[functions.length];
+
+		List<LangBaseFunction> functionSignatures = new LinkedList<>();
+		for(int i = 0;i < functions.length;i++) {
+			DataObject.FunctionPointerObject function = functions[i];
+			if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
+				functionSignatures.add(function.getNormalFunction());
+				langBaseFunctionCounts[i] = 1;
+			}else if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
+				List<LangNativeFunction.InternalFunction> internalFunctions = function.getNativeFunction().getInternalFunctions();
+				functionSignatures.addAll(internalFunctions);
+				langBaseFunctionCounts[i] = internalFunctions.size();
+			}else {
+				return null;
+			}
+		}
+
+		int index = getMostRestrictiveFunctionSignatureIndex(functionSignatures.stream().
+						map(LangBaseFunction::getParameterDataTypeConstraintList).collect(Collectors.toList()),
+				functionSignatures.stream().map(LangBaseFunction::getVarArgsParameterIndex).
+						collect(Collectors.toList()), argumentList);
+		if(index == -1)
+			return null;
+
+		int functionIndex = 0;
+		while(index > 0 && functionIndex < functions.length - 1) {
+			index -= langBaseFunctionCounts[functionIndex];
+			functionIndex++;
+		}
+
+		return functions[functionIndex];
+	}
 	/**
 	 * @param functionSignatures Function signatures will be extracted from the LangBaseFunctions
 	 * @param argumentList The combined argument list

@@ -23,6 +23,8 @@ import static at.jddev0.lang.LangBaseFunction.ParameterAnnotation;
 public class LangNativeFunction {
 	private final String functionName;
 	private final String functionInfo;
+
+	private final boolean method;
 	
 	private final boolean linkerFunction;
 	private final boolean deprecated;
@@ -103,9 +105,11 @@ public class LangNativeFunction {
 			throw new IllegalArgumentException("Method must be annotated with @LangFunction must return a DataObject");
 		
 		String functionName = langFunction.value();
-		
+
+		boolean method = langFunction.isMethod();
+
 		boolean linkerFunction = langFunction.isLinkerFunction();
-		
+
 		boolean deprecated = langFunction.isDeprecated();
 		String deprecatedRemoveVersion = langFunction.getDeprecatedRemoveVersion();
 		if(deprecatedRemoveVersion.equals(""))
@@ -113,22 +117,24 @@ public class LangNativeFunction {
 		String deprecatedReplacementFunction = langFunction.getDeprecatedReplacementFunction();
 		if(deprecatedReplacementFunction.equals(""))
 			deprecatedReplacementFunction = null;
-		
+
 		LangInfo langInfo = functionBody.getAnnotation(LangInfo.class);
 		String functionInfo = langInfo == null?null:langInfo.value();
-		
-		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo,
+
+		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo, method,
 				linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
-		
+
 		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody));
 		
 		return langNativeFunction;
 	}
 
-	private LangNativeFunction(String functionName, String functionInfo, boolean linkerFunction, boolean deprecated,
-							   String deprecatedRemoveVersion, String deprecatedReplacementFunction) {
+	private LangNativeFunction(String functionName, String functionInfo, boolean method,
+							   boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion,
+							   String deprecatedReplacementFunction) {
 		this.functionName = functionName;
 		this.functionInfo = functionInfo;
+		this.method = method;
 		this.linkerFunction = linkerFunction;
 		this.deprecated = deprecated;
 		this.deprecatedRemoveVersion = deprecatedRemoveVersion;
@@ -145,11 +151,15 @@ public class LangNativeFunction {
 	}
 
 	public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList, int SCOPE_ID) {
+		return callFunc(interpreter, null, argumentList, SCOPE_ID);
+	}
+
+	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, List<DataObject> argumentList, int SCOPE_ID) {
 		//TODO remove checks from this method and move to directly to interpreter
 		
 		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
 		if(internalFunctions.size() == 1)
-			return internalFunctions.get(0).callFunc(interpreter, argumentList, combinedArgumentList, SCOPE_ID);
+			return internalFunctions.get(0).callFunc(interpreter, thisObject, argumentList, combinedArgumentList, SCOPE_ID);
 		
 		int index = LangUtils.getMostRestrictiveFunctionSignatureIndex(internalFunctions, combinedArgumentList);
 		
@@ -159,7 +169,7 @@ public class LangNativeFunction {
 					collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 		}
 		
-		return internalFunctions.get(index).callFunc(interpreter, argumentList, combinedArgumentList, SCOPE_ID);
+		return internalFunctions.get(index).callFunc(interpreter, thisObject, argumentList, combinedArgumentList, SCOPE_ID);
 	}
 	
 	public InternalFunction createInternalFunction(Object instance, Method functionBody)
@@ -193,14 +203,23 @@ public class LangNativeFunction {
 		Parameter firstParam = parameters[0];
 		boolean hasInterpreterParameter = firstParam.getType().isAssignableFrom(LangInterpreter.class);
 		
-		Parameter secondParam = hasInterpreterParameter && parameters.length >= 2?parameters[1]:null;
+		Parameter secondParam = parameters.length >= 2?parameters[1]:null;
+
+		Parameter thirdParam = parameters.length >= 3?parameters[2]:null;
 		
 		if(hasInterpreterParameter?
 				secondParam == null || !secondParam.getType().isAssignableFrom(int.class):
 					!firstParam.getType().isAssignableFrom(int.class))
-			throw new IllegalArgumentException("The method must start with (LangInterpreter interpreter, int SCOPE_ID) or (int SCOPE_ID)");
-		
-		int diff = hasInterpreterParameter?2:1;
+				throw new IllegalArgumentException("The method must start with (LangInterpreter interpreter, int SCOPE_ID) or (int SCOPE_ID)");
+
+		if(method && (hasInterpreterParameter?thirdParam == null || !thirdParam.getType().isAssignableFrom(DataObject.LangObject.class):
+				(secondParam == null || !secondParam.getType().isAssignableFrom(DataObject.LangObject.class))))
+			throw new IllegalArgumentException("The method for LangObjects must start with " +
+					"(LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject) or (int SCOPE_ID, LangObject thisObject)");
+
+
+
+		int diff = (hasInterpreterParameter?2:1) + (method?1:0);
 		List<Class<?>> methodParameterTypeList = new ArrayList<>(parameters.length - diff);
 		List<DataObject> parameterList = new ArrayList<>(parameters.length - diff);
 		List<DataTypeConstraint> parameterDataTypeConstraintList = new ArrayList<>(parameters.length - diff);
@@ -367,7 +386,7 @@ public class LangNativeFunction {
 		private final Object instance;
 		private final Method functionBody;
 		private final boolean hasInterpreterParameter;
-		
+
 		private final boolean combinatorFunction;
 		private final int combinatorFunctionCallCount;
 		private final List<DataObject> combinatorProvidedArgumentList;
@@ -393,7 +412,13 @@ public class LangNativeFunction {
 			this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
 		}
 		
-		public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList, List<DataObject> combinedArgumentList, int SCOPE_ID) {
+		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, List<DataObject> argumentList, List<DataObject> combinedArgumentList, int SCOPE_ID) {
+			if(method && thisObject == null)
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is not bound for native function for LangObject", SCOPE_ID);
+
+			if(!method && thisObject != null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is bound for native function", SCOPE_ID);
+
 			int argCount = parameterList.size();
 			
 			if(combinatorFunction) {
@@ -411,8 +436,8 @@ public class LangNativeFunction {
 				if((!combinatorFunction || combinatorFunctionCallCount > 0) && combinedArgumentList.size() < argCount - 1)
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1), SCOPE_ID);
 			}
-			
-			int diff = hasInterpreterParameter?2:1;
+
+			int diff = (hasInterpreterParameter?2:1) + (method?1:0);
 			Object[] methodArguments = new Object[diff + argCount];
 			if(hasInterpreterParameter) {
 				methodArguments[0] = interpreter;
@@ -420,11 +445,13 @@ public class LangNativeFunction {
 			}else {
 				methodArguments[0] = SCOPE_ID;
 			}
+			if(method)
+				methodArguments[diff - 1] = thisObject;
 			
 			int argumentIndex = 0;
 			for(int i = 0;i < argCount;i++) {
 				if(combinatorFunction && argumentIndex >= combinedArgumentList.size() && (varArgsParameterIndex == -1 || combinatorFunctionCallCount == 0))
-					return combinatorCall(interpreter, combinedArgumentList, SCOPE_ID);
+					return combinatorCall(interpreter, thisObject, combinedArgumentList, SCOPE_ID);
 				
 				String variableName = parameterList.get(i).getVariableName();
 				
@@ -448,7 +475,7 @@ public class LangNativeFunction {
 					}else if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
 						//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
 						if(combinatorFunction && combinatorFunctionCallCount == 0)
-							return combinatorCall(interpreter, combinedArgumentList, SCOPE_ID);
+							return combinatorCall(interpreter, thisObject, combinedArgumentList, SCOPE_ID);
 						
 						List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
 								map(DataObject::new).collect(Collectors.toList());
@@ -536,9 +563,9 @@ public class LangNativeFunction {
 			}
 		}
 		
-		private DataObject combinatorCall(LangInterpreter interpreter, List<DataObject> combinedArgumentList, int SCOPE_ID) {
+		private DataObject combinatorCall(LangInterpreter interpreter, DataObject.LangObject thisObject, List<DataObject> combinedArgumentList, int SCOPE_ID) {
 			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
-					linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
+					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
 			
 			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
 							parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
@@ -557,8 +584,11 @@ public class LangNativeFunction {
 			
 			String functionName = "<" + (varArgsParameterIndex == -1?"":"inf-") + LangNativeFunction.this.functionName + "-func(" + functionNames + ")>";
 			
-			
-			return new DataObject().setFunctionPointer(new FunctionPointerObject(functionName, langNativeFunction));
+			FunctionPointerObject fp = new FunctionPointerObject(functionName, langNativeFunction);
+			if(method)
+				fp = new FunctionPointerObject(fp, thisObject);
+
+			return new DataObject().setFunctionPointer(fp);
 		}
 		
 		public List<String> getParameterInfoList() {
@@ -603,7 +633,11 @@ public class LangNativeFunction {
 	public String getFunctionInfo() {
 		return functionInfo;
 	}
-	
+
+	public boolean isMethod() {
+		return method;
+	}
+
 	public boolean isLinkerFunction() {
 		return linkerFunction;
 	}

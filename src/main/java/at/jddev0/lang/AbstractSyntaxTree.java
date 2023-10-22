@@ -166,7 +166,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return false;
 			
 			ListNode that = (ListNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && that.nodes.equals(that.nodes);
+			return this.getNodeType().equals(that.getNodeType()) && this.nodes.equals(that.nodes);
 		}
 		
 		@Override
@@ -216,11 +216,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			if(obj == null)
 				return false;
 			
-			if(!(obj instanceof ChildlessNode))
+			if(!(obj instanceof ListNode))
 				return false;
 			
 			ListNode that = (ListNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && that.nodes.equals(that.nodes);
+			return this.getNodeType().equals(that.getNodeType()) && this.nodes.equals(that.nodes);
 		}
 		
 		@Override
@@ -382,7 +382,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return false;
 			
 			AssignmentNode that = (AssignmentNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && that.nodes.equals(that.nodes);
+			return this.getNodeType().equals(that.getNodeType()) && this.nodes.equals(that.nodes);
 		}
 		
 		@Override
@@ -629,7 +629,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return false;
 			
 			ArgumentSeparatorNode that = (ArgumentSeparatorNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && this.originalText.equals(originalText);
+			return this.getNodeType().equals(that.getNodeType()) && this.originalText.equals(that.originalText);
 		}
 		
 		@Override
@@ -2083,7 +2083,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			if(obj == null)
 				return false;
 			
-			if(!(obj instanceof LoopStatementPartLoopNode))
+			if(!(obj instanceof TryStatementPartTryNode))
 				return false;
 			
 			TryStatementPartTryNode that = (TryStatementPartTryNode)obj;
@@ -2429,6 +2429,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			GET_ITEM              ("[...]",      0,       OperatorType.ALL),
 			OPTIONAL_GET_ITEM     ("?.[...]",    0,       OperatorType.ALL),
 			MEMBER_ACCESS         ("::",         0, true, OperatorType.ALL),
+			/**
+			 * MEMBER_ACCESS operator where composite type is "&amp;this"
+			 */
+			MEMBER_ACCESS_THIS    ("::",      1,  0, true, OperatorType.ALL),
 			OPTIONAL_MEMBER_ACCESS("?::",        0, true, OperatorType.ALL),
 			MEMBER_ACCESS_POINTER ("->",         0, true, OperatorType.ALL);
 			
@@ -3275,13 +3279,219 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			return Objects.hash(this.getNodeType(), this.memberNames, this.typeConstraints);
 		}
 	}
-	
+
+	public static final class ClassDefinitionNode extends ChildlessNode {
+		private final List<String> staticMemberNames;
+		private final List<String> staticMemberTypeConstraints;
+		private final List<Node> staticMemberValues;
+
+		private final List<String> memberNames;
+		private final List<String> memberTypeConstraints;
+		private final List<Boolean> memberFinalFlag;
+
+		/**
+		 * If multiple methods have the same name, they are overloaded
+		 */
+		private final List<String> methodNames;
+		private final List<Node> methodDefinitions;
+		private final List<Boolean> methodOverrideFlag;
+
+		private final List<Node> constructorDefinitions;
+
+		/**
+		 * List of parent nodes separated by ArgumentSeparator nodes
+		 */
+		private final List<AbstractSyntaxTree.Node> parentClasses;
+
+		public ClassDefinitionNode(int lineNumberFrom, int lineNumberTo, List<String> staticMemberNames,
+								   List<String> staticMemberTypeConstraints, List<Node> staticMemberValues,
+								   List<String> memberNames, List<String> memberTypeConstraints, List<Boolean> memberFinalFlag,
+								   List<String> methodNames, List<Node> methodDefinitions, List<Boolean> methodOverrideFlag,
+								   List<Node> constructorDefinitions, List<AbstractSyntaxTree.Node> parentClasses) {
+			super(lineNumberFrom, lineNumberTo);
+
+			this.staticMemberNames = staticMemberNames;
+			this.staticMemberTypeConstraints = staticMemberTypeConstraints;
+			this.staticMemberValues = staticMemberValues;
+
+			this.memberNames = memberNames;
+			this.memberTypeConstraints = memberTypeConstraints;
+			this.memberFinalFlag = memberFinalFlag;
+
+			this.methodNames = methodNames;
+			this.methodDefinitions = methodDefinitions;
+			this.methodOverrideFlag = methodOverrideFlag;
+
+			this.constructorDefinitions = constructorDefinitions;
+
+			this.parentClasses = parentClasses;
+		}
+
+		public List<String> getStaticMemberNames() {
+			return staticMemberNames;
+		}
+
+		public List<String> getStaticMemberTypeConstraints() {
+			return staticMemberTypeConstraints;
+		}
+
+		public List<Node> getStaticMemberValues() {
+			return staticMemberValues;
+		}
+
+		public List<String> getMemberNames() {
+			return memberNames;
+		}
+
+		public List<String> getMemberTypeConstraints() {
+			return memberTypeConstraints;
+		}
+
+		public List<Boolean> getMemberFinalFlag() {
+			return memberFinalFlag;
+		}
+
+		public List<String> getMethodNames() {
+			return methodNames;
+		}
+
+		public List<Node> getMethodDefinitions() {
+			return methodDefinitions;
+		}
+
+		public List<Boolean> getMethodOverrideFlag() {
+			return methodOverrideFlag;
+		}
+
+		public List<Node> getConstructorDefinitions() {
+			return constructorDefinitions;
+		}
+
+		public List<AbstractSyntaxTree.Node> getParentClasses() {
+			return parentClasses;
+		}
+
+		@Override
+		public NodeType getNodeType() {
+			return NodeType.CLASS_DEFINITION;
+		}
+
+		@Override
+		public String toString() {
+			if(staticMemberNames.size() != staticMemberTypeConstraints.size() ||
+					memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size() ||
+					staticMemberNames.size() != staticMemberValues.size() || methodNames.size() != methodDefinitions.size() ||
+					methodNames.size() != methodOverrideFlag.size())
+				return "ClassDefinitionNode: <INVALID>";
+
+			StringBuilder builder = new StringBuilder();
+			builder.append("ClassDefinitionNode: Position: {LineFrom: ");
+			builder.append(lineNumberFrom);
+			builder.append(", LineTo: ");
+			builder.append(lineNumberTo);
+			builder.append("}, StaticMembers{TypeConstraints} = <value>: {\n");
+			for(int i = 0;i < staticMemberNames.size();i++) {
+				builder.append("\t");
+				builder.append(staticMemberNames.get(i));
+				if(staticMemberTypeConstraints.get(i) != null) {
+					builder.append("{");
+					builder.append(staticMemberTypeConstraints.get(i));
+					builder.append("}");
+				}
+				if(staticMemberValues.get(i) != null) {
+					builder.append(" = {\n");
+					String[] tokens = staticMemberValues.get(i).toString().split("\\n");
+					for(String token:tokens) {
+						builder.append("\t\t");
+						builder.append(token);
+						builder.append("\n");
+					}
+					builder.append("\t}");
+				}
+				builder.append("\n");
+			}
+			builder.append("}, Members{TypeConstraints}: {\n");
+			for(int i = 0;i < memberNames.size();i++) {
+				builder.append("\t");
+				builder.append(memberFinalFlag.get(i)?"final:":"");
+				builder.append(memberNames.get(i));
+				if(memberTypeConstraints.get(i) != null) {
+					builder.append("{");
+					builder.append(memberTypeConstraints.get(i));
+					builder.append("}");
+				}
+				builder.append("\n");
+			}
+			builder.append("}, MethodName = <definition>: {\n");
+			for(int i = 0;i < methodNames.size();i++) {
+				builder.append("\t");
+				builder.append(methodOverrideFlag.get(i)?"override:":"");
+				builder.append(methodNames.get(i));
+				builder.append(" = {\n");
+				String[] tokens = methodDefinitions.get(i).toString().split("\\n");
+				for(String token:tokens) {
+					builder.append("\t\t");
+					builder.append(token);
+					builder.append("\n");
+				}
+				builder.append("\t}\n");
+			}
+			builder.append("}, Constructors: {\n");
+			constructorDefinitions.forEach(node -> {
+                String[] tokens = node.toString().split("\\n");
+                for (String token:tokens) {
+                    builder.append("\t");
+                    builder.append(token);
+                    builder.append("\n");
+                }
+            });
+			builder.append("}, ParentClasses: {\n");
+			String[] tokens = parentClasses.toString().split("\\n");
+			for (String token:tokens) {
+				builder.append("\t");
+				builder.append(token);
+				builder.append("\n");
+			}
+			builder.append("}");
+
+			return builder.toString();
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(this == obj)
+				return true;
+
+			if(obj == null)
+				return false;
+
+			if(!(obj instanceof ClassDefinitionNode))
+				return false;
+
+			ClassDefinitionNode that = (ClassDefinitionNode)obj;
+			return this.getNodeType().equals(that.getNodeType()) && this.staticMemberNames.equals(that.staticMemberNames) &&
+					this.staticMemberTypeConstraints.equals(that.staticMemberTypeConstraints) &&
+					this.staticMemberValues.equals(that.staticMemberValues) && this.memberNames.equals(that.memberNames) &&
+					this.memberTypeConstraints.equals(that.memberTypeConstraints) && this.memberFinalFlag.equals(that.memberFinalFlag) &&
+					this.methodNames.equals(that.methodNames) && this.methodDefinitions.equals(that.methodDefinitions) &&
+					this.methodOverrideFlag.equals(that.methodOverrideFlag) &&
+					this.constructorDefinitions.equals(that.constructorDefinitions) && this.parentClasses.equals(that.parentClasses);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(this.getNodeType(), this.staticMemberNames, this.staticMemberTypeConstraints,
+					this.staticMemberValues, this.memberNames, this.memberTypeConstraints, this.methodNames,
+					this.methodDefinitions, this.methodOverrideFlag, this.constructorDefinitions, this.parentClasses);
+		}
+	}
+
 	public static enum NodeType {
 		GENERAL, LIST, PARSING_ERROR, ASSIGNMENT, ESCAPE_SEQUENCE, UNPROCESSED_VARIABLE_NAME, VARIABLE_NAME, ARGUMENT_SEPARATOR,
 		FUNCTION_CALL, FUNCTION_CALL_PREVIOUS_NODE_VALUE, FUNCTION_DEFINITION, CONDITION, IF_STATEMENT_PART_IF, IF_STATEMENT_PART_ELSE,
 		IF_STATEMENT, LOOP_STATEMENT_PART_LOOP, LOOP_STATEMENT_PART_WHILE, LOOP_STATEMENT_PART_UNTIL, LOOP_STATEMENT_PART_REPEAT, LOOP_STATEMENT_PART_FOR_EACH,
 		LOOP_STATEMENT_PART_ELSE, LOOP_STATEMENT, LOOP_STATEMENT_CONTINUE_BREAK, TRY_STATEMENT_PART_TRY, TRY_STATEMENT_PART_SOFT_TRY, TRY_STATEMENT_PART_NON_TRY,
 		TRY_STATEMENT_PART_CATCH, TRY_STATEMENT_PART_ELSE, TRY_STATEMENT_PART_FINALLY, TRY_STATEMENT, MATH, OPERATION, RETURN, THROW, INT_VALUE, LONG_VALUE,
-		FLOAT_VALUE, DOUBLE_VALUE, CHAR_VALUE, TEXT_VALUE, NULL_VALUE, VOID_VALUE, ARRAY, STRUCT_DEFINITION;
+		FLOAT_VALUE, DOUBLE_VALUE, CHAR_VALUE, TEXT_VALUE, NULL_VALUE, VOID_VALUE, ARRAY, STRUCT_DEFINITION, CLASS_DEFINITION;
 	}
 }

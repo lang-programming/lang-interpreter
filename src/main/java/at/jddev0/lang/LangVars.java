@@ -109,5 +109,6 @@ final class LangVars {
 		addStaticLangVar("&Complex", new DataObject().setStruct(LangCompositeTypes.STRUCT_COMPLEX).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Pair", new DataObject().setStruct(LangCompositeTypes.STRUCT_PAIR).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Maybe", new DataObject().setStruct(LangCompositeTypes.STRUCT_MAYBE).setFinalData(true), SCOPE_ID);
+		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true), SCOPE_ID);
 	}
 }

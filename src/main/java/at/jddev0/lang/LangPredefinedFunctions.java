@@ -41,7 +41,7 @@ import static at.jddev0.lang.LangFunction.LangParameter.*;
 final class LangPredefinedFunctions {
 	private LangPredefinedFunctions() {}
 
-	static void addPredefinedFunctions(LangInterpreter interpreter, Map<String, LangNativeFunction> funcs) {
+	static void addPredefinedFunctions(Map<String, LangNativeFunction> funcs) {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedResetFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedErrorFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLangFunctions.class));
@@ -66,10 +66,11 @@ final class LangPredefinedFunctions {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLangTestFunctions.class));
 	}
 
-	static void addLinkerFunctions(LangInterpreter interpreter, Map<String, LangNativeFunction> funcs) {
+	static void addLinkerFunctions(Map<String, LangNativeFunction> funcs) {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLinkerFunctions.class));
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedResetFunctions {
 		private LangPredefinedResetFunctions() {}
 
@@ -116,6 +117,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedErrorFunctions {
 		private LangPredefinedErrorFunctions() {}
 
@@ -166,6 +168,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedLangFunctions {
 		private LangPredefinedLangFunctions() {}
 
@@ -194,6 +197,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedSystemFunctions {
 		private LangPredefinedSystemFunctions() {}
 
@@ -707,6 +711,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedIOFunctions {
 		private LangPredefinedIOFunctions() {}
 
@@ -930,6 +935,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedNumberFunctions {
 		private LangPredefinedNumberFunctions() {}
 
@@ -1255,6 +1261,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedCharacterFunctions {
 		private LangPredefinedCharacterFunctions() {}
 
@@ -1290,6 +1297,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedTextFunctions {
 		private LangPredefinedTextFunctions() {}
 
@@ -1704,6 +1712,8 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedConversionFunctions {
 		private LangPredefinedConversionFunctions() {}
 
@@ -1857,6 +1867,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedOperationFunctions {
 		private LangPredefinedOperationFunctions() {}
 
@@ -2361,6 +2372,8 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedMathFunctions {
 		private LangPredefinedMathFunctions() {}
 
@@ -3256,6 +3269,8 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedCombinatorFunctions {
 		private LangPredefinedCombinatorFunctions() {}
 
@@ -6376,6 +6391,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedFuncPtrFunctions {
 		private LangPredefinedFuncPtrFunctions() {}
 
@@ -6521,6 +6537,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedByteBufferFunctions {
 		private LangPredefinedByteBufferFunctions() {}
 
@@ -6651,6 +6668,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedArrayFunctions {
 		private LangPredefinedArrayFunctions() {}
 
@@ -7649,6 +7667,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedListFunctions {
 		private LangPredefinedListFunctions() {}
 
@@ -8525,6 +8544,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedStructFunctions {
 		private LangPredefinedStructFunctions() {}
 
@@ -8749,6 +8769,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedComplexStructFunctions {
 		private LangPredefinedComplexStructFunctions() {}
 
@@ -9003,6 +9024,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedPairStructFunctions {
 		private LangPredefinedPairStructFunctions() {}
 
@@ -9059,6 +9081,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedMaybeStructFunctions {
 		private LangPredefinedMaybeStructFunctions() {}
 
@@ -9168,6 +9191,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedModuleFunctions {
 		private LangPredefinedModuleFunctions() {}
 
@@ -9522,6 +9546,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedLangTestFunctions {
 		private LangPredefinedLangTestFunctions() {}
 
@@ -10292,6 +10317,7 @@ final class LangPredefinedFunctions {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static final class LangPredefinedLinkerFunctions {
 		private LangPredefinedLinkerFunctions() {}
 
