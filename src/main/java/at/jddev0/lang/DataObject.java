@@ -2847,7 +2847,8 @@ public class DataObject {
 				return true;
 
 			for(LangObject parentClass:parentClasses)
-				return parentClass.isInstanceOf(classObject);
+				if(parentClass.isInstanceOf(classObject))
+					return true;
 
 			return false;
 		}
