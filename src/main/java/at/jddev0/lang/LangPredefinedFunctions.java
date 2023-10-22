@@ -639,9 +639,27 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$value\") must not be a definition struct", SCOPE_ID);
 
 			if(!typeStruct.isDefinition())
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$type\") be a definition struct", SCOPE_ID);
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a definition struct", SCOPE_ID);
 
 			return new DataObject().setBoolean(valueStruct.getStructBaseDefinition().equals(typeStruct));
+		}
+		@LangFunction("isInstanceOf")
+		@AllowedTypes(DataObject.DataType.INT)
+		public static DataObject isInstanceOfWithObjectParametersFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$value") @AllowedTypes(DataObject.DataType.OBJECT) DataObject valueObject,
+				@LangParameter("$type") @AllowedTypes(DataObject.DataType.OBJECT) DataObject typeObject
+		) {
+			DataObject.LangObject langObject = valueObject.getObject();
+			DataObject.LangObject typeClass = typeObject.getObject();
+
+			if(langObject.isClass())
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$value\") must be an object", SCOPE_ID);
+
+			if(!typeClass.isClass())
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a class", SCOPE_ID);
+
+			return new DataObject().setBoolean(langObject.getClassBaseDefinition().equals(typeClass));
 		}
 
 		@LangFunction("typeOf")
