@@ -2684,6 +2684,33 @@ public class DataObject {
 			if(this.constructors.length < 1)
 				throw new DataTypeConstraintException("There must be at least one constructor");
 
+			{
+				List<LangBaseFunction> functionSignatures = new LinkedList<>();
+				for(FunctionPointerObject constructor:constructors) {
+					if(constructor.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
+						functionSignatures.add(constructor.getNormalFunction());
+					}else if(constructor.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
+						List<LangNativeFunction.InternalFunction> internalFunctions = constructor.getNativeFunction().getInternalFunctions();
+						functionSignatures.addAll(internalFunctions);
+					}else {
+						throw new DataTypeConstraintException("Invalid function type \"" + constructor.getFunctionPointerType() + "\"");
+					}
+				}
+
+				for(int i = 0;i < functionSignatures.size();i++) {
+					for(int j = 0;j < functionSignatures.size();j++) {
+						//Do not compare to same function signature
+						if(i == j)
+							continue;
+
+						if(LangUtils.areFunctionSignaturesEquals(functionSignatures.get(i), functionSignatures.get(j)))
+							throw new DataTypeConstraintException("Duplicated function signatures: " +
+									"\"construct" + functionSignatures.get(i).toFunctionSignatureSyntax() +
+									"\" and \"construct" + functionSignatures.get(j).toFunctionSignatureSyntax() + "\"");
+					}
+				}
+			}
+
 			//TODO allow super constructor call from constructor [Dynamically bind super constructors to this]
 
 			this.members = null;
