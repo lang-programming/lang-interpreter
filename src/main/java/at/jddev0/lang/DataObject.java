@@ -2447,6 +2447,7 @@ public class DataObject {
 		public static final LangObject OBJECT_CLASS;
 		static {
 			Map<String, FunctionPointerObject[]> methods = new HashMap<>();
+			Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
 			methods.put("mp.getClass", new FunctionPointerObject[] {
 					new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction(value="mp.getClass", isMethod=true)
@@ -2458,6 +2459,9 @@ public class DataObject {
 							return new DataObject().setObject(thisObject.getClassBaseDefinition());
 						}
 					}))
+			});
+			methodOverrideFlags.put("mp.getClass", new Boolean[] {
+					false
 			});
 
 			FunctionPointerObject[] constructors = new FunctionPointerObject[] {
@@ -2474,7 +2478,7 @@ public class DataObject {
 			};
 
 			OBJECT_CLASS = new LangObject(true, new DataObject[0], new String[0], new DataTypeConstraint[0],
-					new boolean[0], methods, constructors, null);
+					new boolean[0], methods, methodOverrideFlags, constructors, null);
 		}
 
 		private final DataObject[] staticMembers;
@@ -2498,14 +2502,16 @@ public class DataObject {
 
 		public LangObject(DataObject[] staticMembers, String[] memberNames, DataTypeConstraint[] memberTypeConstraints,
 						  boolean[] memberFinalFlags, Map<String, FunctionPointerObject[]> methods,
-						  FunctionPointerObject[] constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
-			this(false, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, constructors, parentClasses);
+						  Map<String, Boolean[]> methodOverrideFlags, FunctionPointerObject[] constructors,
+						  LangObject[] parentClasses) throws DataTypeConstraintException {
+			this(false, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, methodOverrideFlags,
+					constructors, parentClasses);
 		}
 
 		private LangObject(boolean isBaseObject, DataObject[] staticMembers, String[] memberNames,
 						   DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
-						   Map<String, FunctionPointerObject[]> methods, FunctionPointerObject[] constructors,
-						   LangObject[] parentClasses) throws DataTypeConstraintException {
+						   Map<String, FunctionPointerObject[]> methods, Map<String, Boolean[]> methodOverrideFlags,
+						   FunctionPointerObject[] constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
 			if(isBaseObject) {
 				this.parentClasses = parentClasses = new LangObject[0];
 			}else if(parentClasses == null || parentClasses.length == 0) {
@@ -2594,11 +2600,18 @@ public class DataObject {
 
 			this.methods = new HashMap<>(methods);
             this.methods.replaceAll((k, v) -> Arrays.copyOf(v, v.length));
-			for(Map.Entry<String, FunctionPointerObject[]> method:methods.entrySet()) {
-				FunctionPointerObject[] overloadedMethods = method.getValue();
+			List<String> methodNames = new ArrayList<>(methods.keySet());
+			for(String methodName:methodNames) {
+				FunctionPointerObject[] overloadedMethods = methods.get(methodName);
+				Boolean[] overloadedMethodOverrideFlags = methodOverrideFlags.get(methodName);
+
+				if(overloadedMethodOverrideFlags == null || overloadedMethods.length != overloadedMethodOverrideFlags.length)
+					throw new DataTypeConstraintException("Invalid override flag values for \"" + methodName + "\"");
+
+				//TODO check override flag -> error if method present in super and no override or method not present but override [For native function with multiple signatures: check all signatures]
 
 				if(overloadedMethods.length == 0)
-					throw new DataTypeConstraintException("No method present for method \"" + method.getKey() + "\"");
+					throw new DataTypeConstraintException("No method present for method \"" + methodName + "\"");
 
 				List<LangBaseFunction> functionSignatures = new LinkedList<>();
 				for(FunctionPointerObject overloadedMethod:overloadedMethods) {
@@ -2620,8 +2633,8 @@ public class DataObject {
 
 						if(LangUtils.areFunctionSignaturesEquals(functionSignatures.get(i), functionSignatures.get(j)))
 							throw new DataTypeConstraintException("Duplicated function signatures: " +
-									"\"" + method.getKey() + functionSignatures.get(i).toFunctionSignatureSyntax() + "\" and \"" +
-									method.getKey() + functionSignatures.get(j).toFunctionSignatureSyntax() + "\"");
+									"\"" + methodName + functionSignatures.get(i).toFunctionSignatureSyntax() + "\" and \"" +
+									methodName + functionSignatures.get(j).toFunctionSignatureSyntax() + "\"");
 					}
 				}
 			}

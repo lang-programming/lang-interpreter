@@ -2550,7 +2550,8 @@ public final class LangInterpreter {
 						
 						if(variableName.startsWith("&")) {
 							DataObject dataObject = getOrCreateDataObjectFromVariableName(null, moduleName, variableName.
-									substring(0, variableName.length() - 3), false, false, false, null, argument.getLineNumberFrom(), SCOPE_ID);
+									substring(0, variableName.length() - 3), false, false,
+									false, null, argument.getLineNumberFrom(), SCOPE_ID);
 							if(dataObject == null) {
 								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARR_PTR, "Unpacking of undefined variable",
 										argument.getLineNumberFrom(), SCOPE_ID));
@@ -3178,16 +3179,17 @@ public final class LangInterpreter {
 						node.getLineNumberFrom(), SCOPE_ID);
 
 		Map<String, List<FunctionPointerObject>> rawMethods = new HashMap<>();
+		Map<String, List<Boolean>> rawMethodOverrideFlags = new HashMap<>();
 		for(int i = 0;i < methodNames.size();i++) {
 			if(methodOverrideFlag.get(i) == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for method at index " + i,
 						node.getLineNumberFrom(), SCOPE_ID);
 
-			boolean override = methodOverrideFlag.get(i);
-
 			String methodName = methodNames.get(i);
-			if(!rawMethods.containsKey(methodName))
+			if(!rawMethods.containsKey(methodName)) {
 				rawMethods.put(methodName, new LinkedList<>());
+				rawMethodOverrideFlags.put(methodName, new LinkedList<>());
+			}
 
 			List<FunctionPointerObject> functions = rawMethods.get(methodName);
 			DataObject methodDefinition = interpretNode(null, methodDefinitions.get(i), SCOPE_ID);
@@ -3195,13 +3197,17 @@ public final class LangInterpreter {
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Methods must be of type \"" + DataType.FUNCTION_POINTER + "\"",
 						methodDefinitions.get(i).getLineNumberFrom(), SCOPE_ID);
 
-			//TODO use method override flag
-
 			functions.add(methodDefinition.getFunctionPointer());
+
+			List<Boolean> methodOverrideFlags = rawMethodOverrideFlags.get(methodName);
+			methodOverrideFlags.add(methodOverrideFlag.get(i));
 		}
 
 		Map<String, FunctionPointerObject[]> methods = new HashMap<>();
 		rawMethods.forEach((k, v) -> methods.put(k, v.toArray(new FunctionPointerObject[0])));
+
+		Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
+		rawMethodOverrideFlags.forEach((k, v) -> methodOverrideFlags.put(k, v.toArray(new Boolean[0])));
 
 		List<Node> constructorDefinitions = node.getConstructorDefinitions();
 
@@ -3231,7 +3237,7 @@ public final class LangInterpreter {
 
 		try {
 			return new DataObject().setObject(new LangObject(staticMembers, memberNames.toArray(new String[0]),
-					memberTypeConstraintsArray, memberFinalFlagArray, methods, constructors,
+					memberTypeConstraintsArray, memberFinalFlagArray, methods, methodOverrideFlags, constructors,
 					parentClassObjectList.toArray(new LangObject[0])));
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
