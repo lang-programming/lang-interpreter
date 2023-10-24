@@ -1337,7 +1337,9 @@ public final class LangInterpreter {
 					
 					return interpretNode(leftSideOperand, node.getRightSideOperand(), SCOPE_ID);
 				case MEMBER_ACCESS:
-					if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
+					if(!(node.getLeftSideOperand() instanceof TextValueNode && leftSideOperand.getType() == DataType.TEXT &&
+							leftSideOperand.getText().equals("super")) && leftSideOperand.getType() != DataType.STRUCT &&
+							leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
 								node.getLineNumberFrom(), SCOPE_ID);
@@ -2616,10 +2618,11 @@ public final class LangInterpreter {
 		final String originalFunctionName = functionName;
 
 		if(functionName.startsWith("mp.")) {
-			if(compositeType == null || compositeType.getType() != DataType.OBJECT)
+			if(compositeType == null || (compositeType.getType() != DataType.OBJECT &&
+					!(compositeType.getType() == DataType.TEXT && compositeType.getText().equals("super"))))
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method call without object", node.getLineNumberFrom(), SCOPE_ID);
 
-			if(compositeType.getObject().isClass())
+			if(compositeType.getType() == DataType.OBJECT && compositeType.getObject().isClass())
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method can not be called on classes", node.getLineNumberFrom(), SCOPE_ID);
 		}
 
@@ -2666,6 +2669,36 @@ public final class LangInterpreter {
 				}catch(DataTypeConstraintException e) {
 					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 				}
+			}else if(compositeType.getType() == DataType.TEXT && compositeType.getText().equals("super")) {
+				compositeType = data.get(SCOPE_ID).var.get("&this");
+
+				if(compositeType == null || compositeType.getType() != DataType.OBJECT)
+					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+							"Super can only be used in methods when \"&this\" is present", SCOPE_ID);
+
+				if(functionName.startsWith("fp.") || functionName.startsWith("fn.") ||
+						functionName.startsWith("func.") || functionName.startsWith("ln.") || functionName.startsWith("linker"))
+					throw new DataTypeConstraintException("The method \"" + functionName + "\" is not part of this object");
+
+				String methodName = functionName.startsWith("mp.")?functionName:("mp." + functionName);
+
+				methods = compositeType.getObject().getSuperMethods().get(methodName);
+				if(methods == null)
+					throw new DataTypeConstraintException("The method \"" + functionName + "\" is not in any super class of this object");
+
+				List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
+
+				fp = LangUtils.getMostRestrictiveFunction(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+				if(fp == null)
+					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+							"No matching function signature was found for the given arguments in any super class of this object." +
+									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
+									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+
+				//Bind "&this" on super method
+				fp = new FunctionPointerObject(fp, compositeType.getObject());
+
+				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				//Constructor and destructor
 				if(functionName.equals("construct")) {
@@ -2700,6 +2733,10 @@ public final class LangInterpreter {
 
 					return createdObject;
 				}
+
+				if(functionName.startsWith("fn.") || functionName.startsWith("func.") ||
+					functionName.startsWith("ln.") || functionName.startsWith("linker"))
+					throw new DataTypeConstraintException("The method \"" + functionName + "\" is not part of this object");
 
 				String methodName = (compositeType.getObject().isClass() || functionName.startsWith("fp."))?
 						null:((functionName.startsWith("mp.")?"":"mp.") + functionName);

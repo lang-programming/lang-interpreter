@@ -2837,6 +2837,23 @@ public class DataObject {
 			return new HashMap<>(methods);
 		}
 
+		public Map<String, FunctionPointerObject[]> getSuperMethods() {
+			Map<String, List<FunctionPointerObject>> rawSuperMethods = new HashMap<>();
+			for(LangObject parentClass:parentClasses) {
+				parentClass.getMethods().forEach((k, v) -> {
+					if(!rawSuperMethods.containsKey(k))
+						rawSuperMethods.put(k, new LinkedList<>());
+
+					rawSuperMethods.get(k).addAll(Arrays.asList(v));
+				});
+			}
+
+			Map<String, FunctionPointerObject[]> superMethods = new HashMap<>();
+			rawSuperMethods.forEach((k, v) -> superMethods.put(k, v.toArray(new FunctionPointerObject[0])));
+
+			return new HashMap<>(superMethods);
+		}
+
 		public FunctionPointerObject[] getConstructors() {
 			return Arrays.copyOf(constructors, constructors.length);
 		}
