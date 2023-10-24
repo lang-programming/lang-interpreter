@@ -151,15 +151,15 @@ public class LangNativeFunction {
 	}
 
 	public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList, int SCOPE_ID) {
-		return callFunc(interpreter, null, argumentList, SCOPE_ID);
+		return callFunc(interpreter, null, -1, argumentList, SCOPE_ID);
 	}
 
-	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, List<DataObject> argumentList, int SCOPE_ID) {
+	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel, List<DataObject> argumentList, int SCOPE_ID) {
 		//TODO remove checks from this method and move to directly to interpreter
 		
 		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
 		if(internalFunctions.size() == 1)
-			return internalFunctions.get(0).callFunc(interpreter, thisObject, argumentList, combinedArgumentList, SCOPE_ID);
+			return internalFunctions.get(0).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList, SCOPE_ID);
 		
 		int index = LangUtils.getMostRestrictiveFunctionSignatureIndex(internalFunctions, combinedArgumentList);
 		
@@ -169,7 +169,7 @@ public class LangNativeFunction {
 					collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 		}
 		
-		return internalFunctions.get(index).callFunc(interpreter, thisObject, argumentList, combinedArgumentList, SCOPE_ID);
+		return internalFunctions.get(index).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList, SCOPE_ID);
 	}
 	
 	public InternalFunction createInternalFunction(Object instance, Method functionBody)
@@ -412,7 +412,8 @@ public class LangNativeFunction {
 			this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
 		}
 		
-		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, List<DataObject> argumentList, List<DataObject> combinedArgumentList, int SCOPE_ID) {
+		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
+								   List<DataObject> argumentList, List<DataObject> combinedArgumentList, int SCOPE_ID) {
 			if(method && thisObject == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is not bound for native function for LangObject", SCOPE_ID);
 
@@ -451,7 +452,7 @@ public class LangNativeFunction {
 			int argumentIndex = 0;
 			for(int i = 0;i < argCount;i++) {
 				if(combinatorFunction && argumentIndex >= combinedArgumentList.size() && (varArgsParameterIndex == -1 || combinatorFunctionCallCount == 0))
-					return combinatorCall(interpreter, thisObject, combinedArgumentList, SCOPE_ID);
+					return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList, SCOPE_ID);
 				
 				String variableName = parameterList.get(i).getVariableName();
 				
@@ -475,7 +476,7 @@ public class LangNativeFunction {
 					}else if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
 						//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
 						if(combinatorFunction && combinatorFunctionCallCount == 0)
-							return combinatorCall(interpreter, thisObject, combinedArgumentList, SCOPE_ID);
+							return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList, SCOPE_ID);
 						
 						List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
 								map(DataObject::new).collect(Collectors.toList());
@@ -563,7 +564,8 @@ public class LangNativeFunction {
 			}
 		}
 		
-		private DataObject combinatorCall(LangInterpreter interpreter, DataObject.LangObject thisObject, List<DataObject> combinedArgumentList, int SCOPE_ID) {
+		private DataObject combinatorCall(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
+										  List<DataObject> combinedArgumentList, int SCOPE_ID) {
 			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
 					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
 			
@@ -586,7 +588,7 @@ public class LangNativeFunction {
 			
 			FunctionPointerObject fp = new FunctionPointerObject(functionName, langNativeFunction);
 			if(method)
-				fp = new FunctionPointerObject(fp, thisObject);
+				fp = new FunctionPointerObject(fp, thisObject, superLevel);
 
 			return new DataObject().setFunctionPointer(fp);
 		}

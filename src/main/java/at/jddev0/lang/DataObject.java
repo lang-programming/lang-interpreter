@@ -2104,6 +2104,10 @@ public class DataObject {
 		 */
 		private final LangObject thisObject;
 		/**
+		 * For methods the super level of the class [= level of parent]
+		 */
+		private final int superLevel;
+		/**
 		 * If functionName is set, the function name from the stack frame element which is created for the function call will be overridden
 		 */
 		private final String functionName;
@@ -2115,13 +2119,14 @@ public class DataObject {
 		 * For normal and native function pointer definition
 		 * Used for binding the this-object
 		 */
-		public FunctionPointerObject(FunctionPointerObject func, LangObject thisObject) throws DataTypeConstraintException {
+		public FunctionPointerObject(FunctionPointerObject func, LangObject thisObject, int superLevel) throws DataTypeConstraintException {
 			if(thisObject.isClass())
 				throw new DataTypeConstraintException("The this-object must be an object");
 
 			this.langPath = func.langPath;
 			this.langFile = func.langFile;
 			this.thisObject = thisObject;
+			this.superLevel = superLevel;
 			this.functionName = func.functionName;
 			this.normalFunction = func.normalFunction;
 			this.nativeFunction = func.nativeFunction;
@@ -2135,6 +2140,7 @@ public class DataObject {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.thisObject = null;
+			this.superLevel = -1;
 			this.functionName = functionName;
 			this.normalFunction = normalFunction;
 			this.nativeFunction = null;
@@ -2166,6 +2172,7 @@ public class DataObject {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.thisObject = null;
+			this.superLevel = -1;
 			this.functionName = functionName == null?nativeFunction.getFunctionName():functionName;
 			this.normalFunction = null;
 			this.nativeFunction = nativeFunction;
@@ -2207,6 +2214,10 @@ public class DataObject {
 
 		public String getLangFile() {
 			return langFile;
+		}
+
+		public int getSuperLevel() {
+			return superLevel;
 		}
 
 		public LangObject getThisObject() {
@@ -2257,12 +2268,13 @@ public class DataObject {
 
 			FunctionPointerObject that = (FunctionPointerObject)obj;
 			return this.functionPointerType == that.functionPointerType && Objects.equals(this.thisObject, that.thisObject) &&
-					Objects.equals(this.normalFunction, that.normalFunction) && Objects.equals(this.nativeFunction, that.nativeFunction);
+					Objects.equals(this.superLevel, that.superLevel) && Objects.equals(this.normalFunction, that.normalFunction) &&
+					Objects.equals(this.nativeFunction, that.nativeFunction);
 		}
 
 		@Override
 		public int hashCode() {
-			return Objects.hash(functionPointerType, thisObject, normalFunction, nativeFunction);
+			return Objects.hash(functionPointerType, thisObject, superLevel, normalFunction, nativeFunction);
 		}
 	}
 	public static final class VarPointerObject {
@@ -2772,18 +2784,18 @@ public class DataObject {
 			this.methods = new HashMap<>(classBaseDefinition.methods);
 			this.methods.replaceAll((k, v) -> {
 				FunctionPointerObject[] arrayCopy = Arrays.copyOf(v, v.length);
+				int[] superLevels = classBaseDefinition.methodSuperLevels.get(k);
 				for(int i = 0;i < arrayCopy.length;i++)
-					arrayCopy[i] = new FunctionPointerObject(arrayCopy[i], this);
+					arrayCopy[i] = new FunctionPointerObject(arrayCopy[i], this, superLevels[i]);
 
 				return arrayCopy;
 			});
 
-			this.methodSuperLevels = new HashMap<>(classBaseDefinition.methodSuperLevels);
-			this.methodSuperLevels.replaceAll((k, v) -> Arrays.copyOf(v, v.length));
+			this.methodSuperLevels = null;
 
 			this.constructors = Arrays.copyOf(classBaseDefinition.constructors, classBaseDefinition.constructors.length);
 			for(int i = 0;i < this.constructors.length;i++)
-				this.constructors[i] = new FunctionPointerObject(this.constructors[i], this);
+				this.constructors[i] = new FunctionPointerObject(this.constructors[i], this, 0);
 
 			this.parentClasses = Arrays.copyOf(classBaseDefinition.parentClasses, classBaseDefinition.parentClasses.length);
 		}
@@ -2877,6 +2889,9 @@ public class DataObject {
 			return new HashMap<>(methods);
 		}
 
+		/**
+		 * @return Method super levels for class and null for object
+		 */
 		public Map<String, int[]> getMethodSuperLevels() {
 			return methodSuperLevels;
 		}
@@ -2906,31 +2921,6 @@ public class DataObject {
 			return rawSuperMethods;
 		}
 
-		private Map<String, List<Integer>> getRawSuperMethodSuperLevels(int superLevel) {
-			Map<String, List<Integer>> rawSuperMethods = new HashMap<>();
-			for(LangObject parentClass:parentClasses) {
-				if(superLevel > 0) {
-					Map<String, List<Integer>> superRawSuperMethods = parentClass.
-							getRawSuperMethodSuperLevels(superLevel - 1);
-					superRawSuperMethods.forEach((k, v) -> {
-						if(!rawSuperMethods.containsKey(k))
-							rawSuperMethods.put(k, new LinkedList<>());
-
-						v.stream().map(i -> i + 1).forEachOrdered(rawSuperMethods.get(k)::add);
-					});
-				}else {
-					parentClass.getMethodSuperLevels().forEach((k, v) -> {
-						if(!rawSuperMethods.containsKey(k))
-							rawSuperMethods.put(k, new LinkedList<>());
-
-						rawSuperMethods.get(k).addAll(Arrays.stream(v).map(i -> i + 1).boxed().collect(Collectors.toList()));
-					});
-				}
-			}
-
-			return rawSuperMethods;
-		}
-
 		public Map<String, FunctionPointerObject[]> getSuperMethods() {
 			Map<String, List<FunctionPointerObject>> rawSuperMethods = getRawSuperMethods(this.superLevel);
 
@@ -2938,15 +2928,6 @@ public class DataObject {
 			rawSuperMethods.forEach((k, v) -> superMethods.put(k, v.toArray(new FunctionPointerObject[0])));
 
 			return new HashMap<>(superMethods);
-		}
-
-		public Map<String, int[]> getSuperMethodSuperLevels() {
-			Map<String, List<Integer>> rawSuperMethodSuperLevels = getRawSuperMethodSuperLevels(this.superLevel);
-
-			Map<String, int[]> superMethodSuperLevels = new HashMap<>();
-			rawSuperMethodSuperLevels.forEach((k, v) -> superMethodSuperLevels.put(k, v.stream().mapToInt(i -> i).toArray()));
-
-			return new HashMap<>(superMethodSuperLevels);
 		}
 
 		public FunctionPointerObject[] getConstructors() {

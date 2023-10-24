@@ -2275,12 +2275,17 @@ public final class LangInterpreter {
 	}
 	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList, int parentLineNumber, final int SCOPE_ID) {
 		argumentValueList = new ArrayList<>(argumentValueList);
-		
+
+		LangObject thisObject = fp.getThisObject();
+		int originalSuperLevel = -1;
+		if(thisObject != null && !thisObject.isClass()) {
+			originalSuperLevel = thisObject.getSuperLevel();
+			thisObject.setSuperLevel(fp.getSuperLevel());
+		}
+
 		try {
 			String functionLangPath = fp.getLangPath();
 			String functionLangFile = fp.getLangFile();
-
-			LangObject thisObject = fp.getThisObject();
 			
 			functionName = (functionName == null || fp.getFunctionName() != null)?fp.toString():functionName;
 			
@@ -2481,7 +2486,7 @@ public final class LangInterpreter {
 					if(nativeFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber, SCOPE_ID);
 					
-					DataObject ret = nativeFunction.callFunc(this, thisObject, argumentValueList, SCOPE_ID);
+					DataObject ret = nativeFunction.callFunc(this, thisObject, fp.getSuperLevel(), argumentValueList, SCOPE_ID);
 					if(nativeFunction.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 						nativeFunction.getDeprecatedRemoveVersion() == null?"the future":nativeFunction.getDeprecatedRemoveVersion(),
@@ -2496,8 +2501,13 @@ public final class LangInterpreter {
 					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP type", parentLineNumber, SCOPE_ID);
 			}
 		}finally {
-			//Update call stack
-			popStackElement();
+			try {
+				if(thisObject != null && !thisObject.isClass())
+					thisObject.setSuperLevel(originalSuperLevel);
+			}finally {
+				//Update call stack
+				popStackElement();
+			}
 		}
 	}
 	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList, final int SCOPE_ID) {
@@ -2652,7 +2662,6 @@ public final class LangInterpreter {
 		}
 		
 		FunctionPointerObject fp;
-		int[] superLevels = null;
 		FunctionPointerObject[] methods = null;
 		if(compositeType != null) {
 			if(compositeType.getType() == DataType.STRUCT) {
@@ -2690,8 +2699,6 @@ public final class LangInterpreter {
 							"The method \"" + functionName + "\" is not in any super class of this object",
 							node.getLineNumberFrom(), SCOPE_ID);
 
-				superLevels = compositeType.getObject().getSuperMethodSuperLevels().get(methodName);
-
 				List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
 
 				int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
@@ -2703,19 +2710,10 @@ public final class LangInterpreter {
 									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
 									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 
-				int superLevel = superLevels[functionIndex];
-
 				//Bind "&this" on super method
-				fp = new FunctionPointerObject(fp, compositeType.getObject());
+				fp = new FunctionPointerObject(fp, compositeType.getObject(), compositeType.getObject().getSuperLevel() + 1);
 
-				int originalSuperLevel = compositeType.getObject().getSuperLevel();
-				try {
-					compositeType.getObject().setSuperLevel(superLevel);
-
-					return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
-				}finally {
-					compositeType.getObject().setSuperLevel(originalSuperLevel);
-				}
+				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				//Constructor and destructor
 				if(functionName.equals("construct")) {
@@ -2785,7 +2783,6 @@ public final class LangInterpreter {
 
 						fp = member.getFunctionPointer();
 					}else {
-						superLevels = compositeType.getObject().getMethodSuperLevels().get(methodName);
 						fp = null;
 					}
 				}catch(DataTypeConstraintException e) {
@@ -2874,7 +2871,7 @@ public final class LangInterpreter {
 
 		List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
 		if(fp == null) {
-			if(methods == null || superLevels == null)
+			if(methods == null)
 				return setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "\"" + node.getFunctionName() +
 						"\": Invalid interpreter state", node.getLineNumberFrom(), SCOPE_ID);
 
@@ -2885,17 +2882,6 @@ public final class LangInterpreter {
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 						" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
 						collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
-
-			int superLevel = superLevels[functionIndex];
-
-			int originalSuperLevel = compositeType.getObject().getSuperLevel();
-			try {
-				compositeType.getObject().setSuperLevel(superLevel);
-
-				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
-			}finally {
-				compositeType.getObject().setSuperLevel(originalSuperLevel);
-			}
 		}
 		return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 	}
