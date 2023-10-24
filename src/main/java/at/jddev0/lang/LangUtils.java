@@ -163,6 +163,18 @@ public final class LangUtils {
 	 */
 	public static DataObject.FunctionPointerObject getMostRestrictiveFunction(DataObject.FunctionPointerObject[] functions,
 																	   List<DataObject> argumentList) {
+		int functionIndex = getMostRestrictiveFunctionIndex(functions, argumentList);
+
+		return functionIndex == -1?null:functions[functionIndex];
+	}
+
+	/**
+	 * @param functions Function signatures will be extracted from the FunctionPointerObject
+	 * @param argumentList The combined argument list
+	 *
+	 * @return Returns the index of the most restrictive function for the provided arguments or -1 if no function signature matches the arguments
+	 */
+	public static int getMostRestrictiveFunctionIndex(DataObject.FunctionPointerObject[] functions, List<DataObject> argumentList) {
 		int[] langBaseFunctionCounts = new int[functions.length];
 
 		List<LangBaseFunction> functionSignatures = new LinkedList<>();
@@ -176,7 +188,7 @@ public final class LangUtils {
 				functionSignatures.addAll(internalFunctions);
 				langBaseFunctionCounts[i] = internalFunctions.size();
 			}else {
-				return null;
+				return -1;
 			}
 		}
 
@@ -185,7 +197,7 @@ public final class LangUtils {
 				functionSignatures.stream().map(LangBaseFunction::getVarArgsParameterIndex).
 						collect(Collectors.toList()), argumentList);
 		if(index == -1)
-			return null;
+			return -1;
 
 		int functionIndex = 0;
 		while(index > 0 && functionIndex < functions.length - 1) {
@@ -193,8 +205,9 @@ public final class LangUtils {
 			functionIndex++;
 		}
 
-		return functions[functionIndex];
+		return functionIndex;
 	}
+
 	/**
 	 * @param functionSignatures Function signatures will be extracted from the LangBaseFunctions
 	 * @param argumentList The combined argument list

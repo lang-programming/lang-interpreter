@@ -2652,6 +2652,7 @@ public final class LangInterpreter {
 		}
 		
 		FunctionPointerObject fp;
+		int[] superLevels = null;
 		FunctionPointerObject[] methods = null;
 		if(compositeType != null) {
 			if(compositeType.getType() == DataType.STRUCT) {
@@ -2678,27 +2679,43 @@ public final class LangInterpreter {
 
 				if(functionName.startsWith("fp.") || functionName.startsWith("fn.") ||
 						functionName.startsWith("func.") || functionName.startsWith("ln.") || functionName.startsWith("linker"))
-					throw new DataTypeConstraintException("The method \"" + functionName + "\" is not part of this object");
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+							"The method \"" + functionName + "\" is not part of this object", node.getLineNumberFrom(), SCOPE_ID);
 
 				String methodName = functionName.startsWith("mp.")?functionName:("mp." + functionName);
 
 				methods = compositeType.getObject().getSuperMethods().get(methodName);
 				if(methods == null)
-					throw new DataTypeConstraintException("The method \"" + functionName + "\" is not in any super class of this object");
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+							"The method \"" + functionName + "\" is not in any super class of this object",
+							node.getLineNumberFrom(), SCOPE_ID);
+
+				superLevels = compositeType.getObject().getSuperMethodSuperLevels().get(methodName);
 
 				List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
 
-				fp = LangUtils.getMostRestrictiveFunction(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+				int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+
+				fp = functionIndex == -1?null:methods[functionIndex];
 				if(fp == null)
 					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 							"No matching function signature was found for the given arguments in any super class of this object." +
 									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
 									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 
+				int superLevel = superLevels[functionIndex];
+
 				//Bind "&this" on super method
 				fp = new FunctionPointerObject(fp, compositeType.getObject());
 
-				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
+				int originalSuperLevel = compositeType.getObject().getSuperLevel();
+				try {
+					compositeType.getObject().setSuperLevel(superLevel);
+
+					return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
+				}finally {
+					compositeType.getObject().setSuperLevel(originalSuperLevel);
+				}
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				//Constructor and destructor
 				if(functionName.equals("construct")) {
@@ -2736,7 +2753,8 @@ public final class LangInterpreter {
 
 				if(functionName.startsWith("fn.") || functionName.startsWith("func.") ||
 					functionName.startsWith("ln.") || functionName.startsWith("linker"))
-					throw new DataTypeConstraintException("The method \"" + functionName + "\" is not part of this object");
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+							"The method \"" + functionName + "\" is not part of this object", node.getLineNumberFrom(), SCOPE_ID);
 
 				String methodName = (compositeType.getObject().isClass() || functionName.startsWith("fp."))?
 						null:((functionName.startsWith("mp.")?"":"mp.") + functionName);
@@ -2744,7 +2762,9 @@ public final class LangInterpreter {
 					methods = methodName == null?null:compositeType.getObject().getMethods().get(methodName);
 					if(methods == null) {
 						if(functionName.startsWith("mp."))
-							throw new DataTypeConstraintException("The method \"" + functionName + "\" is not part of this object");
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+									"The method \"" + functionName + "\" is not part of this object",
+									node.getLineNumberFrom(), SCOPE_ID);
 
 						if(!functionName.startsWith("fp."))
 							functionName = "fp." + functionName;
@@ -2765,6 +2785,7 @@ public final class LangInterpreter {
 
 						fp = member.getFunctionPointer();
 					}else {
+						superLevels = compositeType.getObject().getMethodSuperLevels().get(methodName);
 						fp = null;
 					}
 				}catch(DataTypeConstraintException e) {
@@ -2853,15 +2874,28 @@ public final class LangInterpreter {
 
 		List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
 		if(fp == null) {
-			if(methods == null)
+			if(methods == null || superLevels == null)
 				return setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "\"" + node.getFunctionName() +
 						"\": Invalid interpreter state", node.getLineNumberFrom(), SCOPE_ID);
 
-			fp = LangUtils.getMostRestrictiveFunction(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+
+			fp = functionIndex == -1?null:methods[functionIndex];
 			if(fp == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 						" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
 						collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+
+			int superLevel = superLevels[functionIndex];
+
+			int originalSuperLevel = compositeType.getObject().getSuperLevel();
+			try {
+				compositeType.getObject().setSuperLevel(superLevel);
+
+				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
+			}finally {
+				compositeType.getObject().setSuperLevel(originalSuperLevel);
+			}
 		}
 		return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 	}

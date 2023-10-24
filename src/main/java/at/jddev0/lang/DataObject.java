@@ -2481,12 +2481,18 @@ public class DataObject {
 					new boolean[0], methods, methodOverrideFlags, constructors, null);
 		}
 
+		private int superLevel = 0;
+
 		private final DataObject[] staticMembers;
 		private final String[] memberNames;
 		private final DataTypeConstraint[] memberTypeConstraints;
 		private final boolean[] memberFinalFlags;
 		private final DataObject[] members;
 		private final Map<String, FunctionPointerObject[]> methods;
+		/**
+		 * Parent class level were a method comes from [Level 0 is this class, level 1 is from a direct parent class, ...]
+		 */
+		private final Map<String, int[]> methodSuperLevels;
 		private final FunctionPointerObject[] constructors;
 		/**
 		 * If size = 0: This is the base object<br>
@@ -2664,13 +2670,24 @@ public class DataObject {
 							" (For method \"" + methodName + "\" and member \"" + functionVarName + "\")");
 			}
 
+			this.methodSuperLevels = new HashMap<>();
+			this.methods.forEach((k, v) -> methodSuperLevels.put(k, new int[v.length]));
+
 			//TODO allow multi-inheritance (Check if a method with the same function signature is in both super classes)
 			{
 				for(LangObject parentClass:parentClasses) {
 					parentClass.getMethods().forEach((k, v) -> {
 						FunctionPointerObject[] overloadedMethods = this.methods.get(k);
+						int[] superLevels = this.methodSuperLevels.get(k);
 						if(overloadedMethods == null) {
 							this.methods.put(k, Arrays.copyOf(v, v.length));
+
+							int[] superSuperLevels = parentClass.methodSuperLevels.get(k);
+							superSuperLevels = Arrays.copyOf(superSuperLevels, superSuperLevels.length);
+							for(int i = 0;i < superSuperLevels.length;i++)
+								superSuperLevels[i]++;
+
+							this.methodSuperLevels.put(k, superSuperLevels);
 
 							return;
 						}
@@ -2678,15 +2695,21 @@ public class DataObject {
 						//TODO dynamically bind super methods to this for overridden methods [Same function signature] and check if method can be overridden
 						int overloadedMethodIndex = overloadedMethods.length;
 						overloadedMethods = Arrays.copyOf(overloadedMethods, overloadedMethods.length + v.length);
-                        for(FunctionPointerObject method:v) {
+
+						superLevels = Arrays.copyOf(superLevels, superLevels.length + v.length);
+                        for(int i = 0;i < v.length;i++) {
+							FunctionPointerObject method = v[i];
+							int superSuperLevel = parentClass.methodSuperLevels.get(k)[i];
 
 							//TODO check for same function signature if not overridden
 
                             overloadedMethods[overloadedMethodIndex] = method;
+							superLevels[overloadedMethodIndex] = superSuperLevel + 1;
                             overloadedMethodIndex++;
                         }
 
 						this.methods.put(k, overloadedMethods);
+						this.methodSuperLevels.put(k, superLevels);
 					});
 				}
 			}
@@ -2755,11 +2778,28 @@ public class DataObject {
 				return arrayCopy;
 			});
 
+			this.methodSuperLevels = new HashMap<>(classBaseDefinition.methodSuperLevels);
+			this.methodSuperLevels.replaceAll((k, v) -> Arrays.copyOf(v, v.length));
+
 			this.constructors = Arrays.copyOf(classBaseDefinition.constructors, classBaseDefinition.constructors.length);
 			for(int i = 0;i < this.constructors.length;i++)
 				this.constructors[i] = new FunctionPointerObject(this.constructors[i], this);
 
 			this.parentClasses = Arrays.copyOf(classBaseDefinition.parentClasses, classBaseDefinition.parentClasses.length);
+		}
+
+		public int getSuperLevel() {
+			if(isClass())
+				throw new DataTypeConstraintException("Super level can only be queried on objects");
+
+			return superLevel;
+		}
+
+		public void setSuperLevel(int superLevel) {
+			if(isClass())
+				throw new DataTypeConstraintException("Super level can only be modified on objects");
+
+			this.superLevel = superLevel;
 		}
 
 		public void postConstructor() throws DataTypeConstraintException {
@@ -2837,21 +2877,76 @@ public class DataObject {
 			return new HashMap<>(methods);
 		}
 
-		public Map<String, FunctionPointerObject[]> getSuperMethods() {
+		public Map<String, int[]> getMethodSuperLevels() {
+			return methodSuperLevels;
+		}
+
+		private Map<String, List<FunctionPointerObject>> getRawSuperMethods(int superLevel) {
 			Map<String, List<FunctionPointerObject>> rawSuperMethods = new HashMap<>();
 			for(LangObject parentClass:parentClasses) {
-				parentClass.getMethods().forEach((k, v) -> {
-					if(!rawSuperMethods.containsKey(k))
-						rawSuperMethods.put(k, new LinkedList<>());
+				if(superLevel > 0) {
+					Map<String, List<FunctionPointerObject>> superRawSuperMethods = parentClass.
+							getRawSuperMethods(superLevel - 1);
+					superRawSuperMethods.forEach((k, v) -> {
+						if(!rawSuperMethods.containsKey(k))
+							rawSuperMethods.put(k, new LinkedList<>());
 
-					rawSuperMethods.get(k).addAll(Arrays.asList(v));
-				});
+						rawSuperMethods.get(k).addAll(v);
+					});
+				}else {
+					parentClass.getMethods().forEach((k, v) -> {
+						if(!rawSuperMethods.containsKey(k))
+							rawSuperMethods.put(k, new LinkedList<>());
+
+						rawSuperMethods.get(k).addAll(Arrays.asList(v));
+					});
+				}
 			}
+
+			return rawSuperMethods;
+		}
+
+		private Map<String, List<Integer>> getRawSuperMethodSuperLevels(int superLevel) {
+			Map<String, List<Integer>> rawSuperMethods = new HashMap<>();
+			for(LangObject parentClass:parentClasses) {
+				if(superLevel > 0) {
+					Map<String, List<Integer>> superRawSuperMethods = parentClass.
+							getRawSuperMethodSuperLevels(superLevel - 1);
+					superRawSuperMethods.forEach((k, v) -> {
+						if(!rawSuperMethods.containsKey(k))
+							rawSuperMethods.put(k, new LinkedList<>());
+
+						v.stream().map(i -> i + 1).forEachOrdered(rawSuperMethods.get(k)::add);
+					});
+				}else {
+					parentClass.getMethodSuperLevels().forEach((k, v) -> {
+						if(!rawSuperMethods.containsKey(k))
+							rawSuperMethods.put(k, new LinkedList<>());
+
+						rawSuperMethods.get(k).addAll(Arrays.stream(v).map(i -> i + 1).boxed().collect(Collectors.toList()));
+					});
+				}
+			}
+
+			return rawSuperMethods;
+		}
+
+		public Map<String, FunctionPointerObject[]> getSuperMethods() {
+			Map<String, List<FunctionPointerObject>> rawSuperMethods = getRawSuperMethods(this.superLevel);
 
 			Map<String, FunctionPointerObject[]> superMethods = new HashMap<>();
 			rawSuperMethods.forEach((k, v) -> superMethods.put(k, v.toArray(new FunctionPointerObject[0])));
 
 			return new HashMap<>(superMethods);
+		}
+
+		public Map<String, int[]> getSuperMethodSuperLevels() {
+			Map<String, List<Integer>> rawSuperMethodSuperLevels = getRawSuperMethodSuperLevels(this.superLevel);
+
+			Map<String, int[]> superMethodSuperLevels = new HashMap<>();
+			rawSuperMethodSuperLevels.forEach((k, v) -> superMethodSuperLevels.put(k, v.stream().mapToInt(i -> i).toArray()));
+
+			return new HashMap<>(superMethodSuperLevels);
 		}
 
 		public FunctionPointerObject[] getConstructors() {
