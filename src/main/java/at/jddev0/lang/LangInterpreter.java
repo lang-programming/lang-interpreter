@@ -2711,7 +2711,8 @@ public final class LangInterpreter {
 									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 
 				//Bind "&this" on super method
-				fp = new FunctionPointerObject(fp, compositeType.getObject(), compositeType.getObject().getSuperLevel() + 1);
+				fp = new FunctionPointerObject(fp, compositeType.getObject(),
+						fp.getSuperLevel() + compositeType.getObject().getSuperLevel() + 1);
 
 				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 			}else if(compositeType.getType() == DataType.OBJECT) {
