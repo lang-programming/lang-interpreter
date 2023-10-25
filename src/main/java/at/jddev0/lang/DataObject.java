@@ -2616,8 +2616,8 @@ public class DataObject {
 				}
 			}
 
-			this.methods = new HashMap<>(methods);
-            this.methods.replaceAll((k, v) -> Arrays.copyOf(v, v.length));
+			Map<String, List<FunctionPointerObject>> rawMethods = new HashMap<>();
+			methods.forEach((k, v) -> rawMethods.put(k, new LinkedList<>(Arrays.asList(v))));
 			List<String> methodNames = new ArrayList<>(methods.keySet());
 			for(String methodName:methodNames) {
 				FunctionPointerObject[] overloadedMethods = methods.get(methodName);
@@ -2625,9 +2625,6 @@ public class DataObject {
 
 				if(overloadedMethodOverrideFlags == null || overloadedMethods.length != overloadedMethodOverrideFlags.length)
 					throw new DataTypeConstraintException("Invalid override flag values for \"" + methodName + "\"");
-
-				//TODO check override flag -> error if method present in super and no override or method not present but override [For native function with multiple signatures: check all signatures]
-
 				if(overloadedMethods.length == 0)
 					throw new DataTypeConstraintException("No method present for method \"" + methodName + "\"");
 
@@ -2657,7 +2654,6 @@ public class DataObject {
 				}
 			}
 
-
 			for(String methodName:methods.keySet()) {
 				String functionVarName = "fp." + methodName.substring(3);
 
@@ -2682,49 +2678,103 @@ public class DataObject {
 							" (For method \"" + methodName + "\" and member \"" + functionVarName + "\")");
 			}
 
-			this.methodSuperLevels = new HashMap<>();
-			this.methods.forEach((k, v) -> methodSuperLevels.put(k, new int[v.length]));
+			Map<String, List<Integer>> rawMethodSuperLevels = new HashMap<>();
+			rawMethods.forEach((k, v) -> {
+				List<Integer> list = new LinkedList<>();
+				for(int i = 0;i < v.size();i++)
+					list.add(0);
+
+				rawMethodSuperLevels.put(k, list);
+			});
 
 			//TODO allow multi-inheritance (Check if a method with the same function signature is in both super classes)
 			{
 				for(LangObject parentClass:parentClasses) {
 					parentClass.getMethods().forEach((k, v) -> {
-						FunctionPointerObject[] overloadedMethods = this.methods.get(k);
-						int[] superLevels = this.methodSuperLevels.get(k);
+						List<FunctionPointerObject> overloadedMethods = rawMethods.get(k);
+						List<Integer> superLevels = rawMethodSuperLevels.get(k);
 						if(overloadedMethods == null) {
-							this.methods.put(k, Arrays.copyOf(v, v.length));
+							rawMethods.put(k, new LinkedList<>(Arrays.asList(v)));
 
 							int[] superSuperLevels = parentClass.methodSuperLevels.get(k);
-							superSuperLevels = Arrays.copyOf(superSuperLevels, superSuperLevels.length);
-							for(int i = 0;i < superSuperLevels.length;i++)
-								superSuperLevels[i]++;
+							List<Integer> rawSuperSuperLevels = new LinkedList<>();
+							for(int superSuperLevel:superSuperLevels)
+								rawSuperSuperLevels.add(superSuperLevel + 1);
 
-							this.methodSuperLevels.put(k, superSuperLevels);
+							rawMethodSuperLevels.put(k, rawSuperSuperLevels);
 
 							return;
 						}
 
-						//TODO dynamically bind super methods to this for overridden methods [Same function signature] and check if method can be overridden
-						int overloadedMethodIndex = overloadedMethods.length;
-						overloadedMethods = Arrays.copyOf(overloadedMethods, overloadedMethods.length + v.length);
+						//Override check
+						Boolean[] overloadedMethodOverrideFlags = methodOverrideFlags.get(k);
+						List<LangBaseFunction> functionSignatures = new LinkedList<>();
+						List<Boolean> overrideFlags = new LinkedList<>();
+						for(int i = 0;i < overloadedMethods.size();i++) {
+							FunctionPointerObject overloadedMethod = overloadedMethods.get(i);
 
-						superLevels = Arrays.copyOf(superLevels, superLevels.length + v.length);
-                        for(int i = 0;i < v.length;i++) {
+							if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
+								functionSignatures.add(overloadedMethod.getNormalFunction());
+								overrideFlags.add(overloadedMethodOverrideFlags[i]);
+							}else if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
+								List<LangNativeFunction.InternalFunction> internalFunctions = overloadedMethod.getNativeFunction().getInternalFunctions();
+								functionSignatures.addAll(internalFunctions);
+								for(int j = 0;j < internalFunctions.size();j++)
+									overrideFlags.add(overloadedMethodOverrideFlags[i]);
+							}else {
+								throw new DataTypeConstraintException("Invalid function type \"" + overloadedMethod.getFunctionPointerType() + "\"");
+							}
+						}
+
+						List<LangBaseFunction> superFunctionSignatures = new LinkedList<>();
+						for(int i = 0;i < parentClass.methods.get(k).length;i++) {
+							FunctionPointerObject overloadedMethod = parentClass.methods.get(k)[i];
+
+							if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
+								superFunctionSignatures.add(overloadedMethod.getNormalFunction());
+							}else if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
+								List<LangNativeFunction.InternalFunction> internalFunctions = overloadedMethod.getNativeFunction().getInternalFunctions();
+								superFunctionSignatures.addAll(internalFunctions);
+							}else {
+								throw new DataTypeConstraintException("Invalid function type \"" + overloadedMethod.getFunctionPointerType() + "\"");
+							}
+						}
+
+						for(int i = 0;i < functionSignatures.size();i++) {
+							boolean isAnyEquals = false;
+                            for(LangBaseFunction superFunctionSignature:superFunctionSignatures) {
+                                if(LangUtils.areFunctionSignaturesEquals(functionSignatures.get(i), superFunctionSignature)) {
+                                    isAnyEquals = true;
+                                    break;
+                                }
+                            }
+
+							if(overrideFlags.get(i)) {
+								if(!isAnyEquals)
+									throw new DataTypeConstraintException("No method for override was found for function signature: " +
+											"\"" + k + functionSignatures.get(i).toFunctionSignatureSyntax());
+							}else {
+								if(isAnyEquals)
+									throw new DataTypeConstraintException("Method was not declared as override for function signature: " +
+											"\"" + k + functionSignatures.get(i).toFunctionSignatureSyntax());
+							}
+						}
+
+						for(int i = 0;i < v.length;i++) {
 							FunctionPointerObject method = v[i];
 							int superSuperLevel = parentClass.methodSuperLevels.get(k)[i];
 
-							//TODO check for same function signature if not overridden
-
-                            overloadedMethods[overloadedMethodIndex] = method;
-							superLevels[overloadedMethodIndex] = superSuperLevel + 1;
-                            overloadedMethodIndex++;
-                        }
-
-						this.methods.put(k, overloadedMethods);
-						this.methodSuperLevels.put(k, superLevels);
+							overloadedMethods.add(method);
+							superLevels.add(superSuperLevel + 1);
+						}
 					});
 				}
 			}
+
+			this.methods = new HashMap<>();
+			rawMethods.forEach((k, v) -> this.methods.put(k, v.toArray(new FunctionPointerObject[0])));
+			this.methodSuperLevels = new HashMap<>();
+			rawMethodSuperLevels.forEach((k, v) -> this.methodSuperLevels.put(k, v.stream().mapToInt(i -> i).toArray()));
 
 			this.constructors = Arrays.copyOf(constructors, constructors.length);
 			if(this.constructors.length < 1)
