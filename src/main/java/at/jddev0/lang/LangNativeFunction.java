@@ -155,8 +155,6 @@ public class LangNativeFunction {
 	}
 
 	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel, List<DataObject> argumentList, int SCOPE_ID) {
-		//TODO remove checks from this method and move to directly to interpreter
-		
 		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
 		if(internalFunctions.size() == 1)
 			return internalFunctions.get(0).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList, SCOPE_ID);
@@ -549,8 +547,19 @@ public class LangNativeFunction {
 			}
 			
 			try {
-				//TODO check return type in LangInterpreter
-				return (DataObject)functionBody.invoke(instance, methodArguments);
+				DataObject ret = (DataObject)functionBody.invoke(instance, methodArguments);
+
+				if(returnValueTypeConstraint != null && !interpreter.isThrownValue(SCOPE_ID)) {
+					//Thrown values are always allowed
+
+					DataObject retTmp = ret == null?new DataObject().setVoid():ret;
+
+					if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
+						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+								"Invalid return value type \"" + retTmp.getType() + "\"", -1, SCOPE_ID);
+				}
+
+				return ret;
 			}catch(IllegalAccessException|IllegalArgumentException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
 						"Native Error (\"" + e.getClass().getSimpleName() + "\"): " + e.getMessage(), SCOPE_ID);

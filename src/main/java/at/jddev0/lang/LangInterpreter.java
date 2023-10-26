@@ -2273,6 +2273,12 @@ public final class LangInterpreter {
 		
 		return retTmp == null?retTmp:new DataObject(retTmp);
 	}
+	boolean isThrownValue(final int SCOPE_ID) {
+		return executionState.isThrownValue ||
+				(executionState.tryThrownError != null && executionState.tryBlockLevel > 0 &&
+						(!executionState.isSoftTry || executionState.tryBodyScopeID == SCOPE_ID));
+	}
+
 	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList, int parentLineNumber, final int SCOPE_ID) {
 		argumentValueList = new ArrayList<>(argumentValueList);
 
@@ -2462,15 +2468,12 @@ public final class LangInterpreter {
 					
 					DataTypeConstraint returnValueTypeConstraint = normalFunction.getReturnValueTypeConstraint();
 					
-					boolean isReturnValueThrownError = executionState.isThrownValue ||
-							(executionState.tryThrownError != null && executionState.tryBlockLevel > 0 &&
-									(!executionState.isSoftTry || executionState.tryBodyScopeID == SCOPE_ID));
 					int returnOrThrowStatementLineNumber = executionState.returnOrThrowStatementLineNumber;
 					
 					DataObject retTmp = getAndResetReturnValue(SCOPE_ID);
 					retTmp = retTmp == null?new DataObject().setVoid():retTmp;
 					
-					if(returnValueTypeConstraint != null && !isReturnValueThrownError) {
+					if(returnValueTypeConstraint != null && !isThrownValue(SCOPE_ID)) {
 						//Thrown values are always allowed
 						
 						if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
