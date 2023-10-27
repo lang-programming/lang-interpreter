@@ -61,7 +61,6 @@ final class LangPredefinedFunctions {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedStructFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedComplexStructFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedPairStructFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedMaybeStructFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedModuleFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLangTestFunctions.class));
 	}
@@ -9093,116 +9092,6 @@ final class LangPredefinedFunctions {
 
 			try {
 				return new DataObject(pairStruct.getMember("$second"));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-	}
-
-	@SuppressWarnings("unused")
-	public static final class LangPredefinedMaybeStructFunctions {
-		private LangPredefinedMaybeStructFunctions() {}
-
-		@LangFunction("nothing")
-		@LangInfo("Create a nothing &Maybe struct value")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject nothingFunction(
-				LangInterpreter interpreter, int SCOPE_ID
-		) {
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createMaybeNothing());
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("just")
-		@LangInfo("Create a just &Maybe struct value")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject justFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$value") DataObject valueObject
-		) {
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createMaybeJust(valueObject));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("isPresent")
-		@LangInfo("Returns 1 if a just &maybe value is provided for nothing &maybe value 0 is returned")
-		public static DataObject isPresentFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&maybe") @AllowedTypes(DataObject.DataType.STRUCT) DataObject maybeStructObject
-		) {
-			StructObject maybeStruct = maybeStructObject.getStruct();
-
-			if(maybeStruct.isDefinition() || !maybeStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_MAYBE))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Maybe\"",
-						maybeStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				return new DataObject().setBoolean(maybeStruct.getMember("$present").getBoolean());
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("maybeGet")
-		@LangInfo("Returns the value if a just &maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown")
-		public static DataObject maybeGetFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&maybe") @AllowedTypes(DataObject.DataType.STRUCT) DataObject maybeStructObject
-		) {
-			StructObject maybeStruct = maybeStructObject.getStruct();
-
-			if(maybeStruct.isDefinition() || !maybeStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_MAYBE))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Maybe\"",
-						maybeStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				boolean present = maybeStruct.getMember("$present").getBoolean();
-				if(!present)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Value of argument 1 (\"%s\") is not present",
-							maybeStructObject.getVariableName()), SCOPE_ID);
-
-				return new DataObject(maybeStruct.getMember("$value"));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("maybeFlatMap")
-		@LangInfo("fp.mapper is executed which must return a new &Maybe value if value of &maybe is present otherwise a new empty maybe is returned")
-		public static DataObject maybeFlatMapFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&maybe") @AllowedTypes(DataObject.DataType.STRUCT) DataObject maybeStructObject,
-				@LangParameter("fp.mapper") @AllowedTypes(DataType.FUNCTION_POINTER) DataObject mapperFuncObject
-		) {
-			StructObject maybeStruct = maybeStructObject.getStruct();
-
-			if(maybeStruct.isDefinition() || !maybeStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_MAYBE))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Maybe\"",
-						maybeStructObject.getVariableName()), SCOPE_ID);
-
-			FunctionPointerObject mapperFunc = mapperFuncObject.getFunctionPointer();
-
-			try {
-				boolean present = maybeStruct.getMember("$present").getBoolean();
-				if(present) {
-					DataObject ret = interpreter.callFunctionPointer(mapperFunc, mapperFuncObject.getVariableName(), Arrays.asList(
-							new DataObject(maybeStruct.getMember("$value"))
-					), SCOPE_ID);
-
-					if(ret == null || ret.getType() != DataType.STRUCT || maybeStruct.isDefinition() ||
-							!maybeStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_MAYBE))
-						return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by fp.mapperFunc() must be of type \"&Maybe\"", SCOPE_ID);
-
-					return ret;
-				}
-
-				return new DataObject().setStruct(LangCompositeTypes.createMaybeNothing());
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 			}

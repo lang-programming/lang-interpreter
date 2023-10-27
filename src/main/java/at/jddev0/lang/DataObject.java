@@ -85,7 +85,7 @@ public class DataObject {
 	 * This method will not modify variableName<br>
 	 * This method will also not modify finalData nor staticData (<b>Except</b>: {@code dataObject.copyStaticAndFinalModifiers} flag is set)
 	 */
-	void setData(DataObject dataObject) throws DataTypeConstraintViolatedException {
+	public void setData(DataObject dataObject) throws DataTypeConstraintViolatedException {
 		this.type = checkAndRetType(dataObject.type);
 
 		this.txt = dataObject.txt;

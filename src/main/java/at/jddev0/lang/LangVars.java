@@ -109,9 +109,9 @@ final class LangVars {
 		addStaticLangVar("&StackTraceElement", new DataObject().setStruct(LangCompositeTypes.STRUCT_STACK_TRACE_ELEMENT).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Complex", new DataObject().setStruct(LangCompositeTypes.STRUCT_COMPLEX).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Pair", new DataObject().setStruct(LangCompositeTypes.STRUCT_PAIR).setFinalData(true), SCOPE_ID);
-		addStaticLangVar("&Maybe", new DataObject().setStruct(LangCompositeTypes.STRUCT_MAYBE).setFinalData(true), SCOPE_ID);
 	}
 	private void addClassDefinitionLangVars(final int SCOPE_ID) {
 		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true), SCOPE_ID);
+		addStaticLangVar("&Maybe", new DataObject().setObject(LangCompositeTypes.CLASS_MAYBE).setFinalData(true), SCOPE_ID);
 	}
 }

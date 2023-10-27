@@ -3730,6 +3730,10 @@ public final class LangInterpreter {
 			return ret;
 		}
 	}
+	public DataObject callConstructor(LangObject langObject, List<DataObject> argumentList, final int SCOPE_ID) {
+		return callConstructor(langObject, argumentList, -1, SCOPE_ID);
+	}
+
 	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
 		if(rawMethodName.startsWith("fn.") || rawMethodName.startsWith("func.") ||
 				rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker"))
@@ -3781,6 +3785,9 @@ public final class LangInterpreter {
 
 		return callFunctionPointer(fp, rawMethodName, argumentList, lineNumber, SCOPE_ID);
 	}
+	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, final int SCOPE_ID) {
+		return callMethod(langObject, rawMethodName, argumentList, -1, SCOPE_ID);
+	}
 
 	public DataObject callSuperConstructor(LangObject langObject, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
 		if(langObject.isClass())
@@ -3811,6 +3818,10 @@ public final class LangInterpreter {
 
 		return ret;
 	}
+	public DataObject callSuperConstructor(LangObject langObject, List<DataObject> argumentList, final int SCOPE_ID) {
+		return callSuperConstructor(langObject, argumentList, -1, SCOPE_ID);
+	}
+
 	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
 		if(rawMethodName.startsWith("fp.") || rawMethodName.startsWith("fn.") ||
 				rawMethodName.startsWith("func.") || rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker"))
@@ -3838,6 +3849,9 @@ public final class LangInterpreter {
 		fp = new FunctionPointerObject(fp, langObject, fp.getSuperLevel() + langObject.getSuperLevel() + 1);
 
 		return callFunctionPointer(fp, rawMethodName, argumentList, lineNumber, SCOPE_ID);
+	}
+	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, final int SCOPE_ID) {
+		return callSuperMethod(langObject, rawMethodName, argumentList, -1, SCOPE_ID);
 	}
 
 	/**
