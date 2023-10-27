@@ -2698,7 +2698,6 @@ public final class LangInterpreter {
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
-				//Constructor
 				if(functionName.equals("construct"))
 					return callConstructor(compositeType.getObject(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
 
