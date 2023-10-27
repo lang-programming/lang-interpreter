@@ -180,7 +180,7 @@ public class LangCompositeTypes {
 					public DataObject nothingConstructMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
 					) {
-						thisObject.getMember("$value").setNull();
+						thisObject.getMember("$value").setVoid();
 						thisObject.getMember("$present").setBoolean(false);
 
 						return null;
