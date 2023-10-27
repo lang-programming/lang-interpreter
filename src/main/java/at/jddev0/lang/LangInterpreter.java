@@ -2689,48 +2689,18 @@ public final class LangInterpreter {
 					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 							"Super can only be used in methods if \"&this\" is present", SCOPE_ID);
 
-				if(functionName.equals("construct")) {
-					List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
+				if(functionName.equals("construct"))
 					return callSuperConstructor(compositeType.getObject(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-				}
 
-				if(functionName.startsWith("fp.") || functionName.startsWith("fn.") ||
-						functionName.startsWith("func.") || functionName.startsWith("ln.") || functionName.startsWith("linker"))
-					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-							"The method \"" + functionName + "\" is not part of this object", node.getLineNumberFrom(), SCOPE_ID);
-
-				String methodName = functionName.startsWith("mp.")?functionName:("mp." + functionName);
-
-				methods = compositeType.getObject().getSuperMethods().get(methodName);
-				if(methods == null)
-					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-							"The method \"" + functionName + "\" is not in any super class of this object",
-							node.getLineNumberFrom(), SCOPE_ID);
-
-				List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-
-				int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
-
-				fp = functionIndex == -1?null:methods[functionIndex];
-				if(fp == null)
-					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-							"No matching function signature was found for the given arguments in any super class of this object." +
-									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
-									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
-
-				//Bind "&this" on super method
-				fp = new FunctionPointerObject(fp, compositeType.getObject(),
-						fp.getSuperLevel() + compositeType.getObject().getSuperLevel() + 1);
-
-				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
+				return callSuperMethod(compositeType.getObject(), functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
 				//Constructor
-				if(functionName.equals("construct")) {
+				if(functionName.equals("construct"))
 					return callConstructor(compositeType.getObject(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-				}
 
 				return callMethod(compositeType.getObject(), functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 			}else {
@@ -2815,19 +2785,6 @@ public final class LangInterpreter {
 		}
 
 		List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-		if(fp == null) {
-			if(methods == null)
-				return setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "\"" + node.getFunctionName() +
-						"\": Invalid interpreter state", node.getLineNumberFrom(), SCOPE_ID);
-
-			int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
-
-			fp = functionIndex == -1?null:methods[functionIndex];
-			if(fp == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-						" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(methods).stream().
-						collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
-		}
 		return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 	}
 	
@@ -3777,7 +3734,7 @@ public final class LangInterpreter {
 	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
 		if(rawMethodName.startsWith("fn.") || rawMethodName.startsWith("func.") ||
 				rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker"))
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"The method \"" + rawMethodName + "\" is not part of this object", lineNumber, SCOPE_ID);
 
 		String methodName = (langObject.isClass() || rawMethodName.startsWith("fp."))?
@@ -3788,7 +3745,7 @@ public final class LangInterpreter {
 			FunctionPointerObject[] methods = methodName == null?null:langObject.getMethods().get(methodName);
 			if(methods == null) {
 				if(rawMethodName.startsWith("mp."))
-					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 							"The method \"" + rawMethodName + "\" is not part of this object",
 							lineNumber, SCOPE_ID);
 
@@ -3854,6 +3811,34 @@ public final class LangInterpreter {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
 
 		return ret;
+	}
+	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
+		if(rawMethodName.startsWith("fp.") || rawMethodName.startsWith("fn.") ||
+				rawMethodName.startsWith("func.") || rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker"))
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+					"The method \"" + rawMethodName + "\" is not part of this object", lineNumber, SCOPE_ID);
+
+		String methodName = rawMethodName.startsWith("mp.")?rawMethodName:("mp." + rawMethodName);
+
+		FunctionPointerObject[] methods = langObject.getSuperMethods().get(methodName);
+		if(methods == null)
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+					"The method \"" + rawMethodName + "\" is not in any super class of this object",
+					lineNumber, SCOPE_ID);
+
+		int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+
+		FunctionPointerObject fp = functionIndex == -1?null:methods[functionIndex];
+		if(fp == null)
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+					"No matching function signature was found for the given arguments in any super class of this object." +
+							" Available function signatures:\n    " + rawMethodName + LangUtils.getFunctionSignatures(methods).stream().
+							collect(Collectors.joining("\n    " + rawMethodName)), SCOPE_ID);
+
+		//Bind "&this" on super method
+		fp = new FunctionPointerObject(fp, langObject, fp.getSuperLevel() + langObject.getSuperLevel() + 1);
+
+		return callFunctionPointer(fp, rawMethodName, argumentList, lineNumber, SCOPE_ID);
 	}
 
 	/**
