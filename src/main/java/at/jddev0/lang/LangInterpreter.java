@@ -2751,59 +2751,9 @@ public final class LangInterpreter {
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				//Constructor
 				if(functionName.equals("construct")) {
-					if(compositeType.getObject().isClass()) {
-						DataObject createdObject = new DataObject().setObject(new LangObject(compositeType.getObject()));
+					List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
-						FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
-
-						List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
-
-						FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
-						if(constructorFunction == null)
-							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(constructors).stream().
-									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
-
-						DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-						if(ret == null)
-							ret = new DataObject().setVoid();
-
-						if(ret.getType() != DataType.VOID)
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
-
-						try {
-							createdObject.getObject().postConstructor();
-						}catch(DataTypeConstraintException e) {
-							return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-									"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
-						}
-
-						return createdObject;
-					}else {
-						if(compositeType.getObject().isInitialized())
-							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized",
-									node.getLineNumberFrom(), SCOPE_ID);
-
-						//Current constructors for super level instead of normal constructors, because constructors are not overridden
-						FunctionPointerObject[] constructors = compositeType.getObject().getConstructorsForCurrentSuperLevel();
-
-						List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
-
-						FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
-						if(constructorFunction == null)
-							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(constructors).stream().
-									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
-
-						DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-						if(ret == null)
-							ret = new DataObject().setVoid();
-
-						if(ret.getType() != DataType.VOID)
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
-
-						return ret;
-					}
+					return callConstructor(compositeType.getObject(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
 				}
 
 				if(functionName.startsWith("fn.") || functionName.startsWith("func.") ||
@@ -3831,7 +3781,62 @@ public final class LangInterpreter {
 		
 		return new DataObject(builder.toString());
 	}
-	
+
+	public DataObject callConstructor(LangObject langObject, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
+		if(langObject.isClass()) {
+			DataObject createdObject = new DataObject().setObject(new LangObject(langObject));
+
+			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			if(constructorFunction == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
+						collect(Collectors.joining("\n    construct")), SCOPE_ID);
+
+			DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, lineNumber, SCOPE_ID);
+			if(ret == null)
+				ret = new DataObject().setVoid();
+
+			if(ret.getType() != DataType.VOID)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",
+						lineNumber, SCOPE_ID);
+
+			try {
+				createdObject.getObject().postConstructor();
+			}catch(DataTypeConstraintException e) {
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+						"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(),
+						lineNumber, SCOPE_ID);
+			}
+
+			return createdObject;
+		}else {
+			if(langObject.isInitialized())
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized",
+						lineNumber, SCOPE_ID);
+
+			//Current constructors for super level instead of normal constructors, because constructors are not overridden
+			FunctionPointerObject[] constructors = langObject.getConstructorsForCurrentSuperLevel();
+
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			if(constructorFunction == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
+						collect(Collectors.joining("\n    construct")), SCOPE_ID);
+
+			DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, lineNumber, SCOPE_ID);
+			if(ret == null)
+				ret = new DataObject().setVoid();
+
+			if(ret.getType() != DataType.VOID)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",
+						lineNumber, SCOPE_ID);
+
+			return ret;
+		}
+	}
+
 	/**
 	 * LangPatterns: Regex: \w+
 	 */
