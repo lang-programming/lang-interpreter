@@ -2546,6 +2546,10 @@ public class DataObject {
 		 * This is also been used for instance of checks
 		 */
 		private final LangObject classBaseDefinition;
+		/**
+		 * false for classes and uninitialized objects, true for objects where post construct was called
+		 */
+		private boolean initialized = false;
 
 		public LangObject(DataObject[] staticMembers, String[] memberNames, DataTypeConstraint[] memberTypeConstraints,
 						  boolean[] memberFinalFlags, Map<String, FunctionPointerObject[]> methods,
@@ -2873,6 +2877,12 @@ public class DataObject {
 		}
 
 		public void postConstructor() throws DataTypeConstraintException {
+			if(isClass())
+				throw new DataTypeConstraintException("Post construct must be called on an object");
+
+			if(isInitialized())
+				throw new DataTypeConstraintException("Object is already initialized");
+
 			for(int i = 0;i < members.length;i++) {
 				if(memberTypeConstraints[i] != null)
 					this.members[i].setTypeConstraint(memberTypeConstraints[i]);
@@ -2880,6 +2890,12 @@ public class DataObject {
 				if(memberFinalFlags[i])
 					this.members[i].setFinalData(true);
 			}
+
+			initialized = true;
+		}
+
+		public boolean isInitialized() {
+			return initialized;
 		}
 
 		public boolean isClass() {

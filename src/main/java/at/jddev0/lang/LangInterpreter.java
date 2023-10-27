@@ -2467,7 +2467,7 @@ public final class LangInterpreter {
 					data.remove(NEW_SCOPE_ID);
 					
 					DataTypeConstraint returnValueTypeConstraint = normalFunction.getReturnValueTypeConstraint();
-					
+
 					int returnOrThrowStatementLineNumber = executionState.returnOrThrowStatementLineNumber;
 					
 					DataObject retTmp = getAndResetReturnValue(SCOPE_ID);
@@ -2719,38 +2719,60 @@ public final class LangInterpreter {
 
 				return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom(), SCOPE_ID);
 			}else if(compositeType.getType() == DataType.OBJECT) {
-				//Constructor and destructor
+				//Constructor
 				if(functionName.equals("construct")) {
-					if(!compositeType.getObject().isClass())
-						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The constructor must be called from a class", SCOPE_ID);
+					if(compositeType.getObject().isClass()) {
+						DataObject createdObject = new DataObject().setObject(new LangObject(compositeType.getObject()));
 
-					DataObject createdObject = new DataObject().setObject(new LangObject(compositeType.getObject()));
+						FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
 
-					FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+						List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
-					List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+						FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+						if(constructorFunction == null)
+							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(constructors).stream().
+									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
 
-					FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
-					if(constructorFunction == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-								" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(constructors).stream().
-								collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+						DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
+						if(ret == null)
+							ret = new DataObject().setVoid();
 
-					DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-					if(ret == null)
-						ret = new DataObject().setVoid();
+						if(ret.getType() != DataType.VOID)
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
 
-					if(ret.getType() != DataType.VOID)
-						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+						try {
+							createdObject.getObject().postConstructor();
+						}catch(DataTypeConstraintException e) {
+							return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+									"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+						}
 
-					try {
-						createdObject.getObject().postConstructor();
-					}catch(DataTypeConstraintException e) {
-						return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-								"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+						return createdObject;
+					}else {
+						if(compositeType.getObject().isInitialized())
+							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized",
+									node.getLineNumberFrom(), SCOPE_ID);
+
+						FunctionPointerObject[] constructors = compositeType.getObject().getConstructors();
+
+						List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+
+						FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+						if(constructorFunction == null)
+							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+									" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(constructors).stream().
+									collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+
+						DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
+						if(ret == null)
+							ret = new DataObject().setVoid();
+
+						if(ret.getType() != DataType.VOID)
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+
+						return ret;
 					}
-
-					return createdObject;
 				}
 
 				if(functionName.startsWith("fn.") || functionName.startsWith("func.") ||
