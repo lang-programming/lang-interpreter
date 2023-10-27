@@ -159,11 +159,9 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_STARTS_WITH_VAR_NAME_PTR_OR_DEREFERENCE = Pattern.compile("(\\[\\[\\w+\\]\\]::)?\\$(\\*+\\w+|\\[+\\w+\\]+|\\*+\\[+\\w+\\]+).*");
 	/**
-	 * RegEx: "<code>(override:)?op:((len|deepCopy|inc|dec|pos|inv|not)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|(getItem|setItem)).*</code>"
+	 * RegEx: "<code>(override:)?op:.*</code>"
 	 */
-	public static final Pattern PARSING_STARTS_WITH_OPERATOR_METHOD = Pattern.compile("(override:)?op:((len|deepCopy|inc|dec|pos|inv|not)|" +
-			"((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|" +
-			"(getItem|setItem)).*");
+	public static final Pattern PARSING_STARTS_WITH_OPERATOR_METHOD_PREFIX = Pattern.compile("(override:)?op:.*");
 	/**
 	 * RegEx: "<code>(override:)?mp\.\w+.*</code>"
 	 */

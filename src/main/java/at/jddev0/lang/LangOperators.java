@@ -2077,7 +2077,7 @@ public final class LangOperators {
 		return null;
 	}
 	/**
-	 * For "&"
+	 * For "&amp;"
 	 */
 	public DataObject opAnd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
 		DataObject ret = callOperatorMethod("and", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
