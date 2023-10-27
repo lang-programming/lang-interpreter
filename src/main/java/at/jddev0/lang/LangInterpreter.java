@@ -2694,6 +2694,36 @@ public final class LangInterpreter {
 					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 							"The method \"" + functionName + "\" is not part of this object", node.getLineNumberFrom(), SCOPE_ID);
 
+				if(functionName.equals("construct")) {
+					if(compositeType.getObject().isInitialized())
+						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized",
+								node.getLineNumberFrom(), SCOPE_ID);
+
+					FunctionPointerObject[] superConstructors = compositeType.getObject().getSuperConstructors();
+
+					List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+
+					FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(superConstructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+					if(constructorFunction == null)
+						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+								"No matching function signature was found for the given arguments in any super class of this object." +
+										" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(superConstructors).stream().
+										collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+
+					//Bind "&this" on super constructor
+					constructorFunction = new FunctionPointerObject(constructorFunction, compositeType.getObject(),
+							constructorFunction.getSuperLevel() + compositeType.getObject().getSuperLevel() + 1);
+
+					DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
+					if(ret == null)
+						ret = new DataObject().setVoid();
+
+					if(ret.getType() != DataType.VOID)
+						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+
+					return ret;
+				}
+
 				String methodName = functionName.startsWith("mp.")?functionName:("mp." + functionName);
 
 				methods = compositeType.getObject().getSuperMethods().get(methodName);
@@ -2754,7 +2784,8 @@ public final class LangInterpreter {
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized",
 									node.getLineNumberFrom(), SCOPE_ID);
 
-						FunctionPointerObject[] constructors = compositeType.getObject().getConstructors();
+						//Current constructors for super level instead of normal constructors, because constructors are not overridden
+						FunctionPointerObject[] constructors = compositeType.getObject().getConstructorsForCurrentSuperLevel();
 
 						List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 

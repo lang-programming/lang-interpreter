@@ -3001,6 +3001,40 @@ public class DataObject {
 			return Arrays.copyOf(constructors, constructors.length);
 		}
 
+		/**
+		 * @return Returns all constructors for the current super level without going to super
+		 * [0 is current, 1 is parent, 2 is grandparent]
+		 */
+		public FunctionPointerObject[] getConstructorsForCurrentSuperLevel() {
+			if(superLevel == 0)
+				return getConstructors();
+
+			List<FunctionPointerObject> rawSuperMethods = getRawSuperConstructors(this.superLevel - 1);
+
+			return rawSuperMethods.toArray(new FunctionPointerObject[0]);
+		}
+
+		private List<FunctionPointerObject> getRawSuperConstructors(int superLevel) {
+			List<FunctionPointerObject> rawSuperConstructors = new LinkedList<>();
+			for(LangObject parentClass:parentClasses) {
+				if(superLevel > 0) {
+					List<FunctionPointerObject> superRawSuperConstructors = parentClass.
+							getRawSuperConstructors(superLevel - 1);
+					rawSuperConstructors.addAll(superRawSuperConstructors);
+				}else {
+					rawSuperConstructors.addAll(Arrays.asList(parentClass.getConstructors()));
+				}
+			}
+
+			return rawSuperConstructors;
+		}
+
+		public FunctionPointerObject[] getSuperConstructors() {
+			List<FunctionPointerObject> rawSuperMethods = getRawSuperConstructors(this.superLevel);
+
+			return rawSuperMethods.toArray(new FunctionPointerObject[0]);
+		}
+
 		public LangObject[] getParentClasses() {
 			return Arrays.copyOf(parentClasses, parentClasses.length);
 		}
