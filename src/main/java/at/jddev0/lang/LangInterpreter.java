@@ -82,8 +82,8 @@ public final class LangInterpreter {
 		LangPredefinedFunctions.addPredefinedFunctions(funcs);
 		LangPredefinedFunctions.addLinkerFunctions(funcs);
 	}
-	final LangOperators operators = new LangOperators(this);
-	final LangVars langVars = new LangVars(this);
+	public final LangOperators operators = new LangOperators(this);
+	public final LangVars langVars = new LangVars(this);
 	
 	/**
 	 * @param term can be null

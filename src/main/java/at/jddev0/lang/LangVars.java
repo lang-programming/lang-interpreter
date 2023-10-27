@@ -12,7 +12,7 @@ import at.jddev0.lang.LangInterpreter.StackElement;
  * @author JDDev0
  * @version v1.0.0
  */
-final class LangVars {
+public final class LangVars {
 	private final LangInterpreter interpreter;
 	
 	public LangVars(LangInterpreter interpreter) {

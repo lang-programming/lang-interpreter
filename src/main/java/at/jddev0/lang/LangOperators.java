@@ -20,7 +20,7 @@ import at.jddev0.lang.LangInterpreter.InterpretingError;
  * @author JDDev0
  * @version v1.0.0
  */
-final class LangOperators {
+public final class LangOperators {
 	private final LangInterpreter interpreter;
 	
 	public LangOperators(LangInterpreter interpreter) {
