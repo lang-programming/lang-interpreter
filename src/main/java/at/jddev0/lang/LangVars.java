@@ -36,7 +36,8 @@ final class LangVars {
 		addNumberLangVars(SCOPE_ID);
 		addErrorLangVars(SCOPE_ID);
 		addTypeLangVars(SCOPE_ID);
-		addCompositeLangVars(SCOPE_ID);
+		addStructDefinitionLangVars(SCOPE_ID);
+		addClassDefinitionLangVars(SCOPE_ID);
 	}
 	private void addSystemLangVars(final int SCOPE_ID) {
 		addLangVar("$LANG_VERSION", new DataObject(LangInterpreter.VERSION, true).setFinalData(true), SCOPE_ID);
@@ -104,11 +105,13 @@ final class LangVars {
 			addLangVar(variableName, new DataObject().setTypeValue(type).setFinalData(true), SCOPE_ID);
 		}
 	}
-	private void addCompositeLangVars(final int SCOPE_ID) {
+	private void addStructDefinitionLangVars(final int SCOPE_ID) {
 		addStaticLangVar("&StackTraceElement", new DataObject().setStruct(LangCompositeTypes.STRUCT_STACK_TRACE_ELEMENT).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Complex", new DataObject().setStruct(LangCompositeTypes.STRUCT_COMPLEX).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Pair", new DataObject().setStruct(LangCompositeTypes.STRUCT_PAIR).setFinalData(true), SCOPE_ID);
 		addStaticLangVar("&Maybe", new DataObject().setStruct(LangCompositeTypes.STRUCT_MAYBE).setFinalData(true), SCOPE_ID);
+	}
+	private void addClassDefinitionLangVars(final int SCOPE_ID) {
 		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true), SCOPE_ID);
 	}
 }
