@@ -421,7 +421,7 @@ public class LangNativeFunction {
 			int argCount = parameterList.size();
 			
 			if(combinatorFunction) {
-				combinedArgumentList = new ArrayList<>(combinedArgumentList);
+				combinedArgumentList = new ArrayList<>(combinedArgumentList.stream().map(DataObject::new).collect(Collectors.toList()));
 				combinedArgumentList.addAll(0, combinatorProvidedArgumentList);
 			}
 			
