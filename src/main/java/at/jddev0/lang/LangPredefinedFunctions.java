@@ -3291,18 +3291,6 @@ final class LangPredefinedFunctions {
 	public static final class LangPredefinedCombinatorFunctions {
 		private LangPredefinedCombinatorFunctions() {}
 
-		@LangFunction("combA0")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a()")
-		public static DataObject combA0Function(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
-		}
-
 		@LangFunction("combA")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)")
@@ -3316,6 +3304,18 @@ final class LangPredefinedFunctions {
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
 					b
 			), SCOPE_ID);
+		}
+
+		@LangFunction("combA0")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a()")
+		public static DataObject combA0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), new LinkedList<>(), SCOPE_ID);
 		}
 
 		@LangFunction("combA2")
@@ -3453,24 +3453,6 @@ final class LangPredefinedFunctions {
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA, SCOPE_ID);
 		}
 
-		@LangFunction("combB0")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b())")
-		public static DataObject combB0Function(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
-			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), new LinkedList<>(), SCOPE_ID);
-
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					retB == null?new DataObject().setVoid():retB
-			), SCOPE_ID);
-		}
-
 		@LangFunction("combB")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(c))")
@@ -3486,6 +3468,24 @@ final class LangPredefinedFunctions {
 			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
 					c
 			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					retB == null?new DataObject().setVoid():retB
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combB0")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b())")
+		public static DataObject combB0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), new LinkedList<>(), SCOPE_ID);
 
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
 					retB == null?new DataObject().setVoid():retB
@@ -3671,6 +3671,32 @@ final class LangPredefinedFunctions {
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA, SCOPE_ID);
 		}
 
+		@LangFunction("combC")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(c)(b)")
+		public static DataObject combCFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") DataObject c
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+			ret = ret == null?new DataObject().setVoid():ret;
+
+			if(ret.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(c) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retFunc = ret.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(retFunc, ret.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+		}
+
 		@LangFunction("combC0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b)")
@@ -3703,10 +3729,10 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 		}
 
-		@LangFunction("combC")
+		@LangFunction("combC2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(c, b)")
-		public static DataObject combCFunction(
+		public static DataObject combC2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -3795,8 +3821,40 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combD")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b, c(d))")
+		@LangInfo("Combinator execution: a(b)(c(d))")
 		public static DataObject combDFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
+				@LangParameter("$d") DataObject d
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject cFunc = c.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), Arrays.asList(
+					retC == null?new DataObject().setVoid():retC
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combD2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b, c(d))")
+		public static DataObject combD2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -3840,8 +3898,53 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combE")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b, c(d, e))")
+		@LangInfo("Combinator execution: a(b)(c(d)(e))")
 		public static DataObject combEFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
+				@LangParameter("$d") DataObject d,
+				@LangParameter("$e") DataObject e
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject cFunc = c.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+			retC = retC == null?new DataObject().setVoid():retC;
+
+			if(retC.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by c(d) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retCFunc = retC.getFunctionPointer();
+
+			DataObject retC2 = interpreter.callFunctionPointer(retCFunc, retC.getVariableName(), Arrays.asList(
+					e
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							retC2 == null?new DataObject().setVoid():retC2
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combE3")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b, c(d, e))")
+		public static DataObject combE3Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -3936,8 +4039,36 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combF")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: c(b, a)")
+		@LangInfo("Combinator execution: c(b)(a)")
 		public static DataObject combFFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
+			FunctionPointerObject cFunc = c.getFunctionPointer();
+
+			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			retC = retC == null?new DataObject().setVoid():retC;
+
+			if(retC.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by c(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retCFunc = retC.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(retCFunc, retC.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							a
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combF2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: c(b, a)")
+		public static DataObject combF2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -4007,8 +4138,42 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combG")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(d, b(c))")
+		@LangInfo("Combinator execution: a(d)(b(c))")
 		public static DataObject combGFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$c") DataObject c,
+				@LangParameter("$d") DataObject d
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(d) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							retB == null?new DataObject().setVoid():retB
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combG2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(d, b(c))")
+		public static DataObject combG2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
@@ -4080,8 +4245,46 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combH")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b, c, b)")
+		@LangInfo("Combinator execution: a(b)(c)(b)")
 		public static DataObject combHFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") DataObject c
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retA2 = interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+			retA2 = retA2 == null?new DataObject().setVoid():retA2;
+
+			if(retA2.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b)(c) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retA2Func = retA2.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(retA2Func, retA2.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							b
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combH3")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b, c, b)")
+		public static DataObject combH3Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -4188,8 +4391,53 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combJ")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b, a(d, c))")
+		@LangInfo("Combinator execution: a(b)(a(d)(c))")
 		public static DataObject combJFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") DataObject c,
+				@LangParameter("$d") DataObject d
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retAA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+			retAA = retAA == null?new DataObject().setVoid():retAA;
+
+			if(retAA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(d) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAAFunc = retAA.getFunctionPointer();
+
+			DataObject retAA2 = interpreter.callFunctionPointer(retAAFunc, retAA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							c
+					)
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							retAA2 == null?new DataObject().setVoid():retAA2
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combJ3")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b, a(d, c))")
+		public static DataObject combJ3Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -4541,6 +4789,30 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 		}
 
+		@LangFunction("combN")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b)(c)")
+		public static DataObject combNFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") DataObject c
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			ret = ret == null?new DataObject().setVoid():ret;
+
+			if(ret.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			return interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+		}
+
 		@LangFunction("combN0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a()()")
@@ -4575,30 +4847,6 @@ final class LangPredefinedFunctions {
 
 			if(ret.getType() != DataType.FUNCTION_POINTER)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a() must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
-
-			return interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
-					c
-			), SCOPE_ID);
-		}
-
-		@LangFunction("combN")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b)(c)")
-		public static DataObject combNFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					b
-			), SCOPE_ID);
-			ret = ret == null?new DataObject().setVoid():ret;
-
-			if(ret.getType() != DataType.FUNCTION_POINTER)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
 
 			return interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
 					c
@@ -4772,53 +5020,6 @@ final class LangPredefinedFunctions {
 			return ret;
 		}
 
-		@LangFunction("combNW")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b)(b)")
-		public static DataObject combNWFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					b
-			), SCOPE_ID);
-			ret = ret == null?new DataObject().setVoid():ret;
-
-			if(ret.getType() != DataType.FUNCTION_POINTER)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
-
-			return interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
-					b
-			), SCOPE_ID);
-		}
-
-		@LangFunction("combNX")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(c)(b)")
-		public static DataObject combNXFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") DataObject b,
-				@LangParameter("$c") DataObject c
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					c
-			), SCOPE_ID);
-			ret = ret == null?new DataObject().setVoid():ret;
-
-			if(ret.getType() != DataType.FUNCTION_POINTER)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
-
-			return interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
-					b
-			), SCOPE_ID);
-		}
-
 		@LangFunction("combNZ")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(...)(args[1])(args[0])")
@@ -4938,8 +5139,47 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combP")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b(d), c(d))")
+		@LangInfo("Combinator execution: a(b(d))(c(d))")
 		public static DataObject combPFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
+				@LangParameter("$d") DataObject d
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+			FunctionPointerObject cFunc = c.getFunctionPointer();
+
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					retB == null?new DataObject().setVoid():retB
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b(d)) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							retC == null?new DataObject().setVoid():retC
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combP2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b(d), c(d))")
+		public static DataObject combP2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
@@ -5165,6 +5405,25 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 		}
 
+		@LangFunction("combQ0")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: b(a())")
+		public static DataObject combQ0Function(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$c") DataObject c
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), new ArrayList<>(), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+					retA == null?new DataObject().setVoid():retA
+			), SCOPE_ID);
+		}
+
 		@LangFunction("combQE")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a())")
@@ -5278,6 +5537,34 @@ final class LangPredefinedFunctions {
 			return ret;
 		}
 
+		@LangFunction("combR")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: b(c)(a)")
+		public static DataObject combRFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$c") DataObject c
+		) {
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+			retB = retB == null?new DataObject().setVoid():retB;
+
+			if(retB.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by b(c) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retBFunc = retB.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(retBFunc, retB.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							a
+					)
+			), SCOPE_ID);
+		}
+
 		@LangFunction("combR0")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(a)")
@@ -5310,10 +5597,10 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 		}
 
-		@LangFunction("combR")
+		@LangFunction("combR2")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: b(c, a)")
-		public static DataObject combRFunction(
+		public static DataObject combR2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
@@ -5401,8 +5688,41 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combS")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(c, b(c))")
+		@LangInfo("Combinator execution: a(c)(b(c))")
 		public static DataObject combSFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$c") DataObject c
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(c) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+					c
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							retB == null?new DataObject().setVoid():retB
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combS2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(c, b(c))")
+		public static DataObject combS2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
@@ -5630,8 +5950,48 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combU")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b(d), c(e))")
+		@LangInfo("Combinator execution: a(b(d))(c(e))")
 		public static DataObject combUFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c,
+				@LangParameter("$d") DataObject d,
+				@LangParameter("$e") DataObject e
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+			FunctionPointerObject bFunc = b.getFunctionPointer();
+			FunctionPointerObject cFunc = c.getFunctionPointer();
+
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+					d
+			), SCOPE_ID);
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					retB == null?new DataObject().setVoid():retB
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b(d)) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
+					e
+			), SCOPE_ID);
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							retC == null?new DataObject().setVoid():retC
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combU2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b(d), c(e))")
+		public static DataObject combU2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
@@ -5735,8 +6095,36 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combV")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: c(a, b)")
+		@LangInfo("Combinator execution: c(a)(b)")
 		public static DataObject combVFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") DataObject a,
+				@LangParameter("$b") DataObject b,
+				@LangParameter("$c") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject c
+		) {
+			FunctionPointerObject cFunc = c.getFunctionPointer();
+
+			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
+					a
+			), SCOPE_ID);
+			retC = retC == null?new DataObject().setVoid():retC;
+
+			if(retC.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by c(a) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retCFunc = retC.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(retCFunc, retC.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							b
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combV2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: c(a, b)")
+		public static DataObject combV2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a,
 				@LangParameter("$b") DataObject b,
@@ -5792,8 +6180,35 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combW")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b, b)")
+		@LangInfo("Combinator execution: a(b)(b)")
 		public static DataObject combWFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$b") DataObject b
+		) {
+			FunctionPointerObject aFunc = a.getFunctionPointer();
+
+			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
+					b
+			), SCOPE_ID);
+			retA = retA == null?new DataObject().setVoid():retA;
+
+			if(retA.getType() != DataType.FUNCTION_POINTER)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
+
+			FunctionPointerObject retAFunc = retA.getFunctionPointer();
+
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					Arrays.asList(
+							b
+					)
+			), SCOPE_ID);
+		}
+
+		@LangFunction("combW2")
+		@CombinatorFunction
+		@LangInfo("Combinator execution: a(b, b)")
+		public static DataObject combW2Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
 				@LangParameter("$b") DataObject b
