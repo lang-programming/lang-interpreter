@@ -99,3 +99,7 @@ javadoc {
 }
 
 tasks.withType(Sign)*.enabled = project.hasProperty('publishMavenUsername')
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
