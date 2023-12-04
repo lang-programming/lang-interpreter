@@ -1957,7 +1957,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject((leftSideOperand.getType() != DataType.NULL && leftSideOperand.getType() != DataType.VOID)?leftSideOperand:rightSideOperand);
+			return (leftSideOperand.getType() != DataType.NULL && leftSideOperand.getType() != DataType.VOID)?leftSideOperand:rightSideOperand;
 		}
 
 		@LangFunction("inlineIf")
