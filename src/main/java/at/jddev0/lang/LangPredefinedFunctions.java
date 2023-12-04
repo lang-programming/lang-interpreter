@@ -1948,7 +1948,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject(leftSideOperand.getBoolean()?leftSideOperand:rightSideOperand);
+			return leftSideOperand.getBoolean()?leftSideOperand:rightSideOperand;
 		}
 
 		@LangFunction("nullCoalescing")
