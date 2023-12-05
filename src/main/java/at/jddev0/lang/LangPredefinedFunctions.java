@@ -2461,7 +2461,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("&arr") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
 		) {
 			DataObject[] arr = arrayObject.getArray();
-			return arr.length == 0?null:new DataObject(arr[interpreter.RAN.nextInt(arr.length)]);
+			return arr.length == 0?null:arr[interpreter.RAN.nextInt(arr.length)];
 		}
 		@LangFunction("randChoice")
 		public static DataObject randChoiceWithListParameterFunction(
@@ -2469,7 +2469,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
 		) {
 			List<DataObject> list = listObject.getList();
-			return list.size() == 0?null:new DataObject(list.get(interpreter.RAN.nextInt(list.size())));
+			return list.isEmpty()?null:list.get(interpreter.RAN.nextInt(list.size()));
 		}
 		@LangFunction("randChoice")
 		public static DataObject randChoiceWithStructParameterFunction(
@@ -2482,7 +2482,7 @@ final class LangPredefinedFunctions {
 			if(struct.isDefinition())
 				return memberNames.length == 0?null:new DataObject(memberNames[interpreter.RAN.nextInt(memberNames.length)]);
 
-			return memberNames.length == 0?null:new DataObject(struct.getMember(memberNames[interpreter.RAN.nextInt(memberNames.length)]));
+			return memberNames.length == 0?null:struct.getMember(memberNames[interpreter.RAN.nextInt(memberNames.length)]);
 		}
 		@LangFunction("randChoice")
 		public static DataObject randChoiceFunction(
