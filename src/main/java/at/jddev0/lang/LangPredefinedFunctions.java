@@ -1967,7 +1967,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$middleOperand") DataObject middleOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject(leftSideOperand.getBoolean()?middleOperand:rightSideOperand);
+			return leftSideOperand.getBoolean()?middleOperand:rightSideOperand;
 		}
 
 		@LangFunction("inc")
