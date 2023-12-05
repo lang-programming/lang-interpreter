@@ -1,11 +1,6 @@
 package at.jddev0.lang;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import at.jddev0.lang.DataObject.DataType;
@@ -117,6 +112,13 @@ public final class LangUtils {
 			argumentList.add(i, new DataObject().setArgumentSeparator(", "));
 		
 		return argumentList;
+	}
+
+	/**
+	 * @return Returns a list of DataObjects where all arguments are separated by an ARGUMENT_SEPARATOR
+	 */
+	public static List<DataObject> asListWithArgumentSeparators(DataObject... arguments) {
+		return LangUtils.separateArgumentsWithArgumentSeparators(Arrays.asList(arguments));
 	}
 
 	/**
