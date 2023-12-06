@@ -3259,14 +3259,12 @@ final class LangPredefinedFunctions {
 				@LangParameter("$firstArg") DataObject firstArg,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			DataObject min = new DataObject(firstArg);
-			for(int i = 0;i < args.size();i++) {
-				DataObject dataObject = args.get(i);
-				if(dataObject.isLessThan(min))
-					min = dataObject;
-			}
+			DataObject min = firstArg;
+            for(DataObject dataObject:args)
+                if(dataObject.isLessThan(min))
+                    min = dataObject;
 
-			return new DataObject(min);
+			return min;
 		}
 
 		@LangFunction("max")
