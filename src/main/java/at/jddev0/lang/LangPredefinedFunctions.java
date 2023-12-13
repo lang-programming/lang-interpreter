@@ -578,7 +578,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") @CallByPointer DataObject pointerObject
 		) {
-			return new DataObject(pointerObject);
+			return pointerObject;
 		}
 
 		@LangFunction("exec")
