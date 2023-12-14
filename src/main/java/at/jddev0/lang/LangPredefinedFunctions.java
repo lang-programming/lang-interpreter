@@ -4382,7 +4382,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") DataObject a
 		) {
-			return new DataObject(a);
+			return a;
 		}
 
 		@LangFunction("combJ")
