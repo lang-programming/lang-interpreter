@@ -4524,7 +4524,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$b") DataObject b,
 				@LangParameter("$c") DataObject c
 		) {
-			return new DataObject(a);
+			return a;
 		}
 
 		@LangFunction("combK4")
