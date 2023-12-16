@@ -14,7 +14,14 @@ import at.jddev0.lang.DataObject.DataType;
  */
 public final class LangUtils {
 	private LangUtils() {}
-	
+
+	/**
+	 * @return Will return a new DataObject of type VOID if the dataObject is null or the dataObject itself
+	 */
+	public static DataObject nullToLangVoid(DataObject dataObject) {
+		return dataObject == null?new DataObject().setVoid():dataObject;
+	}
+
 	/**
 	 * @return Will return null if the dataObjects is empty or if dataObjects only contains Java null values
 	 */
