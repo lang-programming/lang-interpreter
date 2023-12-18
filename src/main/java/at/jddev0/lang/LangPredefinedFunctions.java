@@ -5860,7 +5860,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args,
 				@LangParameter("$z") DataObject z
 		) {
-			DataObject ret = new DataObject(z);
+			DataObject ret = z;
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
 
