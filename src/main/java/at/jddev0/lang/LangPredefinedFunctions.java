@@ -7257,7 +7257,7 @@ final class LangPredefinedFunctions {
 			else if(index >= arr.length)
 				return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, SCOPE_ID);
 
-			return new DataObject(arr[index]);
+			return arr[index];
 		}
 
 		@LangFunction("arrayGetAll")
