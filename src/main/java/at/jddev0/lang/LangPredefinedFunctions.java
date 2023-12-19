@@ -7597,7 +7597,7 @@ final class LangPredefinedFunctions {
 			DataObject[] newArr = new DataObject[arr.length];
 			for(int i = 0;i < arr.length;i++) {
 				newArr[i] = new DataObject(interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
-						new DataObject(arr[i])
+						arr[i]
 				), SCOPE_ID));
 			}
 
