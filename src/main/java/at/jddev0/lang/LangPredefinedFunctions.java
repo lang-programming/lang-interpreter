@@ -5883,7 +5883,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args,
 				@LangParameter("$z") DataObject z
 		) {
-			DataObject ret = new DataObject(z);
+			DataObject ret = z;
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
 
