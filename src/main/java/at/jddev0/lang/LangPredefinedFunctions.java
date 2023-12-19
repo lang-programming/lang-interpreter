@@ -6836,7 +6836,7 @@ final class LangPredefinedFunctions {
 				public DataObject argCnt0FuncFunction(
 						int SCOPE_ID
 				) {
-					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), new LinkedList<>(), SCOPE_ID));
+					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), new LinkedList<>(), SCOPE_ID);
 				}
 			})));
 		}
