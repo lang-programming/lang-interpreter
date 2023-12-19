@@ -6928,11 +6928,11 @@ final class LangPredefinedFunctions {
 						@LangParameter("$c") DataObject c,
 						@LangParameter("$d") DataObject d
 				) {
-					return new DataObject(interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
 									a, b, c, d
 							)
-					), SCOPE_ID));
+					), SCOPE_ID);
 				}
 			})));
 		}
