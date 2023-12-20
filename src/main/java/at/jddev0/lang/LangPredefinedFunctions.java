@@ -7709,7 +7709,7 @@ final class LangPredefinedFunctions {
 
 			DataObject[] reducedArrays = new DataObject[len];
 			for(int i = 0;i < len;i++) {
-				DataObject currentValueObject = initialValueObject == null?null:new DataObject(initialValueObject);
+				DataObject currentValueObject = initialValueObject;
 
 				for(DataObject[] arr:arrays) {
 					DataObject ele = arr[i];
@@ -7724,13 +7724,13 @@ final class LangPredefinedFunctions {
 					currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
 					LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
-									new DataObject(currentValueObject),
-									new DataObject(ele)
+									currentValueObject,
+									ele
 							)
 					), SCOPE_ID);
 				}
 
-				reducedArrays[i] = currentValueObject == null?new DataObject().setVoid():new DataObject(currentValueObject);
+				reducedArrays[i] = currentValueObject == null?new DataObject().setVoid():currentValueObject;
 			}
 
 			return new DataObject().setArray(reducedArrays);
