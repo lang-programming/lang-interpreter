@@ -8237,7 +8237,7 @@ final class LangPredefinedFunctions {
 			if(list.size() == 0)
 				return null;
 
-			return new DataObject(list.peekFirst());
+			return list.peekFirst();
 		}
 
 		@LangFunction("listPop")
