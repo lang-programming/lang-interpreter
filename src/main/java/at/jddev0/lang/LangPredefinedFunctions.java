@@ -8213,7 +8213,7 @@ final class LangPredefinedFunctions {
 			if(list.size() == 0)
 				return null;
 
-			return new DataObject(list.pollFirst());
+			return list.pollFirst();
 		}
 
 		@LangFunction("listUnshift")
