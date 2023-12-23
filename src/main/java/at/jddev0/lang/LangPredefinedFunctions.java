@@ -8249,7 +8249,7 @@ final class LangPredefinedFunctions {
 			if(list.size() == 0)
 				return null;
 
-			return new DataObject(list.pollLast());
+			return list.pollLast();
 		}
 
 		@LangFunction("listPush")
