@@ -8273,7 +8273,7 @@ final class LangPredefinedFunctions {
 			if(list.size() == 0)
 				return null;
 
-			return new DataObject(list.peekLast());
+			return list.peekLast();
 		}
 
 		@LangFunction("listRemove")
