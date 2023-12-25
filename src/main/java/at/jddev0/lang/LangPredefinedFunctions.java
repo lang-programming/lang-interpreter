@@ -8288,7 +8288,7 @@ final class LangPredefinedFunctions {
 				if(dataObject.isStrictEquals(valueObject)) {
 					list.remove(i);
 
-					return new DataObject(dataObject);
+					return dataObject;
 				}
 			}
 
