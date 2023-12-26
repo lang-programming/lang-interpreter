@@ -8307,7 +8307,7 @@ final class LangPredefinedFunctions {
 				if(dataObject.isEquals(valueObject)) {
 					list.remove(i);
 
-					return new DataObject(dataObject);
+					return dataObject;
 				}
 			}
 
