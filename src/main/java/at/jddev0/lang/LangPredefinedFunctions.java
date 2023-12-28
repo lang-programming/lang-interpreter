@@ -8331,7 +8331,7 @@ final class LangPredefinedFunctions {
 			else if(index >= list.size())
 				return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, SCOPE_ID);
 
-			return new DataObject(list.remove(index));
+			return list.remove(index);
 		}
 
 		@LangFunction("listGet")
