@@ -8696,13 +8696,13 @@ final class LangPredefinedFunctions {
 				currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
 				LangUtils.separateArgumentsWithArgumentSeparators(
 						Arrays.asList(
-								new DataObject(currentValueObject),
-								new DataObject(ele)
+								currentValueObject,
+								ele
 						)
 				), SCOPE_ID);
 			}
 
-			return currentValueObject == null?null:new DataObject(currentValueObject);
+			return currentValueObject;
 		}
 
 		@LangFunction(value="listReduceColumn", hasInfo=true)
