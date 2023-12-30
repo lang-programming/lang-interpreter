@@ -8766,13 +8766,13 @@ final class LangPredefinedFunctions {
 					currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
 					LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
-									new DataObject(currentValueObject),
-									new DataObject(ele)
+									currentValueObject,
+									ele
 							)
 					), SCOPE_ID);
 				}
 
-				reduceedLists.add(currentValueObject == null?new DataObject().setVoid():new DataObject(currentValueObject));
+				reduceedLists.add(currentValueObject == null?new DataObject().setVoid():currentValueObject);
 			}
 
 			return new DataObject().setList(reduceedLists);
