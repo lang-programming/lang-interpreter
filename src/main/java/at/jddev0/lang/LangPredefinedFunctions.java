@@ -8816,7 +8816,7 @@ final class LangPredefinedFunctions {
 					interpreter.callFunctionPointer(functionObject.getFunctionPointer(), functionObject.getVariableName(),
 							LangUtils.separateArgumentsWithArgumentSeparators(
 									Arrays.asList(
-											new DataObject(ele),
+											ele,
 											breakFunc
 									)
 							), SCOPE_ID);
@@ -8827,7 +8827,7 @@ final class LangPredefinedFunctions {
 			}else {
 				for(DataObject ele:list) {
 					interpreter.callFunctionPointer(functionObject.getFunctionPointer(), functionObject.getVariableName(), Arrays.asList(
-							new DataObject(ele)
+							ele
 					), SCOPE_ID);
 				}
 			}
