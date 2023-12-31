@@ -8874,7 +8874,7 @@ final class LangPredefinedFunctions {
 							LangUtils.separateArgumentsWithArgumentSeparators(
 									Arrays.asList(
 											new DataObject().setInt(i),
-											new DataObject(list.get(i)),
+											list.get(i),
 											breakFunc
 									)
 							), SCOPE_ID);
@@ -8888,7 +8888,7 @@ final class LangPredefinedFunctions {
 					LangUtils.separateArgumentsWithArgumentSeparators(
 							Arrays.asList(
 									new DataObject().setInt(i),
-									new DataObject(list.get(i))
+									list.get(i)
 							)
 					), SCOPE_ID);
 				}
