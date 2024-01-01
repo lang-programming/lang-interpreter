@@ -9092,7 +9092,7 @@ final class LangPredefinedFunctions {
 			String memberName = memberNameObject.getText();
 
 			try {
-				return new DataObject(struct.getMember(memberName));
+				return struct.getMember(memberName);
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 			}
