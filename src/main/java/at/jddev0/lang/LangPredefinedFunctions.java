@@ -9249,7 +9249,7 @@ final class LangPredefinedFunctions {
 						complexStructObject.getVariableName()), SCOPE_ID);
 
 			try {
-				return new DataObject(complexStruct.getMember("$imag"));
+				return complexStruct.getMember("$imag");
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 			}
