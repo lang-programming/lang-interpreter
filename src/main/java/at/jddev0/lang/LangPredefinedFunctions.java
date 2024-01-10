@@ -9502,7 +9502,7 @@ final class LangPredefinedFunctions {
 						pairStructObject.getVariableName()), SCOPE_ID);
 
 			try {
-				return new DataObject(pairStruct.getMember("$second"));
+				return pairStruct.getMember("$second");
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 			}
