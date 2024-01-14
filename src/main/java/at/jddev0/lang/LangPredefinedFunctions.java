@@ -8126,9 +8126,9 @@ final class LangPredefinedFunctions {
 				@LangParameter("$count") @NumberValue Number countNumber
 		) {
 			List<DataObject> elements = IntStream.range(0, countNumber.intValue()).mapToObj(i -> {
-				return new DataObject(interpreter.callFunctionPointer(funcPointerObject.getFunctionPointer(), funcPointerObject.getVariableName(), Arrays.asList(
+				return interpreter.callFunctionPointer(funcPointerObject.getFunctionPointer(), funcPointerObject.getVariableName(), Arrays.asList(
 						new DataObject().setInt(i)
-				), SCOPE_ID));
+				), SCOPE_ID);
 			}).collect(Collectors.toList());
 			return new DataObject().setList(new LinkedList<>(elements));
 		}
