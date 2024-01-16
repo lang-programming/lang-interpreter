@@ -8657,9 +8657,9 @@ final class LangPredefinedFunctions {
 
 			LinkedList<DataObject> newList = new LinkedList<>();
 			for(int i = 0;i < list.size();i++) {
-				newList.add(new DataObject(interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
+				newList.add(interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
 						list.get(i)
-				), SCOPE_ID)));
+				), SCOPE_ID));
 			}
 
 			return new DataObject().setList(newList);
