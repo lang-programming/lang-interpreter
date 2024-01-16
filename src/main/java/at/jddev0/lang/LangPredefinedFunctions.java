@@ -8638,9 +8638,9 @@ final class LangPredefinedFunctions {
 			List<DataObject> list = listObject.getList();
 
 			for(int i = 0;i < list.size();i++) {
-				list.set(i, new DataObject(interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
+				list.set(i, interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
 						list.get(i)
-				), SCOPE_ID)));
+				), SCOPE_ID));
 			}
 
 			return null;
