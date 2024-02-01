@@ -2470,9 +2470,8 @@ public final class LangInterpreter {
 
 					int returnOrThrowStatementLineNumber = executionState.returnOrThrowStatementLineNumber;
 					
-					DataObject retTmp = getAndResetReturnValue(SCOPE_ID);
-					retTmp = retTmp == null?new DataObject().setVoid():retTmp;
-					
+					DataObject retTmp = LangUtils.nullToLangVoid(getAndResetReturnValue(SCOPE_ID));
+
 					if(returnValueTypeConstraint != null && !isThrownValue(SCOPE_ID)) {
 						//Thrown values are always allowed
 						
