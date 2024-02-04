@@ -1150,13 +1150,13 @@ public final class LangOperators {
 							@LangParameter("&args") @RawVarArgs List<DataObject> args
 					) {
 						DataObject retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), args, SCOPE_ID);
-						DataObject ret = retN == null?new DataObject().setVoid():retN;
+						DataObject ret = LangUtils.nullToLangVoid(retN);
 						
 						for(int i = 1;i < count;i++) {
 							retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), Arrays.asList(
 									ret
 							), SCOPE_ID);
-							ret = retN == null?new DataObject().setVoid():retN;
+							ret = LangUtils.nullToLangVoid(retN);
 						}
 						
 						return ret;
