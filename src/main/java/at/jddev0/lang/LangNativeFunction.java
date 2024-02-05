@@ -552,7 +552,7 @@ public class LangNativeFunction {
 				if(returnValueTypeConstraint != null && !interpreter.isThrownValue(SCOPE_ID)) {
 					//Thrown values are always allowed
 
-					DataObject retTmp = ret == null?new DataObject().setVoid():ret;
+					DataObject retTmp = LangUtils.nullToLangVoid(ret);
 
 					if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
 						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
