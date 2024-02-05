@@ -262,7 +262,7 @@ public final class LangOperators {
 						DataObject retA = interpreter.callFunctionPointer(aFunc, leftSideOperand.getVariableName(), args, SCOPE_ID);
 						
 						return interpreter.callFunctionPointer(bFunc, rightSideOperand.getVariableName(), Arrays.asList(
-								retA == null?new DataObject().setVoid():new DataObject(retA)
+								LangUtils.nullToLangVoid(retA)
 						), SCOPE_ID);
 					}
 				})));
