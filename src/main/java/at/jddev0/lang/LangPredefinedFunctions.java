@@ -3484,7 +3484,7 @@ final class LangPredefinedFunctions {
 			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), new LinkedList<>(), SCOPE_ID);
 
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					retB == null?new DataObject().setVoid():retB
+					LangUtils.nullToLangVoid(retB)
 			), SCOPE_ID);
 		}
 
