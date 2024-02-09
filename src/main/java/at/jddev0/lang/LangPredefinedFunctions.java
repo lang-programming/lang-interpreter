@@ -3639,7 +3639,7 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					retB == null?new DataObject().setVoid():retB
+					LangUtils.nullToLangVoid(retB)
 			), SCOPE_ID);
 		}
 
