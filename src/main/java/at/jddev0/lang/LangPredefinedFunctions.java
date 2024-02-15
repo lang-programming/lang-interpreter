@@ -4047,7 +4047,7 @@ final class LangPredefinedFunctions {
 			DataObject retC = interpreter.callFunctionPointer(cFunc, c.getVariableName(), Arrays.asList(
 					b
 			), SCOPE_ID);
-			retC = retC == null?new DataObject().setVoid():retC;
+			retC = LangUtils.nullToLangVoid(retC);
 
 			if(retC.getType() != DataType.FUNCTION_POINTER)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by c(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
