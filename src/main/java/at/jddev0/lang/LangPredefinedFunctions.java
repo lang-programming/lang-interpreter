@@ -4898,7 +4898,7 @@ final class LangPredefinedFunctions {
 			DataObject ret = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
 					b
 			), SCOPE_ID);
-			ret = ret == null?new DataObject().setVoid():ret;
+			ret = LangUtils.nullToLangVoid(ret);
 
 			if(ret.getType() != DataType.FUNCTION_POINTER)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
@@ -4906,7 +4906,7 @@ final class LangPredefinedFunctions {
 			ret = interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
 					c
 			), SCOPE_ID);
-			ret = ret == null?new DataObject().setVoid():ret;
+			ret = LangUtils.nullToLangVoid(ret);
 
 			if(ret.getType() != DataType.FUNCTION_POINTER)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b)(c) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
@@ -4914,7 +4914,7 @@ final class LangPredefinedFunctions {
 			ret = interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
 					d
 			), SCOPE_ID);
-			ret = ret == null?new DataObject().setVoid():ret;
+			ret = LangUtils.nullToLangVoid(ret);
 
 			if(ret.getType() != DataType.FUNCTION_POINTER)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b)(c)(d) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
