@@ -4963,7 +4963,7 @@ final class LangPredefinedFunctions {
 				ret = interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
 						n
 				), SCOPE_ID);
-				ret = ret == null?new DataObject().setVoid():ret;
+				ret = LangUtils.nullToLangVoid(ret);
 			}
 
 			return ret;
