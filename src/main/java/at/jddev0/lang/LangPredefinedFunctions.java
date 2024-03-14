@@ -5964,9 +5964,9 @@ final class LangPredefinedFunctions {
 			), SCOPE_ID);
 
 			DataObject retA = interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
-					retB == null?new DataObject().setVoid():retB
+					LangUtils.nullToLangVoid(retB)
 			), SCOPE_ID);
-			retA = retA == null?new DataObject().setVoid():retA;
+			retA = LangUtils.nullToLangVoid(retA);
 
 			if(retA.getType() != DataType.FUNCTION_POINTER)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by a(b(d)) must be of type " + DataType.FUNCTION_POINTER, SCOPE_ID);
@@ -5979,7 +5979,7 @@ final class LangPredefinedFunctions {
 
 			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 					Arrays.asList(
-							retC == null?new DataObject().setVoid():retC
+							LangUtils.nullToLangVoid(retC)
 					)
 			), SCOPE_ID);
 		}
