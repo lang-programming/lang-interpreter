@@ -6791,7 +6791,7 @@ final class LangPredefinedFunctions {
 							), SCOPE_ID);
 
 							DataObject retF = interpreter.callFunctionPointer(fFunc, f.getVariableName(), Arrays.asList(
-									retX == null?new DataObject().setVoid():retX
+									LangUtils.nullToLangVoid(retX)
 							), SCOPE_ID);
 							if(retF == null || retF.getType() != DataType.FUNCTION_POINTER)
 								return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by $f() must be of type " +
