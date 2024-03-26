@@ -8772,7 +8772,7 @@ final class LangPredefinedFunctions {
 					), SCOPE_ID);
 				}
 
-				reduceedLists.add(currentValueObject == null?new DataObject().setVoid():currentValueObject);
+				reduceedLists.add(LangUtils.nullToLangVoid(currentValueObject));
 			}
 
 			return new DataObject().setList(reduceedLists);
