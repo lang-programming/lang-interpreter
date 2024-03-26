@@ -7730,7 +7730,7 @@ final class LangPredefinedFunctions {
 					), SCOPE_ID);
 				}
 
-				reducedArrays[i] = currentValueObject == null?new DataObject().setVoid():currentValueObject;
+				reducedArrays[i] = LangUtils.nullToLangVoid(currentValueObject);
 			}
 
 			return new DataObject().setArray(reducedArrays);
