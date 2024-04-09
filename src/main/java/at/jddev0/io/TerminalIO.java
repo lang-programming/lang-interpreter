@@ -122,7 +122,7 @@ public class TerminalIO {
 	 * @param lvl Checks if level of lvl is ok.
 	 * @return Returns true for message level that are ok otherwise false.
 	 */
-	private boolean checkLevel(Level lvl) {
+	protected boolean checkLevel(Level lvl) {
 		return Level.USER == lvl || lvl.getLevel() >= this.lvl;
 	}
 	
@@ -132,7 +132,7 @@ public class TerminalIO {
 	 * @param caller The caller class
 	 * @param newLine Auto new Line
 	 */
-	private void log(Level lvl, String txt, Class<?> caller, boolean newLine) {
+	protected void log(Level lvl, String txt, Class<?> caller, boolean newLine) {
 		//Checks if lvl is ok
 		if(!checkLevel(lvl))
 			return;
