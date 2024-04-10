@@ -6995,7 +6995,7 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("combXN7")
 		@CombinatorFunction
-		@LangInfo("Combinator execution: a(b(c)(d))(c)")
+		@LangInfo("Combinator execution: a(b(c)(d))(b(d)(c))")
 		public static DataObject combXN7Function(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
