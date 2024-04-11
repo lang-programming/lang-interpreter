@@ -3284,6 +3284,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final List<String> staticMemberNames;
 		private final List<String> staticMemberTypeConstraints;
 		private final List<Node> staticMemberValues;
+		private final List<Boolean> staticMemberFinalFlag;
 
 		private final List<String> memberNames;
 		private final List<String> memberTypeConstraints;
@@ -3305,14 +3306,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
 		public ClassDefinitionNode(int lineNumberFrom, int lineNumberTo, List<String> staticMemberNames,
 								   List<String> staticMemberTypeConstraints, List<Node> staticMemberValues,
-								   List<String> memberNames, List<String> memberTypeConstraints, List<Boolean> memberFinalFlag,
-								   List<String> methodNames, List<Node> methodDefinitions, List<Boolean> methodOverrideFlag,
-								   List<Node> constructorDefinitions, List<AbstractSyntaxTree.Node> parentClasses) {
+								   List<Boolean> staticMemberFinalFlag, List<String> memberNames, List<String> memberTypeConstraints,
+								   List<Boolean> memberFinalFlag, List<String> methodNames, List<Node> methodDefinitions,
+								   List<Boolean> methodOverrideFlag, List<Node> constructorDefinitions,
+								   List<AbstractSyntaxTree.Node> parentClasses) {
 			super(lineNumberFrom, lineNumberTo);
 
 			this.staticMemberNames = staticMemberNames;
 			this.staticMemberTypeConstraints = staticMemberTypeConstraints;
 			this.staticMemberValues = staticMemberValues;
+			this.staticMemberFinalFlag = staticMemberFinalFlag;
 
 			this.memberNames = memberNames;
 			this.memberTypeConstraints = memberTypeConstraints;
@@ -3337,6 +3340,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
 		public List<Node> getStaticMemberValues() {
 			return staticMemberValues;
+		}
+
+		public List<Boolean> getStaticMemberFinalFlag() {
+			return staticMemberFinalFlag;
 		}
 
 		public List<String> getMemberNames() {
@@ -3379,9 +3386,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			if(staticMemberNames.size() != staticMemberTypeConstraints.size() ||
+					staticMemberNames.size() != staticMemberValues.size() ||
+					staticMemberNames.size() != staticMemberFinalFlag.size() ||
 					memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size() ||
-					staticMemberNames.size() != staticMemberValues.size() || methodNames.size() != methodDefinitions.size() ||
-					methodNames.size() != methodOverrideFlag.size())
+					methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size())
 				return "ClassDefinitionNode: <INVALID>";
 
 			StringBuilder builder = new StringBuilder();
@@ -3392,6 +3400,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append("}, StaticMembers{TypeConstraints} = <value>: {\n");
 			for(int i = 0;i < staticMemberNames.size();i++) {
 				builder.append("\t");
+				builder.append(staticMemberFinalFlag.get(i)?"final:":"");
 				builder.append(staticMemberNames.get(i));
 				if(staticMemberTypeConstraints.get(i) != null) {
 					builder.append("{");
@@ -3471,6 +3480,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			ClassDefinitionNode that = (ClassDefinitionNode)obj;
 			return this.getNodeType().equals(that.getNodeType()) && this.staticMemberNames.equals(that.staticMemberNames) &&
 					this.staticMemberTypeConstraints.equals(that.staticMemberTypeConstraints) &&
+					this.staticMemberFinalFlag.equals(that.staticMemberFinalFlag) &&
 					this.staticMemberValues.equals(that.staticMemberValues) && this.memberNames.equals(that.memberNames) &&
 					this.memberTypeConstraints.equals(that.memberTypeConstraints) && this.memberFinalFlag.equals(that.memberFinalFlag) &&
 					this.methodNames.equals(that.methodNames) && this.methodDefinitions.equals(that.methodDefinitions) &&
@@ -3481,8 +3491,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public int hashCode() {
 			return Objects.hash(this.getNodeType(), this.staticMemberNames, this.staticMemberTypeConstraints,
-					this.staticMemberValues, this.memberNames, this.memberTypeConstraints, this.methodNames,
-					this.methodDefinitions, this.methodOverrideFlag, this.constructorDefinitions, this.parentClasses);
+					this.staticMemberValues, this.staticMemberFinalFlag, this.memberNames, this.memberTypeConstraints,
+					this.methodNames, this.methodDefinitions, this.methodOverrideFlag, this.constructorDefinitions,
+					this.parentClasses);
 		}
 	}
 

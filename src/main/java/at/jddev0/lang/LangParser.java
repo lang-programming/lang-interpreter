@@ -1806,6 +1806,7 @@ public final class LangParser {
 		List<String> staticMemberNames = new LinkedList<>();
 		List<String> staticMemberTypeConstraints = new LinkedList<>();
 		List<AbstractSyntaxTree.Node> staticMemberValues = new LinkedList<>();
+		List<Boolean> staticMemberFinalFlag = new LinkedList<>();
 
 		List<String> memberNames = new LinkedList<>();
 		List<String> memberTypeConstraints = new LinkedList<>();
@@ -1931,9 +1932,17 @@ public final class LangParser {
 			if(isStaticMember)
 				line = line.substring(7);
 
-			boolean isFinalMember = !isStaticMember && line.startsWith("final:");
+			boolean isFinalMember = line.startsWith("final:") && !line.startsWith("final:static:");
 			if(isFinalMember)
 				line = line.substring(6);
+
+			//Also check if "final:" is before "static:"
+			if(!isFinalMember && !isStaticMember && line.startsWith("final:static:")) {
+				line = line.substring(13);
+
+				isStaticMember = true;
+				isFinalMember = true;
+			}
 
 			String lvalue = line;
 			String assignmentOperator = null;
@@ -1993,6 +2002,7 @@ public final class LangParser {
 					staticMemberNames.add(lvalue);
 					staticMemberTypeConstraints.add(typeConstraint);
 					staticMemberValues.add(null);
+					staticMemberFinalFlag.add(isFinalMember);
 
 					continue;
 				}
@@ -2004,6 +2014,7 @@ public final class LangParser {
 						staticMemberTypeConstraints.add(typeConstraint);
 						staticMemberValues.add(isSimpleAssignmentOperator?new AbstractSyntaxTree.TextValueNode(lineNumber, ""):
 								new AbstractSyntaxTree.NullValueNode(lineNumber));
+						staticMemberFinalFlag.add(isFinalMember);
 
 						continue;
 					}
@@ -2032,6 +2043,7 @@ public final class LangParser {
 						staticMemberValues.add(parseOperationExpr(rvalue));
 						break;
 				}
+				staticMemberFinalFlag.add(isFinalMember);
 
 				continue;
 			}
@@ -2048,8 +2060,8 @@ public final class LangParser {
 		}
 
 		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(lineNumberFrom, lineNumber, staticMemberNames,
-				staticMemberTypeConstraints, staticMemberValues, memberNames, memberTypeConstraints, memberFinalFlag,
-				methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses));
+				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, memberNames, memberTypeConstraints,
+				memberFinalFlag, methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses));
 
 		return ast;
 	}

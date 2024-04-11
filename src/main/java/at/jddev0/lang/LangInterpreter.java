@@ -3044,8 +3044,10 @@ public final class LangInterpreter {
 		List<String> staticMemberNames = node.getStaticMemberNames();
 		List<String> staticMemberTypeConstraints = node.getStaticMemberTypeConstraints();
 		List<Node> staticMemberValues = node.getStaticMemberValues();
+		List<Boolean> staticMemberFinalFlag = node.getStaticMemberFinalFlag();
 
-		if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size())
+		if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size() ||
+				staticMemberNames.size() != staticMemberFinalFlag.size())
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
 
 		for(String staticMemberName:staticMemberNames)
@@ -3070,6 +3072,15 @@ public final class LangInterpreter {
 				return errorOut;
 		}
 
+		boolean[] staticMemberFinalFlagArray = new boolean[staticMemberFinalFlag.size()];
+		for(int i = 0;i < staticMemberFinalFlagArray.length;i++) {
+			if(staticMemberFinalFlag.get(i) == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for static member at index " + i,
+						node.getLineNumberFrom(), SCOPE_ID);
+
+			staticMemberFinalFlagArray[i] = staticMemberFinalFlag.get(i);
+		}
+
 		DataObject[] staticMembers = new DataObject[staticMemberNames.size()];
 		try {
 			for(int i = 0;i < staticMembers.length;i++) {
@@ -3080,6 +3091,9 @@ public final class LangInterpreter {
 
 				if(staticMemberTypeConstraintsArray[i] != null)
 					staticMembers[i].setTypeConstraint(staticMemberTypeConstraintsArray[i]);
+
+				if(staticMemberFinalFlagArray[i])
+					staticMembers[i].setFinalData(true);
 			}
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
