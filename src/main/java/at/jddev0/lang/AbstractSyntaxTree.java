@@ -3209,16 +3209,25 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class StructDefinitionNode extends ChildlessNode {
+		private final String structName;
+
 		private final List<String> memberNames;
 		private final List<String> typeConstraints;
 		
-		public StructDefinitionNode(int lineNumberFrom, int lineNumberTo, List<String> memberNames, List<String> typeConstraints) {
+		public StructDefinitionNode(int lineNumberFrom, int lineNumberTo, String structName, List<String> memberNames,
+									List<String> typeConstraints) {
 			super(lineNumberFrom, lineNumberTo);
-			
+
+			this.structName = structName;
+
 			this.memberNames = memberNames;
 			this.typeConstraints = typeConstraints;
 		}
-		
+
+		public String getStructName() {
+			return structName;
+		}
+
 		public List<String> getMemberNames() {
 			return memberNames;
 		}
@@ -3242,6 +3251,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append(lineNumberFrom);
 			builder.append(", LineTo: ");
 			builder.append(lineNumberTo);
+			builder.append("}, StructName: ");
+			builder.append(structName);
 			builder.append("}, Members{TypeConstraints}: {\n");
 			for(int i = 0;i < memberNames.size();i++) {
 				builder.append("\t");
@@ -3270,13 +3281,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return false;
 			
 			StructDefinitionNode that = (StructDefinitionNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && this.memberNames.equals(that.memberNames) &&
-					this.typeConstraints.equals(that.typeConstraints);
+			return this.getNodeType().equals(that.getNodeType()) && Objects.equals(this.structName, that.structName) &&
+					this.memberNames.equals(that.memberNames) && this.typeConstraints.equals(that.typeConstraints);
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(this.getNodeType(), this.memberNames, this.typeConstraints);
+			return Objects.hash(this.getNodeType(), this.structName, this.memberNames, this.typeConstraints);
 		}
 	}
 

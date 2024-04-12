@@ -1544,6 +1544,18 @@ public final class LangParser {
 
 			return ast;
 		}
+
+		//Struct definition
+		if(LangPatterns.matches(token, LangPatterns.PARSING_STRUCT_DEFINITION)) {
+			//Skip "struct "
+			token = token.substring(7);
+
+			String structName = token.substring(0, token.length() - 1);
+
+			nodes.addAll(parseStructDefinition(structName, lines).getChildren());
+
+			return ast;
+		}
 		
 		nodes.addAll(parseToken(token, lines).getChildren());
 		
@@ -1720,7 +1732,7 @@ public final class LangParser {
 				}else if(lrvalue.equals("{")) {
 					//Struct definition
 
-					nodes.addAll(parseStructDefinition(lines).getChildren());
+					nodes.addAll(parseStructDefinition(null, lines).getChildren());
 
 					return ast;
 				}else if(lrvalue.startsWith("<") && lrvalue.endsWith(">{")) {
@@ -1745,7 +1757,7 @@ public final class LangParser {
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseStructDefinition(BufferedReader lines) throws IOException {
+	private AbstractSyntaxTree parseStructDefinition(String structName, BufferedReader lines) throws IOException {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
@@ -1811,7 +1823,7 @@ public final class LangParser {
 			return ast;
 		}
 
-		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(lineNumberFrom, lineNumber, memberNames, typeConstraints));
+		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(lineNumberFrom, lineNumber, structName, memberNames, typeConstraints));
 
 		return ast;
 	}

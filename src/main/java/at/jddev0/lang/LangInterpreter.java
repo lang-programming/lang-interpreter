@@ -2993,6 +2993,27 @@ public final class LangInterpreter {
 	}
 	
 	private DataObject interpretStructDefinitionNode(StructDefinitionNode node, final int SCOPE_ID) {
+		String structName = node.getStructName();
+		DataObject structDataObject = null;
+		boolean[] flags = new boolean[] {false, false};
+		if(structName != null) {
+			structDataObject = getOrCreateDataObjectFromVariableName(null, null, structName, false, false, true, flags,
+					node.getLineNumberFrom(), SCOPE_ID);
+			if(flags[0])
+				return structDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
+
+			if(structDataObject.getVariableName() == null) {
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom(), SCOPE_ID);
+			}
+
+			if(structDataObject.isFinalData() || structDataObject.isLangVar()) {
+				if(flags[1])
+					data.get(SCOPE_ID).var.remove(structDataObject.getVariableName());
+
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom(), SCOPE_ID);
+			}
+		}
+
 		List<String> memberNames = node.getMemberNames();
 		List<String> typeConstraints = node.getTypeConstraints();
 		
@@ -3020,7 +3041,23 @@ public final class LangInterpreter {
 		}
 		
 		try {
-			return new DataObject().setStruct(new StructObject(memberNames.toArray(new String[0]), typeConstraintsArray));
+			StructObject structObject = new StructObject(memberNames.toArray(new String[0]), typeConstraintsArray);
+
+			if(structDataObject == null)
+				return new DataObject().setStruct(structObject);
+
+			try {
+				structDataObject.setStruct(structObject).
+						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.STRUCT)).setFinalData(true);
+			}catch(DataTypeConstraintViolatedException e) {
+				if(flags[1])
+					data.get(SCOPE_ID).var.remove(structName);
+
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for class definition: \"" +
+						structName + "\" was already defined and cannot be set to a struct definition", node.getLineNumberFrom(), SCOPE_ID);
+			}
+
+			return structDataObject;
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 		}

@@ -159,6 +159,10 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_STARTS_WITH_VAR_NAME_PTR_OR_DEREFERENCE = Pattern.compile("(\\[\\[\\w+\\]\\]::)?\\$(\\*+\\w+|\\[+\\w+\\]+|\\*+\\[+\\w+\\]+).*");
 	/**
+	 * RegEx: "<code>struct (\$|&)\w+\{</code>"
+	 */
+	public static final Pattern PARSING_STRUCT_DEFINITION = Pattern.compile("struct (\\$|&)\\w+\\{");
+	/**
 	 * RegEx: "<code>class (\$|&)\w+<.*>\{</code>"
 	 */
 	public static final Pattern PARSING_CLASS_DEFINITION = Pattern.compile("class (\\$|&)\\w+<.*>\\{");
