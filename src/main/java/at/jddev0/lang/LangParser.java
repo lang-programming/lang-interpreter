@@ -1522,6 +1522,28 @@ public final class LangParser {
 			
 			return ast;
 		}
+
+		//Class definition
+		if(LangPatterns.matches(token, LangPatterns.PARSING_CLASS_DEFINITION)) {
+			//Skip "class "
+			token = token.substring(6);
+
+			int bracketIndex = token.indexOf('<');
+			String className = token.substring(0, bracketIndex);
+
+			token = token.substring(bracketIndex);
+
+			int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '<', '>');
+			if(parentClassesEndIndex != token.length() - 2) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
+
+				return ast;
+			}
+
+			nodes.addAll(parseClassDefinition(className, token.substring(1, token.length() - 2), lines).getChildren());
+
+			return ast;
+		}
 		
 		nodes.addAll(parseToken(token, lines).getChildren());
 		
@@ -1711,7 +1733,7 @@ public final class LangParser {
 						return ast;
 					}
 
-					nodes.addAll(parseClassDefinition(lrvalue.substring(1, lrvalue.length() - 2), lines).getChildren());
+					nodes.addAll(parseClassDefinition(null, lrvalue.substring(1, lrvalue.length() - 2), lines).getChildren());
 
 					return ast;
 				}
@@ -1794,7 +1816,7 @@ public final class LangParser {
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseClassDefinition(String parentClassesToken, BufferedReader lines) throws IOException {
+	private AbstractSyntaxTree parseClassDefinition(String className, String parentClassesToken, BufferedReader lines) throws IOException {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
@@ -2059,7 +2081,7 @@ public final class LangParser {
 			return ast;
 		}
 
-		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(lineNumberFrom, lineNumber, staticMemberNames,
+		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(lineNumberFrom, lineNumber, className, staticMemberNames,
 				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, memberNames, memberTypeConstraints,
 				memberFinalFlag, methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses));
 

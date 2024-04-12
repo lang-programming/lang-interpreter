@@ -3027,6 +3027,27 @@ public final class LangInterpreter {
 	}
 
 	private DataObject interpretClassDefinitionNode(ClassDefinitionNode node, final int SCOPE_ID) {
+		String className = node.getClassName();
+		DataObject classDataObject = null;
+		boolean[] flags = new boolean[] {false, false};
+		if(className != null) {
+			classDataObject = getOrCreateDataObjectFromVariableName(null, null, className, false, false, true, flags,
+					node.getLineNumberFrom(), SCOPE_ID);
+			if(flags[0])
+				return classDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
+
+			if(classDataObject.getVariableName() == null) {
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom(), SCOPE_ID);
+			}
+
+			if(classDataObject.isFinalData() || classDataObject.isLangVar()) {
+				if(flags[1])
+					data.get(SCOPE_ID).var.remove(classDataObject.getVariableName());
+
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom(), SCOPE_ID);
+			}
+		}
+
 		List<AbstractSyntaxTree.Node> parentClasses = node.getParentClasses();
 
 		List<DataObject> parentClassList = new LinkedList<>(interpretFunctionPointerArguments(parentClasses, SCOPE_ID));
@@ -3207,9 +3228,25 @@ public final class LangInterpreter {
 		}
 
 		try {
-			return new DataObject().setObject(new LangObject(staticMembers, memberNames.toArray(new String[0]),
+			LangObject classObject = new LangObject(staticMembers, memberNames.toArray(new String[0]),
 					memberTypeConstraintsArray, memberFinalFlagArray, methods, methodOverrideFlags, constructors,
-					parentClassObjectList.toArray(new LangObject[0])));
+					parentClassObjectList.toArray(new LangObject[0]));
+
+			if(classDataObject == null)
+				return new DataObject().setObject(classObject);
+
+			try {
+				classDataObject.setObject(classObject).
+						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.OBJECT)).setFinalData(true);
+			}catch(DataTypeConstraintViolatedException e) {
+				if(flags[1])
+					data.get(SCOPE_ID).var.remove(className);
+
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for class definition: \"" +
+						className + "\" was already defined and cannot be set to a class", node.getLineNumberFrom(), SCOPE_ID);
+			}
+
+			return classDataObject;
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 		}
