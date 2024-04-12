@@ -3251,9 +3251,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append(lineNumberFrom);
 			builder.append(", LineTo: ");
 			builder.append(lineNumberTo);
-			builder.append("}, StructName: ");
+			builder.append("}, StructName: \"");
 			builder.append(structName);
-			builder.append("}, Members{TypeConstraints}: {\n");
+			builder.append("\", Members{TypeConstraints}: {\n");
 			for(int i = 0;i < memberNames.size();i++) {
 				builder.append("\t");
 				builder.append(memberNames.get(i));
@@ -3416,9 +3416,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append(lineNumberFrom);
 			builder.append(", LineTo: ");
 			builder.append(lineNumberTo);
-			builder.append("}, ClassName: ");
+			builder.append("}, ClassName: \"");
 			builder.append(className);
-			builder.append(", StaticMembers{TypeConstraints} = <value>: {\n");
+			builder.append("\", StaticMembers{TypeConstraints} = <value>: {\n");
 			for(int i = 0;i < staticMemberNames.size();i++) {
 				builder.append("\t");
 				builder.append(staticMemberFinalFlag.get(i)?"final:":"");

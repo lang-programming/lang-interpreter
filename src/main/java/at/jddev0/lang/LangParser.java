@@ -1529,7 +1529,7 @@ public final class LangParser {
 			token = token.substring(6);
 
 			int bracketIndex = token.indexOf('<');
-			String className = token.substring(0, bracketIndex);
+			String className = token.substring(0, bracketIndex).trim();
 
 			token = token.substring(bracketIndex);
 
@@ -1550,7 +1550,7 @@ public final class LangParser {
 			//Skip "struct "
 			token = token.substring(7);
 
-			String structName = token.substring(0, token.length() - 1);
+			String structName = token.substring(0, token.length() - 1).trim();
 
 			nodes.addAll(parseStructDefinition(structName, lines).getChildren());
 
