@@ -1016,9 +1016,18 @@ public final class LangParser {
 					"()", "[]", "{}"
 			};
 			for(String bracketPair:bracketPairs) {
-				if(tokens[0].contains(bracketPair.charAt(0) + "") &&
-						LangUtils.getIndexOfMatchingBracket(tokens[0], 0, tokens[0].length(), bracketPair.charAt(0), bracketPair.charAt(1)) == -1) {
-					return null;
+				int startIndex = 0;
+
+				while((startIndex = tokens[0].indexOf(bracketPair.charAt(0), startIndex)) != -1) {
+					int matchingIndex = LangUtils.getIndexOfMatchingBracket(tokens[0], startIndex, tokens[0].length(),
+							bracketPair.charAt(0), bracketPair.charAt(1));
+
+					if(matchingIndex == -1)
+						return null;
+
+					startIndex = matchingIndex + 1; //Skip "("
+					if(startIndex >= tokens[0].length())
+						break;
 				}
 			}
 			
