@@ -281,11 +281,9 @@ final class LangPredefinedFunctions {
 				})));
 
 				for(int i = 0;i < repeatCount;i++) {
-					interpreter.callFunctionPointer(loopFunc, loopFunctionObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-							Arrays.asList(
-								new DataObject().setInt(i),
-								breakFunc
-							)
+					interpreter.callFunctionPointer(loopFunc, loopFunctionObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+							new DataObject().setInt(i),
+							breakFunc
 					), SCOPE_ID);
 
 					if(shouldBreak[0])
