@@ -3829,7 +3829,7 @@ public final class LangInterpreter {
 
 	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
 		if(rawMethodName.startsWith("fn.") || rawMethodName.startsWith("func.") ||
-				rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker"))
+				rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker."))
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"The method \"" + rawMethodName + "\" is not part of this object", lineNumber, SCOPE_ID);
 
@@ -3917,7 +3917,7 @@ public final class LangInterpreter {
 
 	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
 		if(rawMethodName.startsWith("fp.") || rawMethodName.startsWith("fn.") ||
-				rawMethodName.startsWith("func.") || rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker"))
+				rawMethodName.startsWith("func.") || rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker."))
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"The method \"" + rawMethodName + "\" is not part of this object", lineNumber, SCOPE_ID);
 
