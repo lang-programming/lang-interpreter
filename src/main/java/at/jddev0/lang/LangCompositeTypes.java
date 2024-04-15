@@ -1,9 +1,6 @@
 package at.jddev0.lang;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import at.jddev0.lang.DataObject.DataType;
 import at.jddev0.lang.DataObject.DataTypeConstraint;
@@ -156,6 +153,40 @@ public class LangCompositeTypes {
 				})),
 		});
 		methodOverrideFlags.put("mp.flatMap", new Boolean[] {
+				false
+		});
+
+		methods.put("op:deepCopy", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:deepCopy", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject deepCopyMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+					) {
+						DataObject value = thisObject.getMember("$value");
+						boolean present = thisObject.getMember("$present").getBoolean();
+
+						try {
+							List<DataObject> arguments = new LinkedList<>();
+							if(present) {
+								DataObject deepCopyRet = interpreter.operators.opDeepCopy(value, -1, SCOPE_ID);
+								if(deepCopyRet == null) {
+									return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS,
+											"The deep copy operator is not defined for " + value.getType(), SCOPE_ID);
+								}
+
+								arguments.add(deepCopyRet);
+							}
+
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_MAYBE, arguments, SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:deepCopy", new Boolean[] {
 				false
 		});
 
