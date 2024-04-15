@@ -19,17 +19,14 @@ import at.jddev0.lang.DataObject.DataTypeConstraintException;
 import at.jddev0.lang.DataObject.ErrorObject;
 import at.jddev0.lang.DataObject.FunctionPointerObject;
 import at.jddev0.lang.DataObject.StructObject;
-import at.jddev0.lang.LangFunction.AllowedTypes;
-import at.jddev0.lang.LangFunction.LangParameter;
-import at.jddev0.lang.LangFunction.LangParameter.NumberValue;
+import at.jddev0.lang.DataObject.LangObject;
+import at.jddev0.lang.LangFunction.*;
+import at.jddev0.lang.LangFunction.LangParameter.*;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 import at.jddev0.lang.LangInterpreter.StackElement;
 import at.jddev0.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
 import at.jddev0.lang.regex.InvalidPaternSyntaxException;
 import at.jddev0.lang.regex.LangRegEx;
-
-import static at.jddev0.lang.LangFunction.*;
-import static at.jddev0.lang.LangFunction.LangParameter.*;
 
 /**
  * Lang-Module<br>
@@ -59,8 +56,8 @@ final class LangPredefinedFunctions {
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedArrayFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedListFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedStructFunctions.class));
-		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedComplexStructFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedPairStructFunctions.class));
+		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedComplexClassFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedModuleFunctions.class));
 		funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedLangTestFunctions.class));
 	}
@@ -9976,261 +9973,6 @@ final class LangPredefinedFunctions {
 	}
 
 	@SuppressWarnings("unused")
-	public static final class LangPredefinedComplexStructFunctions {
-		private LangPredefinedComplexStructFunctions() {}
-
-		@LangFunction("complex")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject complexFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$real") @NumberValue Number realNumber,
-				@LangParameter("$imag") @NumberValue Number imagNumber
-		) {
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(realNumber.doubleValue(), imagNumber.doubleValue()));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("creal")
-		@LangInfo("Returns the real value of &z")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject crealFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
-		) {
-			StructObject complexStruct = complexStructObject.getStruct();
-
-			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				return complexStruct.getMember("$real");
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("cimag")
-		@LangInfo("Returns the imaginary value of &z")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject cimagFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
-		) {
-			StructObject complexStruct = complexStructObject.getStruct();
-
-			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				return complexStruct.getMember("$imag");
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("cabs")
-		@LangInfo("Returns the absolute value of &z")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject cabsFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
-		) {
-			StructObject complexStruct = complexStructObject.getStruct();
-
-			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				return new DataObject().setDouble(Math.hypot(complexStruct.getMember("$real").getDouble(),
-						complexStruct.getMember("$imag").getDouble()));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("conj")
-		@LangInfo("Returns a conjugated copy of &z")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject conjFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
-		) {
-			StructObject complexStruct = complexStructObject.getStruct();
-
-			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(complexStruct.getMember("$real").getDouble(),
-						-complexStruct.getMember("$imag").getDouble()));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("cinv")
-		@LangInfo("Returns a negated copy of &z")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject cinvFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&z") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructObject
-		) {
-			StructObject complexStruct = complexStructObject.getStruct();
-
-			if(complexStruct.isDefinition() || !complexStruct.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructObject.getVariableName()), SCOPE_ID);
-
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(-complexStruct.getMember("$real").getDouble(),
-						-complexStruct.getMember("$imag").getDouble()));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("cadd")
-		@LangInfo("Returns &a + &b")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject caddFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
-		) {
-			StructObject complexStructA = complexStructAObject.getStruct();
-			StructObject complexStructB = complexStructBObject.getStruct();
-
-			if(complexStructA.isDefinition() || !complexStructA.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructAObject.getVariableName()), SCOPE_ID);
-
-			if(complexStructB.isDefinition() || !complexStructB.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
-						complexStructBObject.getVariableName()), SCOPE_ID);
-
-			double realA = complexStructA.getMember("$real").getDouble();
-			double imagA = complexStructA.getMember("$imag").getDouble();
-
-			double realB = complexStructB.getMember("$real").getDouble();
-			double imagB = complexStructB.getMember("$imag").getDouble();
-
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(realA + realB, imagA + imagB));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("csub")
-		@LangInfo("Returns &a - &b")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject csubFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
-		) {
-			StructObject complexStructA = complexStructAObject.getStruct();
-			StructObject complexStructB = complexStructBObject.getStruct();
-
-			if(complexStructA.isDefinition() || !complexStructA.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructAObject.getVariableName()), SCOPE_ID);
-
-			if(complexStructB.isDefinition() || !complexStructB.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
-						complexStructBObject.getVariableName()), SCOPE_ID);
-
-			double realA = complexStructA.getMember("$real").getDouble();
-			double imagA = complexStructA.getMember("$imag").getDouble();
-
-			double realB = complexStructB.getMember("$real").getDouble();
-			double imagB = complexStructB.getMember("$imag").getDouble();
-
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(realA - realB, imagA - imagB));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("cmul")
-		@LangInfo("Returns &a * &b")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject cmulFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
-		) {
-			StructObject complexStructA = complexStructAObject.getStruct();
-			StructObject complexStructB = complexStructBObject.getStruct();
-
-			if(complexStructA.isDefinition() || !complexStructA.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructAObject.getVariableName()), SCOPE_ID);
-
-			if(complexStructB.isDefinition() || !complexStructB.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
-						complexStructBObject.getVariableName()), SCOPE_ID);
-
-			double realA = complexStructA.getMember("$real").getDouble();
-			double imagA = complexStructA.getMember("$imag").getDouble();
-
-			double realB = complexStructB.getMember("$real").getDouble();
-			double imagB = complexStructB.getMember("$imag").getDouble();
-
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(realA * realB - imagA * imagB, realA * imagB + imagA * realB));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-
-		@LangFunction("cdiv")
-		@LangInfo("Returns &a / &b")
-		@AllowedTypes(DataObject.DataType.STRUCT)
-		public static DataObject cdivFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("&a") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructAObject,
-				@LangParameter("&b") @AllowedTypes(DataObject.DataType.STRUCT) DataObject complexStructBObject
-		) {
-			StructObject complexStructA = complexStructAObject.getStruct();
-			StructObject complexStructB = complexStructBObject.getStruct();
-
-			if(complexStructA.isDefinition() || !complexStructA.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-						complexStructAObject.getVariableName()), SCOPE_ID);
-
-			if(complexStructB.isDefinition() || !complexStructB.getStructBaseDefinition().equals(LangCompositeTypes.STRUCT_COMPLEX))
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
-						complexStructBObject.getVariableName()), SCOPE_ID);
-
-			double realA = complexStructA.getMember("$real").getDouble();
-			double imagA = complexStructA.getMember("$imag").getDouble();
-
-			double realB = complexStructB.getMember("$real").getDouble();
-			double imagB = complexStructB.getMember("$imag").getDouble();
-
-			double realNumerator = realA * realB + imagA * imagB;
-			double imagNumerator = imagA * realB - realA * imagB;
-
-			double denominator = realB * realB + imagB * imagB;
-
-			try {
-				return new DataObject().setStruct(LangCompositeTypes.createComplex(realNumerator / denominator, imagNumerator / denominator));
-			}catch(DataTypeConstraintException e) {
-				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
-			}
-		}
-	}
-
-	@SuppressWarnings("unused")
 	public static final class LangPredefinedPairStructFunctions {
 		private LangPredefinedPairStructFunctions() {}
 
@@ -10281,6 +10023,288 @@ final class LangPredefinedFunctions {
 
 			try {
 				return pairStruct.getMember("$second");
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+	}
+
+	@SuppressWarnings("unused")
+	public static final class LangPredefinedComplexClassFunctions {
+		private LangPredefinedComplexClassFunctions() {}
+
+		@LangFunction("complex")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject complexFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$real") @NumberValue DataObject realObject,
+				@LangParameter("$imag") @NumberValue DataObject imagObject
+		) {
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						realObject,
+						imagObject
+				), SCOPE_ID);
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("creal")
+		@LangInfo("Returns the real value of &z")
+		@AllowedTypes(DataObject.DataType.DOUBLE)
+		public static DataObject crealFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexDataObject
+		) {
+			LangObject complexObject = complexDataObject.getObject();
+
+			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexDataObject.getVariableName()), SCOPE_ID);
+
+			try {
+				return complexObject.getMember("$real");
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("cimag")
+		@LangInfo("Returns the imaginary value of &z")
+		@AllowedTypes(DataObject.DataType.DOUBLE)
+		public static DataObject cimagFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexDataObject
+		) {
+			LangObject complexObject = complexDataObject.getObject();
+
+			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexDataObject.getVariableName()), SCOPE_ID);
+
+			try {
+				return complexObject.getMember("$imag");
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("cabs")
+		@LangInfo("Returns the absolute value of &z")
+		@AllowedTypes(DataObject.DataType.DOUBLE)
+		public static DataObject cabsFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexDataObject
+		) {
+			LangObject complexObject = complexDataObject.getObject();
+
+			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexDataObject.getVariableName()), SCOPE_ID);
+
+			double real = complexObject.getMember("$real").getDouble();
+			double imag = complexObject.getMember("$imag").getDouble();
+
+			try {
+				return new DataObject().setDouble(Math.hypot(real, imag));
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("conj")
+		@LangInfo("Returns a conjugated copy of &z")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject conjFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexDataObject
+		) {
+			LangObject complexObject = complexDataObject.getObject();
+
+			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexDataObject.getVariableName()), SCOPE_ID);
+
+			double real = complexObject.getMember("$real").getDouble();
+			double imag = complexObject.getMember("$imag").getDouble();
+
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						new DataObject().setDouble(real),
+						new DataObject().setDouble(-imag)
+				), SCOPE_ID);
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("cinv")
+		@LangInfo("Returns a negated copy of &z")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject cinvFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexDataObject
+		) {
+			LangObject complexObject = complexDataObject.getObject();
+
+			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexDataObject.getVariableName()), SCOPE_ID);
+
+			double real = complexObject.getMember("$real").getDouble();
+			double imag = complexObject.getMember("$imag").getDouble();
+
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						new DataObject().setDouble(-real),
+						new DataObject().setDouble(-imag)
+				), SCOPE_ID);
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("cadd")
+		@LangInfo("Returns &a + &b")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject caddFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&a") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexADataObject,
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexBDataObject
+		) {
+			LangObject complexObjectA = complexADataObject.getObject();
+			LangObject complexObjectB = complexBDataObject.getObject();
+
+			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexADataObject.getVariableName()), SCOPE_ID);
+
+			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
+						complexBDataObject.getVariableName()), SCOPE_ID);
+
+			double realA = complexObjectA.getMember("$real").getDouble();
+			double imagA = complexObjectA.getMember("$imag").getDouble();
+
+			double realB = complexObjectB.getMember("$real").getDouble();
+			double imagB = complexObjectB.getMember("$imag").getDouble();
+
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						new DataObject().setDouble(realA + realB),
+						new DataObject().setDouble(imagA + imagB)
+				), SCOPE_ID);
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("csub")
+		@LangInfo("Returns &a - &b")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject csubFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&a") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexADataObject,
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexBDataObject
+		) {
+			LangObject complexObjectA = complexADataObject.getObject();
+			LangObject complexObjectB = complexBDataObject.getObject();
+
+			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexADataObject.getVariableName()), SCOPE_ID);
+
+			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
+						complexBDataObject.getVariableName()), SCOPE_ID);
+
+			double realA = complexObjectA.getMember("$real").getDouble();
+			double imagA = complexObjectA.getMember("$imag").getDouble();
+
+			double realB = complexObjectB.getMember("$real").getDouble();
+			double imagB = complexObjectB.getMember("$imag").getDouble();
+
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						new DataObject().setDouble(realA - realB),
+						new DataObject().setDouble(imagA - imagB)
+				), SCOPE_ID);
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("cmul")
+		@LangInfo("Returns &a * &b")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject cmulFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&a") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexADataObject,
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexBDataObject
+		) {
+			LangObject complexObjectA = complexADataObject.getObject();
+			LangObject complexObjectB = complexBDataObject.getObject();
+
+			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexADataObject.getVariableName()), SCOPE_ID);
+
+			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
+						complexBDataObject.getVariableName()), SCOPE_ID);
+
+			double realA = complexObjectA.getMember("$real").getDouble();
+			double imagA = complexObjectA.getMember("$imag").getDouble();
+
+			double realB = complexObjectB.getMember("$real").getDouble();
+			double imagB = complexObjectB.getMember("$imag").getDouble();
+
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						new DataObject().setDouble(realA * realB - imagA * imagB),
+						new DataObject().setDouble(realA * imagB + imagA * realB)
+				), SCOPE_ID);
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+			}
+		}
+
+		@LangFunction("cdiv")
+		@LangInfo("Returns &a / &b")
+		@AllowedTypes(DataObject.DataType.OBJECT)
+		public static DataObject cdivFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("&a") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexADataObject,
+				@LangParameter("&b") @AllowedTypes(DataObject.DataType.OBJECT) DataObject complexBDataObject
+		) {
+			LangObject complexObjectA = complexADataObject.getObject();
+			LangObject complexObjectB = complexBDataObject.getObject();
+
+			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+						complexADataObject.getVariableName()), SCOPE_ID);
+
+			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
+						complexBDataObject.getVariableName()), SCOPE_ID);
+
+			double realA = complexObjectA.getMember("$real").getDouble();
+			double imagA = complexObjectA.getMember("$imag").getDouble();
+
+			double realB = complexObjectB.getMember("$real").getDouble();
+			double imagB = complexObjectB.getMember("$imag").getDouble();
+
+			double realNumerator = realA * realB + imagA * imagB;
+			double imagNumerator = imagA * realB - realA * imagB;
+
+			double denominator = realB * realB + imagB * imagB;
+
+			try {
+				return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+						new DataObject().setDouble(realNumerator / denominator),
+						new DataObject().setDouble(imagNumerator / denominator)
+				), SCOPE_ID);
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 			}

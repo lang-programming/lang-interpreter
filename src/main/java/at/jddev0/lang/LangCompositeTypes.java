@@ -9,11 +9,13 @@ import at.jddev0.lang.DataObject.DataType;
 import at.jddev0.lang.DataObject.DataTypeConstraint;
 import at.jddev0.lang.DataObject.LangObject;
 import at.jddev0.lang.DataObject.StructObject;
+import at.jddev0.lang.LangFunction.*;
+import at.jddev0.lang.LangFunction.LangParameter.*;
 
 /**
  * Lang-Module<br>
  * Definition of Lang composite types
- * 
+ *
  * @author JDDev0
  * @version v1.0.0
  */
@@ -21,15 +23,15 @@ public class LangCompositeTypes {
 	private static final DataTypeConstraint TYPE_CONSTRAINT_OPTIONAL_TEXT = DataTypeConstraint.fromAllowedTypes(Arrays.asList(
 			DataType.NULL, DataType.TEXT
 	));
-	
+
 	private static final DataTypeConstraint TYPE_CONSTRAINT_DOUBLE_ONLY = DataTypeConstraint.fromAllowedTypes(Arrays.asList(
 			DataType.DOUBLE
 	));
-	
+
 	private static final DataTypeConstraint TYPE_CONSTRAINT_INT_ONLY = DataTypeConstraint.fromAllowedTypes(Arrays.asList(
 			DataType.INT
 	));
-	
+
 	public static final StructObject STRUCT_STACK_TRACE_ELEMENT = new StructObject(new String[] {
 			"$path",
 			"$file",
@@ -56,21 +58,7 @@ public class LangCompositeTypes {
 				new DataObject(moduleFile)
 		});
 	}
-	
-	public static final StructObject STRUCT_COMPLEX = new StructObject(new String[] {
-			"$real",
-			"$imag"
-	}, new DataTypeConstraint[] {
-			TYPE_CONSTRAINT_DOUBLE_ONLY,
-			TYPE_CONSTRAINT_DOUBLE_ONLY
-	});
-	public static StructObject createComplex(double real, double imag) {
-		return new StructObject(LangCompositeTypes.STRUCT_COMPLEX, new DataObject[] {
-				new DataObject().setDouble(real),
-				new DataObject().setDouble(imag)
-		});
-	}
-	
+
 	public static final StructObject STRUCT_PAIR = new StructObject(new String[] {
 			"$first",
 			"$second"
@@ -90,8 +78,8 @@ public class LangCompositeTypes {
 		methods.put("mp.isPresent", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="mp.isPresent", isMethod=true)
-					@LangFunction.LangInfo("Returns 1 if a just &maybe value is provided for nothing &maybe value 0 is returned")
-					@LangFunction.AllowedTypes(DataType.INT)
+					@LangInfo("Returns 1 if a just &maybe value is provided for nothing &maybe value 0 is returned")
+					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isPresentMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
@@ -111,7 +99,7 @@ public class LangCompositeTypes {
 		methods.put("mp.get", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="mp.get", isMethod=true)
-					@LangFunction.LangInfo("Returns the value if a just &maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown")
+					@LangInfo("Returns the value if a just &maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown")
 					@SuppressWarnings("unused")
 					public DataObject getMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
@@ -135,12 +123,12 @@ public class LangCompositeTypes {
 		methods.put("mp.flatMap", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="mp.flatMap", isMethod=true)
-					@LangFunction.LangInfo("fp.mapper is executed which must return a new &Maybe value if value of &maybe is present otherwise a new empty maybe is returned")
-					@LangFunction.AllowedTypes(DataType.OBJECT)
+					@LangInfo("fp.mapper is executed which must return a new &Maybe value if value of &maybe is present otherwise a new empty maybe is returned")
+					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject flatMapMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
-							@LangFunction.LangParameter("fp.mapper") @LangFunction.AllowedTypes(DataType.FUNCTION_POINTER) DataObject mapperFuncObject
+							@LangParameter("fp.mapper") @AllowedTypes(DataType.FUNCTION_POINTER) DataObject mapperFuncObject
 					) {
 						DataObject.FunctionPointerObject mapperFunc = mapperFuncObject.getFunctionPointer();
 
@@ -174,8 +162,8 @@ public class LangCompositeTypes {
 		DataObject.FunctionPointerObject[] constructors = new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="construct", isMethod=true)
-					@LangFunction.LangInfo("Creates a nothing &Maybe object")
-					@LangFunction.AllowedTypes(DataType.VOID)
+					@LangInfo("Creates a nothing &Maybe object")
+					@AllowedTypes(DataType.VOID)
 					@SuppressWarnings("unused")
 					public DataObject nothingConstructMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
@@ -188,12 +176,12 @@ public class LangCompositeTypes {
 				})),
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="construct", isMethod=true)
-					@LangFunction.AllowedTypes(DataType.VOID)
-					@LangFunction.LangInfo("Creates a just &Maybe object")
+					@AllowedTypes(DataType.VOID)
+					@LangInfo("Creates a just &Maybe object")
 					@SuppressWarnings("unused")
 					public DataObject justConstructMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
-							@LangFunction.LangParameter("$value") DataObject valueObject
+							@LangParameter("$value") DataObject valueObject
 					) {
 						thisObject.getMember("$value").setData(valueObject);
 						thisObject.getMember("$present").setBoolean(true);
@@ -207,8 +195,8 @@ public class LangCompositeTypes {
 				new DataObject().setFunctionPointer(
 						new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 							@LangFunction("fp.nothing")
-							@LangFunction.AllowedTypes(DataType.OBJECT)
-							@LangFunction.LangInfo("Creates a nothing &Maybe object")
+							@AllowedTypes(DataType.OBJECT)
+							@LangInfo("Creates a nothing &Maybe object")
 							@SuppressWarnings("unused")
 							public DataObject nothingStaticMethod(
 									LangInterpreter interpreter, int SCOPE_ID
@@ -220,12 +208,12 @@ public class LangCompositeTypes {
 				new DataObject().setFunctionPointer(
 						new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 							@LangFunction("fp.just")
-							@LangFunction.AllowedTypes(DataType.OBJECT)
-							@LangFunction.LangInfo("Creates a just &Maybe object")
+							@AllowedTypes(DataType.OBJECT)
+							@LangInfo("Creates a just &Maybe object")
 							@SuppressWarnings("unused")
 							public DataObject justStaticMethod(
 									LangInterpreter interpreter, int SCOPE_ID,
-									@LangFunction.LangParameter("$value") DataObject valueObject
+									@LangParameter("$value") DataObject valueObject
 							) {
 								return interpreter.callConstructor(CLASS_MAYBE, Arrays.asList(valueObject), SCOPE_ID);
 							}
@@ -251,6 +239,473 @@ public class LangCompositeTypes {
 		};
 
 		CLASS_MAYBE = new LangObject(staticMembers, memberNames, memberDataTypeConstraints,
+				memberFinalFlags, methods, methodOverrideFlags, constructors, parentClasses);
+	}
+
+	public static final LangObject CLASS_COMPLEX;
+	static {
+		Map<String, DataObject.FunctionPointerObject[]> methods = new HashMap<>();
+		Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
+
+		methods.put("op:deepCopy", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:deepCopy", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject deepCopyMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+					) {
+						double real = thisObject.getMember("$real").getDouble();
+						double imag = thisObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(real),
+									new DataObject().setDouble(imag)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:deepCopy", new Boolean[] {
+				false
+		});
+
+		methods.put("op:inv", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:inv", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject invMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+					) {
+						double real = thisObject.getMember("$real").getDouble();
+						double imag = thisObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(-real),
+									new DataObject().setDouble(-imag)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:inv", new Boolean[] {
+				false
+		});
+
+		methods.put("op:add", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:add", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject addMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
+					) {
+						LangObject operandObject = operand.getObject();
+
+						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+									operand.getVariableName()), SCOPE_ID);
+
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandObject.getMember("$real").getDouble();
+						double imagB = operandObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA + realB),
+									new DataObject().setDouble(imagA + imagB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:add", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject addMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandNumber.doubleValue();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA + realB),
+									new DataObject().setDouble(imagA)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:add", new Boolean[] {
+				false,
+				false
+		});
+
+		methods.put("op:r-add", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:r-add", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject rAddMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = operandNumber.doubleValue();
+
+						double realB = thisObject.getMember("$real").getDouble();
+						double imagB = thisObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA + realB),
+									new DataObject().setDouble(imagB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:r-add", new Boolean[] {
+				false
+		});
+
+		methods.put("op:sub", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:sub", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject subMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
+					) {
+						LangObject operandObject = operand.getObject();
+
+						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+									operand.getVariableName()), SCOPE_ID);
+
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandObject.getMember("$real").getDouble();
+						double imagB = operandObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA - realB),
+									new DataObject().setDouble(imagA - imagB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:sub", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject subMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandNumber.doubleValue();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA - realB),
+									new DataObject().setDouble(imagA)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:sub", new Boolean[] {
+				false,
+				false
+		});
+
+		methods.put("op:r-sub", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:r-sub", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject rSubMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = operandNumber.doubleValue();
+
+						double realB = thisObject.getMember("$real").getDouble();
+						double imagB = thisObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA - realB),
+									new DataObject().setDouble(-imagB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:r-sub", new Boolean[] {
+				false
+		});
+
+		methods.put("op:mul", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:mul", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject mulMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
+					) {
+						LangObject operandObject = operand.getObject();
+
+						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+									operand.getVariableName()), SCOPE_ID);
+
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandObject.getMember("$real").getDouble();
+						double imagB = operandObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA * realB - imagA * imagB),
+									new DataObject().setDouble(realA * imagB + imagA * realB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:mul", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject mulMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandNumber.doubleValue();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA * realB),
+									new DataObject().setDouble(imagA * realB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:mul", new Boolean[] {
+				false,
+				false
+		});
+
+		methods.put("op:r-mul", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:r-mul", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject rMulMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = operandNumber.doubleValue();
+
+						double realB = thisObject.getMember("$real").getDouble();
+						double imagB = thisObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA * realB),
+									new DataObject().setDouble(realA * imagB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:r-mul", new Boolean[] {
+				false
+		});
+
+		methods.put("op:div", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:div", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject divMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
+					) {
+						LangObject operandObject = operand.getObject();
+
+						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
+									operand.getVariableName()), SCOPE_ID);
+
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandObject.getMember("$real").getDouble();
+						double imagB = operandObject.getMember("$imag").getDouble();
+
+						double realNumerator = realA * realB + imagA * imagB;
+						double imagNumerator = imagA * realB - realA * imagB;
+
+						double denominator = realB * realB + imagB * imagB;
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realNumerator / denominator),
+									new DataObject().setDouble(imagNumerator / denominator)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:div", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject divMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = thisObject.getMember("$real").getDouble();
+						double imagA = thisObject.getMember("$imag").getDouble();
+
+						double realB = operandNumber.doubleValue();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realA / realB),
+									new DataObject().setDouble(imagA / realB)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:div", new Boolean[] {
+				false,
+				false
+		});
+
+		methods.put("op:r-div", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:r-div", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject rDivMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$x") @NumberValue Number operandNumber
+					) {
+						double realA = operandNumber.doubleValue();
+
+						double realB = thisObject.getMember("$real").getDouble();
+						double imagB = thisObject.getMember("$imag").getDouble();
+
+						double realNumerator = realA * realB;
+						double imagNumerator = - realA * imagB;
+
+						double denominator = realB * realB + imagB * imagB;
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(realNumerator / denominator),
+									new DataObject().setDouble(imagNumerator / denominator)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:r-div", new Boolean[] {
+				false
+		});
+
+		DataObject.FunctionPointerObject[] constructors = new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="construct", isMethod=true)
+					@LangInfo("Creates a &Complex object")
+					@AllowedTypes(DataType.VOID)
+					@SuppressWarnings("unused")
+					public DataObject constructMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$real") @NumberValue Number realNumber,
+							@LangParameter("$imag") @NumberValue Number imagNumber
+					) {
+						thisObject.getMember("$real").setDouble(realNumber.doubleValue());
+						thisObject.getMember("$imag").setDouble(imagNumber.doubleValue());
+
+						return null;
+					}
+				}))
+		};
+
+		DataObject[] staticMembers = new DataObject[] {
+
+		};
+
+		String[] memberNames = new String[] {
+				"$real",
+				"$imag"
+		};
+		DataTypeConstraint[] memberDataTypeConstraints = new DataTypeConstraint[] {
+				TYPE_CONSTRAINT_DOUBLE_ONLY, //$real
+				TYPE_CONSTRAINT_DOUBLE_ONLY  //$imag
+		};
+		boolean[] memberFinalFlags = new boolean[] {
+				true, //$value
+				true  //$present
+		};
+
+		LangObject[] parentClasses = new LangObject[] {
+				LangObject.OBJECT_CLASS
+		};
+
+		CLASS_COMPLEX = new LangObject(staticMembers, memberNames, memberDataTypeConstraints,
 				memberFinalFlags, methods, methodOverrideFlags, constructors, parentClasses);
 	}
 
