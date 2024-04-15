@@ -1557,37 +1557,43 @@ public final class LangInterpreter {
 						
 						break;
 					}
-					
-					if(dataObject.getType() == DataType.STRUCT && typeObject.getType() == DataType.STRUCT) {
-						StructObject dataStruct = dataObject.getStruct();
+
+					if(typeObject.getType() == DataType.STRUCT) {
 						StructObject typeStruct = typeObject.getStruct();
-						
-						if(dataStruct.isDefinition())
-							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The first operand of the \"" +
-									node.getOperator().getSymbol() + "\" operator must not be a definition struct", node.getLineNumberFrom(), SCOPE_ID);
-						
+
 						if(!typeStruct.isDefinition())
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
-									node.getOperator().getSymbol() + "\" operator must be a definition struct", node.getLineNumberFrom(), SCOPE_ID);
-						
-						conditionOutput = dataStruct.getStructBaseDefinition().equals(typeStruct);
-						
+									node.getOperator().getSymbol() + "\" operator must be a struct definition ", node.getLineNumberFrom(), SCOPE_ID);
+
+						if(dataObject.getType() == DataType.STRUCT) {
+							StructObject dataStruct = dataObject.getStruct();
+
+							conditionOutput = !dataStruct.isDefinition() && dataStruct.getStructBaseDefinition().equals(typeStruct);
+
+							break;
+						}
+
+						conditionOutput = false;
+
 						break;
 					}
 
-					if(dataObject.getType() == DataType.OBJECT && typeObject.getType() == DataType.OBJECT) {
-						LangObject langObject = dataObject.getObject();
+					if(typeObject.getType() == DataType.OBJECT) {
 						LangObject typeClass = typeObject.getObject();
-
-						if(langObject.isClass())
-							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The first operand of the \"" +
-									node.getOperator().getSymbol() + "\" operator must be an object", node.getLineNumberFrom(), SCOPE_ID);
 
 						if(!typeClass.isClass())
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
 									node.getOperator().getSymbol() + "\" operator must be a class", node.getLineNumberFrom(), SCOPE_ID);
 
-						conditionOutput = langObject.isInstanceOf(typeClass);
+						if(dataObject.getType() == DataType.OBJECT) {
+							LangObject langObject = dataObject.getObject();
+
+							conditionOutput = !langObject.isClass() && langObject.isInstanceOf(typeClass);
+
+							break;
+						}
+
+						conditionOutput = false;
 
 						break;
 					}
