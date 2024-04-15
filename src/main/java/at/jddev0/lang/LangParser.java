@@ -1538,18 +1538,20 @@ public final class LangParser {
 			token = token.substring(6);
 
 			int bracketIndex = token.indexOf('<');
-			String className = token.substring(0, bracketIndex).trim();
+			String className = token.substring(0, bracketIndex == -1?(token.length() - 1):bracketIndex).trim();
 
-			token = token.substring(bracketIndex);
+			if(bracketIndex != -1) {
+				token = token.substring(bracketIndex);
 
-			int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '<', '>');
-			if(parentClassesEndIndex != token.length() - 2) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
+				int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '<', '>');
+				if(parentClassesEndIndex != token.length() - 2) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
 
-				return ast;
+					return ast;
+				}
 			}
 
-			nodes.addAll(parseClassDefinition(className, token.substring(1, token.length() - 2), lines).getChildren());
+			nodes.addAll(parseClassDefinition(className, bracketIndex == -1?"":token.substring(1, token.length() - 2), lines).getChildren());
 
 			return ast;
 		}

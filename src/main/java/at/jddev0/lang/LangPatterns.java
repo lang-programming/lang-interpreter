@@ -163,9 +163,9 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_STRUCT_DEFINITION = Pattern.compile("struct (\\$|&)\\w+\\s*\\{");
 	/**
-	 * RegEx: "<code>class (\$|&)\w+\s*<.*>\{</code>"
+	 * RegEx: "<code>class (\$|&)\w+\s*(<.*>)?\{</code>"
 	 */
-	public static final Pattern PARSING_CLASS_DEFINITION = Pattern.compile("class (\\$|&)\\w+\\s*<.*>\\{");
+	public static final Pattern PARSING_CLASS_DEFINITION = Pattern.compile("class (\\$|&)\\w+\\s*(<.*>)?\\{");
 	/**
 	 * RegEx: "<code>(override:)?op:.*</code>"
 	 */
