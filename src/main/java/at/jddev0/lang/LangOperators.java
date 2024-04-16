@@ -284,11 +284,11 @@ public final class LangOperators {
 	 * For "&lt;=&gt;"
 	 */
 	public DataObject opSpaceship(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		if(leftSideOperand.isLessThan(rightSideOperand))
+		if(isLessThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID))
 			return new DataObject().setInt(-1);
-		if(leftSideOperand.isEquals(rightSideOperand))
+		if(isEquals(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID))
 			return new DataObject().setInt(0);
-		if(leftSideOperand.isGreaterThan(rightSideOperand))
+		if(isGreaterThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID))
 			return new DataObject().setInt(1);
 		
 		return new DataObject().setNull();
@@ -2911,5 +2911,871 @@ public final class LangOperators {
 		}
 		
 		return null;
+	}
+
+	//Comparison functions
+	/**
+	 * For "=="
+	 */
+	public boolean isEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		if(leftSideOperand == rightSideOperand)
+			return true;
+
+		if(leftSideOperand == null || rightSideOperand == null)
+			return false;
+
+		Number number = rightSideOperand.toNumber();
+		switch(leftSideOperand.getType()) {
+			case TEXT:
+				if(rightSideOperand.getType() == DataType.TEXT)
+					return leftSideOperand.getText().equals(rightSideOperand.getText());
+
+				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
+					return leftSideOperand.getText().charAt(0) == rightSideOperand.getChar();
+
+				return number != null && isEquals(rightSideOperand, leftSideOperand, lineNumber, SCOPE_ID);
+
+			case CHAR:
+				if(rightSideOperand.getType() == DataType.TEXT && rightSideOperand.getText().length() == 1)
+					return leftSideOperand.getChar() == rightSideOperand.getText().charAt(0);
+
+				return number != null && leftSideOperand.getChar() == number.intValue();
+
+			case INT:
+				return number != null && leftSideOperand.getInt() == number.intValue();
+
+			case LONG:
+				return number != null && leftSideOperand.getLong() == number.longValue();
+
+			case FLOAT:
+				return number != null && leftSideOperand.getFloat() == number.floatValue();
+
+			case DOUBLE:
+				return number != null && leftSideOperand.getDouble() == number.doubleValue();
+
+			case BYTE_BUFFER:
+				if(rightSideOperand.getType() == DataType.BYTE_BUFFER)
+					return Arrays.equals(leftSideOperand.getByteBuffer(), rightSideOperand.getByteBuffer());
+
+				return number != null && leftSideOperand.getByteBuffer().length == number.intValue();
+
+			case ARRAY:
+				if(rightSideOperand.getType() == DataType.ARRAY)
+					return Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getArray());
+
+				if(rightSideOperand.getType() == DataType.LIST)
+					return Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getList().toArray(new DataObject[0]));
+
+				return number != null && leftSideOperand.getArray().length == number.intValue();
+
+			case LIST:
+				if(rightSideOperand.getType() == DataType.LIST)
+					return Objects.deepEquals(leftSideOperand.getList(), rightSideOperand.getList());
+
+				if(rightSideOperand.getType() == DataType.ARRAY)
+					return Objects.deepEquals(leftSideOperand.getList().toArray(new DataObject[0]), rightSideOperand.getArray());
+
+				return number != null && leftSideOperand.getList().size() == number.intValue();
+
+			case STRUCT:
+				if(rightSideOperand.getType() == DataType.STRUCT)
+					return Objects.equals(leftSideOperand.getStruct(), rightSideOperand.getStruct());
+
+				return number != null && leftSideOperand.getStruct().getMemberNames().length == number.intValue();
+
+			case OBJECT:
+				if(rightSideOperand.getType() == DataType.OBJECT)
+					return Objects.equals(leftSideOperand.getObject(), rightSideOperand.getObject());
+
+				return false;
+
+			case VAR_POINTER:
+				return leftSideOperand.getVarPointer().equals(rightSideOperand.getVarPointer());
+
+			case FUNCTION_POINTER:
+				return leftSideOperand.getFunctionPointer().equals(rightSideOperand.getFunctionPointer());
+
+			case ERROR:
+				switch(rightSideOperand.getType()) {
+					case TEXT:
+						if(number == null)
+							return leftSideOperand.getError().getErrtxt().equals(rightSideOperand.getText());
+						return leftSideOperand.getError().getErrno() == number.intValue();
+
+					case CHAR:
+					case INT:
+					case LONG:
+					case FLOAT:
+					case DOUBLE:
+					case BYTE_BUFFER:
+					case ARRAY:
+					case LIST:
+					case STRUCT:
+						return number != null && leftSideOperand.getError().getErrno() == number.intValue();
+
+					case ERROR:
+						return leftSideOperand.getError().equals(rightSideOperand.getError());
+
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+				return false;
+
+			case TYPE:
+				return rightSideOperand.getType() == DataType.TYPE?leftSideOperand.getTypeValue() == rightSideOperand.getTypeValue():
+						leftSideOperand.getTypeValue() == rightSideOperand.getType();
+
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+				return leftSideOperand.getType() == rightSideOperand.getType();
+		}
+
+		return false;
+	}
+	/**
+	 * For "==="
+	 */
+	public boolean isStrictEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		if(leftSideOperand == rightSideOperand)
+			return true;
+
+		if(leftSideOperand == null || rightSideOperand == null)
+			return false;
+
+		try {
+			return leftSideOperand.getType().equals(rightSideOperand.getType()) &&
+					Objects.equals(leftSideOperand.getRawText(), rightSideOperand.getRawText()) &&
+					Objects.deepEquals(leftSideOperand.getByteBuffer(), rightSideOperand.getByteBuffer()) &&
+					Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getArray()) &&
+					Objects.deepEquals(leftSideOperand.getList(), rightSideOperand.getList()) &&
+					Objects.equals(leftSideOperand.getVarPointer(), rightSideOperand.getVarPointer()) &&
+					Objects.equals(leftSideOperand.getFunctionPointer(), rightSideOperand.getFunctionPointer()) &&
+					Objects.equals(leftSideOperand.getStruct(), rightSideOperand.getStruct()) &&
+					leftSideOperand.getInt() == rightSideOperand.getInt() && leftSideOperand.getLong() == rightSideOperand.getLong() &&
+					leftSideOperand.getFloat() == rightSideOperand.getFloat() && leftSideOperand.getDouble() == rightSideOperand.getDouble() &&
+					leftSideOperand.getChar() == rightSideOperand.getChar() &&
+					Objects.equals(leftSideOperand.getError(), rightSideOperand.getError()) &&
+					leftSideOperand.getTypeValue() == rightSideOperand.getTypeValue();
+		}catch(StackOverflowError e) {
+			return false;
+		}
+	}
+	/**
+	 * For "&lt;"
+	 */
+	public boolean isLessThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		if(leftSideOperand == rightSideOperand || leftSideOperand == null || rightSideOperand == null)
+			return false;
+
+		DataObject number = rightSideOperand.convertToNumberAndCreateNewDataObject();
+		switch(leftSideOperand.getType()) {
+			case TEXT:
+				if(rightSideOperand.getType() == DataType.TEXT)
+					return leftSideOperand.getText().compareTo(rightSideOperand.getText()) < 0;
+
+				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
+					return leftSideOperand.getText().charAt(0) < rightSideOperand.getChar();
+
+				Number thisNumber = leftSideOperand.toNumber();
+				if(thisNumber == null)
+					return false;
+
+				switch(number.getType()) {
+					case INT:
+						return thisNumber.intValue() < number.getInt();
+					case LONG:
+						return thisNumber.longValue() < number.getLong();
+					case FLOAT:
+						return thisNumber.floatValue() < number.getFloat();
+					case DOUBLE:
+						return thisNumber.doubleValue() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+				return false;
+
+			case CHAR:
+				if(rightSideOperand.getType() == DataType.TEXT && rightSideOperand.getText().length() == 1)
+					return leftSideOperand.getChar() < rightSideOperand.getText().charAt(0);
+
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getChar() < number.getInt();
+					case LONG:
+						return leftSideOperand.getChar() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getChar() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getChar() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case INT:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getInt() < number.getInt();
+					case LONG:
+						return leftSideOperand.getInt() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getInt() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getInt() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case LONG:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getLong() < number.getInt();
+					case LONG:
+						return leftSideOperand.getLong() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getLong() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getLong() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case FLOAT:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getFloat() < number.getInt();
+					case LONG:
+						return leftSideOperand.getFloat() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getFloat() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getFloat() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case DOUBLE:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getDouble() < number.getInt();
+					case LONG:
+						return leftSideOperand.getDouble() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getDouble() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getDouble() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case BYTE_BUFFER:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getByteBuffer().length < number.getInt();
+					case LONG:
+						return leftSideOperand.getByteBuffer().length < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getByteBuffer().length < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getByteBuffer().length < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case ARRAY:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getArray().length < number.getInt();
+					case LONG:
+						return leftSideOperand.getArray().length < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getArray().length < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getArray().length < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case LIST:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getList().size() < number.getInt();
+					case LONG:
+						return leftSideOperand.getList().size() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getList().size() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getList().size() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case ERROR:
+				if(rightSideOperand.getType() == DataType.TEXT && number.getType() == DataType.NULL)
+					return leftSideOperand.getError().getErrtxt().compareTo(rightSideOperand.getText()) < 0;
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getError().getErrno() < number.getInt();
+					case LONG:
+						return leftSideOperand.getError().getErrno() < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getError().getErrno() < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getError().getErrno() < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+				return false;
+
+			case STRUCT:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getStruct().getMemberNames().length < number.getInt();
+					case LONG:
+						return leftSideOperand.getStruct().getMemberNames().length < number.getLong();
+					case FLOAT:
+						return leftSideOperand.getStruct().getMemberNames().length < number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getStruct().getMemberNames().length < number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return false;
+		}
+
+		return false;
+	}
+	/**
+	 * For "&gt;"
+	 */
+	public boolean isGreaterThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		if(leftSideOperand == rightSideOperand || leftSideOperand == null || rightSideOperand == null)
+			return false;
+
+		DataObject number = rightSideOperand.convertToNumberAndCreateNewDataObject();
+		switch(leftSideOperand.getType()) {
+			case TEXT:
+				if(rightSideOperand.getType() == DataType.TEXT)
+					return leftSideOperand.getText().compareTo(rightSideOperand.getText()) > 0;
+
+				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
+					return leftSideOperand.getText().charAt(0) > rightSideOperand.getChar();
+
+				Number thisNumber = leftSideOperand.toNumber();
+				if(thisNumber == null)
+					return false;
+
+				switch(number.getType()) {
+					case INT:
+						return thisNumber.intValue() > number.getInt();
+					case LONG:
+						return thisNumber.longValue() > number.getLong();
+					case FLOAT:
+						return thisNumber.floatValue() > number.getFloat();
+					case DOUBLE:
+						return thisNumber.doubleValue() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+				return false;
+
+			case CHAR:
+				if(rightSideOperand.getType() == DataType.TEXT && rightSideOperand.getText().length() == 1)
+					return leftSideOperand.getChar() > rightSideOperand.getText().charAt(0);
+
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getChar() > number.getInt();
+					case LONG:
+						return leftSideOperand.getChar() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getChar() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getChar() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case INT:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getInt() > number.getInt();
+					case LONG:
+						return leftSideOperand.getInt() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getInt() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getInt() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case LONG:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getLong() > number.getInt();
+					case LONG:
+						return leftSideOperand.getLong() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getLong() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getLong() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case FLOAT:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getFloat() > number.getInt();
+					case LONG:
+						return leftSideOperand.getFloat() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getFloat() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getFloat() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case DOUBLE:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getDouble() > number.getInt();
+					case LONG:
+						return leftSideOperand.getDouble() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getDouble() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getDouble() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case BYTE_BUFFER:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getByteBuffer().length > number.getInt();
+					case LONG:
+						return leftSideOperand.getByteBuffer().length > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getByteBuffer().length > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getByteBuffer().length > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case ARRAY:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getArray().length > number.getInt();
+					case LONG:
+						return leftSideOperand.getArray().length > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getArray().length > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getArray().length > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case LIST:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getList().size() > number.getInt();
+					case LONG:
+						return leftSideOperand.getList().size() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getList().size() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getList().size() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case ERROR:
+				if(rightSideOperand.getType() == DataType.TEXT && number.getType() == DataType.NULL)
+					return leftSideOperand.getError().getErrtxt().compareTo(rightSideOperand.getText()) > 0;
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getError().getErrno() > number.getInt();
+					case LONG:
+						return leftSideOperand.getError().getErrno() > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getError().getErrno() > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getError().getErrno() > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+				return false;
+
+			case STRUCT:
+				switch(number.getType()) {
+					case INT:
+						return leftSideOperand.getStruct().getMemberNames().length > number.getInt();
+					case LONG:
+						return leftSideOperand.getStruct().getMemberNames().length > number.getLong();
+					case FLOAT:
+						return leftSideOperand.getStruct().getMemberNames().length > number.getFloat();
+					case DOUBLE:
+						return leftSideOperand.getStruct().getMemberNames().length > number.getDouble();
+
+					case CHAR:
+					case BYTE_BUFFER:
+					case ERROR:
+					case ARRAY:
+					case LIST:
+					case TEXT:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return false;
+				}
+
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return false;
+		}
+
+		return false;
+	}
+	/**
+	 * For "&lt;="
+	 */
+	public boolean isLessThanOrEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		return isLessThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID) ||
+				isEquals(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	}
+	/**
+	 * For "&gt;="
+	 */
+	public boolean isGreaterThanOrEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+		return isGreaterThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID) ||
+				isEquals(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
 	}
 }

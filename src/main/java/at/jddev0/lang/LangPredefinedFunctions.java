@@ -2351,7 +2351,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.isEquals(rightSideOperand));
+			return new DataObject().setBoolean(interpreter.operators.isEquals(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conNotEquals")
@@ -2360,7 +2360,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(!leftSideOperand.isEquals(rightSideOperand));
+			return new DataObject().setBoolean(!interpreter.operators.isEquals(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conStrictEquals")
@@ -2369,7 +2369,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.isStrictEquals(rightSideOperand));
+			return new DataObject().setBoolean(interpreter.operators.isStrictEquals(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conStrictNotEquals")
@@ -2378,7 +2378,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(!leftSideOperand.isStrictEquals(rightSideOperand));
+			return new DataObject().setBoolean(!interpreter.operators.isStrictEquals(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conLessThan")
@@ -2387,7 +2387,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.isLessThan(rightSideOperand));
+			return new DataObject().setBoolean(interpreter.operators.isLessThan(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conGreaterThan")
@@ -2396,7 +2396,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.isGreaterThan(rightSideOperand));
+			return new DataObject().setBoolean(interpreter.operators.isGreaterThan(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conLessThanOrEquals")
@@ -2405,7 +2405,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.isLessThanOrEquals(rightSideOperand));
+			return new DataObject().setBoolean(interpreter.operators.isLessThanOrEquals(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conGreaterThanOrEquals")
@@ -2414,7 +2414,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.isGreaterThanOrEquals(rightSideOperand));
+			return new DataObject().setBoolean(interpreter.operators.isGreaterThanOrEquals(leftSideOperand, rightSideOperand, -1, SCOPE_ID));
 		}
 	}
 
@@ -3290,7 +3290,7 @@ final class LangPredefinedFunctions {
 		) {
 			DataObject min = firstArg;
             for(DataObject dataObject:args)
-                if(dataObject.isLessThan(min))
+                if(interpreter.operators.isLessThan(dataObject, min, -1, SCOPE_ID))
                     min = dataObject;
 
 			return min;
@@ -3304,7 +3304,7 @@ final class LangPredefinedFunctions {
 		) {
 			DataObject max = firstArg;
             for(DataObject dataObject:args)
-                if(dataObject.isGreaterThan(max))
+                if(interpreter.operators.isGreaterThan(dataObject, max, -1, SCOPE_ID))
                     max = dataObject;
 
 			return max;
@@ -8151,7 +8151,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$value") DataObject valueObject
 		) {
 			DataObject[] arr = arrayObject.getArray();
-			long count = Arrays.stream(arr).filter(ele -> ele.isStrictEquals(valueObject)).count();
+			long count = Arrays.stream(arr).filter(ele -> interpreter.operators.isStrictEquals(ele, valueObject, -1, SCOPE_ID)).count();
 			return new DataObject().setInt((int)count);
 		}
 
@@ -8164,7 +8164,7 @@ final class LangPredefinedFunctions {
 		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = 0;i < arr.length;i++)
-				if(arr[i].isStrictEquals(valueObject))
+				if(interpreter.operators.isStrictEquals(arr[i], valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -8179,7 +8179,7 @@ final class LangPredefinedFunctions {
 		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = arr.length - 1;i >= 0;i--)
-				if(arr[i].isStrictEquals(valueObject))
+				if(interpreter.operators.isStrictEquals(arr[i], valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -8193,7 +8193,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$value") DataObject valueObject
 		) {
 			DataObject[] arr = arrayObject.getArray();
-			long count = Arrays.stream(arr).filter(ele -> ele.isEquals(valueObject)).count();
+			long count = Arrays.stream(arr).filter(ele -> interpreter.operators.isEquals(ele, valueObject, -1, SCOPE_ID)).count();
 			return new DataObject().setInt((int)count);
 		}
 
@@ -8206,7 +8206,7 @@ final class LangPredefinedFunctions {
 		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = 0;i < arr.length;i++)
-				if(arr[i].isEquals(valueObject))
+				if(interpreter.operators.isEquals(arr[i], valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -8221,7 +8221,7 @@ final class LangPredefinedFunctions {
 		) {
 			DataObject[] arr = arrayObject.getArray();
 			for(int i = arr.length - 1;i >= 0;i--)
-				if(arr[i].isEquals(valueObject))
+				if(interpreter.operators.isEquals(arr[i], valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -8248,7 +8248,7 @@ final class LangPredefinedFunctions {
 			for(DataObject ele:arr) {
 				boolean flag = true;
 				for(DataObject distinctEle:distinctValues) {
-					if(ele.isStrictEquals(distinctEle)) {
+					if(interpreter.operators.isStrictEquals(ele, distinctEle, -1, SCOPE_ID)) {
 						flag = false;
 						break;
 					}
@@ -8273,7 +8273,7 @@ final class LangPredefinedFunctions {
 			for(DataObject ele:arr) {
 				boolean flag = true;
 				for(DataObject distinctEle:distinctValues) {
-					if(ele.isEquals(distinctEle)) {
+					if(interpreter.operators.isEquals(ele, distinctEle, -1, SCOPE_ID)) {
 						flag = false;
 						break;
 					}
@@ -9071,7 +9071,7 @@ final class LangPredefinedFunctions {
 			LinkedList<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++) {
 				DataObject dataObject = list.get(i);
-				if(dataObject.isStrictEquals(valueObject)) {
+				if(interpreter.operators.isStrictEquals(dataObject, valueObject, -1, SCOPE_ID)) {
 					list.remove(i);
 
 					return dataObject;
@@ -9090,7 +9090,7 @@ final class LangPredefinedFunctions {
 			LinkedList<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++) {
 				DataObject dataObject = list.get(i);
-				if(dataObject.isEquals(valueObject)) {
+				if(interpreter.operators.isEquals(dataObject, valueObject, -1, SCOPE_ID)) {
 					list.remove(i);
 
 					return dataObject;
@@ -9221,7 +9221,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$value") DataObject valueObject
 		) {
 			List<DataObject> list = listObject.getList();
-			long count = list.stream().filter(ele -> ele.isStrictEquals(valueObject)).count();
+			long count = list.stream().filter(ele -> interpreter.operators.isStrictEquals(ele, valueObject, -1, SCOPE_ID)).count();
 			return new DataObject().setInt((int)count);
 		}
 
@@ -9234,7 +9234,7 @@ final class LangPredefinedFunctions {
 		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++)
-				if(list.get(i).isStrictEquals(valueObject))
+				if(interpreter.operators.isStrictEquals(list.get(i), valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -9249,7 +9249,7 @@ final class LangPredefinedFunctions {
 		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = list.size() - 1;i >= 0;i--)
-				if(list.get(i).isStrictEquals(valueObject))
+				if(interpreter.operators.isStrictEquals(list.get(i), valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -9263,7 +9263,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$value") DataObject valueObject
 		) {
 			List<DataObject> list = listObject.getList();
-			long count = list.stream().filter(ele -> ele.isEquals(valueObject)).count();
+			long count = list.stream().filter(ele -> interpreter.operators.isEquals(ele, valueObject, -1, SCOPE_ID)).count();
 			return new DataObject().setInt((int)count);
 		}
 
@@ -9276,7 +9276,7 @@ final class LangPredefinedFunctions {
 		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = 0;i < list.size();i++)
-				if(list.get(i).isEquals(valueObject))
+				if(interpreter.operators.isEquals(list.get(i), valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -9291,7 +9291,7 @@ final class LangPredefinedFunctions {
 		) {
 			List<DataObject> list = listObject.getList();
 			for(int i = list.size() - 1;i >= 0;i--)
-				if(list.get(i).isEquals(valueObject))
+				if(interpreter.operators.isEquals(list.get(i), valueObject, -1, SCOPE_ID))
 					return new DataObject().setInt(i);
 
 			return new DataObject().setInt(-1);
@@ -9316,7 +9316,7 @@ final class LangPredefinedFunctions {
 			for(DataObject ele:listObject.getList()) {
 				boolean flag = true;
 				for(DataObject distinctEle:distinctValues) {
-					if(ele.isStrictEquals(distinctEle)) {
+					if(interpreter.operators.isStrictEquals(ele, distinctEle, -1, SCOPE_ID)) {
 						flag = false;
 						break;
 					}
@@ -9339,7 +9339,7 @@ final class LangPredefinedFunctions {
 			for(DataObject ele:listObject.getList()) {
 				boolean flag = true;
 				for(DataObject distinctEle:distinctValues) {
-					if(ele.isEquals(distinctEle)) {
+					if(interpreter.operators.isEquals(ele, distinctEle, -1, SCOPE_ID)) {
 						flag = false;
 						break;
 					}
@@ -10767,7 +10767,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultEquals(
-					actualValueObject.isEquals(expectedValueObject), interpreter.printStackTrace(-1),
+					interpreter.operators.isEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10794,7 +10794,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNotEquals(
-					!actualValueObject.isEquals(expectedValueObject), interpreter.printStackTrace(-1),
+					!interpreter.operators.isEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10821,7 +10821,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultLessThan(
-					actualValueObject.isLessThan(expectedValueObject), interpreter.printStackTrace(-1),
+					interpreter.operators.isLessThan(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10848,7 +10848,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultLessThanOrEquals(
-					actualValueObject.isLessThanOrEquals(expectedValueObject), interpreter.printStackTrace(-1),
+					interpreter.operators.isLessThanOrEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10875,7 +10875,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultGreaterThan(
-					actualValueObject.isGreaterThan(expectedValueObject), interpreter.printStackTrace(-1),
+					interpreter.operators.isGreaterThan(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10902,7 +10902,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultGreaterThanOrEquals(
-					actualValueObject.isGreaterThanOrEquals(expectedValueObject), interpreter.printStackTrace(-1),
+					interpreter.operators.isGreaterThanOrEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10929,7 +10929,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultStrictEquals(
-					actualValueObject.isStrictEquals(expectedValueObject), interpreter.printStackTrace(-1),
+					interpreter.operators.isStrictEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;
@@ -10956,7 +10956,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultStrictNotEquals(
-					!actualValueObject.isStrictEquals(expectedValueObject), interpreter.printStackTrace(-1),
+					!interpreter.operators.isStrictEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
 					messageObject == null?null:messageObject.getText(), actualValueObject, expectedValueObject));
 
 			return null;

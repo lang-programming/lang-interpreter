@@ -1609,7 +1609,7 @@ public final class LangInterpreter {
 							DataType.STRUCT + ", or " + DataType.OBJECT, node.getLineNumberFrom(), SCOPE_ID);
 				case EQUALS:
 				case NOT_EQUALS:
-					conditionOutput = leftSideOperand.isEquals(rightSideOperand);
+					conditionOutput = operators.isEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					
 					if(node.getOperator() == Operator.NOT_EQUALS)
 						conditionOutput = !conditionOutput;
@@ -1627,22 +1627,22 @@ public final class LangInterpreter {
 					break;
 				case STRICT_EQUALS:
 				case STRICT_NOT_EQUALS:
-					conditionOutput = leftSideOperand.isStrictEquals(rightSideOperand);
+					conditionOutput = operators.isStrictEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					
 					if(node.getOperator() == Operator.STRICT_NOT_EQUALS)
 						conditionOutput = !conditionOutput;
 					break;
 				case LESS_THAN:
-					conditionOutput = leftSideOperand.isLessThan(rightSideOperand);
+					conditionOutput = operators.isLessThan(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					break;
 				case GREATER_THAN:
-					conditionOutput = leftSideOperand.isGreaterThan(rightSideOperand);
+					conditionOutput = operators.isGreaterThan(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					break;
 				case LESS_THAN_OR_EQUALS:
-					conditionOutput = leftSideOperand.isLessThanOrEquals(rightSideOperand);
+					conditionOutput = operators.isLessThanOrEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					break;
 				case GREATER_THAN_OR_EQUALS:
-					conditionOutput = leftSideOperand.isGreaterThanOrEquals(rightSideOperand);
+					conditionOutput = operators.isGreaterThanOrEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					break;
 				
 				default:
@@ -2262,7 +2262,7 @@ public final class LangInterpreter {
 			
 			if(langTestExpectedReturnValue != null) {
 				langTestStore.addAssertResult(new LangTest.AssertResultReturn(!executionState.isThrownValue &&
-						langTestExpectedReturnValue.isStrictEquals(retTmp), printStackTrace(-1),
+						operators.isStrictEquals(langTestExpectedReturnValue, retTmp, -1, SCOPE_ID), printStackTrace(-1),
 						langTestMessageForLastTestResult, retTmp, langTestExpectedReturnValue));
 				
 				langTestExpectedReturnValue = null;
