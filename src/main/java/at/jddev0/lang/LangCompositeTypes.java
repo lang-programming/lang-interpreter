@@ -75,7 +75,7 @@ public class LangCompositeTypes {
 		methods.put("mp.isPresent", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="mp.isPresent", isMethod=true)
-					@LangInfo("Returns 1 if a just &maybe value is provided for nothing &maybe value 0 is returned")
+					@LangInfo("Returns 1 if a just &Maybe value is provided for nothing &Maybe value 0 is returned")
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isPresentMethod(
@@ -96,7 +96,7 @@ public class LangCompositeTypes {
 		methods.put("mp.get", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="mp.get", isMethod=true)
-					@LangInfo("Returns the value if a just &maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown")
+					@LangInfo("Returns the value if a just &Maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown")
 					@SuppressWarnings("unused")
 					public DataObject getMethod(
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
@@ -153,6 +153,38 @@ public class LangCompositeTypes {
 				})),
 		});
 		methodOverrideFlags.put("mp.flatMap", new Boolean[] {
+				false
+		});
+
+		methods.put("mp.ifPresent", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="mp.ifPresent", isMethod=true)
+					@LangInfo("fp.func is executed with the value of &Maybe if the value is present otherwise fp.func will not be called")
+					@AllowedTypes(DataType.VOID)
+					@SuppressWarnings("unused")
+					public DataObject ifPresentMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("fp.func") @AllowedTypes(DataType.FUNCTION_POINTER) DataObject funcObject
+					) {
+						DataObject.FunctionPointerObject func = funcObject.getFunctionPointer();
+
+						try {
+							boolean present = thisObject.getMember("$present").getBoolean();
+							if(present) {
+								interpreter.callFunctionPointer(func, funcObject.getVariableName(), Arrays.asList(
+										new DataObject(thisObject.getMember("$value"))
+								), SCOPE_ID);
+							}
+
+							return null;
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE,
+									e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+		});
+		methodOverrideFlags.put("mp.ifPresent", new Boolean[] {
 				false
 		});
 
