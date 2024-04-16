@@ -1160,7 +1160,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$number") DataObject numberObject
 		) {
-			numberObject = numberObject.convertToNumberAndCreateNewDataObject();
+			numberObject = interpreter.conversions.convertToNumberAndCreateNewDataObject(numberObject, -1, SCOPE_ID);
 			if(numberObject.getType() == DataType.NULL)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$number\") can not be converted to a number value", SCOPE_ID);
 
@@ -1902,7 +1902,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") DataObject valueObject
 		) {
-			DataObject value = valueObject.convertToNumberAndCreateNewDataObject();
+			DataObject value = interpreter.conversions.convertToNumberAndCreateNewDataObject(valueObject, -1, SCOPE_ID);
 			if(value.getType() == DataType.NULL)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 						"Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.LIST, SCOPE_ID);
@@ -2569,7 +2569,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -2600,7 +2600,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -2743,7 +2743,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -2774,7 +2774,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -2917,7 +2917,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -2948,7 +2948,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -3006,7 +3006,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -3037,7 +3037,7 @@ final class LangPredefinedFunctions {
 
 			for(int i = 0;i < numberObjects.size();i++) {
 				DataObject numberObject = numberObjects.get(i);
-				Number number = numberObject.toNumber();
+				Number number = interpreter.conversions.toNumber(numberObject, -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -7772,7 +7772,7 @@ final class LangPredefinedFunctions {
 		) {
 			byte[] byteBuf = new byte[numberObjects.size()];
 			for(int i = 0;i < byteBuf.length;i++) {
-				Number number = numberObjects.get(i).toNumber();
+				Number number = interpreter.conversions.toNumber(numberObjects.get(i), -1, SCOPE_ID);
 				if(number == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM,
 							"The type of argument " + (i + 1) + " (for var args parameter \"&numbers\") must be a number", SCOPE_ID);
@@ -8302,7 +8302,7 @@ final class LangPredefinedFunctions {
 								a, b
 						)
 				), SCOPE_ID);
-				Number retNumber = retObject.toNumber();
+				Number retNumber = interpreter.conversions.toNumber(retObject, -1, SCOPE_ID);
 				if(retNumber == null) {
 					interpreter.setErrno(InterpretingError.NO_NUM, "The value returned by Argument 2 (\"fp.comparator\") must be a number.", SCOPE_ID);
 
@@ -9368,7 +9368,7 @@ final class LangPredefinedFunctions {
 								a, b
 						)
 				), SCOPE_ID);
-				Number retNumber = retObject.toNumber();
+				Number retNumber = interpreter.conversions.toNumber(retObject, -1, SCOPE_ID);
 				if(retNumber == null) {
 					interpreter.setErrno(InterpretingError.NO_NUM, "The value returned by Argument 2 (\"fp.comparator\") must be a number.", SCOPE_ID);
 

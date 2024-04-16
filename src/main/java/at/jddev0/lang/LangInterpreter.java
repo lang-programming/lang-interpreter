@@ -837,7 +837,7 @@ public final class LangInterpreter {
 					DataObject var = varPointer.getType() == DataType.NULL?null:varPointer.getVarPointer().getVar();
 					
 					DataObject numberObject = interpretNode(null, repeatNode.getRepeatCountNode(), SCOPE_ID);
-					Number number = numberObject == null?null:numberObject.toNumber();
+					Number number = numberObject == null?null:conversions.toNumber(numberObject, repeatNode.getRepeatCountNode().getLineNumberFrom(), SCOPE_ID);
 					if(number == null) {
 						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.repeat needs a repeat count value",
 								node.getLineNumberFrom(), SCOPE_ID);
@@ -1031,7 +1031,7 @@ public final class LangInterpreter {
 			executionState.breakContinueCount = 1;
 		}else {
 			DataObject numberObject = interpretNode(null, numberNode, SCOPE_ID);
-			Number number = numberObject == null?null:numberObject.toNumber();
+			Number number = numberObject == null?null:conversions.toNumber(numberObject, numberNode.getLineNumberFrom(), SCOPE_ID);
 			if(number == null) {
 				setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con." + (node.isContinueNode()?"continue":"break") + " needs either non value or a level number",
 						node.getLineNumberFrom(), SCOPE_ID);
@@ -1712,7 +1712,7 @@ public final class LangInterpreter {
 			
 			//Flags
 			case "lang.allowTermRedirect":
-				Number number = value.toNumber();
+				Number number = conversions.toNumber(value, lineNumber, SCOPE_ID);
 				if(number == null) {
 					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.allowTermRedirect flag!", lineNumber, SCOPE_ID);
 					
@@ -1721,7 +1721,7 @@ public final class LangInterpreter {
 				executionFlags.allowTermRedirect = number.intValue() != 0;
 				break;
 			case "lang.errorOutput":
-				number = value.toNumber();
+				number = conversions.toNumber(value, lineNumber, SCOPE_ID);
 				if(number == null) {
 					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.errorOutput flag!", lineNumber, SCOPE_ID);
 					
@@ -1730,7 +1730,7 @@ public final class LangInterpreter {
 				executionFlags.errorOutput = ExecutionFlags.ErrorOutputFlag.getErrorFlagFor(number.intValue());
 				break;
 			case "lang.test":
-				number = value.toNumber();
+				number = conversions.toNumber(value, lineNumber, SCOPE_ID);
 				if(number == null) {
 					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.test flag!", lineNumber, SCOPE_ID);
 					
@@ -1747,7 +1747,7 @@ public final class LangInterpreter {
 				executionFlags.langTest = langTestNewValue;
 				break;
 			case "lang.rawVariableNames":
-				number = value.toNumber();
+				number = conversions.toNumber(value, lineNumber, SCOPE_ID);
 				if(number == null) {
 					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.rawVariableNames flag!", lineNumber, SCOPE_ID);
 					
@@ -3534,7 +3534,7 @@ public final class LangInterpreter {
 			if(sizeArgumentIndex == null && argumentList.isEmpty())
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT;
 			DataObject dataObject = sizeArgumentIndex == null?argumentList.remove(0):fullArgumentList.get(sizeArgumentIndex);
-			Number number = dataObject.toNumber();
+			Number number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 			if(number == null)
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 			
@@ -3546,7 +3546,7 @@ public final class LangInterpreter {
 			if(decimalPlacesCountIndex == null && argumentList.isEmpty())
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT;
 			DataObject dataObject = decimalPlacesCountIndex == null?argumentList.remove(0):fullArgumentList.get(decimalPlacesCountIndex);
-			Number number = dataObject.toNumber();
+			Number number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 			if(number == null)
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 			
@@ -3562,7 +3562,7 @@ public final class LangInterpreter {
 		DataObject dataObject = formatType == 'n'?null:(valueSpecifiedIndex == null?argumentList.remove(0):fullArgumentList.get(valueSpecifiedIndex));
 		switch(formatType) {
 			case 'd':
-				Number number = dataObject.toNumber();
+				Number number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3576,7 +3576,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'b':
-				number = dataObject.toNumber();
+				number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3590,7 +3590,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'o':
-				number = dataObject.toNumber();
+				number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3604,7 +3604,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'x':
-				number = dataObject.toNumber();
+				number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3618,7 +3618,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'f':
-				number = dataObject.toNumber();
+				number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3647,7 +3647,7 @@ public final class LangInterpreter {
 				break;
 				
 			case 'c':
-				number = dataObject.toNumber();
+				number = conversions.toNumber(dataObject, -1, SCOPE_ID);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -4115,10 +4115,11 @@ public final class LangInterpreter {
 	}
 
 	/**
-	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(bool)</code>
+	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(bool|number)</code>
 	 */
 	private static final String[] CONVERSION_METHOD_NAMES = new String[] {
-			"to:bool"
+			"to:bool",
+			"to:number"
 	};
 	private boolean isConversionMethodName(String token) {
 		for(String operator:CONVERSION_METHOD_NAMES)

@@ -461,7 +461,8 @@ public class LangNativeFunction {
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("The type of argument %d (\"%s\") must be one of %s", argumentIndex + 1,
 							variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()), SCOPE_ID);
 				
-				Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?combinedArgumentList.get(argumentIndex).toNumber():null;
+				Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?
+						interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), -1, SCOPE_ID):null;
 				if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
 					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName), SCOPE_ID);
 				

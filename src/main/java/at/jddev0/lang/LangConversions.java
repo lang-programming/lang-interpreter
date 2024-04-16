@@ -88,4 +88,98 @@ public final class LangConversions {
 
 		return false;
 	}
+
+	public Number toNumber(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("number", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case TEXT:
+				String txt = operand.getText();
+				if(txt.length() > 0) {
+					char lastChar = txt.charAt(txt.length() - 1);
+
+					if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
+							lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
+						//INT
+						try {
+							return Integer.parseInt(txt);
+						}catch(NumberFormatException ignore) {}
+
+						//LONG
+						try {
+							if(txt.endsWith("l") || txt.endsWith("L"))
+								return Long.parseLong(txt.substring(0, txt.length() - 1));
+							else
+								return Long.parseLong(txt);
+						}catch(NumberFormatException ignore) {}
+
+						//FLOAT
+						if(txt.endsWith("f") || txt.endsWith("F")) {
+							try {
+								return Float.parseFloat(txt.substring(0, txt.length() - 1));
+							}catch(NumberFormatException ignore) {}
+						}
+
+						//DOUBLE
+						try {
+							return Double.parseDouble(txt);
+						}catch(NumberFormatException ignore) {}
+					}
+				}
+
+				return null;
+			case CHAR:
+				return (int)operand.getChar();
+			case INT:
+				return operand.getInt();
+			case LONG:
+				return operand.getLong();
+			case FLOAT:
+				return operand.getFloat();
+			case DOUBLE:
+				return operand.getDouble();
+			case BYTE_BUFFER:
+				return operand.getByteBuffer().length;
+			case ERROR:
+				return operand.getError().getErrno();
+			case ARRAY:
+				return operand.getArray().length;
+			case LIST:
+				return operand.getList().size();
+			case STRUCT:
+				return operand.getStruct().getMemberNames().length;
+
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
+	public DataObject convertToNumberAndCreateNewDataObject(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		Number number = toNumber(operand, lineNumber, SCOPE_ID);
+		if(number == null)
+			return new DataObject().setNull();
+
+		if(number instanceof Integer)
+			return new DataObject().setInt(number.intValue());
+
+		if(number instanceof Long)
+			return new DataObject().setLong(number.longValue());
+
+		if(number instanceof Float)
+			return new DataObject().setFloat(number.floatValue());
+
+		if(number instanceof Double)
+			return new DataObject().setDouble(number.doubleValue());
+
+		return new DataObject().setNull();
+	}
 }

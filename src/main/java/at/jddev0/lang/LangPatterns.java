@@ -95,9 +95,9 @@ final class LangPatterns {
 			"((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|" +
 			"(getItem|setItem))");
 	/**
-	 * RegEx: "<code>to:(bool)</code>"
+	 * RegEx: "<code>to:(bool|number)</code>"
 	 */
-	public static final Pattern CONVERSION_METHOD_NAME = Pattern.compile("to:(bool)");
+	public static final Pattern CONVERSION_METHOD_NAME = Pattern.compile("to:(bool|number)");
 	/**
 	 * RegEx: "<code>\{[?!]?([A-Z]+\|)*[A-Z]+\}</code>"
 	 */

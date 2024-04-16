@@ -2839,7 +2839,7 @@ public final class LangOperators {
 					if(index < 0 || index >= len)
 						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
 					
-					Number valueNumber = rightSideOperand.toNumber();
+					Number valueNumber = interpreter.conversions.toNumber(rightSideOperand, lineNumber, SCOPE_ID);
 					if(valueNumber == null)
 						return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, lineNumber, SCOPE_ID);
 					byte value = valueNumber.byteValue();
@@ -2924,7 +2924,7 @@ public final class LangOperators {
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		Number number = rightSideOperand.toNumber();
+		Number number = interpreter.conversions.toNumber(rightSideOperand, lineNumber, SCOPE_ID);
 		switch(leftSideOperand.getType()) {
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.TEXT)
@@ -3075,7 +3075,7 @@ public final class LangOperators {
 		if(leftSideOperand == rightSideOperand || leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		DataObject number = rightSideOperand.convertToNumberAndCreateNewDataObject();
+		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber, SCOPE_ID);
 		switch(leftSideOperand.getType()) {
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.TEXT)
@@ -3084,7 +3084,7 @@ public final class LangOperators {
 				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
 					return leftSideOperand.getText().charAt(0) < rightSideOperand.getChar();
 
-				Number thisNumber = leftSideOperand.toNumber();
+				Number thisNumber = interpreter.conversions.toNumber(leftSideOperand, lineNumber, SCOPE_ID);
 				if(thisNumber == null)
 					return false;
 
@@ -3423,7 +3423,7 @@ public final class LangOperators {
 		if(leftSideOperand == rightSideOperand || leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		DataObject number = rightSideOperand.convertToNumberAndCreateNewDataObject();
+		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber, SCOPE_ID);
 		switch(leftSideOperand.getType()) {
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.TEXT)
@@ -3432,7 +3432,7 @@ public final class LangOperators {
 				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
 					return leftSideOperand.getText().charAt(0) > rightSideOperand.getChar();
 
-				Number thisNumber = leftSideOperand.toNumber();
+				Number thisNumber = interpreter.conversions.toNumber(leftSideOperand, lineNumber, SCOPE_ID);
 				if(thisNumber == null)
 					return false;
 

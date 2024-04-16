@@ -512,26 +512,6 @@ public class DataObject {
 		return typeConstraint;
 	}
 
-	public DataObject convertToNumberAndCreateNewDataObject() {
-		Number number = toNumber();
-		if(number == null)
-			return new DataObject().setNull();
-
-		if(number instanceof Integer)
-			return new DataObject().setInt(number.intValue());
-
-		if(number instanceof Long)
-			return new DataObject().setLong(number.longValue());
-
-		if(number instanceof Float)
-			return new DataObject().setFloat(number.floatValue());
-
-		if(number instanceof Double)
-			return new DataObject().setDouble(number.doubleValue());
-
-		return new DataObject().setNull();
-	}
-
 	private String convertByteBufferToText() {
 		StringBuilder builder = new StringBuilder();
 		if(byteBuf.length > 0) {
@@ -958,75 +938,6 @@ public class DataObject {
 			case DOUBLE:
 			case BYTE_BUFFER:
 			case ERROR:
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
-	public Number toNumber() {
-		switch(type) {
-			case TEXT:
-				if(txt.length() > 0) {
-					char lastChar = txt.charAt(txt.length() - 1);
-
-					if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
-							lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
-						//INT
-						try {
-							return Integer.parseInt(txt);
-						}catch(NumberFormatException ignore) {}
-
-						//LONG
-						try {
-							if(txt.endsWith("l") || txt.endsWith("L"))
-								return Long.parseLong(txt.substring(0, txt.length() - 1));
-							else
-								return Long.parseLong(txt);
-						}catch(NumberFormatException ignore) {}
-
-						//FLOAT
-						if(txt.endsWith("f") || txt.endsWith("F")) {
-							try {
-								return Float.parseFloat(txt.substring(0, txt.length() - 1));
-							}catch(NumberFormatException ignore) {}
-						}
-
-						//DOUBLE
-						try {
-							return Double.parseDouble(txt);
-						}catch(NumberFormatException ignore) {}
-					}
-				}
-
-				return null;
-			case CHAR:
-				return (int)charValue;
-			case INT:
-				return intValue;
-			case LONG:
-				return longValue;
-			case FLOAT:
-				return floatValue;
-			case DOUBLE:
-				return doubleValue;
-			case BYTE_BUFFER:
-				return byteBuf.length;
-			case ERROR:
-				return error.getErrno();
-			case ARRAY:
-				return arr.length;
-			case LIST:
-				return list.size();
-			case STRUCT:
-				return sp.getMemberNames().length;
-
 			case VAR_POINTER:
 			case FUNCTION_POINTER:
 			case OBJECT:
