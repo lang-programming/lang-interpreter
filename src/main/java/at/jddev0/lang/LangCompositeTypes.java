@@ -278,6 +278,32 @@ public class LangCompositeTypes {
 		Map<String, DataObject.FunctionPointerObject[]> methods = new HashMap<>();
 		Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
 
+		methods.put("mp.conjugate", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="mp.conjugate", isMethod=true)
+					@AllowedTypes(DataType.OBJECT)
+					@SuppressWarnings("unused")
+					public DataObject conjugateMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+					) {
+						double real = thisObject.getMember("$real").getDouble();
+						double imag = thisObject.getMember("$imag").getDouble();
+
+						try {
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
+									new DataObject().setDouble(real),
+									new DataObject().setDouble(-imag)
+							), SCOPE_ID);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("mp.conjugate", new Boolean[] {
+				false
+		});
+
 		methods.put("op:deepCopy", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="op:deepCopy", isMethod=true)
