@@ -1,17 +1,9 @@
 package at.jddev0.lang;
 
 import at.jddev0.lang.DataObject.DataType;
-import at.jddev0.lang.DataObject.DataTypeConstraintException;
 import at.jddev0.lang.DataObject.FunctionPointerObject;
-import at.jddev0.lang.DataObject.StructObject;
-import at.jddev0.lang.LangFunction.AllowedTypes;
-import at.jddev0.lang.LangFunction.LangParameter;
-import at.jddev0.lang.LangFunction.LangParameter.RawVarArgs;
-import at.jddev0.lang.LangFunction.LangParameter.VarArgs;
-import at.jddev0.lang.LangInterpreter.InterpretingError;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Lang-Module<br>

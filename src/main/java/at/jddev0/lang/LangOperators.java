@@ -187,17 +187,17 @@ public final class LangOperators {
 
 		switch(leftSideOperand.getType()) {
 			case INT:
-				return new DataObject(leftSideOperand.getInt() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getInt() + rightSideOperand.toText());
 			case LONG:
-				return new DataObject(leftSideOperand.getLong() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getLong() + rightSideOperand.toText());
 			case FLOAT:
-				return new DataObject(leftSideOperand.getFloat() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getFloat() + rightSideOperand.toText());
 			case DOUBLE:
-				return new DataObject(leftSideOperand.getDouble() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getDouble() + rightSideOperand.toText());
 			case CHAR:
-				return new DataObject(leftSideOperand.getChar() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getChar() + rightSideOperand.toText());
 			case TEXT:
-				return new DataObject(leftSideOperand.getText() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getText() + rightSideOperand.toText());
 			case BYTE_BUFFER:
 				if(rightSideOperand.getType() != DataType.BYTE_BUFFER)
 					return null;
@@ -619,7 +619,7 @@ public final class LangOperators {
 				}
 				return null;
 			case TEXT:
-				return new DataObject(leftSideOperand.getText() + rightSideOperand.getText());
+				return new DataObject(leftSideOperand.getText() + rightSideOperand.toText());
 			case ARRAY:
 				DataObject[] arrNew = new DataObject[leftSideOperand.getArray().length + 1];
 				for(int i = 0;i < leftSideOperand.getArray().length;i++)
@@ -3052,7 +3052,7 @@ public final class LangOperators {
 
 		try {
 			return leftSideOperand.getType().equals(rightSideOperand.getType()) &&
-					Objects.equals(leftSideOperand.getRawText(), rightSideOperand.getRawText()) &&
+					Objects.equals(leftSideOperand.getText(), rightSideOperand.getText()) &&
 					Objects.deepEquals(leftSideOperand.getByteBuffer(), rightSideOperand.getByteBuffer()) &&
 					Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getArray()) &&
 					Objects.deepEquals(leftSideOperand.getList(), rightSideOperand.getList()) &&

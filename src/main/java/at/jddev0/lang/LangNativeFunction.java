@@ -507,7 +507,7 @@ public class LangNativeFunction {
 											break;
 								
 								DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy);
-								argument = new DataObject(combinedArgument == null?"":combinedArgument.getText()).setVariableName(variableName);
+								argument = new DataObject(combinedArgument == null?"":combinedArgument.toText()).setVariableName(variableName);
 							}else {
 								argument = new DataObject().setVariableName(variableName).
 										setArray(varArgsArgumentList.toArray(new DataObject[0]));

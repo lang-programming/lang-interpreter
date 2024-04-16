@@ -131,7 +131,7 @@ final class LangModuleManager {
 			//Update call stack (Path inside module archive)
 			interpreter.pushStackElement(new StackElement("<module:" + module.getFile()  + "[" + lmc.getName() + "]>", "<entryPoint>", null, module), -1);
 			
-			String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args).stream().map(DataObject::getText).collect(Collectors.toList()).toArray(new String[0]);
+			String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args).stream().map(DataObject::toText).collect(Collectors.toList()).toArray(new String[0]);
 			
 			//Create an empty data map
 			interpreter.createDataMap(SCOPE_ID, langArgs);
@@ -229,7 +229,7 @@ final class LangModuleManager {
 		interpreter.pushStackElement(new StackElement("<module:" + module.getFile() + "[" + module.getLangModuleConfiguration().getName() + "]>",
 				(moduleEntryPoint?"<entryPoint>":entryPoint), "<native:" + (load?"load":"unload") + ">", module), -1);
 		
-		String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args).stream().map(DataObject::getText).collect(Collectors.toList()).toArray(new String[0]);
+		String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args).stream().map(DataObject::toText).collect(Collectors.toList()).toArray(new String[0]);
 		
 		//Create an empty data map
 		interpreter.createDataMap(INNER_SCOPE_ID, langArgs);

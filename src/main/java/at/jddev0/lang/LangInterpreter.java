@@ -1617,7 +1617,7 @@ public final class LangInterpreter {
 				case MATCHES:
 				case NOT_MATCHES:
 					try {
-						conditionOutput = LangRegEx.matches(leftSideOperand.getText(), rightSideOperand.getText());
+						conditionOutput = LangRegEx.matches(leftSideOperand.toText(), rightSideOperand.toText());
 					}catch(InvalidPaternSyntaxException e) {
 						return setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 					}
@@ -1689,7 +1689,7 @@ public final class LangInterpreter {
 		switch(langDataExecutionFlag) {
 			//Data
 			case "lang.version":
-				String langVer = value.getText();
+				String langVer = value.toText();
 				Integer compVer = LangUtils.compareVersions(LangInterpreter.VERSION, langVer);
 				if(compVer == null) {
 					setErrno(InterpretingError.LANG_VER_ERROR, "lang.version has an invalid format", lineNumber, SCOPE_ID);
@@ -1941,11 +1941,11 @@ public final class LangInterpreter {
 					if(translationKeyDataObject == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getLineNumberFrom(), SCOPE_ID);
 					
-					String translationKey = translationKeyDataObject.getText();
+					String translationKey = translationKeyDataObject.toText();
 					if(translationKey.startsWith("lang."))
 						interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getLineNumberFrom(), SCOPE_ID);
 					
-					data.get(SCOPE_ID).lang.put(translationKey, rvalue.getText());
+					data.get(SCOPE_ID).lang.put(translationKey, rvalue.toText());
 					break;
 					
 				case GENERAL:
@@ -2375,8 +2375,8 @@ public final class LangInterpreter {
 
 								DataObject dataObject = LangUtils.combineDataObjects(argumentValueList);
 								try {
-									DataObject newDataObject = new DataObject(dataObject != null?dataObject.getText():
-										new DataObject().setVoid().getText()).setVariableName(variableName);
+									DataObject newDataObject = new DataObject(dataObject != null?dataObject.toText():
+										new DataObject().setVoid().toText()).setVariableName(variableName);
 
 									DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 									if(old != null && old.isStaticData())
@@ -3656,12 +3656,12 @@ public final class LangInterpreter {
 				break;
 				
 			case 's':
-				output = dataObject.getText();
+				output = dataObject.toText();
 				
 				break;
 				
 			case 't':
-				String translationKey = dataObject.getText();
+				String translationKey = dataObject.toText();
 				
 				output = getData().get(SCOPE_ID).lang.get(translationKey);
 				if(output == null)

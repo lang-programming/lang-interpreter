@@ -536,9 +536,9 @@ public class LangTest {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.getText();
+			this.actualValueText = actualValue == null?null:actualValue.toText();
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
-			this.expectedValueText = expectedValue == null?null:expectedValue.getText();
+			this.expectedValueText = expectedValue == null?null:expectedValue.toText();
 			this.expectedValueTypeName = expectedValue == null?null:expectedValue.getType().name();
 			this.expectedValueOperator = expectedValueOperator;
 		}
@@ -874,7 +874,7 @@ public class LangTest {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.getText();
+			this.actualValueText = actualValue == null?null:actualValue.toText();
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
 			this.expectedValue = expectedValue;
 		}
@@ -1078,9 +1078,9 @@ public class LangTest {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.getText();
+			this.actualValueText = actualValue == null?null:actualValue.toText();
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
-			this.expectedValueText = expectedValue == null?null:expectedValue.getText();
+			this.expectedValueText = expectedValue == null?null:expectedValue.toText();
 			this.expectedValueTypeName = expectedValue == null?null:expectedValue.getType().name();
 		}
 		
@@ -1127,7 +1127,7 @@ public class LangTest {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.getText();
+			this.actualValueText = actualValue == null?null:actualValue.toText();
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
 		}
 		

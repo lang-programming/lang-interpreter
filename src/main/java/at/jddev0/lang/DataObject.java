@@ -167,14 +167,8 @@ public class DataObject {
 		return this;
 	}
 
-	//TODO make public and rename to "getText()"
-	String getRawText() {
-		return txt;
-	}
-
-	//TODO remove
 	public String getText() {
-		return toText();
+		return txt;
 	}
 
 	public DataObject setByteBuffer(byte[] byteBuf) throws DataTypeConstraintViolatedException {
@@ -577,7 +571,7 @@ public class DataObject {
 		}else if(ele.getType() == DataType.STRUCT) {
 			builder.append(ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
 		}else {
-			builder.append(ele.getText());
+			builder.append(ele.toText());
 		}
 		builder.append(", ");
 	}
@@ -1434,7 +1428,7 @@ public class DataObject {
 			if(var.getType() == DataType.VAR_POINTER)
 				return "-->{-->{...}}";
 
-			return "-->{" + var + "}";
+			return "-->{" + var.toText() + "}";
 		}
 
 		@Override
