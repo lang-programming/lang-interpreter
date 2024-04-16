@@ -83,6 +83,7 @@ public final class LangInterpreter {
 		LangPredefinedFunctions.addLinkerFunctions(funcs);
 	}
 	public final LangOperators operators = new LangOperators(this);
+	public final LangConversions conversions = new LangConversions(this);
 	public final LangVars langVars = new LangVars(this);
 	
 	/**
@@ -182,7 +183,7 @@ public final class LangInterpreter {
 	}
 	
 	boolean interpretCondition(OperationNode node, final int SCOPE_ID) throws StoppedException {
-		return interpretOperationNode(node, SCOPE_ID).getBoolean();
+		return conversions.toBool(interpretOperationNode(node, SCOPE_ID), node.getLineNumberFrom(), SCOPE_ID);
 	}
 	
 	DataObject interpretLines(BufferedReader lines, final int SCOPE_ID) throws IOException, StoppedException {
@@ -713,7 +714,8 @@ public final class LangInterpreter {
 		try {
 			switch(node.getNodeType()) {
 				case IF_STATEMENT_PART_IF:
-					if(!interpretOperationNode(((IfStatementPartIfNode)node).getCondition(), SCOPE_ID).getBoolean())
+					if(!conversions.toBool(interpretOperationNode(((IfStatementPartIfNode)node).getCondition(), SCOPE_ID),
+							node.getLineNumberFrom(), SCOPE_ID))
 						return false;
 				case IF_STATEMENT_PART_ELSE:
 					interpretAST(node.getIfBody(), SCOPE_ID);
@@ -793,7 +795,8 @@ public final class LangInterpreter {
 						}
 					}
 				case LOOP_STATEMENT_PART_WHILE:
-					while(interpretOperationNode(((LoopStatementPartWhileNode)node).getCondition(), SCOPE_ID).getBoolean()) {
+					while(conversions.toBool(interpretOperationNode(((LoopStatementPartWhileNode)node).getCondition(), SCOPE_ID),
+							node.getLineNumberFrom(), SCOPE_ID)) {
 						flag = true;
 						
 						interpretAST(node.getLoopBody(), SCOPE_ID);
@@ -808,7 +811,8 @@ public final class LangInterpreter {
 					
 					break;
 				case LOOP_STATEMENT_PART_UNTIL:
-					while(!interpretOperationNode(((LoopStatementPartUntilNode)node).getCondition(), SCOPE_ID).getBoolean()) {
+					while(!conversions.toBool(interpretOperationNode(((LoopStatementPartUntilNode)node).getCondition(), SCOPE_ID),
+							node.getLineNumberFrom(), SCOPE_ID)) {
 						flag = true;
 						
 						interpretAST(node.getLoopBody(), SCOPE_ID);
@@ -1395,7 +1399,7 @@ public final class LangInterpreter {
 					output = operators.opSpaceship(leftSideOperand, rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					break;
 				case ELVIS:
-					if(leftSideOperand.getBoolean())
+					if(conversions.toBool(leftSideOperand, node.getLineNumberFrom(), SCOPE_ID))
 						return leftSideOperand;
 					
 					rightSideOperand = interpretNode(null, node.getRightSideOperand(), SCOPE_ID);
@@ -1413,7 +1417,9 @@ public final class LangInterpreter {
 				
 				//Ternary
 				case INLINE_IF:
-					DataObject operand = leftSideOperand.getBoolean()?interpretNode(null, node.getMiddleOperand(), SCOPE_ID):interpretNode(null, node.getRightSideOperand(), SCOPE_ID);
+					DataObject operand = conversions.toBool(leftSideOperand, node.getLineNumberFrom(), SCOPE_ID)?
+							interpretNode(null, node.getMiddleOperand(), SCOPE_ID):
+							interpretNode(null, node.getRightSideOperand(), SCOPE_ID);
 					
 					if(operand == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom(), SCOPE_ID);
@@ -1517,7 +1523,7 @@ public final class LangInterpreter {
 				//Unary (Logical operators)
 				case CONDITIONAL_NON:
 				case NOT:
-					conditionOutput = leftSideOperand.getBoolean();
+					conditionOutput = conversions.toBool(leftSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					
 					if(node.getOperator() == Operator.NOT)
 						conditionOutput = !conditionOutput;
@@ -1525,25 +1531,25 @@ public final class LangInterpreter {
 				
 				//Binary (Logical operators)
 				case AND:
-					boolean leftSideOperandBoolean = leftSideOperand.getBoolean();
+					boolean leftSideOperandBoolean = conversions.toBool(leftSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					if(leftSideOperandBoolean) {
 						rightSideOperand = interpretNode(null, node.getRightSideOperand(), SCOPE_ID);
 						if(rightSideOperand == null)
 							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom(), SCOPE_ID);
-						conditionOutput = rightSideOperand.getBoolean();
+						conditionOutput = conversions.toBool(rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					}else {
 						conditionOutput = false;
 					}
 					break;
 				case OR:
-					leftSideOperandBoolean = leftSideOperand.getBoolean();
+					leftSideOperandBoolean = conversions.toBool(leftSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					if(leftSideOperandBoolean) {
 						conditionOutput = true;
 					}else {
 						rightSideOperand = interpretNode(null, node.getRightSideOperand(), SCOPE_ID);
 						if(rightSideOperand == null)
 							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom(), SCOPE_ID);
-						conditionOutput = rightSideOperand.getBoolean();
+						conditionOutput = conversions.toBool(rightSideOperand, node.getLineNumberFrom(), SCOPE_ID);
 					}
 					break;
 				
@@ -3209,7 +3215,7 @@ public final class LangInterpreter {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom(), SCOPE_ID);
 
 		for(String methodName:methodNames)
-			if(!isMethodName(methodName) && !isOperatorMethodName(methodName))
+			if(!isMethodName(methodName) && !isOperatorMethodName(methodName) && !isConversionMethodName(methodName))
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
 						node.getLineNumberFrom(), SCOPE_ID);
 
@@ -3672,7 +3678,7 @@ public final class LangInterpreter {
 				break;
 				
 			case '?':
-				output = dataObject.getBoolean()?"true":"false";
+				output = conversions.toBool(dataObject, -1, SCOPE_ID)?"true":"false";
 				
 				break;
 				
@@ -4102,6 +4108,20 @@ public final class LangInterpreter {
 	};
 	private boolean isOperatorMethodName(String token) {
 		for(String operator:OPERATOR_METHOD_NAMES)
+			if(operator.equals(token))
+				return true;
+
+		return false;
+	}
+
+	/**
+	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(bool)</code>
+	 */
+	private static final String[] CONVERSION_METHOD_NAMES = new String[] {
+			"to:bool"
+	};
+	private boolean isConversionMethodName(String token) {
+		for(String operator:CONVERSION_METHOD_NAMES)
 			if(operator.equals(token))
 				return true;
 

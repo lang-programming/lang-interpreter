@@ -1973,6 +1973,42 @@ public final class LangParser {
 				continue;
 			}
 
+			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_CONVERSION_METHOD_PREFIX)) {
+				if(visibility != '+') {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid visibility for conversion method (only \"+\" is allowed): \"" + line + "\""));
+
+					return ast;
+				}
+
+				boolean override = line.startsWith("override:");
+				if(override)
+					line = line.substring(9);
+
+				String[] tokens = line.split(" = ", 2);
+				if(tokens.length < 2) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for conversion method (only \" = \" is allowed): \"" + line + "\""));
+
+					return ast;
+				}
+
+				String methodName = tokens[0];
+				String rvalue = tokens[1];
+
+				if(!LangPatterns.matches(methodName, LangPatterns.CONVERSION_METHOD_NAME)) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid conversion method name: \"" + line + "\""));
+
+					return ast;
+				}
+
+				AbstractSyntaxTree.Node rvalueNode = parseLRvalue(rvalue, lines, true).convertToNode();
+
+				methodNames.add(methodName);
+				methodDefinitions.add(rvalueNode);
+				methodOverrideFlag.add(override);
+
+				continue;
+			}
+
 			boolean isStaticMember = line.startsWith("static:");
 			if(isStaticMember)
 				line = line.substring(7);

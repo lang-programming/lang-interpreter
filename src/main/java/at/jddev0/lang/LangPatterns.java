@@ -95,6 +95,10 @@ final class LangPatterns {
 			"((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|" +
 			"(getItem|setItem))");
 	/**
+	 * RegEx: "<code>to:(bool)</code>"
+	 */
+	public static final Pattern CONVERSION_METHOD_NAME = Pattern.compile("to:(bool)");
+	/**
 	 * RegEx: "<code>\{[?!]?([A-Z]+\|)*[A-Z]+\}</code>"
 	 */
 	public static final Pattern TYPE_CONSTRAINT = Pattern.compile("\\{[?!]?([A-Z_]+\\|)*[A-Z_]+\\}");
@@ -170,6 +174,10 @@ final class LangPatterns {
 	 * RegEx: "<code>(override:)?op:.*</code>"
 	 */
 	public static final Pattern PARSING_STARTS_WITH_OPERATOR_METHOD_PREFIX = Pattern.compile("(override:)?op:.*");
+	/**
+	 * RegEx: "<code>(override:)?to:.*</code>"
+	 */
+	public static final Pattern PARSING_STARTS_WITH_CONVERSION_METHOD_PREFIX = Pattern.compile("(override:)?to:.*");
 	/**
 	 * RegEx: "<code>(override:)?mp\.\w+.*</code>"
 	 */

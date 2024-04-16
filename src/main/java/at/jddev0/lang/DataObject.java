@@ -333,10 +333,6 @@ public class DataObject {
 		return setInt(booleanValue?1:0);
 	}
 
-	public boolean getBoolean() {
-		return toBoolean();
-	}
-
 	public DataObject setLong(long longValue) throws DataTypeConstraintViolatedException {
 		if(finalData)
 			return this;
@@ -973,45 +969,6 @@ public class DataObject {
 		}
 
 		return null;
-	}
-	public boolean toBoolean() {
-		switch(type) {
-			case TEXT:
-				return !txt.isEmpty();
-			case CHAR:
-				return charValue != 0;
-			case INT:
-				return intValue != 0;
-			case LONG:
-				return longValue != 0;
-			case FLOAT:
-				return floatValue != 0;
-			case DOUBLE:
-				return doubleValue != 0;
-			case BYTE_BUFFER:
-				return byteBuf.length > 0;
-			case ARRAY:
-				return arr.length > 0;
-			case LIST:
-				return list.size() > 0;
-			case STRUCT:
-				return sp.getMemberNames().length > 0;
-			case ERROR:
-				return error.getErrno() != 0;
-
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case TYPE:
-			case OBJECT:
-				return true;
-
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-				return false;
-		}
-
-		return false;
 	}
 	public Number toNumber() {
 		switch(type) {

@@ -532,7 +532,7 @@ public class LangNativeFunction {
 					}else if(methodParameterType.isAssignableFrom(Number.class)) {
 						argument = argumentNumberValue;
 					}else if(methodParameterType.isAssignableFrom(boolean.class)) {
-						argument = combinedArgumentList.get(argumentIndex).toBoolean();
+						argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), -1, SCOPE_ID);
 					}else {
 						return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "Invalid native method parameter argument type", SCOPE_ID);
 					}

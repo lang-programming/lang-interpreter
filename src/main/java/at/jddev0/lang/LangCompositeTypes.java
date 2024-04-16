@@ -82,7 +82,7 @@ public class LangCompositeTypes {
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
 					) {
 						try {
-							return new DataObject().setBoolean(thisObject.getMember("$present").getBoolean());
+							return new DataObject().setBoolean(interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID));
 						}catch(DataObject.DataTypeConstraintException e) {
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 						}
@@ -102,7 +102,7 @@ public class LangCompositeTypes {
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
 					) {
 						try {
-							boolean present = thisObject.getMember("$present").getBoolean();
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
 							if(!present)
 								return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, "Value is not present", SCOPE_ID);
 
@@ -130,7 +130,7 @@ public class LangCompositeTypes {
 						DataObject.FunctionPointerObject mapperFunc = mapperFuncObject.getFunctionPointer();
 
 						try {
-							boolean present = thisObject.getMember("$present").getBoolean();
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
 							if(present) {
 								DataObject ret = interpreter.callFunctionPointer(mapperFunc, mapperFuncObject.getVariableName(), Arrays.asList(
 										new DataObject(thisObject.getMember("$value"))
@@ -169,7 +169,7 @@ public class LangCompositeTypes {
 						DataObject.FunctionPointerObject func = funcObject.getFunctionPointer();
 
 						try {
-							boolean present = thisObject.getMember("$present").getBoolean();
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
 							if(present) {
 								interpreter.callFunctionPointer(func, funcObject.getVariableName(), Arrays.asList(
 										new DataObject(thisObject.getMember("$value"))
@@ -197,7 +197,7 @@ public class LangCompositeTypes {
 							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
 					) {
 						DataObject value = thisObject.getMember("$value");
-						boolean present = thisObject.getMember("$present").getBoolean();
+						boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
 
 						try {
 							List<DataObject> arguments = new LinkedList<>();

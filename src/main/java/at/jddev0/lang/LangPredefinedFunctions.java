@@ -332,7 +332,8 @@ final class LangPredefinedFunctions {
 					}
 				})));
 
-				while(interpreter.callFunctionPointer(checkFunc, checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID).getBoolean()) {
+				while(interpreter.conversions.toBool(interpreter.callFunctionPointer(checkFunc,
+						checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID), -1, SCOPE_ID)) {
 					interpreter.callFunctionPointer(loopFunc, loopFunctionObject.getVariableName(), Arrays.asList(
 						breakFunc
 					), SCOPE_ID);
@@ -341,7 +342,8 @@ final class LangPredefinedFunctions {
 						break;
 				}
 			}else {
-				while(interpreter.callFunctionPointer(checkFunc, checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID).getBoolean())
+				while(interpreter.conversions.toBool(interpreter.callFunctionPointer(checkFunc,
+						checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID), -1, SCOPE_ID))
 					interpreter.callFunctionPointer(loopFunc, loopFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID);
 			}
 
@@ -383,7 +385,8 @@ final class LangPredefinedFunctions {
 					}
 				})));
 
-				while(!interpreter.callFunctionPointer(checkFunc, checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID).getBoolean()) {
+				while(!interpreter.conversions.toBool(interpreter.callFunctionPointer(checkFunc,
+						checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID), -1, SCOPE_ID)) {
 					interpreter.callFunctionPointer(loopFunc, loopFunctionObject.getVariableName(), Arrays.asList(
 						breakFunc
 					), SCOPE_ID);
@@ -392,7 +395,8 @@ final class LangPredefinedFunctions {
 						break;
 				}
 			}else {
-				while(!interpreter.callFunctionPointer(checkFunc, checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID).getBoolean())
+				while(!interpreter.conversions.toBool(interpreter.callFunctionPointer(checkFunc,
+						checkFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID), -1, SCOPE_ID))
 					interpreter.callFunctionPointer(loopFunc, loopFunctionObject.getVariableName(), new ArrayList<>(), SCOPE_ID);
 			}
 
@@ -1889,7 +1893,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") DataObject valueObject
 		) {
-			return new DataObject().setBoolean(valueObject.toBoolean());
+			return new DataObject().setBoolean(interpreter.conversions.toBool(valueObject, -1, SCOPE_ID));
 		}
 
 		@LangFunction("number")
@@ -1971,7 +1975,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return leftSideOperand.getBoolean()?leftSideOperand:rightSideOperand;
+			return interpreter.conversions.toBool(leftSideOperand, -1, SCOPE_ID)?leftSideOperand:rightSideOperand;
 		}
 
 		@LangFunction("nullCoalescing")
@@ -1990,7 +1994,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$middleOperand") DataObject middleOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return leftSideOperand.getBoolean()?middleOperand:rightSideOperand;
+			return interpreter.conversions.toBool(leftSideOperand, -1, SCOPE_ID)?middleOperand:rightSideOperand;
 		}
 
 		@LangFunction("inc")
@@ -2318,7 +2322,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$operand") DataObject operand
 		) {
-			return new DataObject().setBoolean(!operand.toBoolean());
+			return new DataObject().setBoolean(!interpreter.conversions.toBool(operand, -1, SCOPE_ID));
 		}
 
 		@LangFunction("conAnd")
@@ -2327,7 +2331,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.toBoolean() && rightSideOperand.toBoolean());
+			return new DataObject().setBoolean(interpreter.conversions.toBool(leftSideOperand, -1, SCOPE_ID) &&
+					interpreter.conversions.toBool(rightSideOperand, 1, SCOPE_ID));
 		}
 
 		@LangFunction("conOr")
@@ -2336,7 +2341,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$leftSideOperand") DataObject leftSideOperand,
 				@LangParameter("$rightSideOperand") DataObject rightSideOperand
 		) {
-			return new DataObject().setBoolean(leftSideOperand.toBoolean() || rightSideOperand.toBoolean());
+			return new DataObject().setBoolean(interpreter.conversions.toBool(leftSideOperand, -1, SCOPE_ID) ||
+					interpreter.conversions.toBool(rightSideOperand, 1, SCOPE_ID));
 		}
 
 		@LangFunction("conEquals")
@@ -8318,9 +8324,10 @@ final class LangPredefinedFunctions {
 			DataObject[] arr = arrayObject.getArray();
 
 			List<DataObject> elements = Arrays.stream(arr).map(DataObject::new).filter(dataObject -> {
-				return interpreter.callFunctionPointer(filterObject.getFunctionPointer(), filterObject.getVariableName(), Arrays.asList(
-						dataObject
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(filterObject.getFunctionPointer(),
+						filterObject.getVariableName(), Arrays.asList(
+								dataObject
+						), SCOPE_ID), -1, SCOPE_ID);
 			}).collect(Collectors.toList());
 			return new DataObject().setArray(elements.toArray(new DataObject[0]));
 		}
@@ -8335,9 +8342,10 @@ final class LangPredefinedFunctions {
 			DataObject[] arr = arrayObject.getArray();
 
 			long count = Arrays.stream(arr).map(DataObject::new).filter(dataObject -> {
-				return interpreter.callFunctionPointer(filterObject.getFunctionPointer(), filterObject.getVariableName(), Arrays.asList(
-						dataObject
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(filterObject.getFunctionPointer(),
+						filterObject.getVariableName(), Arrays.asList(
+								dataObject
+						), SCOPE_ID), -1, SCOPE_ID);
 			}).count();
 			return new DataObject().setInt((int)count);
 		}
@@ -8640,9 +8648,10 @@ final class LangPredefinedFunctions {
 			DataObject[] arr = arrayObject.getArray();
 
 			return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).allMatch(ele -> {
-				return interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(), predicateFunction.getVariableName(), Arrays.asList(
-						ele
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
+						predicateFunction.getVariableName(), Arrays.asList(
+								ele
+						), SCOPE_ID), -1, SCOPE_ID);
 			}));
 		}
 
@@ -8656,9 +8665,10 @@ final class LangPredefinedFunctions {
 			DataObject[] arr = arrayObject.getArray();
 
 			return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).anyMatch(ele -> {
-				return interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(), predicateFunction.getVariableName(), Arrays.asList(
-						ele
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
+						predicateFunction.getVariableName(), Arrays.asList(
+								ele
+						), SCOPE_ID), -1, SCOPE_ID);
 			}));
 		}
 
@@ -8672,9 +8682,10 @@ final class LangPredefinedFunctions {
 			DataObject[] arr = arrayObject.getArray();
 
 			return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).noneMatch(ele -> {
-				return interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(), predicateFunction.getVariableName(), Arrays.asList(
-						ele
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
+						predicateFunction.getVariableName(), Arrays.asList(
+								ele
+						), SCOPE_ID), -1, SCOPE_ID);
 			}));
 		}
 
@@ -8816,13 +8827,13 @@ final class LangPredefinedFunctions {
 				for(int i = 0;i < count;i++)
 					permutationArr[i] = new DataObject(arr[indices[i]]);
 
-				if(interpreter.callFunctionPointer(functionObject.getFunctionPointer(), functionObject.getVariableName(),
-						LangUtils.separateArgumentsWithArgumentSeparators(
+				if(interpreter.conversions.toBool(interpreter.callFunctionPointer(functionObject.getFunctionPointer(),
+						functionObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 								Arrays.asList(
 										new DataObject().setArray(permutationArr),
 										new DataObject().setInt(permutationNumber++)
 								)
-						), SCOPE_ID).getBoolean())
+						), SCOPE_ID), -1, SCOPE_ID))
 							return null;
 
 				List<Integer> usedIndices = new LinkedList<>();
@@ -9379,9 +9390,10 @@ final class LangPredefinedFunctions {
 			List<DataObject> list = listObject.getList();
 
 			List<DataObject> elements = list.stream().map(DataObject::new).filter(dataObject -> {
-				return interpreter.callFunctionPointer(filterObject.getFunctionPointer(), filterObject.getVariableName(), Arrays.asList(
-						dataObject
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(filterObject.getFunctionPointer(),
+						filterObject.getVariableName(), Arrays.asList(
+								dataObject
+						), SCOPE_ID), -1, SCOPE_ID);
 			}).collect(Collectors.toList());
 			return new DataObject().setList(new LinkedList<>(elements));
 		}
@@ -9396,9 +9408,10 @@ final class LangPredefinedFunctions {
 			List<DataObject> list = listObject.getList();
 
 			long count = list.stream().map(DataObject::new).filter(dataObject -> {
-				return interpreter.callFunctionPointer(filterObject.getFunctionPointer(), filterObject.getVariableName(), Arrays.asList(
-						dataObject
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(filterObject.getFunctionPointer(),
+						filterObject.getVariableName(), Arrays.asList(
+								dataObject
+						), SCOPE_ID), -1, SCOPE_ID);
 			}).count();
 			return new DataObject().setInt((int)count);
 		}
@@ -9682,9 +9695,10 @@ final class LangPredefinedFunctions {
 			List<DataObject> list = listObject.getList();
 
 			return new DataObject().setBoolean(list.stream().map(DataObject::new).allMatch(ele -> {
-				return interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(), predicateFunction.getVariableName(), Arrays.asList(
-						ele
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
+						predicateFunction.getVariableName(), Arrays.asList(
+								ele
+						), SCOPE_ID), -1, SCOPE_ID);
 			}));
 		}
 
@@ -9698,9 +9712,10 @@ final class LangPredefinedFunctions {
 			List<DataObject> list = listObject.getList();
 
 			return new DataObject().setBoolean(list.stream().map(DataObject::new).anyMatch(ele -> {
-				return interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(), predicateFunction.getVariableName(), Arrays.asList(
-						ele
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
+						predicateFunction.getVariableName(), Arrays.asList(
+								ele
+						), SCOPE_ID), -1, SCOPE_ID);
 			}));
 		}
 
@@ -9714,9 +9729,10 @@ final class LangPredefinedFunctions {
 			List<DataObject> list = listObject.getList();
 
 			return new DataObject().setBoolean(list.stream().map(DataObject::new).noneMatch(ele -> {
-				return interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(), predicateFunction.getVariableName(), Arrays.asList(
-						ele
-				), SCOPE_ID).getBoolean();
+				return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
+						predicateFunction.getVariableName(), Arrays.asList(
+								ele
+						), SCOPE_ID), -1, SCOPE_ID);
 			}));
 		}
 
