@@ -643,49 +643,6 @@ public class DataObject {
 
 		return null;
 	}
-	public Integer toInt() {
-		switch(type) {
-			case TEXT:
-				if(txt.trim().length() == txt.length()) {
-					try {
-						return Integer.parseInt(txt);
-					}catch(NumberFormatException ignore) {}
-				}
-
-				return null;
-			case CHAR:
-				return (int)charValue;
-			case INT:
-				return intValue;
-			case LONG:
-				return (int)longValue;
-			case FLOAT:
-				return (int)floatValue;
-			case DOUBLE:
-				return (int)doubleValue;
-			case ERROR:
-				return error.getErrno();
-			case BYTE_BUFFER:
-				return byteBuf.length;
-			case ARRAY:
-				return arr.length;
-			case LIST:
-				return list.size();
-			case STRUCT:
-				return sp.getMemberNames().length;
-
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
 	public Long toLong() {
 		switch(type) {
 			case TEXT:

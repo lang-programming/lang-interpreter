@@ -77,6 +77,53 @@ public final class LangConversions {
 
 		return null;
 	}
+	public Integer toInt(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("int", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case TEXT:
+				if(operand.getText().trim().length() == operand.getText().length()) {
+					try {
+						return Integer.parseInt(operand.getText());
+					}catch(NumberFormatException ignore) {}
+				}
+
+				return null;
+			case CHAR:
+				return (int)operand.getChar();
+			case INT:
+				return operand.getInt();
+			case LONG:
+				return (int)operand.getLong();
+			case FLOAT:
+				return (int)operand.getFloat();
+			case DOUBLE:
+				return (int)operand.getDouble();
+			case ERROR:
+				return operand.getError().getErrno();
+			case BYTE_BUFFER:
+				return operand.getByteBuffer().length;
+			case ARRAY:
+				return operand.getArray().length;
+			case LIST:
+				return operand.getList().size();
+			case STRUCT:
+				return operand.getStruct().getMemberNames().length;
+
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
 
 	//Special conversion methods
 	public boolean toBool(DataObject operand, int lineNumber, final int SCOPE_ID) {

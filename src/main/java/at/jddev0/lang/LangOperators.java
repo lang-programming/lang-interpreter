@@ -2652,7 +2652,7 @@ public final class LangOperators {
 				
 				return new DataObject().setChar(chr);
 			case INT:
-				Integer i = rightSideOperand.toInt();
+				Integer i = interpreter.conversions.toInt(rightSideOperand, lineNumber, SCOPE_ID);
 				if(i == null)
 					return null;
 				

@@ -1795,7 +1795,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") DataObject valueObject
 		) {
-			Integer value = valueObject.toInt();
+			Integer value = interpreter.conversions.toInt(valueObject, -1, SCOPE_ID);
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 						"Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.INT, SCOPE_ID);
