@@ -42,7 +42,41 @@ public final class LangConversions {
 	}
 
 	//DataType conversion methods
-	//TODO
+	//TODO toText
+	public Character toChar(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("char", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case INT:
+				return (char)operand.getInt();
+			case LONG:
+				return (char)operand.getLong();
+			case FLOAT:
+				return (char)operand.getFloat();
+			case DOUBLE:
+				return (char)operand.getDouble();
+			case CHAR:
+				return operand.getChar();
+			case TEXT:
+			case ARGUMENT_SEPARATOR:
+			case BYTE_BUFFER:
+			case ARRAY:
+			case LIST:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case STRUCT:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ERROR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
 
 	//Special conversion methods
 	public boolean toBool(DataObject operand, int lineNumber, final int SCOPE_ID) {

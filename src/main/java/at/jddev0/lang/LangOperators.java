@@ -2646,7 +2646,7 @@ public final class LangOperators {
 				
 				return new DataObject(txt);
 			case CHAR:
-				Character chr = rightSideOperand.toChar();
+				Character chr = interpreter.conversions.toChar(rightSideOperand, lineNumber, SCOPE_ID);
 				if(chr == null)
 					return null;
 				

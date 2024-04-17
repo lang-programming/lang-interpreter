@@ -643,36 +643,6 @@ public class DataObject {
 
 		return null;
 	}
-	public Character toChar() {
-		switch(type) {
-			case INT:
-				return (char)intValue;
-			case LONG:
-				return (char)longValue;
-			case FLOAT:
-				return (char)floatValue;
-			case DOUBLE:
-				return (char)doubleValue;
-			case CHAR:
-				return charValue;
-			case TEXT:
-			case ARGUMENT_SEPARATOR:
-			case BYTE_BUFFER:
-			case ARRAY:
-			case LIST:
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case STRUCT:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ERROR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
 	public Integer toInt() {
 		switch(type) {
 			case TEXT:
