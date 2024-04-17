@@ -643,40 +643,6 @@ public class DataObject {
 
 		return null;
 	}
-	public DataObject[] toArray() {
-		switch(type) {
-			case ARRAY:
-				return arr;
-			case LIST:
-				return list.stream().map(DataObject::new).toArray(len -> new DataObject[len]);
-			case STRUCT:
-				try {
-					return Arrays.stream(sp.getMemberNames()).
-							map(memberName -> new DataObject(sp.getMember(memberName))).toArray(DataObject[]::new);
-				}catch(DataTypeConstraintException e) {
-					return null;
-				}
-
-			case TEXT:
-			case CHAR:
-			case INT:
-			case LONG:
-			case FLOAT:
-			case DOUBLE:
-			case BYTE_BUFFER:
-			case ERROR:
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
 	public LinkedList<DataObject> toList() {
 		switch(type) {
 			case ARRAY:

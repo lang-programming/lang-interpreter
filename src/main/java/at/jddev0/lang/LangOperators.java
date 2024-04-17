@@ -2682,7 +2682,7 @@ public final class LangOperators {
 				
 				return new DataObject().setByteBuffer(byteBuffer);
 			case ARRAY:
-				DataObject[] arr = rightSideOperand.toArray();
+				DataObject[] arr = interpreter.conversions.toArray(rightSideOperand, lineNumber, SCOPE_ID);
 				if(arr == null)
 					return null;
 				

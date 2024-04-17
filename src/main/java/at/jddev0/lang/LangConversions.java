@@ -306,6 +306,46 @@ public final class LangConversions {
 
 		return null;
 	}
+	public DataObject[] toArray(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("array", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+
+		switch(operand.getType()) {
+			case ARRAY:
+				return operand.getArray();
+			case LIST:
+				return operand.getList().stream().map(DataObject::new).toArray(len -> new DataObject[len]);
+			case STRUCT:
+				try {
+					DataObject operandCopy = operand;
+					return Arrays.stream(operand.getStruct().getMemberNames()).
+							map(memberName -> new DataObject(operandCopy.getStruct().getMember(memberName))).toArray(DataObject[]::new);
+				}catch(DataObject.DataTypeConstraintException e) {
+					return null;
+				}
+
+			case TEXT:
+			case CHAR:
+			case INT:
+			case LONG:
+			case FLOAT:
+			case DOUBLE:
+			case BYTE_BUFFER:
+			case ERROR:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
 
 	//Special conversion methods
 	public boolean toBool(DataObject operand, int lineNumber, final int SCOPE_ID) {

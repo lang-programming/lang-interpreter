@@ -4115,7 +4115,7 @@ public final class LangInterpreter {
 	}
 
 	/**
-	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(char|int|long|float|double|byteBuffer|bool|number)</code>
+	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(char|int|long|float|double|byteBuffer|array|bool|number)</code>
 	 */
 	private static final String[] CONVERSION_METHOD_NAMES = new String[] {
 			"to:char",
@@ -4124,6 +4124,7 @@ public final class LangInterpreter {
 			"to:float",
 			"to:double",
 			"to:byteBuffer",
+			"to:array",
 
 			"to:bool",
 			"to:number"
