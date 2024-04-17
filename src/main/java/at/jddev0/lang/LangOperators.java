@@ -2688,7 +2688,7 @@ public final class LangOperators {
 				
 				return new DataObject().setArray(arr);
 			case LIST:
-				LinkedList<DataObject> list = rightSideOperand.toList();
+				LinkedList<DataObject> list = interpreter.conversions.toList(rightSideOperand, lineNumber, SCOPE_ID);
 				if(list == null)
 					return null;
 				

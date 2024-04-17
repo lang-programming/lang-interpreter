@@ -4,6 +4,7 @@ import at.jddev0.lang.DataObject.DataType;
 import at.jddev0.lang.DataObject.FunctionPointerObject;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Lang-Module<br>
@@ -311,7 +312,6 @@ public final class LangConversions {
 		if(ret != null)
 			operand = ret;
 
-
 		switch(operand.getType()) {
 			case ARRAY:
 				return operand.getArray();
@@ -322,6 +322,45 @@ public final class LangConversions {
 					DataObject operandCopy = operand;
 					return Arrays.stream(operand.getStruct().getMemberNames()).
 							map(memberName -> new DataObject(operandCopy.getStruct().getMember(memberName))).toArray(DataObject[]::new);
+				}catch(DataObject.DataTypeConstraintException e) {
+					return null;
+				}
+
+			case TEXT:
+			case CHAR:
+			case INT:
+			case LONG:
+			case FLOAT:
+			case DOUBLE:
+			case BYTE_BUFFER:
+			case ERROR:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
+	public LinkedList<DataObject> toList(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("list", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case ARRAY:
+				return new LinkedList<>(Arrays.stream(operand.getArray()).map(DataObject::new).collect(Collectors.toList()));
+			case LIST:
+				return operand.getList();
+			case STRUCT:
+				try {
+					DataObject operandCopy = operand;
+					return new LinkedList<>(Arrays.asList(Arrays.stream(operand.getStruct().getMemberNames()).
+							map(memberName -> new DataObject(operandCopy.getStruct().getMember(memberName))).toArray(DataObject[]::new)));
 				}catch(DataObject.DataTypeConstraintException e) {
 					return null;
 				}

@@ -1879,7 +1879,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") DataObject valueObject
 		) {
-			LinkedList<DataObject> value = valueObject.toList();
+			LinkedList<DataObject> value = interpreter.conversions.toList(valueObject, -1, SCOPE_ID);
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 						"Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.LIST, SCOPE_ID);
