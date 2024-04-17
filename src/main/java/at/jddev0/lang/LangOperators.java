@@ -2670,7 +2670,7 @@ public final class LangOperators {
 				
 				return new DataObject().setFloat(f);
 			case DOUBLE:
-				Double d = rightSideOperand.toDouble();
+				Double d = interpreter.conversions.toDouble(rightSideOperand, lineNumber, SCOPE_ID);
 				if(d == null)
 					return null;
 				

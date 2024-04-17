@@ -223,6 +223,58 @@ public final class LangConversions {
 
 		return null;
 	}
+	public Double toDouble(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("double", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case TEXT:
+				if(operand.getText().length() > 0) {
+					char lastChar = operand.getText().charAt(operand.getText().length() - 1);
+
+					if(operand.getText().trim().length() == operand.getText().length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
+							lastChar != 'D' && !operand.getText().contains("x") && !operand.getText().contains("X")) {
+						try {
+							return Double.parseDouble(operand.getText());
+						}catch(NumberFormatException ignore) {}
+					}
+				}
+
+				return null;
+			case CHAR:
+				return (double)operand.getChar();
+			case INT:
+				return (double)operand.getInt();
+			case LONG:
+				return (double)operand.getLong();
+			case FLOAT:
+				return (double)operand.getFloat();
+			case DOUBLE:
+				return operand.getDouble();
+			case ERROR:
+				return (double)operand.getError().getErrno();
+			case BYTE_BUFFER:
+				return (double)operand.getByteBuffer().length;
+			case ARRAY:
+				return (double)operand.getArray().length;
+			case LIST:
+				return (double)operand.getList().size();
+			case STRUCT:
+				return (double)operand.getStruct().getMemberNames().length;
+
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
 
 	//Special conversion methods
 	public boolean toBool(DataObject operand, int lineNumber, final int SCOPE_ID) {

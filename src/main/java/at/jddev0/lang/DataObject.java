@@ -643,54 +643,6 @@ public class DataObject {
 
 		return null;
 	}
-	public Double toDouble() {
-		switch(type) {
-			case TEXT:
-				if(txt.length() > 0) {
-					char lastChar = txt.charAt(txt.length() - 1);
-
-					if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
-							lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
-						try {
-							return Double.parseDouble(txt);
-						}catch(NumberFormatException ignore) {}
-					}
-				}
-
-				return null;
-			case CHAR:
-				return (double)charValue;
-			case INT:
-				return (double)intValue;
-			case LONG:
-				return (double)longValue;
-			case FLOAT:
-				return (double)floatValue;
-			case DOUBLE:
-				return doubleValue;
-			case ERROR:
-				return (double)error.getErrno();
-			case BYTE_BUFFER:
-				return (double)byteBuf.length;
-			case ARRAY:
-				return (double)arr.length;
-			case LIST:
-				return (double)list.size();
-			case STRUCT:
-				return (double)sp.getMemberNames().length;
-
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
 	public byte[] toByteBuffer() {
 		switch(type) {
 			case BYTE_BUFFER:
