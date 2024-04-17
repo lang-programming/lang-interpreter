@@ -155,7 +155,8 @@ public class LangNativeFunction {
 	}
 
 	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel, List<DataObject> argumentList, int SCOPE_ID) {
-		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
+		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+				interpreter, -1, SCOPE_ID);
 		if(internalFunctions.size() == 1)
 			return internalFunctions.get(0).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList, SCOPE_ID);
 		
@@ -507,8 +508,10 @@ public class LangNativeFunction {
 										if(argumentListCopy.remove(k).getType() == DataType.ARGUMENT_SEPARATOR)
 											break;
 								
-								DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy);
-								argument = new DataObject(combinedArgument == null?"":combinedArgument.toText()).setVariableName(variableName);
+								DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy,
+										interpreter, -1, SCOPE_ID);
+								argument = new DataObject(combinedArgument == null?"":interpreter.conversions.
+										toText(combinedArgument, -1, SCOPE_ID)).setVariableName(variableName);
 							}else {
 								argument = new DataObject().setVariableName(variableName).
 										setArray(varArgsArgumentList.toArray(new DataObject[0]));

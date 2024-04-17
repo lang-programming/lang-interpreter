@@ -621,7 +621,7 @@ public final class LangInterpreter {
 			previousDataObject = ret;
 		}
 		
-		return LangUtils.combineDataObjects(dataObjects);
+		return LangUtils.combineDataObjects(dataObjects, this, node.getLineNumberFrom(), SCOPE_ID);
 	}
 	
 	private DataObject interpretValueNode(ValueNode node, final int SCOPE_ID) {
@@ -1250,7 +1250,7 @@ public final class LangInterpreter {
 							interpretedNodes.add(argumentValue);
 							previousDataObject = argumentValue;
 						}
-						List<DataObject> errorList = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes);
+						List<DataObject> errorList = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes, this, node.getLineNumberFrom(), SCOPE_ID);
 						for(DataObject dataObject:errorList) {
 							if(dataObject.getType() != DataType.ERROR) {
 								setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Variable with type other than " + DataType.ERROR + " in catch statement",
@@ -1617,7 +1617,8 @@ public final class LangInterpreter {
 				case MATCHES:
 				case NOT_MATCHES:
 					try {
-						conditionOutput = LangRegEx.matches(leftSideOperand.toText(), rightSideOperand.toText());
+						conditionOutput = LangRegEx.matches(conversions.toText(leftSideOperand, node.getLineNumberFrom(), SCOPE_ID),
+								conversions.toText(rightSideOperand, node.getLineNumberFrom(), SCOPE_ID));
 					}catch(InvalidPaternSyntaxException e) {
 						return setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
 					}
@@ -1689,7 +1690,7 @@ public final class LangInterpreter {
 		switch(langDataExecutionFlag) {
 			//Data
 			case "lang.version":
-				String langVer = value.toText();
+				String langVer = conversions.toText(value, lineNumber, SCOPE_ID);
 				Integer compVer = LangUtils.compareVersions(LangInterpreter.VERSION, langVer);
 				if(compVer == null) {
 					setErrno(InterpretingError.LANG_VER_ERROR, "lang.version has an invalid format", lineNumber, SCOPE_ID);
@@ -1941,11 +1942,11 @@ public final class LangInterpreter {
 					if(translationKeyDataObject == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getLineNumberFrom(), SCOPE_ID);
 					
-					String translationKey = translationKeyDataObject.toText();
+					String translationKey = conversions.toText(translationKeyDataObject, node.getLineNumberFrom(), SCOPE_ID);
 					if(translationKey.startsWith("lang."))
 						interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getLineNumberFrom(), SCOPE_ID);
 					
-					data.get(SCOPE_ID).lang.put(translationKey, rvalue.toText());
+					data.get(SCOPE_ID).lang.put(translationKey, conversions.toText(rvalue, node.getLineNumberFrom(), SCOPE_ID));
 					break;
 					
 				case GENERAL:
@@ -1994,7 +1995,7 @@ public final class LangInterpreter {
 												@LangFunction.LangParameter("&args") @LangFunction.LangParameter.RawVarArgs List<DataObject> argumentList
 										) {
 											FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(functions,
-													LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+													LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, LangInterpreter.this, -1, SCOPE_ID));
 											if(fp == null)
 												return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 														" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(functions).stream().
@@ -2263,14 +2264,15 @@ public final class LangInterpreter {
 			if(langTestExpectedReturnValue != null) {
 				langTestStore.addAssertResult(new LangTest.AssertResultReturn(!executionState.isThrownValue &&
 						operators.isStrictEquals(langTestExpectedReturnValue, retTmp, -1, SCOPE_ID), printStackTrace(-1),
-						langTestMessageForLastTestResult, retTmp, langTestExpectedReturnValue));
+						langTestMessageForLastTestResult, retTmp, retTmp == null?null:conversions.toText(retTmp, -1, SCOPE_ID),
+						langTestExpectedReturnValue, conversions.toText(langTestExpectedReturnValue, -1, SCOPE_ID)));
 				
 				langTestExpectedReturnValue = null;
 			}
 			
 			if(langTestExpectedNoReturnValue) {
 				langTestStore.addAssertResult(new LangTest.AssertResultNoReturn(retTmp == null, printStackTrace(-1),
-						langTestMessageForLastTestResult, retTmp));
+						langTestMessageForLastTestResult, retTmp, retTmp == null?null:conversions.toText(retTmp, -1, SCOPE_ID)));
 				
 				langTestExpectedNoReturnValue = false;
 			}
@@ -2373,10 +2375,11 @@ public final class LangInterpreter {
 											lineNumberFrom, SCOPE_ID);
 								}
 
-								DataObject dataObject = LangUtils.combineDataObjects(argumentValueList);
+								DataObject dataObject = LangUtils.combineDataObjects(argumentValueList,
+										this, -1, SCOPE_ID);
 								try {
-									DataObject newDataObject = new DataObject(dataObject != null?dataObject.toText():
-										new DataObject().setVoid().toText()).setVariableName(variableName);
+									DataObject newDataObject = new DataObject(conversions.toText(dataObject == null?
+											new DataObject().setVoid():dataObject, -1, SCOPE_ID)).setVariableName(variableName);
 
 									DataObject old = data.get(NEW_SCOPE_ID).var.put(variableName, newDataObject);
 									if(old != null && old.isStaticData())
@@ -2389,7 +2392,8 @@ public final class LangInterpreter {
 								}
 							}else {
 								//Array varargs
-								List<DataObject> varArgsTmpList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentValueList).stream().
+								List<DataObject> varArgsTmpList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentValueList,
+												this, -1, SCOPE_ID).stream().
 										map(DataObject::new).collect(Collectors.toList());
 								if(varArgsTmpList.isEmpty() && isLastDataObjectArgumentSeparator)
 									varArgsTmpList.add(new DataObject().setVoid());
@@ -2424,7 +2428,8 @@ public final class LangInterpreter {
 
 						if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER) {
 							if(argumentValueList.size() > 0)
-								lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true);
+								lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true,
+										this, -1, SCOPE_ID);
 							else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
 								lastDataObject = new DataObject().setVoid();
 
@@ -2448,7 +2453,8 @@ public final class LangInterpreter {
 						}
 
 						if(argumentValueList.size() > 0)
-							lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true);
+							lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true,
+									this, -1, SCOPE_ID);
 						else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
 							lastDataObject = new DataObject().setVoid();
 
@@ -2809,7 +2815,8 @@ public final class LangInterpreter {
 		
 		if(previousValue.getType() == DataType.TYPE) {
 			List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
+			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					this, node.getLineNumberFrom(), SCOPE_ID);
 			
 			if(combinedArgumentList.size() < 1)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, "Not enough arguments (1 needed)",
@@ -2831,7 +2838,8 @@ public final class LangInterpreter {
 		
 		if(previousValue.getType() == DataType.STRUCT && previousValue.getStruct().isDefinition()) {
 			List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList);
+			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					this, node.getLineNumberFrom(), SCOPE_ID);
 			
 			StructObject struct = previousValue.getStruct();
 			
@@ -2855,7 +2863,8 @@ public final class LangInterpreter {
 
 			List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					this, node.getLineNumberFrom(), SCOPE_ID));
 			if(constructorFunction == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
@@ -3000,7 +3009,8 @@ public final class LangInterpreter {
 			interpretedNodes.add(new DataObject(argumentValue));
 		}
 		
-		List<DataObject> elements = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes);
+		List<DataObject> elements = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes,
+				this, node.getLineNumberFrom(), SCOPE_ID);
 		return new DataObject().setArray(elements.toArray(new DataObject[0]));
 	}
 	
@@ -3100,7 +3110,8 @@ public final class LangInterpreter {
 		List<AbstractSyntaxTree.Node> parentClasses = node.getParentClasses();
 
 		List<DataObject> parentClassList = new LinkedList<>(interpretFunctionPointerArguments(parentClasses, SCOPE_ID));
-		List<DataObject> combinedParentClassList = LangUtils.combineArgumentsWithoutArgumentSeparators(parentClassList);
+		List<DataObject> combinedParentClassList = LangUtils.combineArgumentsWithoutArgumentSeparators(parentClassList,
+				this, node.getLineNumberFrom(), SCOPE_ID);
 
 		List<LangObject> parentClassObjectList = new LinkedList<>();
 		for(DataObject parentClass:combinedParentClassList) {
@@ -3656,12 +3667,12 @@ public final class LangInterpreter {
 				break;
 				
 			case 's':
-				output = dataObject.toText();
+				output = conversions.toText(dataObject, -1, SCOPE_ID);
 				
 				break;
 				
 			case 't':
-				String translationKey = dataObject.toText();
+				String translationKey = conversions.toText(dataObject, -1, SCOPE_ID);
 				
 				output = getData().get(SCOPE_ID).lang.get(translationKey);
 				if(output == null)
@@ -3781,7 +3792,8 @@ public final class LangInterpreter {
 
 			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					this, lineNumber, SCOPE_ID));
 			if(constructorFunction == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
@@ -3812,7 +3824,8 @@ public final class LangInterpreter {
 			//Current constructors for super level instead of normal constructors, because constructors are not overridden
 			FunctionPointerObject[] constructors = langObject.getConstructorsForCurrentSuperLevel();
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					this, lineNumber, SCOPE_ID));
 			if(constructorFunction == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
@@ -3870,7 +3883,8 @@ public final class LangInterpreter {
 
 				fp = member.getFunctionPointer();
 			}else {
-				int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+				int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+						this, lineNumber, SCOPE_ID));
 
 				fp = functionIndex == -1?null:methods[functionIndex];
 				if(fp == null)
@@ -3897,7 +3911,8 @@ public final class LangInterpreter {
 
 		FunctionPointerObject[] superConstructors = langObject.getSuperConstructors();
 
-		FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(superConstructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+		FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(superConstructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+				this, lineNumber, SCOPE_ID));
 		if(constructorFunction == null)
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"No matching function signature was found for the given arguments in any super class of this object." +
@@ -3935,7 +3950,8 @@ public final class LangInterpreter {
 					"The method \"" + rawMethodName + "\" is not in any super class of this object",
 					lineNumber, SCOPE_ID);
 
-		int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+		int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+				this, lineNumber, SCOPE_ID));
 
 		FunctionPointerObject fp = functionIndex == -1?null:methods[functionIndex];
 		if(fp == null)
@@ -4115,9 +4131,10 @@ public final class LangInterpreter {
 	}
 
 	/**
-	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(char|int|long|float|double|byteBuffer|array|list|bool|number)</code>
+	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number)</code>
 	 */
 	private static final String[] CONVERSION_METHOD_NAMES = new String[] {
+			"to:text",
 			"to:char",
 			"to:int",
 			"to:long",

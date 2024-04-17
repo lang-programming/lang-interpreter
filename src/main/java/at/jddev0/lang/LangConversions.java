@@ -43,7 +43,150 @@ public final class LangConversions {
 	}
 
 	//DataType conversion methods
-	//TODO toText
+
+
+	private String convertByteBufferToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		StringBuilder builder = new StringBuilder();
+		if(operand.getByteBuffer().length > 0) {
+			final String HEX_DIGITS = "0123456789ABCDEF";
+
+			builder.append("0x");
+			for(byte b:operand.getByteBuffer()) {
+				builder.append(HEX_DIGITS.charAt((b >> 4) & 0xF));
+				builder.append(HEX_DIGITS.charAt(b & 0xF));
+			}
+		}else {
+			builder.append("<Empty ByteBuffer>");
+		}
+		return builder.toString();
+	}
+
+	private void convertCompositeElementToText(DataObject ele, StringBuilder builder, int lineNumber, final int SCOPE_ID) {
+		if(ele.getType() == DataType.ARRAY) {
+			builder.append("<Array[" + ele.getArray().length + "]>");
+		}else if(ele.getType() == DataType.LIST) {
+			builder.append("<List[" + ele.getList().size() + "]>");
+		}else if(ele.getType() == DataType.VAR_POINTER) {
+			builder.append("-->{");
+			DataObject data = ele.getVarPointer().getVar();
+			if(data != null && data.getType() == DataType.ARRAY) {
+				builder.append("<Array[" + data.getArray().length + "]>");
+			}else if(data != null && data.getType() == DataType.LIST) {
+				builder.append("<List[" + data.getList().size() + "]>");
+			}else if(data != null && data.getType() == DataType.VAR_POINTER) {
+				builder.append("-->{...}");
+			}else if(data != null && data.getType() == DataType.STRUCT) {
+				builder.append(data.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
+			}else {
+				builder.append(data);
+			}
+			builder.append("}");
+		}else if(ele.getType() == DataType.STRUCT) {
+			builder.append(ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
+		}else if(ele.getType() == DataType.OBJECT) {
+			builder.append(ele.getObject().isClass()?"<Class>":"<Object>");
+		}else {
+			builder.append(toText(ele, lineNumber, SCOPE_ID));
+		}
+		builder.append(", ");
+	}
+
+	private String convertArrayToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		StringBuilder builder = new StringBuilder("[");
+		if(operand.getArray().length > 0) {
+			for(DataObject ele:operand.getArray())
+				convertCompositeElementToText(ele, builder, lineNumber, SCOPE_ID);
+			builder.delete(builder.length() - 2, builder.length());
+		}
+		builder.append(']');
+		return builder.toString();
+	}
+
+	private String convertListToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		StringBuilder builder = new StringBuilder("[");
+		if(operand.getList().size() > 0) {
+			for(DataObject ele:operand.getList())
+				convertCompositeElementToText(ele, builder, lineNumber, SCOPE_ID);
+			builder.delete(builder.length() - 2, builder.length());
+		}
+		builder.append(']');
+		return builder.toString();
+	}
+
+	private String convertStructToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		StringBuilder builder = new StringBuilder("{");
+		String[] memberNames = operand.getStruct().getMemberNames();
+		if(memberNames.length > 0) {
+			if(operand.getStruct().isDefinition()) {
+				for(String memberName:memberNames)
+					builder.append(memberName).append(", ");
+			}else {
+				for(String memberName:memberNames) {
+					builder.append(memberName).append(": ");
+					convertCompositeElementToText(operand.getStruct().getMember(memberName), builder, lineNumber, SCOPE_ID);
+				}
+			}
+
+			builder.delete(builder.length() - 2, builder.length());
+		}
+		builder.append('}');
+		return builder.toString();
+	}
+
+	//Conversion functions
+	public String toText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("text", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case TEXT:
+			case ARGUMENT_SEPARATOR:
+				return operand.getText();
+			case BYTE_BUFFER:
+				return convertByteBufferToText(operand, lineNumber, SCOPE_ID);
+			case ARRAY:
+				return convertArrayToText(operand, lineNumber, SCOPE_ID);
+			case LIST:
+				return convertListToText(operand, lineNumber, SCOPE_ID);
+			case VAR_POINTER:
+				DataObject var = operand.getVarPointer().getVar();
+				if(var.getType() == DataType.VAR_POINTER)
+					return "-->{-->{...}}";
+
+				return "-->{" + toText(var, lineNumber, SCOPE_ID) + "}";
+
+			case FUNCTION_POINTER:
+				if(operand.getVariableName() != null)
+					return operand.getVariableName();
+
+				return operand.getFunctionPointer().toString();
+			case STRUCT:
+				return convertStructToText(operand, lineNumber, SCOPE_ID);
+			case OBJECT:
+				return operand.getObject().toString();
+			case VOID:
+				return "";
+			case NULL:
+				return "null";
+			case INT:
+				return operand.getInt() + "";
+			case LONG:
+				return operand.getLong() + "";
+			case FLOAT:
+				return operand.getFloat() + "";
+			case DOUBLE:
+				return operand.getDouble() + "";
+			case CHAR:
+				return operand.getChar() + "";
+			case ERROR:
+				return operand.getError().toString();
+			case TYPE:
+				return operand.getTypeValue().name();
+		}
+
+		return null;
+	}
 	public Character toChar(DataObject operand, int lineNumber, final int SCOPE_ID) {
 		DataObject ret = callConversionMethod("char", operand, lineNumber, SCOPE_ID);
 		if(ret != null)

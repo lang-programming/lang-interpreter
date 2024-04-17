@@ -512,141 +512,9 @@ public class DataObject {
 		return typeConstraint;
 	}
 
-	private String convertByteBufferToText() {
-		StringBuilder builder = new StringBuilder();
-		if(byteBuf.length > 0) {
-			final String HEX_DIGITS = "0123456789ABCDEF";
-
-			builder.append("0x");
-			for(byte b:byteBuf) {
-				builder.append(HEX_DIGITS.charAt((b >> 4) & 0xF));
-				builder.append(HEX_DIGITS.charAt(b & 0xF));
-			}
-		}else {
-			builder.append("<Empty ByteBuffer>");
-		}
-		return builder.toString();
-	}
-
-	private void convertCompositeElementToText(DataObject ele, StringBuilder builder) {
-		if(ele.getType() == DataType.ARRAY) {
-			builder.append("<Array[" + ele.getArray().length + "]>");
-		}else if(ele.getType() == DataType.LIST) {
-			builder.append("<List[" + ele.getList().size() + "]>");
-		}else if(ele.getType() == DataType.VAR_POINTER) {
-			builder.append("-->{");
-			DataObject data = ele.getVarPointer().getVar();
-			if(data != null && data.getType() == DataType.ARRAY) {
-				builder.append("<Array[" + data.getArray().length + "]>");
-			}else if(data != null && data.getType() == DataType.LIST) {
-				builder.append("<List[" + data.getList().size() + "]>");
-			}else if(data != null && data.getType() == DataType.VAR_POINTER) {
-				builder.append("-->{...}");
-			}else if(data != null && data.getType() == DataType.STRUCT) {
-				builder.append(data.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
-			}else {
-				builder.append(data);
-			}
-			builder.append("}");
-		}else if(ele.getType() == DataType.STRUCT) {
-			builder.append(ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
-		}else {
-			builder.append(ele.toText());
-		}
-		builder.append(", ");
-	}
-
-	private String convertArrayToText() {
-		StringBuilder builder = new StringBuilder("[");
-		if(arr.length > 0) {
-			for(DataObject ele:arr)
-				convertCompositeElementToText(ele, builder);
-			builder.delete(builder.length() - 2, builder.length());
-		}
-		builder.append(']');
-		return builder.toString();
-	}
-
-	private String convertListToText() {
-		StringBuilder builder = new StringBuilder("[");
-		if(list.size() > 0) {
-			for(DataObject ele:list)
-				convertCompositeElementToText(ele, builder);
-			builder.delete(builder.length() - 2, builder.length());
-		}
-		builder.append(']');
-		return builder.toString();
-	}
-
-	private String convertStructToText() {
-		StringBuilder builder = new StringBuilder("{");
-		String[] memberNames = sp.getMemberNames();
-		if(memberNames.length > 0) {
-			if(sp.isDefinition()) {
-				for(String memberName:memberNames)
-					builder.append(memberName).append(", ");
-			}else {
-				for(String memberName:memberNames) {
-					builder.append(memberName).append(": ");
-					convertCompositeElementToText(sp.getMember(memberName), builder);
-				}
-			}
-
-			builder.delete(builder.length() - 2, builder.length());
-		}
-		builder.append('}');
-		return builder.toString();
-	}
-
-	//Conversion functions
-	public String toText() {
-		switch(type) {
-			case TEXT:
-			case ARGUMENT_SEPARATOR:
-				return txt;
-			case BYTE_BUFFER:
-				return convertByteBufferToText();
-			case ARRAY:
-				return convertArrayToText();
-			case LIST:
-				return convertListToText();
-			case VAR_POINTER:
-				return vp.toString();
-			case FUNCTION_POINTER:
-				if(variableName != null)
-					return variableName;
-
-				return fp.toString();
-			case STRUCT:
-				return convertStructToText();
-			case OBJECT:
-				return op.toString();
-			case VOID:
-				return "";
-			case NULL:
-				return "null";
-			case INT:
-				return intValue + "";
-			case LONG:
-				return longValue + "";
-			case FLOAT:
-				return floatValue + "";
-			case DOUBLE:
-				return doubleValue + "";
-			case CHAR:
-				return charValue + "";
-			case ERROR:
-				return error.toString();
-			case TYPE:
-				return typeValue.name();
-		}
-
-		return null;
-	}
-
 	@Override
 	public String toString() {
-		return toText();
+		return "<DataObject>";
 	}
 
 	@Override
@@ -1025,14 +893,6 @@ public class DataObject {
 
 		public DataObject getVar() {
 			return var;
-		}
-
-		@Override
-		public String toString() {
-			if(var.getType() == DataType.VAR_POINTER)
-				return "-->{-->{...}}";
-
-			return "-->{" + var.toText() + "}";
 		}
 
 		@Override

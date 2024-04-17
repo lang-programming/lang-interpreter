@@ -532,13 +532,13 @@ public class LangTest {
 		private final String expectedValueOperator;
 		
 		public AssertResultDataObject(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue, String expectedValueOperator) {
+				String actualValueText, DataObject expectedValue, String expectedValueText, String expectedValueOperator) {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.toText();
+			this.actualValueText = actualValueText;
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
-			this.expectedValueText = expectedValue == null?null:expectedValue.toText();
+			this.expectedValueText = expectedValueText;
 			this.expectedValueTypeName = expectedValue == null?null:expectedValue.getType().name();
 			this.expectedValueOperator = expectedValueOperator;
 		}
@@ -571,8 +571,8 @@ public class LangTest {
 	
 	public static final class AssertResultEquals extends AssertResultDataObject {
 		public AssertResultEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, "==");
+								  String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, "==");
 		}
 		
 		@Override
@@ -583,8 +583,8 @@ public class LangTest {
 	
 	public static final class AssertResultNotEquals extends AssertResultDataObject {
 		public AssertResultNotEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, "!=");
+									 String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, "!=");
 		}
 		
 		@Override
@@ -595,8 +595,8 @@ public class LangTest {
 	
 	public static final class AssertResultLessThan extends AssertResultDataObject {
 		public AssertResultLessThan(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, "<");
+									String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, "<");
 		}
 		
 		@Override
@@ -607,8 +607,8 @@ public class LangTest {
 	
 	public static final class AssertResultGreaterThan extends AssertResultDataObject {
 		public AssertResultGreaterThan(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, ">");
+									   String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, ">");
 		}
 		
 		@Override
@@ -619,8 +619,8 @@ public class LangTest {
 	
 	public static final class AssertResultLessThanOrEquals extends AssertResultDataObject {
 		public AssertResultLessThanOrEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, "<=");
+											String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, "<=");
 		}
 		
 		@Override
@@ -631,8 +631,8 @@ public class LangTest {
 	
 	public static final class AssertResultGreaterThanOrEquals extends AssertResultDataObject {
 		public AssertResultGreaterThanOrEquals(boolean testPassed, String stackTrace, String message,
-				DataObject actualValue, DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, ">=");
+				DataObject actualValue, String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, ">=");
 		}
 		
 		@Override
@@ -643,8 +643,8 @@ public class LangTest {
 	
 	public static final class AssertResultStrictEquals extends AssertResultDataObject {
 		public AssertResultStrictEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, "===");
+										String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, "===");
 		}
 		
 		@Override
@@ -654,9 +654,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultStrictNotEquals extends AssertResultDataObject {
-		public AssertResultStrictNotEquals(boolean testPassed, String stackTrace, String message,
-				DataObject actualValue, DataObject expectedValue) {
-			super(testPassed, stackTrace, message, actualValue, expectedValue, "!==");
+		public AssertResultStrictNotEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+										   String actualValueText, DataObject expectedValue, String expectedValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, expectedValue, expectedValueText, "!==");
 		}
 		
 		@Override
@@ -870,11 +870,11 @@ public class LangTest {
 		private final String expectedValue;
 		
 		public AssertResultDataObjectString(boolean testPassed, String stackTrace, String message,
-				DataObject actualValue, String expectedValue) {
+				DataObject actualValue, String actualValueText, String expectedValue) {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.toText();
+			this.actualValueText = actualValueText;
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
 			this.expectedValue = expectedValue;
 		}
@@ -907,8 +907,8 @@ public class LangTest {
 	
 	public static final class AssertResultTypeEquals extends AssertResultDataObjectString {
 		public AssertResultTypeEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject.DataType expectedType) {
-			super(testPassed, stackTrace, message, actualValue, "Type: == " + expectedType);
+									  String actualValueText, DataObject.DataType expectedType) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "Type: == " + expectedType);
 		}
 		
 		@Override
@@ -919,8 +919,8 @@ public class LangTest {
 	
 	public static final class AssertResultTypeNotEquals extends AssertResultDataObjectString {
 		public AssertResultTypeNotEquals(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject.DataType expectedType) {
-			super(testPassed, stackTrace, message, actualValue, "Type: != " + expectedType);
+										 String actualValueText, DataObject.DataType expectedType) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "Type: != " + expectedType);
 		}
 		
 		@Override
@@ -930,8 +930,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultNull extends AssertResultDataObjectString {
-		public AssertResultNull(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "== null");
+		public AssertResultNull(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+								String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "== null");
 		}
 		
 		@Override
@@ -941,8 +942,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultNotNull extends AssertResultDataObjectString {
-		public AssertResultNotNull(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "!= null");
+		public AssertResultNotNull(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+								   String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "!= null");
 		}
 		
 		@Override
@@ -952,8 +954,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultVoid extends AssertResultDataObjectString {
-		public AssertResultVoid(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "== void");
+		public AssertResultVoid(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+								String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "== void");
 		}
 		
 		@Override
@@ -963,8 +966,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultNotVoid extends AssertResultDataObjectString {
-		public AssertResultNotVoid(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "!= void");
+		public AssertResultNotVoid(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+								   String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "!= void");
 		}
 		
 		@Override
@@ -974,8 +978,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultFinal extends AssertResultDataObjectString {
-		public AssertResultFinal(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "== final");
+		public AssertResultFinal(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+								 String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "== final");
 		}
 		
 		@Override
@@ -985,8 +990,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultNotFinal extends AssertResultDataObjectString {
-		public AssertResultNotFinal(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "!= final");
+		public AssertResultNotFinal(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+									String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "!= final");
 		}
 		
 		@Override
@@ -996,8 +1002,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultStatic extends AssertResultDataObjectString {
-		public AssertResultStatic(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "== static");
+		public AssertResultStatic(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+								  String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "== static");
 		}
 		
 		@Override
@@ -1007,8 +1014,9 @@ public class LangTest {
 	}
 	
 	public static final class AssertResultNotStatic extends AssertResultDataObjectString {
-		public AssertResultNotStatic(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
-			super(testPassed, stackTrace, message, actualValue, "!= static");
+		public AssertResultNotStatic(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+									 String actualValueText) {
+			super(testPassed, stackTrace, message, actualValue, actualValueText, "!= static");
 		}
 		
 		@Override
@@ -1074,13 +1082,13 @@ public class LangTest {
 		private final String expectedValueTypeName;
 		
 		public AssertResultReturn(boolean testPassed, String stackTrace, String message, DataObject actualValue,
-				DataObject expectedValue) {
+								  String actualValueText, DataObject expectedValue, String expectedValueText) {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.toText();
+			this.actualValueText = actualValueText;
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
-			this.expectedValueText = expectedValue == null?null:expectedValue.toText();
+			this.expectedValueText = expectedValueText;
 			this.expectedValueTypeName = expectedValue == null?null:expectedValue.getType().name();
 		}
 		
@@ -1123,11 +1131,12 @@ public class LangTest {
 		private final String actualValueText;
 		private final String actualValueTypeName;
 		
-		public AssertResultNoReturn(boolean testPassed, String stackTrace, String message, DataObject actualValue) {
+		public AssertResultNoReturn(boolean testPassed, String stackTrace, String message, DataObject actualValue,
+									String actualValueText) {
 			this.testPassed = testPassed;
 			this.stackTrace = stackTrace;
 			this.message = message;
-			this.actualValueText = actualValue == null?null:actualValue.toText();
+			this.actualValueText = actualValueText;
 			this.actualValueTypeName = actualValue == null?null:actualValue.getType().name();
 		}
 		

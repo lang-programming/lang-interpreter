@@ -61,7 +61,7 @@ public final class LangOperators {
 			return null;
 
 		FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method,
-				LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList));
+				LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber, SCOPE_ID));
 		if(fp == null)
 			return null;
 
@@ -187,17 +187,17 @@ public final class LangOperators {
 
 		switch(leftSideOperand.getType()) {
 			case INT:
-				return new DataObject(leftSideOperand.getInt() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getInt() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case LONG:
-				return new DataObject(leftSideOperand.getLong() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getLong() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case FLOAT:
-				return new DataObject(leftSideOperand.getFloat() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getFloat() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case DOUBLE:
-				return new DataObject(leftSideOperand.getDouble() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getDouble() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case CHAR:
-				return new DataObject(leftSideOperand.getChar() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getChar() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case TEXT:
-				return new DataObject(leftSideOperand.getText() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case BYTE_BUFFER:
 				if(rightSideOperand.getType() != DataType.BYTE_BUFFER)
 					return null;
@@ -619,7 +619,7 @@ public final class LangOperators {
 				}
 				return null;
 			case TEXT:
-				return new DataObject(leftSideOperand.getText() + rightSideOperand.toText());
+				return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
 			case ARRAY:
 				DataObject[] arrNew = new DataObject[leftSideOperand.getArray().length + 1];
 				for(int i = 0;i < leftSideOperand.getArray().length;i++)
@@ -2640,7 +2640,7 @@ public final class LangOperators {
 		
 		switch(leftSideOperand.getTypeValue()) {
 			case TEXT:
-				String txt = rightSideOperand.toText();
+				String txt = interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID);
 				if(txt == null)
 					return null;
 				

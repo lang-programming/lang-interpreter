@@ -160,7 +160,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject,
 				@LangParameter("$text") DataObject textObject
 		) {
-			return new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(), textObject.toText()));
+			return new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(),
+					interpreter.conversions.toText(textObject, -1, SCOPE_ID)));
 		}
 	}
 
@@ -409,7 +410,8 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$translationKey") @VarArgs DataObject translationKeyObject
 		) {
-			String translationValue = interpreter.data.get(SCOPE_ID).lang.get(translationKeyObject.toText());
+			String translationValue = interpreter.data.get(SCOPE_ID).lang.get(
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID));
 			if(translationValue == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.TRANS_KEY_NOT_FOUND, SCOPE_ID);
 
@@ -426,7 +428,8 @@ final class LangPredefinedFunctions {
 			if(count.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$count\") must be >= 0", SCOPE_ID);
 
-			String translationValue = interpreter.data.get(SCOPE_ID).lang.get(translationKeyObject.toText());
+			String translationValue = interpreter.data.get(SCOPE_ID).lang.get(
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID));
 			if(translationValue == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.TRANS_KEY_NOT_FOUND, SCOPE_ID);
 
@@ -591,7 +594,8 @@ final class LangPredefinedFunctions {
 					currentStackElement.getLangFile(), "<exec-code>", currentStackElement.getModule()), -1);
 
 			int originalLineNumber = interpreter.getParserLineNumber();
-			try(BufferedReader lines = new BufferedReader(new StringReader(textObject.toText()))) {
+			try(BufferedReader lines = new BufferedReader(new StringReader(
+					interpreter.conversions.toText(textObject, -1, SCOPE_ID)))) {
 				interpreter.resetParserPositionVars();
 				interpreter.interpretLines(lines, SCOPE_ID);
 
@@ -768,7 +772,7 @@ final class LangPredefinedFunctions {
 			if(interpreter.term == null && !interpreter.executionFlags.allowTermRedirect)
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_TERMINAL, SCOPE_ID);
 
-			String message = messageObject.toText();
+			String message = interpreter.conversions.toText(messageObject, -1, SCOPE_ID);
 
 			if(interpreter.term == null) {
 				interpreter.setErrno(InterpretingError.NO_TERMINAL_WARNING, SCOPE_ID);
@@ -817,7 +821,7 @@ final class LangPredefinedFunctions {
 			if(level == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_LOG_LEVEL, SCOPE_ID);
 
-			String text = textObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 
 			if(interpreter.term == null) {
 				interpreter.setErrno(InterpretingError.NO_TERMINAL_WARNING, SCOPE_ID);
@@ -853,7 +857,7 @@ final class LangPredefinedFunctions {
 			else
 				level = Level.INFO;
 
-			String text = textObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 
 			if(interpreter.term == null) {
 				@SuppressWarnings("resource")
@@ -908,7 +912,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			System.out.print(textObject.toText());
+			System.out.print(interpreter.conversions.toText(textObject, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -919,7 +923,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			System.out.println(textObject.toText());
+			System.out.println(interpreter.conversions.toText(textObject, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -931,11 +935,12 @@ final class LangPredefinedFunctions {
 				@LangParameter("$format") DataObject formatObject,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			DataObject out = interpreter.formatText(formatObject.toText(), args, SCOPE_ID);
+			DataObject out = interpreter.formatText(
+					interpreter.conversions.toText(formatObject, -1, SCOPE_ID), args, SCOPE_ID);
 			if(out.getType() == DataType.ERROR)
 				return out;
 
-			System.out.print(out.toText());
+			System.out.print(interpreter.conversions.toText(out, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -946,7 +951,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			System.err.print(textObject.toText());
+			System.err.print(interpreter.conversions.toText(textObject, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -957,7 +962,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			System.err.println(textObject.toText());
+			System.err.println(interpreter.conversions.toText(textObject, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -969,11 +974,13 @@ final class LangPredefinedFunctions {
 				@LangParameter("$format") DataObject formatObject,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			DataObject out = interpreter.formatText(formatObject.toText(), args, SCOPE_ID);
+			DataObject out = interpreter.formatText(
+					interpreter.conversions.toText(formatObject, -1, SCOPE_ID), args, SCOPE_ID);
 			if(out.getType() == DataType.ERROR)
 				return out;
 
-			System.err.print(out.toText());
+			System.err.print(
+					interpreter.conversions.toText(out, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -989,7 +996,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$bin") DataObject binObject
 		) {
-			String binString = binObject.toText();
+			String binString = interpreter.conversions.toText(binObject, -1, SCOPE_ID);
 			if(!binString.startsWith("0b") && !binString.startsWith("0B"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_BIN_NUM, "Wrong prefix (Should be 0b or 0B)", SCOPE_ID);
 
@@ -1006,7 +1013,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$oct") DataObject octObject
 		) {
-			String octString = octObject.toText();
+			String octString = interpreter.conversions.toText(octObject, -1, SCOPE_ID);
 			if(!octString.startsWith("0o") && !octString.startsWith("0O"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_OCT_NUM, "Wrong prefix (Should be 0o or 0O)", SCOPE_ID);
 
@@ -1023,7 +1030,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$hex") DataObject hexObject
 		) {
-			String hexString = hexObject.toText();
+			String hexString = interpreter.conversions.toText(hexObject, -1, SCOPE_ID);
 			if(!hexString.startsWith("0x") && !hexString.startsWith("0X"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_HEX_NUM, "Wrong prefix (Should be 0x or 0X)", SCOPE_ID);
 
@@ -1041,7 +1048,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$number") DataObject numberObject,
 				@LangParameter("$base") @NumberValue Number base
 		) {
-			String numberString = numberObject.toText();
+			String numberString = interpreter.conversions.toText(numberObject, -1, SCOPE_ID);
 
 			if(base.intValue() < 2 || base.intValue() > 36)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_NUMBER_BASE,
@@ -1173,7 +1180,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject
 		) {
-			String str = textObject.toText();
+			String str = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			try {
 				return new DataObject().setInt(Integer.parseInt(str));
 			}catch(NumberFormatException e) {
@@ -1187,7 +1194,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject
 		) {
-			String str = textObject.toText();
+			String str = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			try {
 				return new DataObject().setLong(Long.parseLong(str));
 			}catch(NumberFormatException e) {
@@ -1201,7 +1208,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject
 		) {
-			String str = textObject.toText();
+			String str = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 
 			if(str.isEmpty())
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$text\") can not be converted to a FLOAT value", SCOPE_ID);
@@ -1224,7 +1231,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject
 		) {
-			String str = textObject.toText();
+			String str = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 
 			if(str.isEmpty())
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$text\") can not be converted to a DOUBLE value", SCOPE_ID);
@@ -1333,7 +1340,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") DataObject textObject
 		) {
-			String str = textObject.toText();
+			String str = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			if(str.length() == 1)
 				return new DataObject().setChar(str.charAt(0));
 
@@ -1351,7 +1358,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setInt(textObject.toText().length());
+			return new DataObject().setInt(interpreter.conversions.toText(textObject, -1, SCOPE_ID).length());
 		}
 
 		@LangFunction("isEmpty")
@@ -1360,7 +1367,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setBoolean(textObject.toText().isEmpty());
+			return new DataObject().setBoolean(interpreter.conversions.toText(textObject, -1, SCOPE_ID).isEmpty());
 		}
 
 		@LangFunction("isNotEmpty")
@@ -1369,7 +1376,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setBoolean(!textObject.toText().isEmpty());
+			return new DataObject().setBoolean(!interpreter.conversions.toText(textObject, -1, SCOPE_ID).isEmpty());
 		}
 
 		@LangFunction("isBlank")
@@ -1378,7 +1385,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setBoolean(textObject.toText().trim().isEmpty());
+			return new DataObject().setBoolean(interpreter.conversions.toText(textObject, -1, SCOPE_ID).trim().isEmpty());
 		}
 
 		@LangFunction("isNotBlank")
@@ -1387,7 +1394,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setBoolean(!textObject.toText().trim().isEmpty());
+			return new DataObject().setBoolean(!interpreter.conversions.toText(textObject, -1, SCOPE_ID).trim().isEmpty());
 		}
 
 		@LangFunction("toUpper")
@@ -1396,7 +1403,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setText(textObject.toText().toUpperCase());
+			return new DataObject().setText(interpreter.conversions.toText(textObject, -1, SCOPE_ID).toUpperCase());
 		}
 
 		@LangFunction("toLower")
@@ -1405,7 +1412,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setText(textObject.toText().toLowerCase());
+			return new DataObject().setText(interpreter.conversions.toText(textObject, -1, SCOPE_ID).toLowerCase());
 		}
 
 		@LangFunction("trim")
@@ -1414,7 +1421,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			return new DataObject().setText(textObject.toText().trim());
+			return new DataObject().setText(interpreter.conversions.toText(textObject, -1, SCOPE_ID).trim());
 		}
 
 		@LangFunction("replace")
@@ -1426,7 +1433,9 @@ final class LangPredefinedFunctions {
 				@LangParameter("$replacement") @VarArgs DataObject replacementObject
 		) {
 			try {
-				return new DataObject(LangRegEx.replace(textObject.toText(), regexObject.toText(), replacementObject.toText()));
+				return new DataObject(LangRegEx.replace(interpreter.conversions.toText(textObject, -1, SCOPE_ID),
+						interpreter.conversions.toText(regexObject, -1, SCOPE_ID),
+						interpreter.conversions.toText(replacementObject, -1, SCOPE_ID)));
 			}catch(InvalidPaternSyntaxException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), SCOPE_ID);
 			}
@@ -1451,9 +1460,9 @@ final class LangPredefinedFunctions {
 		) {
 			try {
 				if(endIndex == null)
-					return new DataObject(textObject.toText().substring(startIndex.intValue()));
+					return new DataObject(interpreter.conversions.toText(textObject, -1, SCOPE_ID).substring(startIndex.intValue()));
 
-				return new DataObject(textObject.toText().substring(startIndex.intValue(), endIndex.intValue()));
+				return new DataObject(interpreter.conversions.toText(textObject, -1, SCOPE_ID).substring(startIndex.intValue(), endIndex.intValue()));
 			}catch(StringIndexOutOfBoundsException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, SCOPE_ID);
 			}
@@ -1466,7 +1475,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$index") @NumberValue Number indexNumber
 		) {
-			String txt = textObject.toText();
+			String txt = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			int len = txt.length();
 
 			int index = indexNumber.intValue();
@@ -1490,8 +1499,8 @@ final class LangPredefinedFunctions {
 		) {
 			int len = lenNum.intValue();
 
-			String text = textObject.toText();
-			String paddingText = paddingTextObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
+			String paddingText = interpreter.conversions.toText(paddingTextObject, -1, SCOPE_ID);
 
 			if(paddingText.length() == 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The padding text must not be empty", SCOPE_ID);
@@ -1520,8 +1529,8 @@ final class LangPredefinedFunctions {
 		) {
 			int len = lenNum.intValue();
 
-			String text = textObject.toText();
-			String paddingText = paddingTextObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
+			String paddingText = interpreter.conversions.toText(paddingTextObject, -1, SCOPE_ID);
 
 			if(paddingText.length() == 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The padding text must not be empty", SCOPE_ID);
@@ -1546,7 +1555,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$format") DataObject formatObject,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			return interpreter.formatText(formatObject.toText(), args, SCOPE_ID);
+			return interpreter.formatText(interpreter.conversions.toText(formatObject, -1, SCOPE_ID), args, SCOPE_ID);
 		}
 
 		@LangFunction("formatTemplatePluralization")
@@ -1559,7 +1568,7 @@ final class LangPredefinedFunctions {
 			if(count.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Count must be >= 0", SCOPE_ID);
 
-			String translationValue = translationValueObject.toText();
+			String translationValue = interpreter.conversions.toText(translationValueObject, -1, SCOPE_ID);
 
 			try {
 				return new DataObject(LangUtils.formatTranslationTemplatePluralization(translationValue, count.intValue()));
@@ -1577,7 +1586,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$haystack") DataObject haystackObject,
 				@LangParameter("$needle") DataObject needleObject
 		) {
-			return new DataObject().setBoolean(haystackObject.toText().contains(needleObject.toText()));
+			return new DataObject().setBoolean(interpreter.conversions.toText(haystackObject, -1, SCOPE_ID).
+					contains(interpreter.conversions.toText(needleObject, -1, SCOPE_ID)));
 		}
 
 		@LangFunction(value="indexOf", hasInfo=true)
@@ -1587,7 +1597,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$searchText") DataObject searchTextObject
 		) {
-			return new DataObject().setInt(textObject.toText().indexOf(searchTextObject.toText()));
+			return new DataObject().setInt(interpreter.conversions.toText(textObject, -1, SCOPE_ID).
+					indexOf(interpreter.conversions.toText(searchTextObject, -1, SCOPE_ID)));
 		}
 		@LangFunction("indexOf")
 		@AllowedTypes(DataObject.DataType.INT)
@@ -1597,7 +1608,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$searchText") DataObject searchTextObject,
 				@LangParameter("$fromIndex") @NumberValue Number fromIndexNumber
 		) {
-			String txt = textObject.toText();
+			String txt = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			int len = txt.length();
 			int fromIndex = fromIndexNumber.intValue();
 			if(fromIndex < 0)
@@ -1606,7 +1617,8 @@ final class LangPredefinedFunctions {
 			if(fromIndex < 0 || fromIndex >= len)
 				return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, SCOPE_ID);
 
-			return new DataObject().setInt(textObject.toText().indexOf(searchTextObject.toText(), fromIndex));
+			return new DataObject().setInt(interpreter.conversions.toText(textObject, -1, SCOPE_ID).
+					indexOf(interpreter.conversions.toText(searchTextObject, -1, SCOPE_ID), fromIndex));
 		}
 
 		@LangFunction(value="lastIndexOf", hasInfo=true)
@@ -1616,7 +1628,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$searchText") DataObject searchTextObject
 		) {
-			return new DataObject().setInt(textObject.toText().lastIndexOf(searchTextObject.toText()));
+			return new DataObject().setInt(interpreter.conversions.toText(textObject, -1, SCOPE_ID).
+					lastIndexOf(interpreter.conversions.toText(searchTextObject, -1, SCOPE_ID)));
 		}
 		@LangFunction("lastIndexOf")
 		@AllowedTypes(DataObject.DataType.INT)
@@ -1626,7 +1639,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$searchText") DataObject searchTextObject,
 				@LangParameter("$toIndex") @NumberValue Number toIndexNumber
 		) {
-			String txt = textObject.toText();
+			String txt = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			int len = txt.length();
 			int toIndex = toIndexNumber.intValue();
 			if(toIndex < 0)
@@ -1635,7 +1648,8 @@ final class LangPredefinedFunctions {
 			if(toIndex < 0 || toIndex >= len)
 				return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, SCOPE_ID);
 
-			return new DataObject().setInt(textObject.toText().lastIndexOf(searchTextObject.toText(), toIndex));
+			return new DataObject().setInt(interpreter.conversions.toText(textObject, -1, SCOPE_ID).
+					lastIndexOf(interpreter.conversions.toText(searchTextObject, -1, SCOPE_ID), toIndex));
 		}
 
 		@LangFunction("startsWith")
@@ -1645,7 +1659,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$prefix") DataObject prefixObject
 		) {
-			return new DataObject().setBoolean(textObject.toText().startsWith(prefixObject.toText()));
+			return new DataObject().setBoolean(interpreter.conversions.toText(textObject, -1, SCOPE_ID).
+					startsWith(interpreter.conversions.toText(prefixObject, -1, SCOPE_ID)));
 		}
 
 		@LangFunction("endsWith")
@@ -1655,7 +1670,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$text") DataObject textObject,
 				@LangParameter("$suffix") DataObject suffixObject
 		) {
-			return new DataObject().setBoolean(textObject.toText().endsWith(suffixObject.toText()));
+			return new DataObject().setBoolean(interpreter.conversions.toText(textObject, -1, SCOPE_ID).
+					endsWith(interpreter.conversions.toText(suffixObject, -1, SCOPE_ID)));
 		}
 
 		@LangFunction("matches")
@@ -1666,7 +1682,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$regex") DataObject regexObject
 		) {
 			try {
-				return new DataObject().setBoolean(LangRegEx.matches(textObject.toText(), regexObject.toText()));
+				return new DataObject().setBoolean(LangRegEx.matches(interpreter.conversions.toText(textObject, -1, SCOPE_ID),
+						interpreter.conversions.toText(regexObject, -1, SCOPE_ID)));
 			}catch(InvalidPaternSyntaxException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), SCOPE_ID);
 			}
@@ -1682,7 +1699,7 @@ final class LangPredefinedFunctions {
 			if(count.intValue() < 0)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Count must be >= 0", SCOPE_ID);
 
-			String text = textObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 
 			StringBuilder builder = new StringBuilder();
 			for(int i = 0;i < count.intValue();i++)
@@ -1697,7 +1714,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject
 		) {
-			String text = textObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			char[] chars = text.toCharArray();
 			DataObject[] arr = new DataObject[chars.length];
 
@@ -1714,10 +1731,11 @@ final class LangPredefinedFunctions {
 				@LangParameter("$text") @VarArgs DataObject textObject,
 				@LangParameter("&collection") @AllowedTypes({DataObject.DataType.ARRAY, DataObject.DataType.LIST}) DataObject collectionObject
 		) {
-			String text = textObject.toText();
+			String text = interpreter.conversions.toText(textObject, -1, SCOPE_ID);
 			Stream<DataObject> dataObjectStream = collectionObject.getType() == DataType.ARRAY?Arrays.stream(collectionObject.getArray()):collectionObject.getList().stream();
 
-			return new DataObject(dataObjectStream.map(DataObject::toText).collect(Collectors.joining(text)));
+			return new DataObject(dataObjectStream.map(ele ->
+					interpreter.conversions.toText(ele, -1, SCOPE_ID)).collect(Collectors.joining(text)));
 		}
 
 		@LangFunction(value="split", hasInfo=true)
@@ -1740,9 +1758,11 @@ final class LangPredefinedFunctions {
 			String[] arrTmp;
 			try {
 				if(maxSplitCount == null) {
-					arrTmp = LangRegEx.split(textObject.toText(), regexObject.toText());
+					arrTmp = LangRegEx.split(interpreter.conversions.toText(textObject, -1, SCOPE_ID),
+							interpreter.conversions.toText(regexObject, -1, SCOPE_ID));
 				}else {
-					arrTmp = LangRegEx.split(textObject.toText(), regexObject.toText(), maxSplitCount.intValue());
+					arrTmp = LangRegEx.split(interpreter.conversions.toText(textObject, -1, SCOPE_ID),
+							interpreter.conversions.toText(regexObject, -1, SCOPE_ID), maxSplitCount.intValue());
 				}
 			}catch(InvalidPaternSyntaxException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), SCOPE_ID);
@@ -1767,7 +1787,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$value") DataObject valueObject
 		) {
-			String value = valueObject.toText();
+			String value = interpreter.conversions.toText(valueObject, -1, SCOPE_ID);
 			if(value == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 						"Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.TEXT, SCOPE_ID);
@@ -8047,7 +8067,8 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
 		) {
-			return new DataObject(Arrays.stream(arrayObject.getArray()).map(DataObject::toText).collect(Collectors.joining(", ")));
+			return new DataObject(Arrays.stream(arrayObject.getArray()).map(ele ->
+					interpreter.conversions.toText(ele, -1, SCOPE_ID)).collect(Collectors.joining(", ")));
 		}
 
 		@LangFunction("arrayRead")
@@ -9146,7 +9167,8 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
 		) {
-			return new DataObject(listObject.getList().stream().map(DataObject::toText).collect(Collectors.joining(", ")));
+			return new DataObject(listObject.getList().stream().map(ele ->
+					interpreter.conversions.toText(ele, -1, SCOPE_ID)).collect(Collectors.joining(", ")));
 		}
 
 		@LangFunction("listFill")
@@ -10357,7 +10379,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject
 		) {
-			String moduleName = moduleNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(moduleName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The module name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10375,7 +10397,7 @@ final class LangPredefinedFunctions {
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$moduleName") DataObject moduleNameObject
 		) {
-			String moduleName = moduleNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(moduleName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The module name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10393,8 +10415,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$moduleName") DataObject moduleNameObject,
 				@LangParameter("$variableName") DataObject variableNameObject
 		) {
-			String moduleName = moduleNameObject.toText();
-			String variableName = variableNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(moduleName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The module name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10430,8 +10452,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$moduleName") DataObject moduleNameObject,
 				@LangParameter("$variableName") DataObject variableNameObject
 		) {
-			String moduleName = moduleNameObject.toText();
-			String variableName = variableNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(moduleName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The module name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10459,8 +10481,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$moduleName") DataObject moduleNameObject,
 				@LangParameter("$variableName") DataObject variableNameObject
 		) {
-			String moduleName = moduleNameObject.toText();
-			String variableName = variableNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(moduleName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The module name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10488,8 +10510,8 @@ final class LangPredefinedFunctions {
 				@LangParameter("$moduleName") DataObject moduleNameObject,
 				@LangParameter("$variableName") DataObject variableNameObject
 		) {
-			String moduleName = moduleNameObject.toText();
-			String variableName = variableNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(moduleName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The module name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10523,7 +10545,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportFunction\" can only be used inside a module which "
 						+ "is in the \"load\" state", SCOPE_ID);
 
-			String functionName = functionNameObject.toText();
+			String functionName = interpreter.conversions.toText(functionNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(functionName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The function name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10557,7 +10579,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportLinkerFunction\" can only be used inside a module which "
 						+ "is in the \"load\" state", SCOPE_ID);
 
-			String functionName = functionNameObject.toText();
+			String functionName = interpreter.conversions.toText(functionNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(functionName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The function name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10601,7 +10623,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
 						+ "is in the \"load\" state", SCOPE_ID);
 
-			String variableName = variableNameObject.toText();
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(variableName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The variable name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10635,7 +10657,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
 						+ "is in the \"load\" state", SCOPE_ID);
 
-			String variableName = variableNameObject.toText();
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(variableName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The variable name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10669,7 +10691,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
 						+ "is in the \"load\" state", SCOPE_ID);
 
-			String variableName = variableNameObject.toText();
+			String variableName = interpreter.conversions.toText(variableNameObject, -1, SCOPE_ID);
 
 			if(containsNonWordChars(variableName))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The variable name may only contain alphanumeric characters and underscore (_)", SCOPE_ID);
@@ -10695,7 +10717,7 @@ final class LangPredefinedFunctions {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
-			interpreter.langTestStore.addUnit(textObject.toText());
+			interpreter.langTestStore.addUnit(interpreter.conversions.toText(textObject, -1, SCOPE_ID));
 
 			return null;
 		}
@@ -10710,7 +10732,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			try {
-				interpreter.langTestStore.addSubUnit(textObject.toText());
+				interpreter.langTestStore.addSubUnit(interpreter.conversions.toText(textObject, -1, SCOPE_ID));
 			}catch(IllegalStateException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, e.getMessage(), SCOPE_ID);
 			}
@@ -10740,7 +10762,8 @@ final class LangPredefinedFunctions {
 			InterpretingError expectedError = errorObject.getError().getInterprettingError();
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultError(langErrno == expectedError,
-					interpreter.printStackTrace(-1), messageObject == null?null:messageObject.toText(), langErrno,
+					interpreter.printStackTrace(-1), messageObject == null?null:
+					interpreter.conversions.toText(messageObject, -1, SCOPE_ID), langErrno,
 							expectedError));
 
 			return null;
@@ -10768,7 +10791,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultEquals(
 					interpreter.operators.isEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10795,7 +10820,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNotEquals(
 					!interpreter.operators.isEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10822,7 +10849,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultLessThan(
 					interpreter.operators.isLessThan(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10849,7 +10878,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultLessThanOrEquals(
 					interpreter.operators.isLessThanOrEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10876,7 +10907,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultGreaterThan(
 					interpreter.operators.isGreaterThan(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10903,7 +10936,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultGreaterThanOrEquals(
 					interpreter.operators.isGreaterThanOrEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10930,7 +10965,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultStrictEquals(
 					interpreter.operators.isStrictEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10957,7 +10994,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultStrictNotEquals(
 					!interpreter.operators.isStrictEquals(actualValueObject, expectedValueObject, -1, SCOPE_ID), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedValueObject, expectedValueObject == null?null:interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -10982,11 +11021,15 @@ final class LangPredefinedFunctions {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
-			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(translationKeyObject.toText());
+			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID));
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultTranslationValueEquals(
-					translationValue != null && translationValue.equals(expectedValueObject.toText()),
-					interpreter.printStackTrace(-1), messageObject == null?null:messageObject.toText(),
-							translationKeyObject.toText(), translationValue, expectedValueObject.toText()));
+					translationValue != null && translationValue.equals(
+							interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)),
+					interpreter.printStackTrace(-1),
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID), translationValue,
+					interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11011,11 +11054,15 @@ final class LangPredefinedFunctions {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
-			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(translationKeyObject.toText());
+			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID));
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultTranslationValueNotEquals(
-					translationValue != null && !translationValue.equals(expectedValueObject.toText()),
-					interpreter.printStackTrace(-1), messageObject == null?null:messageObject.toText(),
-							translationKeyObject.toText(), translationValue, expectedValueObject.toText()));
+					translationValue != null && !translationValue.equals(
+							interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)),
+					interpreter.printStackTrace(-1),
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID), translationValue,
+					interpreter.conversions.toText(expectedValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11038,10 +11085,12 @@ final class LangPredefinedFunctions {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
-			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(translationKeyObject.toText());
+			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID));
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultTranslationKeyFound(
 					translationValue != null, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), translationKeyObject.toText(), translationValue));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID), translationValue));
 
 			return null;
 		}
@@ -11064,10 +11113,12 @@ final class LangPredefinedFunctions {
 			if(!interpreter.executionFlags.langTest)
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
-			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(translationKeyObject.toText());
+			String translationValue = interpreter.getData().get(SCOPE_ID).lang.get(
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID));
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultTranslationKeyNotFound(
 					translationValue == null, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), translationKeyObject.toText(), translationValue));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					interpreter.conversions.toText(translationKeyObject, -1, SCOPE_ID), translationValue));
 
 			return null;
 		}
@@ -11096,7 +11147,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultTypeEquals(
 					actualValueObject.getType() == expectedType, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedType));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedType));
 
 			return null;
 		}
@@ -11125,7 +11178,9 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultTypeNotEquals(
 					actualValueObject.getType() != expectedType, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject, expectedType));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID),
+					expectedType));
 
 			return null;
 		}
@@ -11150,7 +11205,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNull(
 					actualValueObject.getType() == DataType.NULL, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11175,7 +11231,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNotNull(
 					actualValueObject.getType() != DataType.NULL, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11200,7 +11257,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultVoid(
 					actualValueObject.getType() == DataType.VOID, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11225,7 +11283,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNotVoid(
 					actualValueObject.getType() != DataType.VOID, interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11249,8 +11308,9 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultFinal(actualValueObject.isFinalData(),
-					interpreter.printStackTrace(-1), messageObject == null?null:messageObject.toText(),
-					actualValueObject));
+					interpreter.printStackTrace(-1),
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11275,7 +11335,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNotFinal(
 					!actualValueObject.isFinalData(), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11300,7 +11361,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultStatic(
 					actualValueObject.isStaticData(), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11325,7 +11387,8 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultNotStatic(
 					!actualValueObject.isStaticData(), interpreter.printStackTrace(-1),
-					messageObject == null?null:messageObject.toText(), actualValueObject));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID),
+					actualValueObject, actualValueObject == null?null:interpreter.conversions.toText(actualValueObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11352,7 +11415,7 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestExpectedReturnValueScopeID = SCOPE_ID;
 			interpreter.langTestExpectedThrowValue = expectedError;
-			interpreter.langTestMessageForLastTestResult = messageObject == null?null:messageObject.toText();
+			interpreter.langTestMessageForLastTestResult = messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID);
 
 			return null;
 		}
@@ -11377,7 +11440,7 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestExpectedReturnValueScopeID = SCOPE_ID;
 			interpreter.langTestExpectedReturnValue = expectedReturnValueObject;
-			interpreter.langTestMessageForLastTestResult = messageObject == null?null:messageObject.toText();
+			interpreter.langTestMessageForLastTestResult = messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID);
 
 			return null;
 		}
@@ -11400,7 +11463,7 @@ final class LangPredefinedFunctions {
 
 			interpreter.langTestExpectedReturnValueScopeID = SCOPE_ID;
 			interpreter.langTestExpectedNoReturnValue = true;
-			interpreter.langTestMessageForLastTestResult = messageObject == null?null:messageObject.toText();
+			interpreter.langTestMessageForLastTestResult = messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID);
 
 			return null;
 		}
@@ -11415,7 +11478,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true", SCOPE_ID);
 
 			interpreter.langTestStore.addAssertResult(new LangTest.AssertResultFail(interpreter.printStackTrace(-1),
-					messageObject.toText()));
+					messageObject == null?null:interpreter.conversions.toText(messageObject, -1, SCOPE_ID)));
 
 			return null;
 		}
@@ -11459,7 +11522,8 @@ final class LangPredefinedFunctions {
 
 		private static DataObject executeLinkerFunction(LangInterpreter interpreter, String langFileName,
 				List<DataObject> args, Consumer<Integer> function, int SCOPE_ID) {
-			String[] langArgs = args.stream().map(DataObject::toText).collect(Collectors.toList()).toArray(new String[0]);
+			String[] langArgs = args.stream().map(ele ->
+					interpreter.conversions.toText(ele, -1, SCOPE_ID)).collect(Collectors.toList()).toArray(new String[0]);
 			if(!langFileName.endsWith(".lang"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_LANG_FILE, SCOPE_ID);
 
@@ -11533,7 +11597,8 @@ final class LangPredefinedFunctions {
 					@LangInfo("Arguments which are set as &LANG_ARGS of the executed lang file")
 					@VarArgs List<DataObject> args
 		) {
-			return executeLinkerFunction(interpreter, fileNameObject.toText(), args, NEW_SCOPE_ID -> {
+			return executeLinkerFunction(interpreter, interpreter.conversions.toText(fileNameObject, -1, SCOPE_ID),
+					args, NEW_SCOPE_ID -> {
 				//Copy all vars
 				interpreter.data.get(NEW_SCOPE_ID).var.forEach((name, val) -> {
 					DataObject oldData = interpreter.data.get(SCOPE_ID).var.get(name);
@@ -11555,7 +11620,8 @@ final class LangPredefinedFunctions {
 					@LangInfo("Arguments which are set as &LANG_ARGS of the executed lang file")
 					@VarArgs List<DataObject> args
 		) {
-			return executeLinkerFunction(interpreter, fileNameObject.toText(), args, NEW_SCOPE_ID -> {
+			return executeLinkerFunction(interpreter, interpreter.conversions.toText(fileNameObject, -1, SCOPE_ID),
+					args, NEW_SCOPE_ID -> {
 				//Copy linked translation map (except "lang.* = *") to the "link caller"'s translation map
 				interpreter.data.get(NEW_SCOPE_ID).lang.forEach((k, v) -> {
 					if(!k.startsWith("lang.")) {
@@ -11576,7 +11642,8 @@ final class LangPredefinedFunctions {
 					@LangInfo("Arguments which are set as &LANG_ARGS of the executed lang file")
 					@VarArgs List<DataObject> args
 		) {
-			return executeLinkerFunction(interpreter, fileNameObject.toText(), args, NEW_SCOPE_ID -> {
+			return executeLinkerFunction(interpreter, interpreter.conversions.toText(fileNameObject, -1, SCOPE_ID),
+					args, NEW_SCOPE_ID -> {
 				//Copy linked translation map (except "lang.* = *") to the "link caller"'s translation map
 				interpreter.data.get(NEW_SCOPE_ID).lang.forEach((k, v) -> {
 					if(!k.startsWith("lang.")) {
@@ -11600,7 +11667,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$moduleFile") DataObject moduleFileObject,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			String moduleFile = moduleFileObject.toText();
+			String moduleFile = interpreter.conversions.toText(moduleFileObject, -1, SCOPE_ID);
 
 			if(!moduleFile.endsWith(".lm"))
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_LANG_FILE, "Modules must have a file extension of\".lm\"", SCOPE_ID);
@@ -11617,7 +11684,7 @@ final class LangPredefinedFunctions {
 				@LangParameter("$moduleName") DataObject moduleNameObject,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			String moduleName = moduleNameObject.toText();
+			String moduleName = interpreter.conversions.toText(moduleNameObject, -1, SCOPE_ID);
 			for(int i = 0;i < moduleName.length();i++) {
 				char c = moduleName.charAt(i);
 				if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
@@ -11640,7 +11707,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"moduleLoadNative\" can only be used inside a module which "
 						+ "is in the \"load\" state", SCOPE_ID);
 
-			String entryPoint = entryPointObject.toText();
+			String entryPoint = interpreter.conversions.toText(entryPointObject, -1, SCOPE_ID);
 
 			return interpreter.moduleManager.loadNative(entryPoint, module, LangUtils.separateArgumentsWithArgumentSeparators(args), SCOPE_ID);
 		}
@@ -11656,7 +11723,7 @@ final class LangPredefinedFunctions {
 				return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"moduleUnloadNative\" can only be used inside a module which "
 						+ "is in the \"unload\" state", SCOPE_ID);
 
-			String entryPoint = entryPointObject.toText();
+			String entryPoint = interpreter.conversions.toText(entryPointObject, -1, SCOPE_ID);
 
 			return interpreter.moduleManager.unloadNative(entryPoint, module, LangUtils.separateArgumentsWithArgumentSeparators(args), SCOPE_ID);
 		}
