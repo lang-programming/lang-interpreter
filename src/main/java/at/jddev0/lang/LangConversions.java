@@ -124,6 +124,53 @@ public final class LangConversions {
 
 		return null;
 	}
+	public Long toLong(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("long", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case TEXT:
+				if(operand.getText().trim().length() == operand.getText().length()) {
+					try {
+						return Long.parseLong(operand.getText());
+					}catch(NumberFormatException ignore) {}
+				}
+
+				return null;
+			case CHAR:
+				return (long)operand.getChar();
+			case INT:
+				return (long)operand.getInt();
+			case LONG:
+				return operand.getLong();
+			case FLOAT:
+				return (long)operand.getFloat();
+			case DOUBLE:
+				return (long)operand.getDouble();
+			case ERROR:
+				return (long)operand.getError().getErrno();
+			case BYTE_BUFFER:
+				return (long)operand.getByteBuffer().length;
+			case ARRAY:
+				return (long)operand.getArray().length;
+			case LIST:
+				return (long)operand.getList().size();
+			case STRUCT:
+				return (long)operand.getStruct().getMemberNames().length;
+
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
 
 	//Special conversion methods
 	public boolean toBool(DataObject operand, int lineNumber, final int SCOPE_ID) {

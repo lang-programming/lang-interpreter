@@ -4115,11 +4115,12 @@ public final class LangInterpreter {
 	}
 
 	/**
-	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(char|int|bool|number)</code>
+	 * LangPatterns: CONVERSION_METHOD_NAME <code>to:(char|int|long|bool|number)</code>
 	 */
 	private static final String[] CONVERSION_METHOD_NAMES = new String[] {
 			"to:char",
 			"to:int",
+			"to:long",
 
 			"to:bool",
 			"to:number"

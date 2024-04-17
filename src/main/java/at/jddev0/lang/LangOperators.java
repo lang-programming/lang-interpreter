@@ -2658,7 +2658,7 @@ public final class LangOperators {
 				
 				return new DataObject().setInt(i);
 			case LONG:
-				Long l = rightSideOperand.toLong();
+				Long l = interpreter.conversions.toLong(rightSideOperand, lineNumber, SCOPE_ID);
 				if(l == null)
 					return null;
 				
