@@ -275,6 +275,37 @@ public final class LangConversions {
 
 		return null;
 	}
+	public byte[] toByteBuffer(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callConversionMethod("byteBuffer", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			operand = ret;
+
+		switch(operand.getType()) {
+			case BYTE_BUFFER:
+				return operand.getByteBuffer();
+
+			case TEXT:
+			case CHAR:
+			case INT:
+			case LONG:
+			case FLOAT:
+			case DOUBLE:
+			case ARRAY:
+			case LIST:
+			case ERROR:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case STRUCT:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
 
 	//Special conversion methods
 	public boolean toBool(DataObject operand, int lineNumber, final int SCOPE_ID) {

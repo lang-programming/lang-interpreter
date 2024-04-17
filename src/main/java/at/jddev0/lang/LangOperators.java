@@ -2676,7 +2676,7 @@ public final class LangOperators {
 				
 				return new DataObject().setDouble(d);
 			case BYTE_BUFFER:
-				byte[] byteBuffer = rightSideOperand.toByteBuffer();
+				byte[] byteBuffer = interpreter.conversions.toByteBuffer(rightSideOperand, lineNumber, SCOPE_ID);
 				if(byteBuffer == null)
 					return null;
 				

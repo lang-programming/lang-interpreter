@@ -643,33 +643,6 @@ public class DataObject {
 
 		return null;
 	}
-	public byte[] toByteBuffer() {
-		switch(type) {
-			case BYTE_BUFFER:
-				return byteBuf;
-
-			case TEXT:
-			case CHAR:
-			case INT:
-			case LONG:
-			case FLOAT:
-			case DOUBLE:
-			case ARRAY:
-			case LIST:
-			case ERROR:
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case STRUCT:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
 	public DataObject[] toArray() {
 		switch(type) {
 			case ARRAY:
