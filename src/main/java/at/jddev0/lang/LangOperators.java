@@ -2664,7 +2664,7 @@ public final class LangOperators {
 				
 				return new DataObject().setLong(l);
 			case FLOAT:
-				Float f = rightSideOperand.toFloat();
+				Float f = interpreter.conversions.toFloat(rightSideOperand, lineNumber, SCOPE_ID);
 				if(f == null)
 					return null;
 				

@@ -643,54 +643,6 @@ public class DataObject {
 
 		return null;
 	}
-	public Float toFloat() {
-		switch(type) {
-			case TEXT:
-				if(txt.length() > 0) {
-					char lastChar = txt.charAt(txt.length() - 1);
-
-					if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
-							lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
-						try {
-							return Float.parseFloat(txt);
-						}catch(NumberFormatException ignore) {}
-					}
-				}
-
-				return null;
-			case CHAR:
-				return (float)charValue;
-			case INT:
-				return (float)intValue;
-			case LONG:
-				return (float)longValue;
-			case FLOAT:
-				return floatValue;
-			case DOUBLE:
-				return (float)doubleValue;
-			case ERROR:
-				return (float)error.getErrno();
-			case BYTE_BUFFER:
-				return (float)byteBuf.length;
-			case ARRAY:
-				return (float)arr.length;
-			case LIST:
-				return (float)list.size();
-			case STRUCT:
-				return (float)sp.getMemberNames().length;
-
-			case VAR_POINTER:
-			case FUNCTION_POINTER:
-			case OBJECT:
-			case NULL:
-			case VOID:
-			case ARGUMENT_SEPARATOR:
-			case TYPE:
-				return null;
-		}
-
-		return null;
-	}
 	public Double toDouble() {
 		switch(type) {
 			case TEXT:
