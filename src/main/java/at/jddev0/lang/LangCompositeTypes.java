@@ -413,6 +413,33 @@ public class LangCompositeTypes {
 				false
 		});
 
+		methods.put("op:abs", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:abs", isMethod=true)
+					@AllowedTypes(DataType.DOUBLE)
+					@SuppressWarnings("unused")
+					public DataObject absMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+					) {
+						double real = thisObject.getMember("$real").getDouble();
+						double imag = thisObject.getMember("$imag").getDouble();
+
+						try {
+							try {
+								return new DataObject().setDouble(Math.hypot(real, imag));
+							}catch(DataObject.DataTypeConstraintException e) {
+								return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							}
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				}))
+		});
+		methodOverrideFlags.put("op:abs", new Boolean[] {
+				false
+		});
+
 		methods.put("op:add", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="op:add", isMethod=true)
