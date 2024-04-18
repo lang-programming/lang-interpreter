@@ -89,9 +89,9 @@ final class LangPatterns {
 	 */
 	public static final Pattern METHOD_NAME = Pattern.compile("mp\\.\\w+");
 	/**
-	 * RegEx: "<code>op:((len|deepCopy|inc|dec|pos|inv|not)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|(getItem|setItem))</code>"
+	 * RegEx: "<code>op:((len|deepCopy|inc|dec|pos|inv|not|abs)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|(getItem|setItem))</code>"
 	 */
-	public static final Pattern OPERATOR_METHOD_NAME = Pattern.compile("op:((len|deepCopy|inc|dec|pos|inv|not)|" +
+	public static final Pattern OPERATOR_METHOD_NAME = Pattern.compile("op:((len|deepCopy|inc|dec|pos|inv|not|abs)|" +
 			"((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|" +
 			"(getItem|setItem))");
 	/**

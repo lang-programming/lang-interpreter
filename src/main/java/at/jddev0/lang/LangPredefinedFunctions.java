@@ -3269,37 +3269,16 @@ final class LangPredefinedFunctions {
 			return new DataObject().setLong((long)Math.floor(number.doubleValue()));
 		}
 
-		@LangFunction(value="abs", hasInfo=true)
-		@AllowedTypes(DataObject.DataType.INT)
+		@LangFunction(value="abs")
 		public static DataObject absWithIntParameterFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.INT) DataObject numberObject
+				LangInterpreter interpreter, int SCOPE_ID,@LangParameter("$operand") DataObject operand
 		) {
-			return new DataObject().setInt(Math.abs(numberObject.getInt()));
-		}
-		@LangFunction("abs")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject absWithLongParameterFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.LONG) DataObject numberObject
-		) {
-			return new DataObject().setLong(Math.abs(numberObject.getLong()));
-		}
-		@LangFunction("abs")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject absWithFloatParameterFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.FLOAT) DataObject numberObject
-		) {
-			return new DataObject().setFloat(Math.abs(numberObject.getFloat()));
-		}
-		@LangFunction("abs")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject absWithDoubleParameterFunction(
-				LangInterpreter interpreter, int SCOPE_ID,
-				@LangParameter("$number") @AllowedTypes(DataObject.DataType.DOUBLE) DataObject numberObject
-		) {
-			return new DataObject().setDouble(Math.abs(numberObject.getDouble()));
+			DataObject ret = interpreter.operators.opAbs(operand, -1, SCOPE_ID);
+			if(ret == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"The abs operator is not defined for " + operand.getType(), SCOPE_ID);
+
+			return ret;
 		}
 
 		@LangFunction("min")

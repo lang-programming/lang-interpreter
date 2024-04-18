@@ -2913,6 +2913,45 @@ public final class LangOperators {
 		return null;
 	}
 
+	//Special operator functions
+
+	/**
+	 * For "func.abs()"
+	 */
+	public DataObject opAbs(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod("abs", operand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+		switch(operand.getType()) {
+			case INT:
+				return new DataObject().setInt(Math.abs(operand.getInt()));
+			case LONG:
+				return new DataObject().setLong(Math.abs(operand.getLong()));
+			case FLOAT:
+				return new DataObject().setFloat(Math.abs(operand.getFloat()));
+			case DOUBLE:
+				return new DataObject().setDouble(Math.abs(operand.getDouble()));
+
+			case TEXT:
+			case CHAR:
+			case ARRAY:
+			case BYTE_BUFFER:
+			case LIST:
+			case STRUCT:
+			case ERROR:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
+
 	//Comparison functions
 	/**
 	 * For "=="
