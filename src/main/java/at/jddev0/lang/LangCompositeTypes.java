@@ -222,6 +222,31 @@ public class LangCompositeTypes {
 				false
 		});
 
+		methods.put("to:text", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="to:text", isMethod=true)
+					@AllowedTypes(DataType.TEXT)
+					@SuppressWarnings("unused")
+					public DataObject toTextMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+					) {
+						try {
+							DataObject value = thisObject.getMember("$value");
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							if(present)
+								return new DataObject("just(" + interpreter.conversions.toText(value, -1, SCOPE_ID) + ")");
+
+							return new DataObject("nothing");
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+		});
+		methodOverrideFlags.put("to:text", new Boolean[] {
+				false
+		});
+
 		DataObject.FunctionPointerObject[] constructors = new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="construct", isMethod=true)
