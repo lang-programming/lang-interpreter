@@ -818,7 +818,7 @@ public class LangCompositeTypes {
 							double real = thisObject.getMember("$real").getDouble();
 							double imag = thisObject.getMember("$imag").getDouble();
 
-							return new DataObject(String.format(Locale.ENGLISH, "%.3f + %.3fi", real, imag));
+							return new DataObject(real + " + " + imag + "i");
 						}catch(DataObject.DataTypeConstraintException e) {
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
 						}
