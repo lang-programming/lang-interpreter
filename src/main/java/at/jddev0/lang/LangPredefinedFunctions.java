@@ -1725,7 +1725,7 @@ final class LangPredefinedFunctions {
 		}
 
 		@LangFunction("join")
-		@AllowedTypes(DataObject.DataType.ARRAY)
+		@AllowedTypes(DataObject.DataType.TEXT)
 		public static DataObject joinFunction(
 				LangInterpreter interpreter, int SCOPE_ID,
 				@LangParameter("$text") @VarArgs DataObject textObject,
