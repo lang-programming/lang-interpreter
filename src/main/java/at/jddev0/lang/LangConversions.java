@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
  * @version v1.0.0
  */
 public final class LangConversions {
+	private static final int MAX_TO_TEXT_RECURSION_DEPTH = 10;
+
 	private final LangInterpreter interpreter;
 
 	public LangConversions(LangInterpreter interpreter) {
@@ -43,8 +45,6 @@ public final class LangConversions {
 	}
 
 	//DataType conversion methods
-
-
 	private String convertByteBufferToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
 		StringBuilder builder = new StringBuilder();
 		if(operand.getByteBuffer().length > 0) {
@@ -61,59 +61,47 @@ public final class LangConversions {
 		return builder.toString();
 	}
 
-	private void convertCompositeElementToText(DataObject ele, StringBuilder builder, int lineNumber, final int SCOPE_ID) {
+	private String convertToTextMaxRecursion(DataObject ele, int lineNumber, final int SCOPE_ID) {
 		if(ele.getType() == DataType.ARRAY) {
-			builder.append("<Array[" + ele.getArray().length + "]>");
+			return "<Array[" + ele.getArray().length + "]>";
 		}else if(ele.getType() == DataType.LIST) {
-			builder.append("<List[" + ele.getList().size() + "]>");
-		}else if(ele.getType() == DataType.VAR_POINTER) {
-			builder.append("-->{");
-			DataObject data = ele.getVarPointer().getVar();
-			if(data != null && data.getType() == DataType.ARRAY) {
-				builder.append("<Array[" + data.getArray().length + "]>");
-			}else if(data != null && data.getType() == DataType.LIST) {
-				builder.append("<List[" + data.getList().size() + "]>");
-			}else if(data != null && data.getType() == DataType.VAR_POINTER) {
-				builder.append("-->{...}");
-			}else if(data != null && data.getType() == DataType.STRUCT) {
-				builder.append(data.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
-			}else {
-				builder.append(data);
-			}
-			builder.append("}");
+			return "<List[" + ele.getList().size() + "]>";
 		}else if(ele.getType() == DataType.STRUCT) {
-			builder.append(ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
+			return ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>";
 		}else if(ele.getType() == DataType.OBJECT) {
-			builder.append(ele.getObject().isClass()?"<Class>":"<Object>");
+			return ele.getObject().isClass()?"<Class>":"<Object>";
 		}else {
-			builder.append(toText(ele, lineNumber, SCOPE_ID));
+			return "...";
 		}
-		builder.append(", ");
 	}
 
-	private String convertArrayToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+	private String convertArrayToText(DataObject operand, int recursionStep, int lineNumber, final int SCOPE_ID) {
 		StringBuilder builder = new StringBuilder("[");
 		if(operand.getArray().length > 0) {
-			for(DataObject ele:operand.getArray())
-				convertCompositeElementToText(ele, builder, lineNumber, SCOPE_ID);
+			for(DataObject ele:operand.getArray()) {
+				builder.append(toText(ele, recursionStep - 1, lineNumber, SCOPE_ID));
+				builder.append(", ");
+			}
 			builder.delete(builder.length() - 2, builder.length());
 		}
 		builder.append(']');
 		return builder.toString();
 	}
 
-	private String convertListToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+	private String convertListToText(DataObject operand, int recursionStep, int lineNumber, final int SCOPE_ID) {
 		StringBuilder builder = new StringBuilder("[");
-		if(operand.getList().size() > 0) {
-			for(DataObject ele:operand.getList())
-				convertCompositeElementToText(ele, builder, lineNumber, SCOPE_ID);
+		if(!operand.getList().isEmpty()) {
+			for(DataObject ele:operand.getList()) {
+				builder.append(toText(ele, recursionStep - 1, lineNumber, SCOPE_ID));
+				builder.append(", ");
+			}
 			builder.delete(builder.length() - 2, builder.length());
 		}
 		builder.append(']');
 		return builder.toString();
 	}
 
-	private String convertStructToText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+	private String convertStructToText(DataObject operand, int recursionStep, int lineNumber, final int SCOPE_ID) {
 		StringBuilder builder = new StringBuilder("{");
 		String[] memberNames = operand.getStruct().getMemberNames();
 		if(memberNames.length > 0) {
@@ -123,7 +111,8 @@ public final class LangConversions {
 			}else {
 				for(String memberName:memberNames) {
 					builder.append(memberName).append(": ");
-					convertCompositeElementToText(operand.getStruct().getMember(memberName), builder, lineNumber, SCOPE_ID);
+					builder.append(toText(operand.getStruct().getMember(memberName), recursionStep - 1, lineNumber, SCOPE_ID));
+					builder.append(", ");
 				}
 			}
 
@@ -133,11 +122,14 @@ public final class LangConversions {
 		return builder.toString();
 	}
 
-	//Conversion functions
-	public String toText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+	private String toText(DataObject operand, int recursionStep, int lineNumber, final int SCOPE_ID) {
 		DataObject ret = callConversionMethod("text", operand, lineNumber, SCOPE_ID);
 		if(ret != null)
 			operand = ret;
+
+		if(recursionStep <= 0) {
+			return convertToTextMaxRecursion(operand, lineNumber, SCOPE_ID);
+		}
 
 		switch(operand.getType()) {
 			case TEXT:
@@ -146,15 +138,12 @@ public final class LangConversions {
 			case BYTE_BUFFER:
 				return convertByteBufferToText(operand, lineNumber, SCOPE_ID);
 			case ARRAY:
-				return convertArrayToText(operand, lineNumber, SCOPE_ID);
+				return convertArrayToText(operand, recursionStep, lineNumber, SCOPE_ID);
 			case LIST:
-				return convertListToText(operand, lineNumber, SCOPE_ID);
+				return convertListToText(operand, recursionStep, lineNumber, SCOPE_ID);
 			case VAR_POINTER:
 				DataObject var = operand.getVarPointer().getVar();
-				if(var.getType() == DataType.VAR_POINTER)
-					return "-->{-->{...}}";
-
-				return "-->{" + toText(var, lineNumber, SCOPE_ID) + "}";
+				return "-->{" + toText(var, recursionStep - 1, lineNumber, SCOPE_ID) + "}";
 
 			case FUNCTION_POINTER:
 				if(operand.getVariableName() != null)
@@ -162,7 +151,7 @@ public final class LangConversions {
 
 				return operand.getFunctionPointer().toString();
 			case STRUCT:
-				return convertStructToText(operand, lineNumber, SCOPE_ID);
+				return convertStructToText(operand, recursionStep, lineNumber, SCOPE_ID);
 			case OBJECT:
 				return operand.getObject().toString();
 			case VOID:
@@ -186,6 +175,9 @@ public final class LangConversions {
 		}
 
 		return null;
+	}
+	public String toText(DataObject operand, int lineNumber, final int SCOPE_ID) {
+		return toText(operand, MAX_TO_TEXT_RECURSION_DEPTH, lineNumber, SCOPE_ID);
 	}
 	public Character toChar(DataObject operand, int lineNumber, final int SCOPE_ID) {
 		DataObject ret = callConversionMethod("char", operand, lineNumber, SCOPE_ID);
