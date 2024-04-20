@@ -3002,26 +3002,102 @@ public final class LangOperators {
 				return number != null && leftSideOperand.getByteBuffer().length == number.intValue();
 
 			case ARRAY:
-				if(rightSideOperand.getType() == DataType.ARRAY)
-					return Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getArray());
+				if(rightSideOperand.getType() == DataType.ARRAY) {
+					int len = leftSideOperand.getArray().length;
+					if(len != rightSideOperand.getArray().length)
+						return false;
 
-				if(rightSideOperand.getType() == DataType.LIST)
-					return Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getList().toArray(new DataObject[0]));
+					int i = 0;
+					while(i < len) {
+						if(!isEquals(leftSideOperand.getArray()[i], rightSideOperand.getArray()[i], lineNumber, SCOPE_ID))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
+
+				if(rightSideOperand.getType() == DataType.LIST) {
+					int len = leftSideOperand.getArray().length;
+					if(len != rightSideOperand.getList().size())
+						return false;
+
+					int i = 0;
+					while(i < len) {
+						if(!isEquals(leftSideOperand.getArray()[i], rightSideOperand.getList().get(i), lineNumber, SCOPE_ID))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
 
 				return number != null && leftSideOperand.getArray().length == number.intValue();
 
 			case LIST:
-				if(rightSideOperand.getType() == DataType.LIST)
-					return Objects.deepEquals(leftSideOperand.getList(), rightSideOperand.getList());
+				if(rightSideOperand.getType() == DataType.LIST) {
+					int len = leftSideOperand.getList().size();
+					if(len != rightSideOperand.getList().size())
+						return false;
 
-				if(rightSideOperand.getType() == DataType.ARRAY)
-					return Objects.deepEquals(leftSideOperand.getList().toArray(new DataObject[0]), rightSideOperand.getArray());
+					int i = 0;
+					while(i < len) {
+						if(!isEquals(leftSideOperand.getList().get(i), rightSideOperand.getList().get(i), lineNumber, SCOPE_ID))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
+
+				if(rightSideOperand.getType() == DataType.ARRAY) {
+					int len = leftSideOperand.getList().size();
+					if(len != rightSideOperand.getArray().length)
+						return false;
+
+					int i = 0;
+					while(i < len) {
+						if(!isEquals(leftSideOperand.getList().get(i), rightSideOperand.getArray()[i], lineNumber, SCOPE_ID))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
 
 				return number != null && leftSideOperand.getList().size() == number.intValue();
 
 			case STRUCT:
-				if(rightSideOperand.getType() == DataType.STRUCT)
-					return Objects.equals(leftSideOperand.getStruct(), rightSideOperand.getStruct());
+				if(rightSideOperand.getType() == DataType.STRUCT) {
+					StructObject leftStruct = leftSideOperand.getStruct();
+					StructObject rightStruct = rightSideOperand.getStruct();
+
+					if(leftStruct.isDefinition() != rightStruct.isDefinition())
+						return false;
+
+					String[] leftMemberNames = leftStruct.getMemberNames();
+					String[] rightMemberNames = rightStruct.getMemberNames();
+
+					int len = leftMemberNames.length;
+					if(len != rightMemberNames.length)
+						return false;
+
+					int i = 0;
+					while(i < len) {
+						if(!leftMemberNames[i].equals(rightMemberNames[i]) || (!leftStruct.isDefinition() &&
+								!isEquals(leftStruct.getMember(leftMemberNames[i]), rightStruct.getMember(rightMemberNames[i]),
+										lineNumber, SCOPE_ID)))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
 
 				return number != null && leftSideOperand.getStruct().getMemberNames().length == number.intValue();
 
