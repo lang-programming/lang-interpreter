@@ -1541,17 +1541,17 @@ public final class LangParser {
 			String className = token.substring(0, bracketIndex == -1?(token.length() - 1):bracketIndex).trim();
 
 			if(bracketIndex != -1) {
-				token = token.substring(bracketIndex);
+				token = token.substring(bracketIndex, token.length() - 1).trim();
 
 				int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '<', '>');
-				if(parentClassesEndIndex != token.length() - 2) {
+				if(parentClassesEndIndex != token.length() - 1) {
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
 
 					return ast;
 				}
 			}
 
-			nodes.addAll(parseClassDefinition(className, bracketIndex == -1?"":token.substring(1, token.length() - 2), lines).getChildren());
+			nodes.addAll(parseClassDefinition(className, bracketIndex == -1?"":token.substring(1, token.length() - 1), lines).getChildren());
 
 			return ast;
 		}
