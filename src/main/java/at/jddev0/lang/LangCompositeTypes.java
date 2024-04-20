@@ -222,6 +222,39 @@ public class LangCompositeTypes {
 				false
 		});
 
+		methods.put("op:isEquals", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:isEquals", isMethod=true)
+					@AllowedTypes(DataType.INT)
+					@SuppressWarnings("unused")
+					public DataObject isEqualsMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$operand") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
+					) {
+						LangObject operandObject = operand.getObject();
+
+						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_MAYBE))
+							return new DataObject().setBoolean(false);
+
+						try {
+							DataObject thisValue = thisObject.getMember("$value");
+							boolean thisPresent = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+
+							DataObject operandValue = operandObject.getMember("$value");
+							boolean operandPresent = interpreter.conversions.toBool(operandObject.getMember("$present"), -1, SCOPE_ID);
+
+							return new DataObject().setBoolean(thisPresent == operandPresent && (!thisPresent ||
+									interpreter.operators.isEquals(thisValue, operandValue, -1, SCOPE_ID)));
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+		});
+		methodOverrideFlags.put("op:isEquals", new Boolean[] {
+				false
+		});
+
 		methods.put("to:text", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="to:text", isMethod=true)
