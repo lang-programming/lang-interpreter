@@ -10076,7 +10076,7 @@ final class LangPredefinedFunctions {
 		) {
 			LangObject complexObject = complexDataObject.getObject();
 
-			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObject.isClass() || !complexObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexDataObject.getVariableName()), SCOPE_ID);
 
@@ -10096,7 +10096,7 @@ final class LangPredefinedFunctions {
 		) {
 			LangObject complexObject = complexDataObject.getObject();
 
-			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObject.isClass() || !complexObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexDataObject.getVariableName()), SCOPE_ID);
 
@@ -10116,7 +10116,7 @@ final class LangPredefinedFunctions {
 		) {
 			LangObject complexObject = complexDataObject.getObject();
 
-			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObject.isClass() || !complexObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexDataObject.getVariableName()), SCOPE_ID);
 
@@ -10139,7 +10139,7 @@ final class LangPredefinedFunctions {
 		) {
 			LangObject complexObject = complexDataObject.getObject();
 
-			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObject.isClass() || !complexObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexDataObject.getVariableName()), SCOPE_ID);
 
@@ -10165,7 +10165,7 @@ final class LangPredefinedFunctions {
 		) {
 			LangObject complexObject = complexDataObject.getObject();
 
-			if(complexObject.isClass() || !complexObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObject.isClass() || !complexObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexDataObject.getVariableName()), SCOPE_ID);
 
@@ -10193,11 +10193,11 @@ final class LangPredefinedFunctions {
 			LangObject complexObjectA = complexADataObject.getObject();
 			LangObject complexObjectB = complexBDataObject.getObject();
 
-			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectA.isClass() || !complexObjectA.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexADataObject.getVariableName()), SCOPE_ID);
 
-			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectB.isClass() || !complexObjectB.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
 						complexBDataObject.getVariableName()), SCOPE_ID);
 
@@ -10228,11 +10228,11 @@ final class LangPredefinedFunctions {
 			LangObject complexObjectA = complexADataObject.getObject();
 			LangObject complexObjectB = complexBDataObject.getObject();
 
-			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectA.isClass() || !complexObjectA.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexADataObject.getVariableName()), SCOPE_ID);
 
-			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectB.isClass() || !complexObjectB.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
 						complexBDataObject.getVariableName()), SCOPE_ID);
 
@@ -10263,11 +10263,11 @@ final class LangPredefinedFunctions {
 			LangObject complexObjectA = complexADataObject.getObject();
 			LangObject complexObjectB = complexBDataObject.getObject();
 
-			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectA.isClass() || !complexObjectA.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexADataObject.getVariableName()), SCOPE_ID);
 
-			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectB.isClass() || !complexObjectB.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
 						complexBDataObject.getVariableName()), SCOPE_ID);
 
@@ -10298,11 +10298,11 @@ final class LangPredefinedFunctions {
 			LangObject complexObjectA = complexADataObject.getObject();
 			LangObject complexObjectB = complexBDataObject.getObject();
 
-			if(complexObjectA.isClass() || !complexObjectA.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectA.isClass() || !complexObjectA.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 						complexADataObject.getVariableName()), SCOPE_ID);
 
-			if(complexObjectB.isClass() || !complexObjectB.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+			if(complexObjectB.isClass() || !complexObjectB.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 2 (\"%s\") must be of type \"&Complex\"",
 						complexBDataObject.getVariableName()), SCOPE_ID);
 

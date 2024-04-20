@@ -137,7 +137,7 @@ public class LangCompositeTypes {
 								), SCOPE_ID);
 
 								if(ret == null || ret.getType() != DataType.OBJECT || thisObject.isClass() ||
-										!thisObject.getClassBaseDefinition().equals(CLASS_MAYBE))
+										!thisObject.isInstanceOf(CLASS_MAYBE))
 									return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_FUNC_PTR,
 											"The value returned by fp.mapperFunc() must be of type \"&Maybe\"", SCOPE_ID);
 
@@ -233,7 +233,7 @@ public class LangCompositeTypes {
 					) {
 						LangObject operandObject = operand.getObject();
 
-						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_MAYBE))
+						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_MAYBE))
 							return new DataObject().setBoolean(false);
 
 						try {
@@ -484,7 +484,7 @@ public class LangCompositeTypes {
 					) {
 						LangObject operandObject = operand.getObject();
 
-						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 									operand.getVariableName()), SCOPE_ID);
 
@@ -573,7 +573,7 @@ public class LangCompositeTypes {
 					) {
 						LangObject operandObject = operand.getObject();
 
-						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 									operand.getVariableName()), SCOPE_ID);
 
@@ -662,7 +662,7 @@ public class LangCompositeTypes {
 					) {
 						LangObject operandObject = operand.getObject();
 
-						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 									operand.getVariableName()), SCOPE_ID);
 
@@ -751,7 +751,7 @@ public class LangCompositeTypes {
 					) {
 						LangObject operandObject = operand.getObject();
 
-						if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
 									operand.getVariableName()), SCOPE_ID);
 
@@ -864,7 +864,7 @@ public class LangCompositeTypes {
 
 							LangObject operandObject = operand.getObject();
 
-							if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+							if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 								return new DataObject().setBoolean(false);
 
 							double operandReal = operandObject.getMember("$real").getDouble();
@@ -906,7 +906,7 @@ public class LangCompositeTypes {
 
 							LangObject operandObject = operand.getObject();
 
-							if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+							if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 								return new DataObject().setBoolean(false);
 
 							double operandReal = operandObject.getMember("$real").getDouble();
