@@ -3174,23 +3174,120 @@ public final class LangOperators {
 		if(leftSideOperand == rightSideOperand)
 			return true;
 
-		try {
-			return leftSideOperand.getType().equals(rightSideOperand.getType()) &&
-					Objects.equals(leftSideOperand.getText(), rightSideOperand.getText()) &&
-					Objects.deepEquals(leftSideOperand.getByteBuffer(), rightSideOperand.getByteBuffer()) &&
-					Objects.deepEquals(leftSideOperand.getArray(), rightSideOperand.getArray()) &&
-					Objects.deepEquals(leftSideOperand.getList(), rightSideOperand.getList()) &&
-					Objects.equals(leftSideOperand.getVarPointer(), rightSideOperand.getVarPointer()) &&
-					Objects.equals(leftSideOperand.getFunctionPointer(), rightSideOperand.getFunctionPointer()) &&
-					Objects.equals(leftSideOperand.getStruct(), rightSideOperand.getStruct()) &&
-					leftSideOperand.getInt() == rightSideOperand.getInt() && leftSideOperand.getLong() == rightSideOperand.getLong() &&
-					leftSideOperand.getFloat() == rightSideOperand.getFloat() && leftSideOperand.getDouble() == rightSideOperand.getDouble() &&
-					leftSideOperand.getChar() == rightSideOperand.getChar() &&
-					Objects.equals(leftSideOperand.getError(), rightSideOperand.getError()) &&
-					leftSideOperand.getTypeValue() == rightSideOperand.getTypeValue();
-		}catch(StackOverflowError e) {
+		if(leftSideOperand.getType() != rightSideOperand.getType())
 			return false;
+
+		switch(leftSideOperand.getType()) {
+			case TEXT:
+				return leftSideOperand.getText().equals(rightSideOperand.getText());
+
+			case CHAR:
+				return leftSideOperand.getChar() == rightSideOperand.getChar();
+
+			case INT:
+				return leftSideOperand.getInt() == rightSideOperand.getInt();
+
+			case LONG:
+				return leftSideOperand.getLong() == rightSideOperand.getLong();
+
+			case FLOAT:
+				return leftSideOperand.getFloat() == rightSideOperand.getFloat();
+
+			case DOUBLE:
+				return leftSideOperand.getDouble() == rightSideOperand.getDouble();
+
+			case BYTE_BUFFER:
+				return Arrays.equals(leftSideOperand.getByteBuffer(), rightSideOperand.getByteBuffer());
+
+			case ARRAY:
+				{
+					int len = leftSideOperand.getArray().length;
+					if(len != rightSideOperand.getArray().length)
+						return false;
+
+					int i = 0;
+					while(i < len) {
+						if(!isStrictEquals(leftSideOperand.getArray()[i], rightSideOperand.getArray()[i], lineNumber, SCOPE_ID))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
+
+			case LIST:
+				{
+					int len = leftSideOperand.getList().size();
+					if(len != rightSideOperand.getList().size())
+						return false;
+
+					int i = 0;
+					while(i < len) {
+						if(!isStrictEquals(leftSideOperand.getList().get(i), rightSideOperand.getList().get(i), lineNumber, SCOPE_ID))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
+
+			case STRUCT:
+				{
+					StructObject leftStruct = leftSideOperand.getStruct();
+					StructObject rightStruct = rightSideOperand.getStruct();
+
+					if(leftStruct.isDefinition() != rightStruct.isDefinition())
+						return false;
+
+					String[] leftMemberNames = leftStruct.getMemberNames();
+					String[] rightMemberNames = rightStruct.getMemberNames();
+
+					int len = leftMemberNames.length;
+					if(len != rightMemberNames.length)
+						return false;
+
+					int i = 0;
+					while(i < len) {
+						if(!leftMemberNames[i].equals(rightMemberNames[i]) || (!leftStruct.isDefinition() &&
+								!isStrictEquals(leftStruct.getMember(leftMemberNames[i]), rightStruct.getMember(rightMemberNames[i]),
+										lineNumber, SCOPE_ID)))
+							return false;
+
+						i++;
+					}
+
+					return true;
+				}
+
+			case OBJECT:
+				if(rightSideOperand.getType() == DataType.OBJECT)
+					//Check for same reference only (For classes and objects if "op:isStrictEquals()" is not defined)
+					return leftSideOperand.getObject() == rightSideOperand.getObject();
+
+				return false;
+
+			case VAR_POINTER:
+				//Check for same reference only
+				return leftSideOperand.getVarPointer().getVar() == rightSideOperand.getVarPointer().getVar();
+
+			case FUNCTION_POINTER:
+				return leftSideOperand.getFunctionPointer().equals(rightSideOperand.getFunctionPointer());
+
+			case ERROR:
+				return leftSideOperand.getError().equals(rightSideOperand.getError());
+
+			case TYPE:
+				return leftSideOperand.getTypeValue() == rightSideOperand.getTypeValue();
+
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+				return leftSideOperand.getType() == rightSideOperand.getType();
 		}
+
+		return false;
 	}
 	/**
 	 * For "&lt;"
