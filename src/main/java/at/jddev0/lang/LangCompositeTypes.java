@@ -136,8 +136,8 @@ public class LangCompositeTypes {
 										new DataObject(thisObject.getMember("$value"))
 								), SCOPE_ID);
 
-								if(ret == null || ret.getType() != DataType.OBJECT || thisObject.isClass() ||
-										!thisObject.isInstanceOf(CLASS_MAYBE))
+								if(ret == null || ret.getType() != DataType.OBJECT || ret.getObject().isClass() ||
+										!ret.getObject().isInstanceOf(CLASS_MAYBE))
 									return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_FUNC_PTR,
 											"The value returned by fp.mapperFunc() must be of type \"&Maybe\"", SCOPE_ID);
 
