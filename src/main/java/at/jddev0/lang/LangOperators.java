@@ -2914,7 +2914,6 @@ public final class LangOperators {
 	}
 
 	//Special operator functions
-
 	/**
 	 * For "func.abs()"
 	 */
@@ -2957,11 +2956,15 @@ public final class LangOperators {
 	 * For "=="
 	 */
 	public boolean isEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		if(leftSideOperand == rightSideOperand)
-			return true;
-
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
+
+		DataObject ret = callOperatorMethod("isEquals", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+
+		if(leftSideOperand == rightSideOperand)
+			return true;
 
 		Number number = interpreter.conversions.toNumber(rightSideOperand, lineNumber, SCOPE_ID);
 		switch(leftSideOperand.getType()) {
@@ -3024,12 +3027,14 @@ public final class LangOperators {
 
 			case OBJECT:
 				if(rightSideOperand.getType() == DataType.OBJECT)
-					return Objects.equals(leftSideOperand.getObject(), rightSideOperand.getObject());
+					//Check for same reference only (For classes and objects if "op:isEquals()" is not defined)
+					return leftSideOperand.getObject() == rightSideOperand.getObject();
 
 				return false;
 
 			case VAR_POINTER:
-				return leftSideOperand.getVarPointer().equals(rightSideOperand.getVarPointer());
+				//Check for same reference only
+				return leftSideOperand.getVarPointer().getVar() == rightSideOperand.getVarPointer().getVar();
 
 			case FUNCTION_POINTER:
 				return leftSideOperand.getFunctionPointer().equals(rightSideOperand.getFunctionPointer());

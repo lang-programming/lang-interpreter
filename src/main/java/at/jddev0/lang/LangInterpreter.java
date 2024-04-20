@@ -4090,8 +4090,8 @@ public final class LangInterpreter {
 
 	/**
 	 * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs)|
-	 * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift))|
-	 * (getItem|setItem)))</code>
+	 * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
+	 * isEquals))|(getItem|setItem)))</code>
 	 */
 	private static final String[] OPERATOR_METHOD_NAMES = new String[] {
 			"op:len",
@@ -4119,9 +4119,10 @@ public final class LangInterpreter {
 			"op:lshift", "op:r-lshift",
 			"op:rshift", "op:r-rshift",
 			"op:rzshift", "op:r-rzshift",
+			"op:isEquals", "op:r-isEquals",
 
 			"op:getItem",
-			"op:setItem"
+			"op:setItem",
 	};
 	private boolean isOperatorMethodName(String token) {
 		for(String operator:OPERATOR_METHOD_NAMES)
