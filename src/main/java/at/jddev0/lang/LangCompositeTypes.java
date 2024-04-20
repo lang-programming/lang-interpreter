@@ -957,6 +957,39 @@ public class LangCompositeTypes {
 				false
 		});
 
+		methods.put("op:isStrictEquals", new DataObject.FunctionPointerObject[] {
+				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="op:isStrictEquals", isMethod=true)
+					@AllowedTypes(DataType.INT)
+					@SuppressWarnings("unused")
+					public DataObject isStrictEqualsMethod(
+							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							@LangParameter("$operand") @AllowedTypes(DataType.OBJECT) DataObject operand
+					) {
+						try {
+							double thisReal = thisObject.getMember("$real").getDouble();
+							double thisImag = thisObject.getMember("$imag").getDouble();
+
+							LangObject operandObject = operand.getObject();
+
+							//Check for exact class type instead of instanceOf
+							if(operandObject.isClass() || !operandObject.getClassBaseDefinition().equals(LangCompositeTypes.CLASS_COMPLEX))
+								return new DataObject().setBoolean(false);
+
+							double operandReal = operandObject.getMember("$real").getDouble();
+							double operandImag = operandObject.getMember("$imag").getDouble();
+
+							return new DataObject().setBoolean(thisReal == operandReal && thisImag == operandImag);
+						}catch(DataObject.DataTypeConstraintException e) {
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+						}
+					}
+				})),
+		});
+		methodOverrideFlags.put("op:isStrictEquals", new Boolean[] {
+				false
+		});
+
 		methods.put("to:text", new DataObject.FunctionPointerObject[] {
 				new DataObject.FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction(value="to:text", isMethod=true)
