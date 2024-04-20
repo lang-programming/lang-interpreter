@@ -3088,11 +3088,15 @@ public final class LangOperators {
 	 * For "==="
 	 */
 	public boolean isStrictEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		if(leftSideOperand == rightSideOperand)
-			return true;
-
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
+
+		DataObject ret = callOperatorMethod("isStrictEquals", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+
+		if(leftSideOperand == rightSideOperand)
+			return true;
 
 		try {
 			return leftSideOperand.getType().equals(rightSideOperand.getType()) &&
