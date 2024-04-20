@@ -3475,7 +3475,14 @@ public final class LangOperators {
 	 * For "&gt;"
 	 */
 	public boolean isGreaterThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		if(leftSideOperand == rightSideOperand || leftSideOperand == null || rightSideOperand == null)
+		if(leftSideOperand == null || rightSideOperand == null)
+			return false;
+
+		DataObject ret = callOperatorMethod("isGreaterThan", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+
+		if(leftSideOperand == rightSideOperand)
 			return false;
 
 		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber, SCOPE_ID);

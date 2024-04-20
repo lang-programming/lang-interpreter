@@ -4091,7 +4091,7 @@ public final class LangInterpreter {
 	/**
 	 * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs)|
 	 * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
-	 * isEquals|isStrictEquals|isLessThan))|(getItem|setItem)))</code>
+	 * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)))</code>
 	 */
 	private static final String[] OPERATOR_METHOD_NAMES = new String[] {
 			"op:len",
@@ -4122,6 +4122,7 @@ public final class LangInterpreter {
 			"op:isEquals", "op:r-isEquals",
 			"op:isStrictEquals", "op:r-isStrictEquals",
 			"op:isLessThan", "op:r-isLessThan",
+			"op:isGreaterThan", "op:r-isGreaterThan",
 
 			"op:getItem",
 			"op:setItem",
