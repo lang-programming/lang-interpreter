@@ -3269,8 +3269,8 @@ final class LangPredefinedFunctions {
 			return new DataObject().setLong((long)Math.floor(number.doubleValue()));
 		}
 
-		@LangFunction(value="abs")
-		public static DataObject absWithIntParameterFunction(
+		@LangFunction("abs")
+		public static DataObject absFunction(
 				LangInterpreter interpreter, int SCOPE_ID,@LangParameter("$operand") DataObject operand
 		) {
 			DataObject ret = interpreter.operators.opAbs(operand, -1, SCOPE_ID);
