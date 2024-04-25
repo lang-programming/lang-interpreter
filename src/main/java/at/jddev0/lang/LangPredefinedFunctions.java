@@ -3648,10 +3648,8 @@ final class LangPredefinedFunctions {
 			FunctionPointerObject aFunc = a.getFunctionPointer();
 			FunctionPointerObject bFunc = b.getFunctionPointer();
 
-			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-					Arrays.asList(
-							c, d
-					)
+			DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					c, d
 			), SCOPE_ID);
 
 			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), Arrays.asList(
