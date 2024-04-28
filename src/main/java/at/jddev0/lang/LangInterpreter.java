@@ -572,7 +572,8 @@ public final class LangInterpreter {
 			if(previousValue.getType() == DataType.STRUCT && previousValue.getStruct().isDefinition())
 				return node;
 
-			if(previousValue.getType() == DataType.OBJECT && previousValue.getObject().isClass())
+			if(previousValue.getType() == DataType.OBJECT && (previousValue.getObject().isClass() ||
+					previousValue.getObject().getMethods().containsKey("op:call")))
 				return node;
 		}
 		
@@ -2856,35 +2857,57 @@ public final class LangInterpreter {
 			}
 		}
 
-		if(previousValue.getType() == DataType.OBJECT && previousValue.getObject().isClass()) {
-			DataObject createdObject = new DataObject().setObject(new LangObject(previousValue.getObject()));
+		objectCheck:
+		if(previousValue.getType() == DataType.OBJECT) {
+			if(previousValue.getObject().isClass()) {
+				DataObject createdObject = new DataObject().setObject(new LangObject(previousValue.getObject()));
 
-			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+				FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
 
-			List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
+				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					this, node.getLineNumberFrom(), SCOPE_ID));
-			if(constructorFunction == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
-						collect(Collectors.joining("\n    construct")), SCOPE_ID);
+				FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+						this, node.getLineNumberFrom(), SCOPE_ID));
+				if(constructorFunction == null)
+					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+							" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
+							collect(Collectors.joining("\n    construct")), SCOPE_ID);
 
-			DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-			if(ret == null)
-				ret = new DataObject().setVoid();
+				DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
+				if(ret == null)
+					ret = new DataObject().setVoid();
 
-			if(ret.getType() != DataType.VOID)
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+				if(ret.getType() != DataType.VOID)
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
 
-			try {
-				createdObject.getObject().postConstructor();
-			}catch(DataTypeConstraintException e) {
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-						"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+				try {
+					createdObject.getObject().postConstructor();
+				}catch(DataTypeConstraintException e) {
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+							"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
+				}
+
+				return createdObject;
+			}else {
+				FunctionPointerObject[] method = previousValue.getObject().getMethods().get("op:call");
+				if(method == null)
+					break objectCheck;
+
+				List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
+
+				FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method,
+						LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, this, node.getLineNumberFrom(), SCOPE_ID));
+				if(fp == null)
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "No matching function signature was found for the given arguments." +
+							" Available function signatures:\n    op:call" + String.join("\n    op:call",
+									LangUtils.getFunctionSignatures(method)), node.getLineNumberFrom(), SCOPE_ID);
+
+				DataObject ret = callFunctionPointer(fp, "op:call", argumentList, node.getLineNumberFrom(), SCOPE_ID);
+				if(ret == null)
+					return new DataObject().setVoid();
+
+				return ret;
 			}
-
-			return createdObject;
 		}
 		
 		return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid data type", node.getLineNumberFrom(), SCOPE_ID);
@@ -4091,7 +4114,7 @@ public final class LangInterpreter {
 	/**
 	 * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs)|
 	 * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
-	 * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)))</code>
+	 * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))</code>
 	 */
 	private static final String[] OPERATOR_METHOD_NAMES = new String[] {
 			"op:len",
@@ -4126,6 +4149,8 @@ public final class LangInterpreter {
 
 			"op:getItem",
 			"op:setItem",
+
+			"op:call"
 	};
 	private boolean isOperatorMethodName(String token) {
 		for(String operator:OPERATOR_METHOD_NAMES)
