@@ -2951,6 +2951,97 @@ public final class LangOperators {
 		return null;
 	}
 
+	/**
+	 * For "...(...)"
+	 */
+	public DataObject opCall(DataObject callee, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
+		DataObject ret = callOperatorMethod(callee, "op:call", argumentList, lineNumber, SCOPE_ID);
+		if(ret != null)
+			return ret;
+
+		if(callee.getType() == DataType.FUNCTION_POINTER)
+			return interpreter.callFunctionPointer(callee.getFunctionPointer(), callee.getVariableName(), argumentList,
+					lineNumber, SCOPE_ID);
+
+		if(callee.getType() == DataType.TYPE) {
+			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					interpreter, lineNumber, SCOPE_ID);
+
+			if(combinedArgumentList.isEmpty())
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT,
+						"Not enough arguments for TYPE casting (1 needed)", lineNumber, SCOPE_ID);
+			if(combinedArgumentList.size() > 1)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT,
+						"Too many arguments for TYPE casting (1 needed)", lineNumber, SCOPE_ID);
+
+			DataObject arg = combinedArgumentList.get(0);
+
+			DataObject output = opCast(callee, arg, lineNumber, SCOPE_ID);
+			if(output == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Data type \"" +
+								arg.getType() + "\" can not be casted to \"" + callee.getTypeValue() + "\"!", lineNumber,
+						SCOPE_ID);
+
+			return output;
+		}
+
+		if(callee.getType() == DataType.STRUCT && callee.getStruct().isDefinition()) {
+			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+					interpreter, lineNumber, SCOPE_ID);
+
+			StructObject struct = callee.getStruct();
+
+			String[] memberNames = struct.getMemberNames();
+			if(combinedArgumentList.size() != memberNames.length) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"The argument count is not equals to the count of member names (" + memberNames.length + ")",
+						lineNumber, SCOPE_ID);
+			}
+
+			try {
+				return new DataObject().setStruct(new StructObject(struct, combinedArgumentList.toArray(new DataObject[0])));
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(),
+						lineNumber, SCOPE_ID);
+			}
+		}
+
+		if(callee.getType() == DataType.OBJECT && callee.getObject().isClass()) {
+			DataObject createdObject = new DataObject().setObject(new DataObject.LangObject(callee.getObject()));
+
+			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+
+			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors,
+					LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber, SCOPE_ID));
+			if(constructorFunction == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"No matching function signature was found for the given arguments." +
+								" Available function signatures:\n    construct" + String.join("\n    construct",
+								LangUtils.getFunctionSignatures(constructors)), SCOPE_ID);
+
+			ret = interpreter.callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList,
+					lineNumber, SCOPE_ID);
+			if(ret == null)
+				ret = new DataObject().setVoid();
+
+			if(ret.getType() != DataType.VOID)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
+						"Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+
+			try {
+				createdObject.getObject().postConstructor();
+			}catch(DataTypeConstraintException e) {
+				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+						"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(),
+						lineNumber, SCOPE_ID);
+			}
+
+			return createdObject;
+		}
+
+		return null;
+	}
+
 	//Comparison functions
 	/**
 	 * For "=="

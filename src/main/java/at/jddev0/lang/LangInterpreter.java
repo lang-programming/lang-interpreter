@@ -2809,106 +2809,11 @@ public final class LangInterpreter {
 		if(previousValue == null)
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing previous value for FunctionCallPreviousNodeValueNode",
 					node.getLineNumberFrom(), SCOPE_ID);
-		
-		if(previousValue.getType() == DataType.FUNCTION_POINTER)
-			return callFunctionPointer(previousValue.getFunctionPointer(), previousValue.getVariableName(),
-					interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID), node.getLineNumberFrom(), SCOPE_ID);
-		
-		if(previousValue.getType() == DataType.TYPE) {
-			List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					this, node.getLineNumberFrom(), SCOPE_ID);
-			
-			if(combinedArgumentList.size() < 1)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, "Not enough arguments (1 needed)",
-						node.getLineNumberFrom(), SCOPE_ID);
-			if(combinedArgumentList.size() > 1)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, "Too many arguments (1 needed)",
-						node.getLineNumberFrom(), SCOPE_ID);
-			
-			DataObject arg = combinedArgumentList.get(0);
-			
-			DataObject output = operators.opCast(previousValue, arg, node.getLineNumberFrom(), SCOPE_ID);
-			if(output == null)
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Data type \"" + arg.getType() +
-						"\" can not be casted to \"" + previousValue.getTypeValue() + "\"!", node.getLineNumberFrom(),
-						SCOPE_ID);
-			
-			return output;
-		}
-		
-		if(previousValue.getType() == DataType.STRUCT && previousValue.getStruct().isDefinition()) {
-			List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					this, node.getLineNumberFrom(), SCOPE_ID);
-			
-			StructObject struct = previousValue.getStruct();
-			
-			String[] memberNames = struct.getMemberNames();
-			if(combinedArgumentList.size() != memberNames.length) {
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The array length is not equals to the count of member names (" + memberNames.length + ")",
-						node.getLineNumberFrom(), SCOPE_ID);
-			}
-			
-			try {
-				return new DataObject().setStruct(new StructObject(struct, combinedArgumentList.toArray(new DataObject[0])));
-			}catch(DataTypeConstraintException e) {
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
-			}
-		}
 
-		objectCheck:
-		if(previousValue.getType() == DataType.OBJECT) {
-			if(previousValue.getObject().isClass()) {
-				DataObject createdObject = new DataObject().setObject(new LangObject(previousValue.getObject()));
-
-				FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
-
-				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID));
-
-				FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-						this, node.getLineNumberFrom(), SCOPE_ID));
-				if(constructorFunction == null)
-					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-							" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
-							collect(Collectors.joining("\n    construct")), SCOPE_ID);
-
-				DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, node.getLineNumberFrom(), SCOPE_ID);
-				if(ret == null)
-					ret = new DataObject().setVoid();
-
-				if(ret.getType() != DataType.VOID)
-					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
-
-				try {
-					createdObject.getObject().postConstructor();
-				}catch(DataTypeConstraintException e) {
-					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-							"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(), node.getLineNumberFrom(), SCOPE_ID);
-				}
-
-				return createdObject;
-			}else {
-				FunctionPointerObject[] method = previousValue.getObject().getMethods().get("op:call");
-				if(method == null)
-					break objectCheck;
-
-				List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID);
-
-				FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method,
-						LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, this, node.getLineNumberFrom(), SCOPE_ID));
-				if(fp == null)
-					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "No matching function signature was found for the given arguments." +
-							" Available function signatures:\n    op:call" + String.join("\n    op:call",
-									LangUtils.getFunctionSignatures(method)), node.getLineNumberFrom(), SCOPE_ID);
-
-				DataObject ret = callFunctionPointer(fp, "op:call", argumentList, node.getLineNumberFrom(), SCOPE_ID);
-				if(ret == null)
-					return new DataObject().setVoid();
-
-				return ret;
-			}
-		}
+		DataObject ret = operators.opCall(previousValue, interpretFunctionPointerArguments(node.getChildren(), SCOPE_ID),
+				node.getLineNumberFrom(), SCOPE_ID);
+		if(ret != null)
+			return ret;
 		
 		return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid data type", node.getLineNumberFrom(), SCOPE_ID);
 	}

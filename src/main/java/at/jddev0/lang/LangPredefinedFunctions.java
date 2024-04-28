@@ -2336,6 +2336,21 @@ final class LangPredefinedFunctions {
 			return ret;
 		}
 
+		@LangFunction("call")
+		public static DataObject callFunction(
+				LangInterpreter interpreter, int SCOPE_ID,
+				@LangParameter("$callee") DataObject callee,
+				@LangParameter("&args") @VarArgs List<DataObject> args
+		) {
+			DataObject ret = interpreter.operators.opCall(callee, LangUtils.separateArgumentsWithArgumentSeparators(args),
+					-1, SCOPE_ID);
+			if(ret == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"Invalid arguments for the call operator.", SCOPE_ID);
+
+			return ret;
+		}
+
 		@LangFunction("conNot")
 		@AllowedTypes(DataObject.DataType.INT)
 		public static DataObject conNotFunction(
