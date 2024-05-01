@@ -4061,10 +4061,8 @@ final class LangPredefinedFunctions {
 
 			FunctionPointerObject retCFunc = retC.getFunctionPointer();
 
-			return interpreter.callFunctionPointer(retCFunc, retC.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-					Arrays.asList(
-							a
-					)
+			return interpreter.callFunctionPointer(retCFunc, retC.getVariableName(), Arrays.asList(
+					a
 			), SCOPE_ID);
 		}
 
