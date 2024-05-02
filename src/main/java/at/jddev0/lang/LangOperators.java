@@ -265,7 +265,7 @@ public final class LangOperators {
 								LangUtils.nullToLangVoid(retA)
 						), SCOPE_ID);
 					}
-				})));
+				}, leftSideOperand, rightSideOperand)));
 			
 			case STRUCT:
 			case OBJECT:
@@ -328,7 +328,7 @@ public final class LangOperators {
 								Arrays.stream(arrayObject.getArray()).map(DataObject::new).collect(Collectors.toList())
 						), SCOPE_ID);
 					}
-				})));
+				}, operand)));
 			
 			case STRUCT:
 			case TEXT:
@@ -381,7 +381,7 @@ public final class LangOperators {
 								new DataObject().setArray(args.stream().map(DataObject::new).toArray(DataObject[]::new))
 						), SCOPE_ID);
 					}
-				})));
+				}, operand)));
 			
 			case TEXT:
 			case ARRAY:
@@ -1161,7 +1161,7 @@ public final class LangOperators {
 						
 						return ret;
 					}
-				})));
+				}, count, leftSideOperand)));
 			
 			case TEXT:
 			case CHAR:

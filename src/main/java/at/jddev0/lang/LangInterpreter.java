@@ -2004,7 +2004,7 @@ public final class LangInterpreter {
 
 											return callFunctionPointer(fp, functionName, argumentList, SCOPE_ID);
 										}
-									}))
+									}, Arrays.stream(functions).map(func -> new DataObject().setFunctionPointer(func)).toArray()))
 							).setVariableName(functionName).setFinalData(true));
 						});
 					}else {

@@ -7553,11 +7553,11 @@ final class LangPredefinedFunctions {
 									args.stream().map(DataObject::new).collect(Collectors.toList())
 							), SCOPE_ID);
 						}
-					});
+					}, f, x);
 
 					return new DataObject().setFunctionPointer(new FunctionPointerObject("<combY:anon:inner-func(" + xFunc + ")>", func));
 				}
-			});
+			}, f);
 
 			DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, new LinkedList<>(), SCOPE_ID);
 			FunctionPointerObject retAnonFunc1Func = retAnonFunc1.getFunctionPointer();
@@ -7589,7 +7589,7 @@ final class LangPredefinedFunctions {
 				) {
 					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), new LinkedList<>(), SCOPE_ID);
 				}
-			})));
+			}, funcObject)));
 		}
 
 		@LangFunction("argCnt1")
@@ -7610,7 +7610,7 @@ final class LangPredefinedFunctions {
 							a
 					), SCOPE_ID);
 				}
-			})));
+			}, funcObject)));
 		}
 
 		@LangFunction("argCnt2")
@@ -7634,7 +7634,7 @@ final class LangPredefinedFunctions {
 							)
 					), SCOPE_ID);
 				}
-			})));
+			}, funcObject)));
 		}
 
 		@LangFunction("argCnt3")
@@ -7659,7 +7659,7 @@ final class LangPredefinedFunctions {
 							)
 					), SCOPE_ID);
 				}
-			})));
+			}, funcObject)));
 		}
 
 		@LangFunction("argCnt4")
@@ -7685,7 +7685,7 @@ final class LangPredefinedFunctions {
 							)
 					), SCOPE_ID);
 				}
-			})));
+			}, funcObject)));
 		}
 
 		@LangFunction("argCnt5")
@@ -7712,7 +7712,7 @@ final class LangPredefinedFunctions {
 							)
 					), SCOPE_ID);
 				}
-			})));
+			}, funcObject)));
 		}
 	}
 
@@ -10506,13 +10506,13 @@ final class LangPredefinedFunctions {
 
 			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("module-wrapped-func")
-				public DataObject breakFunction(
+				public DataObject moduleWrappedFuncFunction(
 						LangInterpreter interpreter, int SCOPE_ID,
 						@LangParameter("&args") @RawVarArgs List<DataObject> argumentList
 				) {
 					return interpreter.callFunctionPointer(function, functionName, argumentList, SCOPE_ID);
 				}
-			}));
+			}, functionObject));
 
 			return null;
 		}
@@ -10540,13 +10540,13 @@ final class LangPredefinedFunctions {
 
 			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="module-wrapped-linker-func", isLinkerFunction=true)
-				public DataObject breakFunction(
+				public DataObject moduleWrappedLinkerFunc(
 						LangInterpreter interpreter, int SCOPE_ID,
 						@LangParameter("&args") @RawVarArgs List<DataObject> argumentList
 				) {
 					return interpreter.callFunctionPointer(function, functionName, argumentList, SCOPE_ID);
 				}
-			}));
+			}, functionObject));
 
 			return null;
 		}
