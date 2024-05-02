@@ -517,34 +517,6 @@ public class DataObject {
 		return "<DataObject>";
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if(this == obj)
-			return true;
-
-		if(obj == null)
-			return false;
-
-		if(!(obj instanceof DataObject))
-			return false;
-
-		try {
-			DataObject that = (DataObject)obj;
-			return this.type.equals(that.type) && Objects.equals(this.txt, that.txt) && Objects.equals(this.byteBuf, that.byteBuf) &&
-					Objects.deepEquals(this.arr, that.arr) && Objects.deepEquals(this.list, that.list) && Objects.equals(this.vp, that.vp) &&
-					Objects.equals(this.fp, that.fp) && Objects.equals(this.sp, that.sp) && this.intValue == that.intValue && this.longValue == that.longValue &&
-					this.floatValue == that.floatValue && this.doubleValue == that.doubleValue && this.charValue == that.charValue &&
-					Objects.equals(this.error, that.error) && this.typeValue == that.typeValue;
-		}catch(StackOverflowError e) {
-			return false;
-		}
-	}
-
-	@Override
-	public int hashCode() {
-		return Objects.hash(type, txt, byteBuf, arr, list == null?null:list.toArray(), vp, fp, sp, intValue, longValue, floatValue, doubleValue, charValue, error, typeValue);
-	}
-
 	public static enum DataType {
 		TEXT, CHAR, INT, LONG, FLOAT, DOUBLE, BYTE_BUFFER, ARRAY, LIST, VAR_POINTER, FUNCTION_POINTER, STRUCT, OBJECT, ERROR, NULL, VOID, ARGUMENT_SEPARATOR, TYPE;
 	}
@@ -894,26 +866,6 @@ public class DataObject {
 		public DataObject getVar() {
 			return var;
 		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if(this == obj)
-				return true;
-
-			if(obj == null)
-				return false;
-
-			if(!(obj instanceof VarPointerObject))
-				return false;
-
-			VarPointerObject that = (VarPointerObject)obj;
-			return this.var.equals(that.var);
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(var);
-		}
 	}
 	public static final class StructObject {
 		private final String[] memberNames;
@@ -1031,27 +983,6 @@ public class DataObject {
 		@Override
 		public String toString() {
 			return structBaseDefinition == null?"<Struct[Definition]>":"<Struct[Instance]>";
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if(this == obj)
-				return true;
-
-			if(obj == null)
-				return false;
-
-			if(!(obj instanceof StructObject))
-				return false;
-
-			StructObject that = (StructObject)obj;
-			return Objects.deepEquals(this.memberNames, that.memberNames) && Objects.deepEquals(this.members, that.members) &&
-					Objects.deepEquals(this.typeConstraints, that.typeConstraints) && Objects.equals(this.structBaseDefinition, that.structBaseDefinition);
-		}
-
-		@Override
-		public int hashCode() {
-			return Objects.hash(memberNames, members, typeConstraints, structBaseDefinition);
 		}
 	}
 	public static final class LangObject {
@@ -1630,8 +1561,6 @@ public class DataObject {
 		public String toString() {
 			return classBaseDefinition == null?"<Class>":"<Object>";
 		}
-
-		//TODO equals and hashCode
 	}
 	public static final class ErrorObject {
 		private final InterpretingError err;
