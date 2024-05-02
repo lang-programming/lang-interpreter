@@ -836,9 +836,8 @@ public class DataObject {
 
 		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber,
 								final int SCOPE_ID) {
-			return this.functionPointerType == that.functionPointerType &&
-					interpreter.operators.isEquals(new DataObject().setObject(this.thisObject),
-							new DataObject().setObject(that.thisObject), lineNumber, SCOPE_ID) &&
+			//Check for same reference of thisObjects
+			return this.functionPointerType == that.functionPointerType && this.thisObject == that.thisObject &&
 					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
 					(this.normalFunction == null || this.normalFunction.isEquals(that.normalFunction, interpreter,
 							lineNumber, SCOPE_ID))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
@@ -848,9 +847,8 @@ public class DataObject {
 
 		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber,
 									  final int SCOPE_ID) {
-			return this.functionPointerType == that.functionPointerType &&
-					interpreter.operators.isEquals(new DataObject().setObject(this.thisObject),
-							new DataObject().setObject(that.thisObject), lineNumber, SCOPE_ID) &&
+			//Check for same reference of thisObjects
+			return this.functionPointerType == that.functionPointerType && this.thisObject == that.thisObject &&
 					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
 					(this.normalFunction == null || this.normalFunction.isStrictEquals(that.normalFunction, interpreter,
 							lineNumber, SCOPE_ID))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
