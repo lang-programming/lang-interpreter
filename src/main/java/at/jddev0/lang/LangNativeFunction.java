@@ -144,7 +144,7 @@ public class LangNativeFunction {
 
 	private LangNativeFunction(String functionName, String functionInfo, boolean method,
 							   boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion,
-							   String deprecatedReplacementFunction, Object... valueDependencies) {
+							   String deprecatedReplacementFunction, Object[] valueDependencies) {
 		this.functionName = functionName;
 		this.functionInfo = functionInfo;
 		this.method = method;
@@ -594,7 +594,7 @@ public class LangNativeFunction {
 		private DataObject combinatorCall(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
 										  List<DataObject> combinedArgumentList, int SCOPE_ID) {
 			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
-					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction);
+					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, valueDependencies);
 			
 			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
 							parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
