@@ -94,20 +94,54 @@ public class LangBaseFunction {
         return builder.toString();
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        LangBaseFunction that = (LangBaseFunction) o;
-        return varArgsParameterIndex == that.varArgsParameterIndex && textVarArgsParameter == that.textVarArgsParameter &&
-                Objects.equals(parameterList, that.parameterList) && Objects.equals(parameterDataTypeConstraintList, that.parameterDataTypeConstraintList) &&
-                Objects.equals(parameterAnnotationList, that.parameterAnnotationList);
+    public boolean isEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber,
+                            final int SCOPE_ID) {
+        if(this.varArgsParameterIndex != that.varArgsParameterIndex ||
+                this.textVarArgsParameter != that.textVarArgsParameter ||
+                this.parameterList.size() != that.parameterList.size() ||
+                this.parameterDataTypeConstraintList.size() != that.parameterDataTypeConstraintList.size() ||
+                this.parameterAnnotationList.size() != that.parameterAnnotationList.size())
+            return false;
+
+        for(int i = 0;i < this.parameterList.size();i++)
+            if(!interpreter.operators.isEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber,
+                    SCOPE_ID))
+                return false;
+
+        for(int i = 0;i < this.parameterDataTypeConstraintList.size();i++)
+            if(!Objects.equals(this.parameterDataTypeConstraintList.get(i), that.parameterDataTypeConstraintList.get(i)))
+                return false;
+
+        for(int i = 0;i < this.parameterAnnotationList.size();i++)
+            if(this.parameterAnnotationList.get(i) != that.parameterAnnotationList.get(i))
+                return false;
+
+        return true;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(parameterList, parameterDataTypeConstraintList, parameterAnnotationList,
-                varArgsParameterIndex, textVarArgsParameter);
+    public boolean isStrictEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber,
+                                  final int SCOPE_ID) {
+        if(this.varArgsParameterIndex != that.varArgsParameterIndex ||
+                this.textVarArgsParameter != that.textVarArgsParameter ||
+                this.parameterList.size() != that.parameterList.size() ||
+                this.parameterDataTypeConstraintList.size() != that.parameterDataTypeConstraintList.size() ||
+                this.parameterAnnotationList.size() != that.parameterAnnotationList.size())
+            return false;
+
+        for(int i = 0;i < this.parameterList.size();i++)
+            if(!interpreter.operators.isStrictEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber,
+                    SCOPE_ID))
+                return false;
+
+        for(int i = 0;i < this.parameterDataTypeConstraintList.size();i++)
+            if(!Objects.equals(this.parameterDataTypeConstraintList.get(i), that.parameterDataTypeConstraintList.get(i)))
+                return false;
+
+        for(int i = 0;i < this.parameterAnnotationList.size();i++)
+            if(this.parameterAnnotationList.get(i) != that.parameterAnnotationList.get(i))
+                return false;
+
+        return true;
     }
 
     public static enum ParameterAnnotation {

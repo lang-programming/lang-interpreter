@@ -3204,7 +3204,8 @@ public final class LangOperators {
 				return leftSideOperand.getVarPointer().getVar() == rightSideOperand.getVarPointer().getVar();
 
 			case FUNCTION_POINTER:
-				return leftSideOperand.getFunctionPointer().equals(rightSideOperand.getFunctionPointer());
+				return leftSideOperand.getFunctionPointer().isEquals(rightSideOperand.getFunctionPointer(),
+						interpreter, lineNumber, SCOPE_ID);
 
 			case ERROR:
 				switch(rightSideOperand.getType()) {
@@ -3364,7 +3365,8 @@ public final class LangOperators {
 				return leftSideOperand.getVarPointer().getVar() == rightSideOperand.getVarPointer().getVar();
 
 			case FUNCTION_POINTER:
-				return leftSideOperand.getFunctionPointer().equals(rightSideOperand.getFunctionPointer());
+				return leftSideOperand.getFunctionPointer().isStrictEquals(rightSideOperand.getFunctionPointer(),
+						interpreter, lineNumber, SCOPE_ID);
 
 			case ERROR:
 				return leftSideOperand.getError().equals(rightSideOperand.getError());

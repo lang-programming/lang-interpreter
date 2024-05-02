@@ -35,16 +35,24 @@ public class LangNormalFunction extends LangBaseFunction {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        LangNormalFunction that = (LangNormalFunction) o;
-        return Objects.equals(functionBody, that.functionBody);
+    public boolean isEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber,
+                            final int SCOPE_ID) {
+        if(this == that)
+            return true;
+
+        return that instanceof LangNormalFunction &&
+                super.isEquals(that, interpreter, lineNumber, SCOPE_ID) &&
+                Objects.equals(this.functionBody, ((LangNormalFunction)that).functionBody);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), functionBody);
+    public boolean isStrictEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber,
+                                  final int SCOPE_ID) {
+        if(this == that)
+            return true;
+
+        return that instanceof LangNormalFunction &&
+                super.isStrictEquals(that, interpreter, lineNumber, SCOPE_ID) &&
+                Objects.equals(this.functionBody, ((LangNormalFunction)that).functionBody);
     }
 }

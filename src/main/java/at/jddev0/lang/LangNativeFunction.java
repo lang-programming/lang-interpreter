@@ -623,21 +623,51 @@ public class LangNativeFunction {
 		}
 
 		@Override
-		public boolean equals(Object o) {
-			if (this == o) return true;
-			if (o == null || getClass() != o.getClass()) return false;
-			if (!super.equals(o)) return false;
-			InternalFunction that = (InternalFunction) o;
-			return hasInterpreterParameter == that.hasInterpreterParameter && combinatorFunction == that.combinatorFunction &&
-					combinatorFunctionCallCount == that.combinatorFunctionCallCount && Objects.equals(methodParameterTypeList, that.methodParameterTypeList) &&
-					Objects.equals(instance, that.instance) && Objects.equals(functionBody, that.functionBody) &&
-					Objects.equals(combinatorProvidedArgumentList, that.combinatorProvidedArgumentList);
+		public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber,
+								final int SCOPE_ID) {
+			if(!(baseFunction instanceof InternalFunction))
+				return false;
+
+			InternalFunction that = (InternalFunction)baseFunction;
+
+			if(!super.isEquals(that, interpreter, lineNumber, SCOPE_ID) ||
+					this.hasInterpreterParameter != that.hasInterpreterParameter ||
+					this.combinatorFunction != that.combinatorFunction ||
+					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
+					!Objects.equals(this.functionBody, that.functionBody) ||
+					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size())
+				return false;
+
+			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
+				if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
+						that.combinatorProvidedArgumentList.get(i), lineNumber, SCOPE_ID))
+					return false;
+
+			return true;
 		}
 
 		@Override
-		public int hashCode() {
-			return Objects.hash(super.hashCode(), methodParameterTypeList, instance, functionBody, hasInterpreterParameter,
-					combinatorFunction, combinatorFunctionCallCount, combinatorProvidedArgumentList);
+		public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber,
+									  final int SCOPE_ID) {
+			if(!(baseFunction instanceof InternalFunction))
+				return false;
+
+			InternalFunction that = (InternalFunction)baseFunction;
+
+			if(!super.isEquals(that, interpreter, lineNumber, SCOPE_ID) ||
+					this.hasInterpreterParameter != that.hasInterpreterParameter ||
+					this.combinatorFunction != that.combinatorFunction ||
+					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
+					!Objects.equals(this.functionBody, that.functionBody) ||
+					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size())
+				return false;
+
+			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
+				if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
+						that.combinatorProvidedArgumentList.get(i), lineNumber, SCOPE_ID))
+					return false;
+
+			return true;
 		}
 	}
 	
@@ -671,5 +701,35 @@ public class LangNativeFunction {
 	
 	public List<InternalFunction> getInternalFunctions() {
 		return new ArrayList<>(internalFunctions);
+	}
+
+	public boolean isEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber,
+							final int SCOPE_ID) {
+		if(this == that)
+			return true;
+
+		if(this.internalFunctions.size() != that.internalFunctions.size())
+			return false;
+
+		for(int i = 0;i < this.internalFunctions.size();i++)
+			if(!this.internalFunctions.get(i).isEquals(that.internalFunctions.get(i), interpreter, lineNumber, SCOPE_ID))
+				return false;
+
+		return true;
+	}
+
+	public boolean isStrictEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber,
+								  final int SCOPE_ID) {
+		if(this == that)
+			return true;
+
+		if(this.internalFunctions.size() != that.internalFunctions.size())
+			return false;
+
+		for(int i = 0;i < this.internalFunctions.size();i++)
+			if(!this.internalFunctions.get(i).isStrictEquals(that.internalFunctions.get(i), interpreter, lineNumber, SCOPE_ID))
+				return false;
+
+		return true;
 	}
 }

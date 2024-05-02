@@ -834,26 +834,28 @@ public class DataObject {
 			}
 		}
 
-		@Override
-		public boolean equals(Object obj) {
-			if(this == obj)
-				return true;
-
-			if(obj == null)
-				return false;
-
-			if(!(obj instanceof FunctionPointerObject))
-				return false;
-
-			FunctionPointerObject that = (FunctionPointerObject)obj;
-			return this.functionPointerType == that.functionPointerType && Objects.equals(this.thisObject, that.thisObject) &&
-					Objects.equals(this.superLevel, that.superLevel) && Objects.equals(this.normalFunction, that.normalFunction) &&
-					Objects.equals(this.nativeFunction, that.nativeFunction);
+		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber,
+								final int SCOPE_ID) {
+			return this.functionPointerType == that.functionPointerType &&
+					interpreter.operators.isEquals(new DataObject().setObject(this.thisObject),
+							new DataObject().setObject(that.thisObject), lineNumber, SCOPE_ID) &&
+					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
+					(this.normalFunction == null || this.normalFunction.isEquals(that.normalFunction, interpreter,
+							lineNumber, SCOPE_ID))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
+					(this.nativeFunction == null || this.nativeFunction.isEquals(that.nativeFunction, interpreter,
+							lineNumber, SCOPE_ID)));
 		}
 
-		@Override
-		public int hashCode() {
-			return Objects.hash(functionPointerType, thisObject, superLevel, normalFunction, nativeFunction);
+		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber,
+									  final int SCOPE_ID) {
+			return this.functionPointerType == that.functionPointerType &&
+					interpreter.operators.isEquals(new DataObject().setObject(this.thisObject),
+							new DataObject().setObject(that.thisObject), lineNumber, SCOPE_ID) &&
+					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
+					(this.normalFunction == null || this.normalFunction.isStrictEquals(that.normalFunction, interpreter,
+							lineNumber, SCOPE_ID))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
+					(this.nativeFunction == null || this.nativeFunction.isStrictEquals(that.nativeFunction, interpreter,
+							lineNumber, SCOPE_ID)));
 		}
 	}
 	public static final class VarPointerObject {
