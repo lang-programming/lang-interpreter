@@ -4398,16 +4398,12 @@ final class LangPredefinedFunctions {
 
 			FunctionPointerObject retAAFunc = retAA.getFunctionPointer();
 
-			DataObject retAA2 = interpreter.callFunctionPointer(retAAFunc, retAA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-					Arrays.asList(
-							c
-					)
+			DataObject retAA2 = interpreter.callFunctionPointer(retAAFunc, retAA.getVariableName(), Arrays.asList(
+					c
 			), SCOPE_ID);
 
-			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-					Arrays.asList(
-							LangUtils.nullToLangVoid(retAA2)
-					)
+			return interpreter.callFunctionPointer(retAFunc, retA.getVariableName(), Arrays.asList(
+					LangUtils.nullToLangVoid(retAA2)
 			), SCOPE_ID);
 		}
 
