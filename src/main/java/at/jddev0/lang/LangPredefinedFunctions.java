@@ -5284,11 +5284,9 @@ final class LangPredefinedFunctions {
 					d
 			), SCOPE_ID);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-					Arrays.asList(
-							LangUtils.nullToLangVoid(retC),
-							LangUtils.nullToLangVoid(retB)
-					)
+			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					LangUtils.nullToLangVoid(retC),
+					LangUtils.nullToLangVoid(retB)
 			), SCOPE_ID);
 		}
 
