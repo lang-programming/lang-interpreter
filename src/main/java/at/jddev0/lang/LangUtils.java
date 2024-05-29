@@ -26,7 +26,7 @@ public final class LangUtils {
 	 * @return Will return null if the dataObjects is empty or if dataObjects only contains Java null values
 	 */
 	public static DataObject combineDataObjects(List<DataObject> dataObjects,
-												LangInterpreter interpreter, int lineNumber, final int SCOPE_ID) {
+												LangInterpreter interpreter, int lineNumber) {
 		dataObjects = new LinkedList<>(dataObjects);
 		dataObjects.removeIf(Objects::isNull);
 		
@@ -49,15 +49,15 @@ public final class LangUtils {
 		//Combine everything to a single text object
 		final StringBuilder builder = new StringBuilder();
 		dataObjects.forEach(ele ->
-				builder.append(interpreter.conversions.toText(ele, lineNumber, SCOPE_ID)));
+				builder.append(interpreter.conversions.toText(ele, lineNumber)));
 		return new DataObject(builder.toString());
 	}
 	
 	/**
 	 * @return Returns the next DataObject (One DataObject or a combined text value DataObject) before the next ARGUMENT_SEPARATOR or the end and removes all used data objects
 	 */
-	public static DataObject getNextArgumentAndRemoveUsedDataObjects(List<DataObject> argumentList, boolean removeArgumentSpearator,
-																	 LangInterpreter interpreter, int lineNumber, final int SCOPE_ID) {
+	public static DataObject getNextArgumentAndRemoveUsedDataObjects(List<DataObject> argumentList, boolean removeArgumentSeparator,
+																	 LangInterpreter interpreter, int lineNumber) {
 		List<DataObject> argumentTmpList = new LinkedList<>();
 		while(!argumentList.isEmpty() && argumentList.get(0).getType() != DataType.ARGUMENT_SEPARATOR)
 			argumentTmpList.add(argumentList.remove(0));
@@ -65,10 +65,10 @@ public final class LangUtils {
 		if(argumentTmpList.isEmpty())
 			argumentTmpList.add(new DataObject().setVoid());
 		
-		if(removeArgumentSpearator && argumentList.size() > 0)
+		if(removeArgumentSeparator && argumentList.size() > 0)
 			argumentList.remove(0); //Remove ARGUMENT_SEPARATOR
 		
-		return combineDataObjects(argumentTmpList, interpreter, lineNumber, SCOPE_ID);
+		return combineDataObjects(argumentTmpList, interpreter, lineNumber);
 	}
 	
 	/**
@@ -82,7 +82,7 @@ public final class LangUtils {
 	 * @return Returns a list of DataObjects where every ARGUMENT_SEPARATOR is removed and arguments are combined into single values (A VOID value is used for empty arguments)
 	 */
 	public static List<DataObject> combineArgumentsWithoutArgumentSeparators(List<DataObject> argumentList,
-																			 LangInterpreter interpreter, int lineNumber, final int SCOPE_ID) {
+																			 LangInterpreter interpreter, int lineNumber) {
 		if(argumentList.isEmpty())
 			return new ArrayList<>();
 		
@@ -96,7 +96,7 @@ public final class LangUtils {
 				if(argumentTmpList.isEmpty())
 					argumentTmpList.add(new DataObject().setVoid());
 				
-				combinedArgumentList.add(combineDataObjects(argumentTmpList, interpreter, lineNumber, SCOPE_ID));
+				combinedArgumentList.add(combineDataObjects(argumentTmpList, interpreter, lineNumber));
 				argumentTmpList.clear();
 				
 				continue;
@@ -107,8 +107,8 @@ public final class LangUtils {
 		
 		if(argumentTmpList.isEmpty())
 			argumentTmpList.add(new DataObject().setVoid());
-		
-		combinedArgumentList.add(combineDataObjects(argumentTmpList, interpreter, lineNumber, SCOPE_ID));
+
+		combinedArgumentList.add(combineDataObjects(argumentTmpList, interpreter, lineNumber));
 		
 		return combinedArgumentList;
 	}

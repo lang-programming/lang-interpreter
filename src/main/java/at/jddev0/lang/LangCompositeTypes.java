@@ -79,12 +79,12 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isPresentMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						try {
-							return new DataObject().setBoolean(interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID));
+							return new DataObject().setBoolean(interpreter.conversions.toBool(thisObject.getMember("$present"), -1));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -99,16 +99,16 @@ public class LangCompositeTypes {
 					@LangInfo("Returns the value if a just &Maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown")
 					@SuppressWarnings("unused")
 					public DataObject getMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						try {
-							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 							if(!present)
-								return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, "Value is not present", SCOPE_ID);
+								return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, "Value is not present");
 
 							return new DataObject(thisObject.getMember("$value"));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -124,30 +124,30 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject flatMapMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("fp.mapper") @AllowedTypes(DataType.FUNCTION_POINTER) DataObject mapperFuncObject
 					) {
 						DataObject.FunctionPointerObject mapperFunc = mapperFuncObject.getFunctionPointer();
 
 						try {
-							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 							if(present) {
 								DataObject ret = interpreter.callFunctionPointer(mapperFunc, mapperFuncObject.getVariableName(), Arrays.asList(
 										new DataObject(thisObject.getMember("$value"))
-								), SCOPE_ID);
+								));
 
 								if(ret == null || ret.getType() != DataType.OBJECT || ret.getObject().isClass() ||
 										!ret.getObject().isInstanceOf(CLASS_MAYBE))
 									return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_FUNC_PTR,
-											"The value returned by fp.mapperFunc() must be of type \"&Maybe\"", SCOPE_ID);
+											"The value returned by fp.mapperFunc() must be of type \"&Maybe\"");
 
 								return ret;
 							}
 
-							return interpreter.callConstructor(CLASS_MAYBE, new ArrayList<>(0), SCOPE_ID);
+							return interpreter.callConstructor(CLASS_MAYBE, new ArrayList<>(0));
 						}catch(DataObject.DataTypeConstraintException e) {
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE,
-									e.getMessage(), SCOPE_ID);
+									e.getMessage());
 						}
 					}
 				})),
@@ -163,23 +163,23 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.VOID)
 					@SuppressWarnings("unused")
 					public DataObject ifPresentMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("fp.func") @AllowedTypes(DataType.FUNCTION_POINTER) DataObject funcObject
 					) {
 						DataObject.FunctionPointerObject func = funcObject.getFunctionPointer();
 
 						try {
-							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 							if(present) {
 								interpreter.callFunctionPointer(func, funcObject.getVariableName(), Arrays.asList(
 										new DataObject(thisObject.getMember("$value"))
-								), SCOPE_ID);
+								));
 							}
 
 							return null;
 						}catch(DataObject.DataTypeConstraintException e) {
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE,
-									e.getMessage(), SCOPE_ID);
+									e.getMessage());
 						}
 					}
 				})),
@@ -194,26 +194,26 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject deepCopyMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						DataObject value = thisObject.getMember("$value");
-						boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+						boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 
 						try {
 							List<DataObject> arguments = new LinkedList<>();
 							if(present) {
-								DataObject deepCopyRet = interpreter.operators.opDeepCopy(value, -1, SCOPE_ID);
+								DataObject deepCopyRet = interpreter.operators.opDeepCopy(value, -1);
 								if(deepCopyRet == null) {
 									return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS,
-											"The deep copy operator is not defined for " + value.getType(), SCOPE_ID);
+											"The deep copy operator is not defined for " + value.getType());
 								}
 
 								arguments.add(deepCopyRet);
 							}
 
-							return interpreter.callConstructor(LangCompositeTypes.CLASS_MAYBE, arguments, SCOPE_ID);
+							return interpreter.callConstructor(LangCompositeTypes.CLASS_MAYBE, arguments);
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -228,7 +228,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isEqualsMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$operand") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
 					) {
 						LangObject operandObject = operand.getObject();
@@ -238,15 +238,15 @@ public class LangCompositeTypes {
 
 						try {
 							DataObject thisValue = thisObject.getMember("$value");
-							boolean thisPresent = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							boolean thisPresent = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 
 							DataObject operandValue = operandObject.getMember("$value");
-							boolean operandPresent = interpreter.conversions.toBool(operandObject.getMember("$present"), -1, SCOPE_ID);
+							boolean operandPresent = interpreter.conversions.toBool(operandObject.getMember("$present"), -1);
 
 							return new DataObject().setBoolean(thisPresent == operandPresent && (!thisPresent ||
-									interpreter.operators.isEquals(thisValue, operandValue, -1, SCOPE_ID)));
+									interpreter.operators.isEquals(thisValue, operandValue, -1)));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -261,7 +261,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isStrictEqualsMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$operand") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
 					) {
 						LangObject operandObject = operand.getObject();
@@ -272,15 +272,15 @@ public class LangCompositeTypes {
 
 						try {
 							DataObject thisValue = thisObject.getMember("$value");
-							boolean thisPresent = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							boolean thisPresent = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 
 							DataObject operandValue = operandObject.getMember("$value");
-							boolean operandPresent = interpreter.conversions.toBool(operandObject.getMember("$present"), -1, SCOPE_ID);
+							boolean operandPresent = interpreter.conversions.toBool(operandObject.getMember("$present"), -1);
 
 							return new DataObject().setBoolean(thisPresent == operandPresent && (!thisPresent ||
-									interpreter.operators.isEquals(thisValue, operandValue, -1, SCOPE_ID)));
+									interpreter.operators.isEquals(thisValue, operandValue, -1)));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -295,17 +295,17 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.TEXT)
 					@SuppressWarnings("unused")
 					public DataObject toTextMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						try {
 							DataObject value = thisObject.getMember("$value");
-							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1, SCOPE_ID);
+							boolean present = interpreter.conversions.toBool(thisObject.getMember("$present"), -1);
 							if(present)
-								return new DataObject("just(" + interpreter.conversions.toText(value, -1, SCOPE_ID) + ")");
+								return new DataObject("just(" + interpreter.conversions.toText(value, -1) + ")");
 
 							return new DataObject("nothing");
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -321,7 +321,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.VOID)
 					@SuppressWarnings("unused")
 					public DataObject nothingConstructMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						thisObject.getMember("$value").setVoid();
 						thisObject.getMember("$present").setBoolean(false);
@@ -335,7 +335,7 @@ public class LangCompositeTypes {
 					@LangInfo("Creates a just &Maybe object")
 					@SuppressWarnings("unused")
 					public DataObject justConstructMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$value") DataObject valueObject
 					) {
 						thisObject.getMember("$value").setData(valueObject);
@@ -354,9 +354,9 @@ public class LangCompositeTypes {
 							@LangInfo("Creates a nothing &Maybe object")
 							@SuppressWarnings("unused")
 							public DataObject nothingStaticMethod(
-									LangInterpreter interpreter, int SCOPE_ID
+									LangInterpreter interpreter
 							) {
-								return interpreter.callConstructor(CLASS_MAYBE, new ArrayList<>(0), SCOPE_ID);
+								return interpreter.callConstructor(CLASS_MAYBE, new ArrayList<>(0));
 							}
 						}))
 				).setVariableName("fp.nothing").setFinalData(true),
@@ -367,10 +367,10 @@ public class LangCompositeTypes {
 							@LangInfo("Creates a just &Maybe object")
 							@SuppressWarnings("unused")
 							public DataObject justStaticMethod(
-									LangInterpreter interpreter, int SCOPE_ID,
+									LangInterpreter interpreter,
 									@LangParameter("$value") DataObject valueObject
 							) {
-								return interpreter.callConstructor(CLASS_MAYBE, Arrays.asList(valueObject), SCOPE_ID);
+								return interpreter.callConstructor(CLASS_MAYBE, Arrays.asList(valueObject));
 							}
 						}))
 				).setVariableName("fp.just").setFinalData(true)
@@ -408,7 +408,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject conjugateMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						double real = thisObject.getMember("$real").getDouble();
 						double imag = thisObject.getMember("$imag").getDouble();
@@ -417,9 +417,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(real),
 									new DataObject().setDouble(-imag)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -434,7 +434,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject deepCopyMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						double real = thisObject.getMember("$real").getDouble();
 						double imag = thisObject.getMember("$imag").getDouble();
@@ -443,9 +443,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(real),
 									new DataObject().setDouble(imag)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -460,7 +460,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject invMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						double real = thisObject.getMember("$real").getDouble();
 						double imag = thisObject.getMember("$imag").getDouble();
@@ -469,9 +469,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(-real),
 									new DataObject().setDouble(-imag)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -486,7 +486,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.DOUBLE)
 					@SuppressWarnings("unused")
 					public DataObject absMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						double real = thisObject.getMember("$real").getDouble();
 						double imag = thisObject.getMember("$imag").getDouble();
@@ -495,10 +495,10 @@ public class LangCompositeTypes {
 							try {
 								return new DataObject().setDouble(Math.hypot(real, imag));
 							}catch(DataObject.DataTypeConstraintException e) {
-								return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+								return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 							}
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -513,14 +513,14 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject addMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
 					) {
 						LangObject operandObject = operand.getObject();
 
 						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-									operand.getVariableName()), SCOPE_ID);
+									operand.getVariableName()));
 
 						double realA = thisObject.getMember("$real").getDouble();
 						double imagA = thisObject.getMember("$imag").getDouble();
@@ -532,9 +532,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA + realB),
 									new DataObject().setDouble(imagA + imagB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -543,7 +543,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject addMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = thisObject.getMember("$real").getDouble();
@@ -555,9 +555,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA + realB),
 									new DataObject().setDouble(imagA)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -573,7 +573,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject rAddMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = operandNumber.doubleValue();
@@ -585,9 +585,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA + realB),
 									new DataObject().setDouble(imagB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -602,14 +602,14 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject subMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
 					) {
 						LangObject operandObject = operand.getObject();
 
 						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-									operand.getVariableName()), SCOPE_ID);
+									operand.getVariableName()));
 
 						double realA = thisObject.getMember("$real").getDouble();
 						double imagA = thisObject.getMember("$imag").getDouble();
@@ -621,9 +621,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA - realB),
 									new DataObject().setDouble(imagA - imagB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -632,7 +632,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject subMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = thisObject.getMember("$real").getDouble();
@@ -644,9 +644,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA - realB),
 									new DataObject().setDouble(imagA)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -662,7 +662,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject rSubMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = operandNumber.doubleValue();
@@ -674,9 +674,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA - realB),
 									new DataObject().setDouble(-imagB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -691,14 +691,14 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject mulMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
 					) {
 						LangObject operandObject = operand.getObject();
 
 						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-									operand.getVariableName()), SCOPE_ID);
+									operand.getVariableName()));
 
 						double realA = thisObject.getMember("$real").getDouble();
 						double imagA = thisObject.getMember("$imag").getDouble();
@@ -710,9 +710,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA * realB - imagA * imagB),
 									new DataObject().setDouble(realA * imagB + imagA * realB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -721,7 +721,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject mulMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = thisObject.getMember("$real").getDouble();
@@ -733,9 +733,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA * realB),
 									new DataObject().setDouble(imagA * realB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -751,7 +751,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject rMulMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = operandNumber.doubleValue();
@@ -763,9 +763,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA * realB),
 									new DataObject().setDouble(realA * imagB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -780,14 +780,14 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject divMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("&z") @AllowedTypes(DataObject.DataType.OBJECT) DataObject operand
 					) {
 						LangObject operandObject = operand.getObject();
 
 						if(operandObject.isClass() || !operandObject.isInstanceOf(LangCompositeTypes.CLASS_COMPLEX))
 							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of type \"&Complex\"",
-									operand.getVariableName()), SCOPE_ID);
+									operand.getVariableName()));
 
 						double realA = thisObject.getMember("$real").getDouble();
 						double imagA = thisObject.getMember("$imag").getDouble();
@@ -804,9 +804,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realNumerator / denominator),
 									new DataObject().setDouble(imagNumerator / denominator)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -815,7 +815,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject divMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = thisObject.getMember("$real").getDouble();
@@ -827,9 +827,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realA / realB),
 									new DataObject().setDouble(imagA / realB)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -845,7 +845,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.OBJECT)
 					@SuppressWarnings("unused")
 					public DataObject rDivMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$x") @NumberValue Number operandNumber
 					) {
 						double realA = operandNumber.doubleValue();
@@ -862,9 +862,9 @@ public class LangCompositeTypes {
 							return interpreter.callConstructor(LangCompositeTypes.CLASS_COMPLEX, LangUtils.asListWithArgumentSeparators(
 									new DataObject().setDouble(realNumerator / denominator),
 									new DataObject().setDouble(imagNumerator / denominator)
-							), SCOPE_ID);
+							));
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				}))
@@ -879,7 +879,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isEqualsMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$operand") DataObject operand
 					) {
 						try {
@@ -887,7 +887,7 @@ public class LangCompositeTypes {
 							double thisImag = thisObject.getMember("$imag").getDouble();
 
 							if(thisImag == 0) {
-								Number number = interpreter.conversions.toNumber(operand, -1, SCOPE_ID);
+								Number number = interpreter.conversions.toNumber(operand, -1);
 								if(number != null) {
 									return new DataObject().setBoolean(thisReal == number.doubleValue());
 								}
@@ -906,7 +906,7 @@ public class LangCompositeTypes {
 
 							return new DataObject().setBoolean(thisReal == operandReal && thisImag == operandImag);
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -921,7 +921,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject rIsEqualsMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$operand") DataObject operand
 					) {
 						try {
@@ -929,7 +929,7 @@ public class LangCompositeTypes {
 							double thisImag = thisObject.getMember("$imag").getDouble();
 
 							if(thisImag == 0) {
-								Number number = interpreter.conversions.toNumber(operand, -1, SCOPE_ID);
+								Number number = interpreter.conversions.toNumber(operand, -1);
 								if(number != null) {
 									return new DataObject().setBoolean(number.doubleValue() == thisReal);
 								}
@@ -948,7 +948,7 @@ public class LangCompositeTypes {
 
 							return new DataObject().setBoolean(operandReal == thisReal && operandImag == thisImag);
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -963,7 +963,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.INT)
 					@SuppressWarnings("unused")
 					public DataObject isStrictEqualsMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$operand") @AllowedTypes(DataType.OBJECT) DataObject operand
 					) {
 						try {
@@ -981,7 +981,7 @@ public class LangCompositeTypes {
 
 							return new DataObject().setBoolean(thisReal == operandReal && thisImag == operandImag);
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -996,7 +996,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.TEXT)
 					@SuppressWarnings("unused")
 					public DataObject toTextMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+							LangInterpreter interpreter, LangObject thisObject
 					) {
 						try {
 							double real = thisObject.getMember("$real").getDouble();
@@ -1004,7 +1004,7 @@ public class LangCompositeTypes {
 
 							return new DataObject(real + " + " + imag + "i");
 						}catch(DataObject.DataTypeConstraintException e) {
-							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), SCOPE_ID);
+							return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage());
 						}
 					}
 				})),
@@ -1020,7 +1020,7 @@ public class LangCompositeTypes {
 					@AllowedTypes(DataType.VOID)
 					@SuppressWarnings("unused")
 					public DataObject constructMethod(
-							LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject,
+							LangInterpreter interpreter, LangObject thisObject,
 							@LangParameter("$real") @NumberValue Number realNumber,
 							@LangParameter("$imag") @NumberValue Number imagNumber
 					) {

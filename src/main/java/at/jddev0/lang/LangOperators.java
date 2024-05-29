@@ -27,32 +27,32 @@ public final class LangOperators {
 		this.interpreter = interpreter;
 	}
 
-	private DataObject callOperatorMethod(String operatorName, DataObject operand, int lineNumber, final int SCOPE_ID) {
+	private DataObject callOperatorMethod(String operatorName, DataObject operand, int lineNumber) {
 		return callOperatorMethod(operand, "op:" + operatorName, new ArrayList<>(0),
-				lineNumber, SCOPE_ID);
+				lineNumber);
 	}
 
 	private DataObject callOperatorMethod(String operatorName, boolean hasReverse, DataObject leftSideOperand,
-										  DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+										  DataObject rightSideOperand, int lineNumber) {
 		DataObject ret = callOperatorMethod(leftSideOperand, "op:" + operatorName, Arrays.asList(rightSideOperand),
-				lineNumber, SCOPE_ID);
+				lineNumber);
 		if(ret != null)
 			return ret;
 
 		return hasReverse?callOperatorMethod(rightSideOperand, "op:r-" + operatorName, Arrays.asList(leftSideOperand),
-				lineNumber, SCOPE_ID):null;
+				lineNumber):null;
 	}
 
 	private DataObject callOperatorMethod(String operatorName, DataObject leftSideOperand, DataObject middleOperand,
-										  DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+										  DataObject rightSideOperand, int lineNumber) {
 		return callOperatorMethod(leftSideOperand, "op:" + operatorName,
 				LangUtils.separateArgumentsWithArgumentSeparators(Arrays.asList(
 						middleOperand, rightSideOperand
-				)), lineNumber, SCOPE_ID);
+				)), lineNumber);
 	}
 
 	private DataObject callOperatorMethod(DataObject langObject, String methodName, List<DataObject> argumentList,
-										  int lineNumber, final int SCOPE_ID) {
+										  int lineNumber) {
 		if(langObject.getType() != DataType.OBJECT || langObject.getObject().isClass())
 			return null;
 
@@ -61,11 +61,11 @@ public final class LangOperators {
 			return null;
 
 		FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method,
-				LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber, SCOPE_ID));
+				LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber));
 		if(fp == null)
 			return null;
 
-		DataObject ret = interpreter.callFunctionPointer(fp, methodName, argumentList, lineNumber, SCOPE_ID);
+		DataObject ret = interpreter.callFunctionPointer(fp, methodName, argumentList, lineNumber);
 		if(ret == null)
 			return new DataObject().setVoid();
 
@@ -76,8 +76,8 @@ public final class LangOperators {
 	/**
 	 * For "@"
 	 */
-	public DataObject opLen(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("len", operand, lineNumber, SCOPE_ID);
+	public DataObject opLen(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("len", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -115,8 +115,8 @@ public final class LangOperators {
 	/**
 	 * For "^"
 	 */
-	public DataObject opDeepCopy(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("deepCopy", operand, lineNumber, SCOPE_ID);
+	public DataObject opDeepCopy(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("deepCopy", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -126,7 +126,7 @@ public final class LangOperators {
 			case ARRAY:
 				DataObject[] arrCopy = new DataObject[operand.getArray().length];
 				for(int i = 0;i < operand.getArray().length;i++) {
-					arrCopy[i] = opDeepCopy(operand.getArray()[i], lineNumber, SCOPE_ID);
+					arrCopy[i] = opDeepCopy(operand.getArray()[i], lineNumber);
 					if(arrCopy[i] == null)
 						return null;
 				}
@@ -135,7 +135,7 @@ public final class LangOperators {
 			case LIST:
 				LinkedList<DataObject> listCopy = new LinkedList<>();
 				for(int i = 0;i < operand.getList().size();i++) {
-					listCopy.add(opDeepCopy(operand.getList().get(i), lineNumber, SCOPE_ID));
+					listCopy.add(opDeepCopy(operand.getList().get(i), lineNumber));
 					if(listCopy.get(i) == null)
 						return null;
 				}
@@ -149,12 +149,12 @@ public final class LangOperators {
 					}else {
 						StructObject structCopy = new StructObject(struct.getStructBaseDefinition());
 						for(String memberName:struct.getMemberNames())
-							structCopy.setMember(memberName, opDeepCopy(struct.getMember(memberName), lineNumber, SCOPE_ID));
+							structCopy.setMember(memberName, opDeepCopy(struct.getMember(memberName), lineNumber));
 						
 						return new DataObject().setStruct(structCopy);
 					}
 				}catch(DataTypeConstraintException e) {
-					return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
 				}
 			case OBJECT:
 				return null;
@@ -180,24 +180,24 @@ public final class LangOperators {
 	/**
 	 * For "|||"
 	 */
-	public DataObject opConcat(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("concat", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opConcat(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("concat", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
 		switch(leftSideOperand.getType()) {
 			case INT:
-				return new DataObject(leftSideOperand.getInt() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getInt() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case LONG:
-				return new DataObject(leftSideOperand.getLong() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getLong() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case FLOAT:
-				return new DataObject(leftSideOperand.getFloat() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getFloat() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case DOUBLE:
-				return new DataObject(leftSideOperand.getDouble() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getDouble() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case CHAR:
-				return new DataObject(leftSideOperand.getChar() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getChar() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case TEXT:
-				return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case BYTE_BUFFER:
 				if(rightSideOperand.getType() != DataType.BYTE_BUFFER)
 					return null;
@@ -256,14 +256,14 @@ public final class LangOperators {
 					@LangFunction("concat-func")
 					@SuppressWarnings("unused")
 					public DataObject concatFuncFunction(
-							LangInterpreter interpreter, int SCOPE_ID,
+							LangInterpreter interpreter,
 							@LangParameter("&args") @RawVarArgs List<DataObject> args
 					) {
-						DataObject retA = interpreter.callFunctionPointer(aFunc, leftSideOperand.getVariableName(), args, SCOPE_ID);
+						DataObject retA = interpreter.callFunctionPointer(aFunc, leftSideOperand.getVariableName(), args);
 						
 						return interpreter.callFunctionPointer(bFunc, rightSideOperand.getVariableName(), Arrays.asList(
 								LangUtils.nullToLangVoid(retA)
-						), SCOPE_ID);
+						));
 					}
 				}, leftSideOperand, rightSideOperand)));
 			
@@ -283,12 +283,12 @@ public final class LangOperators {
 	/**
 	 * For "&lt;=&gt;"
 	 */
-	public DataObject opSpaceship(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		if(isLessThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID))
+	public DataObject opSpaceship(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		if(isLessThan(leftSideOperand, rightSideOperand, lineNumber))
 			return new DataObject().setInt(-1);
-		if(isEquals(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID))
+		if(isEquals(leftSideOperand, rightSideOperand, lineNumber))
 			return new DataObject().setInt(0);
-		if(isGreaterThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID))
+		if(isGreaterThan(leftSideOperand, rightSideOperand, lineNumber))
 			return new DataObject().setInt(1);
 		
 		return new DataObject().setNull();
@@ -298,8 +298,8 @@ public final class LangOperators {
 	/**
 	 * For "+|"
 	 */
-	public DataObject opInc(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("inc", operand, lineNumber, SCOPE_ID);
+	public DataObject opInc(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("inc", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -321,12 +321,12 @@ public final class LangOperators {
 						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("auto-unpack-func")
 					public DataObject autoUnpackFuncFunction(
-							LangInterpreter interpreter, int SCOPE_ID,
+							LangInterpreter interpreter,
 							@LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
 					) {
 						return interpreter.callFunctionPointer(func, operand.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 								Arrays.stream(arrayObject.getArray()).map(DataObject::new).collect(Collectors.toList())
-						), SCOPE_ID);
+						));
 					}
 				}, operand)));
 			
@@ -350,8 +350,8 @@ public final class LangOperators {
 	/**
 	 * For "-|"
 	 */
-	public DataObject opDec(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("dec", operand, lineNumber, SCOPE_ID);
+	public DataObject opDec(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("dec", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -374,12 +374,12 @@ public final class LangOperators {
 					@LangFunction("auto-pack-func")
 					@SuppressWarnings("unused")
 					public DataObject autoPackFuncFunction(
-							LangInterpreter interpreter, int SCOPE_ID,
+							LangInterpreter interpreter,
 							@LangParameter("&args") @VarArgs List<DataObject> args
 					) {
 						return interpreter.callFunctionPointer(func, operand.getVariableName(), Arrays.asList(
 								new DataObject().setArray(args.stream().map(DataObject::new).toArray(DataObject[]::new))
-						), SCOPE_ID);
+						));
 					}
 				}, operand)));
 			
@@ -403,8 +403,8 @@ public final class LangOperators {
 	/**
 	 * For "+"
 	 */
-	public DataObject opPos(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("pos", operand, lineNumber, SCOPE_ID);
+	public DataObject opPos(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("pos", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -413,8 +413,8 @@ public final class LangOperators {
 	/**
 	 * For "-"
 	 */
-	public DataObject opInv(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("inv", operand, lineNumber, SCOPE_ID);
+	public DataObject opInv(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("inv", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -467,8 +467,8 @@ public final class LangOperators {
 	/**
 	 * For "+"
 	 */
-	public DataObject opAdd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("add", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opAdd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("add", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -619,7 +619,7 @@ public final class LangOperators {
 				}
 				return null;
 			case TEXT:
-				return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID));
+				return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, lineNumber));
 			case ARRAY:
 				DataObject[] arrNew = new DataObject[leftSideOperand.getArray().length + 1];
 				for(int i = 0;i < leftSideOperand.getArray().length;i++)
@@ -650,8 +650,8 @@ public final class LangOperators {
 	/**
 	 * For "-"
 	 */
-	public DataObject opSub(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("sub", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opSub(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("sub", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -823,8 +823,8 @@ public final class LangOperators {
 	/**
 	 * For "*"
 	 */
-	public DataObject opMul(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("mul", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opMul(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("mul", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -946,7 +946,7 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() < 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Integer value must be larger than or equals to 0", lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Integer value must be larger than or equals to 0", lineNumber);
 						
 						StringBuilder builder = new StringBuilder();
 						for(int i = 0;i < rightSideOperand.getInt();i++)
@@ -996,8 +996,8 @@ public final class LangOperators {
 	/**
 	 * For "**"
 	 */
-	public DataObject opPow(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("pow", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opPow(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("pow", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -1124,7 +1124,7 @@ public final class LangOperators {
 				
 				final int count = rightSideOperand.getInt();
 				if(count < 0)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Number must not be less than 0!", lineNumber, SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Number must not be less than 0!", lineNumber);
 				
 				final FunctionPointerObject func = leftSideOperand.getFunctionPointer();
 				
@@ -1134,7 +1134,7 @@ public final class LangOperators {
 						@LangFunction("pow-func")
 						@SuppressWarnings("unused")
 						public DataObject powFuncFunction(
-								LangInterpreter interpreter, int SCOPE_ID,
+								LangInterpreter interpreter,
 								@LangParameter("&args") @RawVarArgs List<DataObject> args
 						) {
 							return new DataObject().setVoid();
@@ -1146,16 +1146,16 @@ public final class LangOperators {
 					@LangFunction("pow-func")
 					@SuppressWarnings("unused")
 					public DataObject powFuncFunction(
-							LangInterpreter interpreter, int SCOPE_ID,
+							LangInterpreter interpreter,
 							@LangParameter("&args") @RawVarArgs List<DataObject> args
 					) {
-						DataObject retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), args, SCOPE_ID);
+						DataObject retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), args);
 						DataObject ret = LangUtils.nullToLangVoid(retN);
 						
 						for(int i = 1;i < count;i++) {
 							retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), Arrays.asList(
 									ret
-							), SCOPE_ID);
+							));
 							ret = LangUtils.nullToLangVoid(retN);
 						}
 						
@@ -1184,8 +1184,8 @@ public final class LangOperators {
 	/**
 	 * For "/"
 	 */
-	public DataObject opDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("div", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("div", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -1349,8 +1349,8 @@ public final class LangOperators {
 	/**
 	 * For "~/"
 	 */
-	public DataObject opTruncDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("truncDiv", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opTruncDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("truncDiv", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -1359,17 +1359,17 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setInt(leftSideOperand.getInt() / rightSideOperand.getInt());
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(leftSideOperand.getInt() / rightSideOperand.getLong());
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						float tmpF = leftSideOperand.getInt() / rightSideOperand.getFloat();
 						if(tmpF > 0)
@@ -1379,7 +1379,7 @@ public final class LangOperators {
 						return new DataObject().setFloat(tmpF);
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						double tmpD = leftSideOperand.getInt() / rightSideOperand.getDouble();
 						if(tmpD > 0)
@@ -1409,17 +1409,17 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(leftSideOperand.getLong() / rightSideOperand.getInt());
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(leftSideOperand.getLong() / rightSideOperand.getLong());
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						float tmpF = leftSideOperand.getLong() / rightSideOperand.getFloat();
 						if(tmpF > 0)
@@ -1429,7 +1429,7 @@ public final class LangOperators {
 						return new DataObject().setFloat(tmpF);
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						double tmpD = leftSideOperand.getLong() / rightSideOperand.getDouble();
 						if(tmpD > 0)
@@ -1459,7 +1459,7 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						float tmpF = leftSideOperand.getFloat() / rightSideOperand.getInt();
 						if(tmpF > 0)
@@ -1469,7 +1469,7 @@ public final class LangOperators {
 						return new DataObject().setFloat(tmpF);
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						tmpF = leftSideOperand.getFloat() / rightSideOperand.getLong();
 						if(tmpF > 0)
@@ -1479,7 +1479,7 @@ public final class LangOperators {
 						return new DataObject().setFloat(tmpF);
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						tmpF = leftSideOperand.getFloat() / rightSideOperand.getFloat();
 						if(tmpF > 0)
@@ -1489,7 +1489,7 @@ public final class LangOperators {
 						return new DataObject().setFloat(tmpF);
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						double tmpD = leftSideOperand.getFloat() / rightSideOperand.getDouble();
 						if(tmpD > 0)
@@ -1520,7 +1520,7 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						double tmpD = leftSideOperand.getDouble() / rightSideOperand.getInt();
 						if(tmpD > 0)
@@ -1530,7 +1530,7 @@ public final class LangOperators {
 						return new DataObject().setDouble(tmpD);
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						tmpD = leftSideOperand.getDouble() / rightSideOperand.getLong();
 						if(tmpD > 0)
@@ -1540,7 +1540,7 @@ public final class LangOperators {
 						return new DataObject().setDouble(tmpD);
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						tmpD = leftSideOperand.getDouble() / rightSideOperand.getFloat();
 						if(tmpD > 0)
@@ -1550,7 +1550,7 @@ public final class LangOperators {
 						return new DataObject().setDouble(tmpD);
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						tmpD = leftSideOperand.getDouble() / rightSideOperand.getDouble();
 						if(tmpD > 0)
@@ -1599,8 +1599,8 @@ public final class LangOperators {
 	/**
 	 * For "//"
 	 */
-	public DataObject opFloorDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("floorDiv", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opFloorDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("floorDiv", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -1609,22 +1609,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setInt(Math.floorDiv(leftSideOperand.getInt(), rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(Math.floorDiv(leftSideOperand.getInt(), rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.floor(leftSideOperand.getInt() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getInt() / rightSideOperand.getDouble()));
 					
@@ -1649,22 +1649,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(Math.floorDiv(leftSideOperand.getLong(), (long)rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(Math.floorDiv(leftSideOperand.getLong(), rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.floor(leftSideOperand.getLong() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getLong() / rightSideOperand.getDouble()));
 					
@@ -1689,22 +1689,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.floor(leftSideOperand.getFloat() / rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.floor(leftSideOperand.getFloat() / rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.floor(leftSideOperand.getFloat() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getFloat() / rightSideOperand.getDouble()));
 					
@@ -1730,22 +1730,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getDouble() / rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getDouble() / rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getDouble() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.floor(leftSideOperand.getDouble() / rightSideOperand.getDouble()));
 					
@@ -1789,8 +1789,8 @@ public final class LangOperators {
 	/**
 	 * For "^/"
 	 */
-	public DataObject opCeilDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("ceilDiv", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opCeilDiv(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("ceilDiv", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -1799,22 +1799,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setInt(-Math.floorDiv(-leftSideOperand.getInt(), rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getInt(), rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.ceil(leftSideOperand.getInt() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getInt() / rightSideOperand.getDouble()));
 					
@@ -1839,22 +1839,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getLong(), (long)rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getLong(), rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.ceil(leftSideOperand.getLong() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getLong() / rightSideOperand.getDouble()));
 					
@@ -1879,22 +1879,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.ceil(leftSideOperand.getFloat() / rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.ceil(leftSideOperand.getFloat() / rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setFloat((float)Math.ceil(leftSideOperand.getFloat() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getFloat() / rightSideOperand.getDouble()));
 					
@@ -1920,22 +1920,22 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getDouble() / rightSideOperand.getInt()));
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getDouble() / rightSideOperand.getLong()));
 					case FLOAT:
 						if(rightSideOperand.getFloat() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getDouble() / rightSideOperand.getFloat()));
 					case DOUBLE:
 						if(rightSideOperand.getDouble() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setDouble(Math.ceil(leftSideOperand.getDouble() / rightSideOperand.getDouble()));
 					
@@ -1979,8 +1979,8 @@ public final class LangOperators {
 	/**
 	 * For "%"
 	 */
-	public DataObject opMod(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("mod", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opMod(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("mod", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -1989,12 +1989,12 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setInt(leftSideOperand.getInt() % rightSideOperand.getInt());
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(leftSideOperand.getInt() % rightSideOperand.getLong());
 					
@@ -2021,12 +2021,12 @@ public final class LangOperators {
 				switch(rightSideOperand.getType()) {
 					case INT:
 						if(rightSideOperand.getInt() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(leftSideOperand.getLong() % rightSideOperand.getInt());
 					case LONG:
 						if(rightSideOperand.getLong() == 0)
-							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber, SCOPE_ID);
+							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, lineNumber);
 						
 						return new DataObject().setLong(leftSideOperand.getLong() % rightSideOperand.getLong());
 					
@@ -2052,7 +2052,7 @@ public final class LangOperators {
 			
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.ARRAY)
-					return interpreter.formatText(leftSideOperand.getText(), new LinkedList<>(Arrays.asList(rightSideOperand.getArray())), SCOPE_ID);
+					return interpreter.formatText(leftSideOperand.getText(), new LinkedList<>(Arrays.asList(rightSideOperand.getArray())));
 				
 				return null;
 			
@@ -2079,8 +2079,8 @@ public final class LangOperators {
 	/**
 	 * For "&amp;"
 	 */
-	public DataObject opAnd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("and", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opAnd(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("and", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2162,8 +2162,8 @@ public final class LangOperators {
 	/**
 	 * For "|"
 	 */
-	public DataObject opOr(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("or", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opOr(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("or", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2172,7 +2172,7 @@ public final class LangOperators {
 			
 			return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), Arrays.asList(
 					leftSideOperand
-			), SCOPE_ID);
+			));
 		}
 		
 		switch(leftSideOperand.getType()) {
@@ -2253,8 +2253,8 @@ public final class LangOperators {
 	/**
 	 * For "^"
 	 */
-	public DataObject opXor(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("xor", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opXor(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("xor", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2336,8 +2336,8 @@ public final class LangOperators {
 	/**
 	 * For "~"
 	 */
-	public DataObject opNot(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("not", operand, lineNumber, SCOPE_ID);
+	public DataObject opNot(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("not", operand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2370,8 +2370,8 @@ public final class LangOperators {
 	/**
 	 * For "&lt;&lt;"
 	 */
-	public DataObject opLshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("lshift", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opLshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("lshift", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2453,8 +2453,8 @@ public final class LangOperators {
 	/**
 	 * For "&gt;&gt;"
 	 */
-	public DataObject opRshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("rshift", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opRshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("rshift", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2463,7 +2463,7 @@ public final class LangOperators {
 			
 			return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), Arrays.asList(
 					leftSideOperand
-			), SCOPE_ID);
+			));
 		}
 		
 		switch(leftSideOperand.getType()) {
@@ -2544,8 +2544,8 @@ public final class LangOperators {
 	/**
 	 * For "&gt;&gt;&gt;"
 	 */
-	public DataObject opRzshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("rzshift", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opRzshift(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("rzshift", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2554,7 +2554,7 @@ public final class LangOperators {
 			
 			return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
 					Arrays.asList(leftSideOperand.getArray())
-			), SCOPE_ID);
+			));
 		}
 		
 		switch(leftSideOperand.getType()) {
@@ -2634,61 +2634,61 @@ public final class LangOperators {
 	}
 	
 	//All operation functions
-	public DataObject opCast(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+	public DataObject opCast(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
 		if(leftSideOperand.getType() != DataType.TYPE)
 			return null;
 		
 		switch(leftSideOperand.getTypeValue()) {
 			case TEXT:
-				String txt = interpreter.conversions.toText(rightSideOperand, lineNumber, SCOPE_ID);
+				String txt = interpreter.conversions.toText(rightSideOperand, lineNumber);
 				if(txt == null)
 					return null;
 				
 				return new DataObject(txt);
 			case CHAR:
-				Character chr = interpreter.conversions.toChar(rightSideOperand, lineNumber, SCOPE_ID);
+				Character chr = interpreter.conversions.toChar(rightSideOperand, lineNumber);
 				if(chr == null)
 					return null;
 				
 				return new DataObject().setChar(chr);
 			case INT:
-				Integer i = interpreter.conversions.toInt(rightSideOperand, lineNumber, SCOPE_ID);
+				Integer i = interpreter.conversions.toInt(rightSideOperand, lineNumber);
 				if(i == null)
 					return null;
 				
 				return new DataObject().setInt(i);
 			case LONG:
-				Long l = interpreter.conversions.toLong(rightSideOperand, lineNumber, SCOPE_ID);
+				Long l = interpreter.conversions.toLong(rightSideOperand, lineNumber);
 				if(l == null)
 					return null;
 				
 				return new DataObject().setLong(l);
 			case FLOAT:
-				Float f = interpreter.conversions.toFloat(rightSideOperand, lineNumber, SCOPE_ID);
+				Float f = interpreter.conversions.toFloat(rightSideOperand, lineNumber);
 				if(f == null)
 					return null;
 				
 				return new DataObject().setFloat(f);
 			case DOUBLE:
-				Double d = interpreter.conversions.toDouble(rightSideOperand, lineNumber, SCOPE_ID);
+				Double d = interpreter.conversions.toDouble(rightSideOperand, lineNumber);
 				if(d == null)
 					return null;
 				
 				return new DataObject().setDouble(d);
 			case BYTE_BUFFER:
-				byte[] byteBuffer = interpreter.conversions.toByteBuffer(rightSideOperand, lineNumber, SCOPE_ID);
+				byte[] byteBuffer = interpreter.conversions.toByteBuffer(rightSideOperand, lineNumber);
 				if(byteBuffer == null)
 					return null;
 				
 				return new DataObject().setByteBuffer(byteBuffer);
 			case ARRAY:
-				DataObject[] arr = interpreter.conversions.toArray(rightSideOperand, lineNumber, SCOPE_ID);
+				DataObject[] arr = interpreter.conversions.toArray(rightSideOperand, lineNumber);
 				if(arr == null)
 					return null;
 				
 				return new DataObject().setArray(arr);
 			case LIST:
-				LinkedList<DataObject> list = interpreter.conversions.toList(rightSideOperand, lineNumber, SCOPE_ID);
+				LinkedList<DataObject> list = interpreter.conversions.toList(rightSideOperand, lineNumber);
 				if(list == null)
 					return null;
 				
@@ -2711,8 +2711,8 @@ public final class LangOperators {
 	/**
 	 * For "[...]"
 	 */
-	public DataObject opGetItem(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("getItem", false, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opGetItem(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("getItem", false, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2725,7 +2725,7 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					return new DataObject().setInt(leftSideOperand.getByteBuffer()[index]);
 				}
@@ -2739,7 +2739,7 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					return new DataObject(leftSideOperand.getArray()[index]);
 				}
@@ -2753,7 +2753,7 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					return new DataObject(leftSideOperand.getList().get(index));
 				}
@@ -2767,7 +2767,7 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					return new DataObject().setChar(leftSideOperand.getText().charAt(index));
 				}
@@ -2780,7 +2780,7 @@ public final class LangOperators {
 						index++;
 					
 					if(index != 0)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					return new DataObject().setChar(leftSideOperand.getChar());
 				}
@@ -2791,7 +2791,7 @@ public final class LangOperators {
 					try {
 						return new DataObject(leftSideOperand.getStruct().getMember(rightSideOperand.getText()));
 					}catch(DataTypeConstraintException e) {
-						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
 					}
 				}
 				
@@ -2817,14 +2817,14 @@ public final class LangOperators {
 	/**
 	 * For "?[...]"
 	 */
-	public DataObject opOptionalGetItem(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+	public DataObject opOptionalGetItem(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
 		if(leftSideOperand.getType() == DataType.NULL || leftSideOperand.getType() == DataType.VOID)
 			return new DataObject().setVoid();
 		
-		return opGetItem(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		return opGetItem(leftSideOperand, rightSideOperand, lineNumber);
 	}
-	public DataObject opSetItem(DataObject leftSideOperand, DataObject middleOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("setItem", leftSideOperand, middleOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public DataObject opSetItem(DataObject leftSideOperand, DataObject middleOperand, DataObject rightSideOperand, int lineNumber) {
+		DataObject ret = callOperatorMethod("setItem", leftSideOperand, middleOperand, rightSideOperand, lineNumber);
 		if(ret != null)
 			return ret;
 
@@ -2837,11 +2837,11 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
-					Number valueNumber = interpreter.conversions.toNumber(rightSideOperand, lineNumber, SCOPE_ID);
+					Number valueNumber = interpreter.conversions.toNumber(rightSideOperand, lineNumber);
 					if(valueNumber == null)
-						return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, lineNumber);
 					byte value = valueNumber.byteValue();
 					
 					leftSideOperand.getByteBuffer()[index] = value;
@@ -2858,7 +2858,7 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					leftSideOperand.getArray()[index] = new DataObject(rightSideOperand);
 					
@@ -2874,7 +2874,7 @@ public final class LangOperators {
 						index += len;
 					
 					if(index < 0 || index >= len)
-						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, lineNumber);
 					
 					leftSideOperand.getList().set(index, new DataObject(rightSideOperand));
 					
@@ -2887,7 +2887,7 @@ public final class LangOperators {
 						
 						return new DataObject().setVoid();
 					}catch(DataTypeConstraintException e) {
-						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber, SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
 					}
 				}
 				
@@ -2917,8 +2917,8 @@ public final class LangOperators {
 	/**
 	 * For "func.abs()"
 	 */
-	public DataObject opAbs(DataObject operand, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod("abs", operand, lineNumber, SCOPE_ID);
+	public DataObject opAbs(DataObject operand, int lineNumber) {
+		DataObject ret = callOperatorMethod("abs", operand, lineNumber);
 		if(ret != null)
 			return ret;
 		switch(operand.getType()) {
@@ -2954,40 +2954,39 @@ public final class LangOperators {
 	/**
 	 * For "...(...)"
 	 */
-	public DataObject opCall(DataObject callee, List<DataObject> argumentList, int lineNumber, final int SCOPE_ID) {
-		DataObject ret = callOperatorMethod(callee, "op:call", argumentList, lineNumber, SCOPE_ID);
+	public DataObject opCall(DataObject callee, List<DataObject> argumentList, int lineNumber) {
+		DataObject ret = callOperatorMethod(callee, "op:call", argumentList, lineNumber);
 		if(ret != null)
 			return ret;
 
 		if(callee.getType() == DataType.FUNCTION_POINTER)
 			return interpreter.callFunctionPointer(callee.getFunctionPointer(), callee.getVariableName(), argumentList,
-					lineNumber, SCOPE_ID);
+					lineNumber);
 
 		if(callee.getType() == DataType.TYPE) {
 			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					interpreter, lineNumber, SCOPE_ID);
+					interpreter, lineNumber);
 
 			if(combinedArgumentList.isEmpty())
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT,
-						"Not enough arguments for TYPE casting (1 needed)", lineNumber, SCOPE_ID);
+						"Not enough arguments for TYPE casting (1 needed)", lineNumber);
 			if(combinedArgumentList.size() > 1)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT,
-						"Too many arguments for TYPE casting (1 needed)", lineNumber, SCOPE_ID);
+						"Too many arguments for TYPE casting (1 needed)", lineNumber);
 
 			DataObject arg = combinedArgumentList.get(0);
 
-			DataObject output = opCast(callee, arg, lineNumber, SCOPE_ID);
+			DataObject output = opCast(callee, arg, lineNumber);
 			if(output == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Data type \"" +
-								arg.getType() + "\" can not be casted to \"" + callee.getTypeValue() + "\"!", lineNumber,
-						SCOPE_ID);
+								arg.getType() + "\" can not be casted to \"" + callee.getTypeValue() + "\"!", lineNumber);
 
 			return output;
 		}
 
 		if(callee.getType() == DataType.STRUCT && callee.getStruct().isDefinition()) {
 			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					interpreter, lineNumber, SCOPE_ID);
+					interpreter, lineNumber);
 
 			StructObject struct = callee.getStruct();
 
@@ -2995,14 +2994,14 @@ public final class LangOperators {
 			if(combinedArgumentList.size() != memberNames.length) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 						"The argument count is not equals to the count of member names (" + memberNames.length + ")",
-						lineNumber, SCOPE_ID);
+						lineNumber);
 			}
 
 			try {
 				return new DataObject().setStruct(new StructObject(struct, combinedArgumentList.toArray(new DataObject[0])));
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(),
-						lineNumber, SCOPE_ID);
+						lineNumber);
 			}
 		}
 
@@ -3012,28 +3011,28 @@ public final class LangOperators {
 			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
 
 			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors,
-					LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber, SCOPE_ID));
+					LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber));
 			if(constructorFunction == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 						"No matching function signature was found for the given arguments." +
 								" Available function signatures:\n    construct" + String.join("\n    construct",
-								LangUtils.getFunctionSignatures(constructors)), SCOPE_ID);
+								LangUtils.getFunctionSignatures(constructors)));
 
 			ret = interpreter.callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList,
-					lineNumber, SCOPE_ID);
+					lineNumber);
 			if(ret == null)
 				ret = new DataObject().setVoid();
 
 			if(ret.getType() != DataType.VOID)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-						"Invalid constructor implementation: VOID must be returned",  SCOPE_ID);
+						"Invalid constructor implementation: VOID must be returned");
 
 			try {
 				createdObject.getObject().postConstructor();
 			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 						"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(),
-						lineNumber, SCOPE_ID);
+						lineNumber);
 			}
 
 			return createdObject;
@@ -3046,18 +3045,18 @@ public final class LangOperators {
 	/**
 	 * For "=="
 	 */
-	public boolean isEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+	public boolean isEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		DataObject ret = callOperatorMethod("isEquals", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		DataObject ret = callOperatorMethod("isEquals", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
-			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+			return interpreter.conversions.toBool(ret, lineNumber);
 
 		if(leftSideOperand == rightSideOperand)
 			return true;
 
-		Number number = interpreter.conversions.toNumber(rightSideOperand, lineNumber, SCOPE_ID);
+		Number number = interpreter.conversions.toNumber(rightSideOperand, lineNumber);
 		switch(leftSideOperand.getType()) {
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.TEXT)
@@ -3066,7 +3065,7 @@ public final class LangOperators {
 				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
 					return leftSideOperand.getText().charAt(0) == rightSideOperand.getChar();
 
-				return number != null && isEquals(rightSideOperand, leftSideOperand, lineNumber, SCOPE_ID);
+				return number != null && isEquals(rightSideOperand, leftSideOperand, lineNumber);
 
 			case CHAR:
 				if(rightSideOperand.getType() == DataType.TEXT && rightSideOperand.getText().length() == 1)
@@ -3100,7 +3099,7 @@ public final class LangOperators {
 
 					int i = 0;
 					while(i < len) {
-						if(!isEquals(leftSideOperand.getArray()[i], rightSideOperand.getArray()[i], lineNumber, SCOPE_ID))
+						if(!isEquals(leftSideOperand.getArray()[i], rightSideOperand.getArray()[i], lineNumber))
 							return false;
 
 						i++;
@@ -3116,7 +3115,7 @@ public final class LangOperators {
 
 					int i = 0;
 					while(i < len) {
-						if(!isEquals(leftSideOperand.getArray()[i], rightSideOperand.getList().get(i), lineNumber, SCOPE_ID))
+						if(!isEquals(leftSideOperand.getArray()[i], rightSideOperand.getList().get(i), lineNumber))
 							return false;
 
 						i++;
@@ -3135,7 +3134,7 @@ public final class LangOperators {
 
 					int i = 0;
 					while(i < len) {
-						if(!isEquals(leftSideOperand.getList().get(i), rightSideOperand.getList().get(i), lineNumber, SCOPE_ID))
+						if(!isEquals(leftSideOperand.getList().get(i), rightSideOperand.getList().get(i), lineNumber))
 							return false;
 
 						i++;
@@ -3151,7 +3150,7 @@ public final class LangOperators {
 
 					int i = 0;
 					while(i < len) {
-						if(!isEquals(leftSideOperand.getList().get(i), rightSideOperand.getArray()[i], lineNumber, SCOPE_ID))
+						if(!isEquals(leftSideOperand.getList().get(i), rightSideOperand.getArray()[i], lineNumber))
 							return false;
 
 						i++;
@@ -3181,7 +3180,7 @@ public final class LangOperators {
 					while(i < len) {
 						if(!leftMemberNames[i].equals(rightMemberNames[i]) || (!leftStruct.isDefinition() &&
 								!isEquals(leftStruct.getMember(leftMemberNames[i]), rightStruct.getMember(rightMemberNames[i]),
-										lineNumber, SCOPE_ID)))
+										lineNumber)))
 							return false;
 
 						i++;
@@ -3205,7 +3204,7 @@ public final class LangOperators {
 
 			case FUNCTION_POINTER:
 				return leftSideOperand.getFunctionPointer().isEquals(rightSideOperand.getFunctionPointer(),
-						interpreter, lineNumber, SCOPE_ID);
+						interpreter, lineNumber);
 
 			case ERROR:
 				switch(rightSideOperand.getType()) {
@@ -3255,13 +3254,13 @@ public final class LangOperators {
 	/**
 	 * For "==="
 	 */
-	public boolean isStrictEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+	public boolean isStrictEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		DataObject ret = callOperatorMethod("isStrictEquals", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		DataObject ret = callOperatorMethod("isStrictEquals", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
-			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+			return interpreter.conversions.toBool(ret, lineNumber);
 
 		if(leftSideOperand == rightSideOperand)
 			return true;
@@ -3299,7 +3298,7 @@ public final class LangOperators {
 
 					int i = 0;
 					while(i < len) {
-						if(!isStrictEquals(leftSideOperand.getArray()[i], rightSideOperand.getArray()[i], lineNumber, SCOPE_ID))
+						if(!isStrictEquals(leftSideOperand.getArray()[i], rightSideOperand.getArray()[i], lineNumber))
 							return false;
 
 						i++;
@@ -3316,7 +3315,7 @@ public final class LangOperators {
 
 					int i = 0;
 					while(i < len) {
-						if(!isStrictEquals(leftSideOperand.getList().get(i), rightSideOperand.getList().get(i), lineNumber, SCOPE_ID))
+						if(!isStrictEquals(leftSideOperand.getList().get(i), rightSideOperand.getList().get(i), lineNumber))
 							return false;
 
 						i++;
@@ -3344,7 +3343,7 @@ public final class LangOperators {
 					while(i < len) {
 						if(!leftMemberNames[i].equals(rightMemberNames[i]) || (!leftStruct.isDefinition() &&
 								!isStrictEquals(leftStruct.getMember(leftMemberNames[i]), rightStruct.getMember(rightMemberNames[i]),
-										lineNumber, SCOPE_ID)))
+										lineNumber)))
 							return false;
 
 						i++;
@@ -3366,7 +3365,7 @@ public final class LangOperators {
 
 			case FUNCTION_POINTER:
 				return leftSideOperand.getFunctionPointer().isStrictEquals(rightSideOperand.getFunctionPointer(),
-						interpreter, lineNumber, SCOPE_ID);
+						interpreter, lineNumber);
 
 			case ERROR:
 				return leftSideOperand.getError().equals(rightSideOperand.getError());
@@ -3385,18 +3384,18 @@ public final class LangOperators {
 	/**
 	 * For "&lt;"
 	 */
-	public boolean isLessThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+	public boolean isLessThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		DataObject ret = callOperatorMethod("isLessThan", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		DataObject ret = callOperatorMethod("isLessThan", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
-			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+			return interpreter.conversions.toBool(ret, lineNumber);
 
 		if(leftSideOperand == rightSideOperand)
 			return false;
 
-		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber, SCOPE_ID);
+		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber);
 		switch(leftSideOperand.getType()) {
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.TEXT)
@@ -3405,7 +3404,7 @@ public final class LangOperators {
 				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
 					return leftSideOperand.getText().charAt(0) < rightSideOperand.getChar();
 
-				Number thisNumber = interpreter.conversions.toNumber(leftSideOperand, lineNumber, SCOPE_ID);
+				Number thisNumber = interpreter.conversions.toNumber(leftSideOperand, lineNumber);
 				if(thisNumber == null)
 					return false;
 
@@ -3740,18 +3739,18 @@ public final class LangOperators {
 	/**
 	 * For "&gt;"
 	 */
-	public boolean isGreaterThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
+	public boolean isGreaterThan(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
 		if(leftSideOperand == null || rightSideOperand == null)
 			return false;
 
-		DataObject ret = callOperatorMethod("isGreaterThan", true, leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+		DataObject ret = callOperatorMethod("isGreaterThan", true, leftSideOperand, rightSideOperand, lineNumber);
 		if(ret != null)
-			return interpreter.conversions.toBool(ret, lineNumber, SCOPE_ID);
+			return interpreter.conversions.toBool(ret, lineNumber);
 
 		if(leftSideOperand == rightSideOperand)
 			return false;
 
-		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber, SCOPE_ID);
+		DataObject number = interpreter.conversions.convertToNumberAndCreateNewDataObject(rightSideOperand, lineNumber);
 		switch(leftSideOperand.getType()) {
 			case TEXT:
 				if(rightSideOperand.getType() == DataType.TEXT)
@@ -3760,7 +3759,7 @@ public final class LangOperators {
 				if(leftSideOperand.getText().length() == 1 && rightSideOperand.getType() == DataType.CHAR)
 					return leftSideOperand.getText().charAt(0) > rightSideOperand.getChar();
 
-				Number thisNumber = interpreter.conversions.toNumber(leftSideOperand, lineNumber, SCOPE_ID);
+				Number thisNumber = interpreter.conversions.toNumber(leftSideOperand, lineNumber);
 				if(thisNumber == null)
 					return false;
 
@@ -4095,15 +4094,15 @@ public final class LangOperators {
 	/**
 	 * For "&lt;="
 	 */
-	public boolean isLessThanOrEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		return isLessThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID) ||
-				isEquals(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public boolean isLessThanOrEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		return isLessThan(leftSideOperand, rightSideOperand, lineNumber) ||
+				isEquals(leftSideOperand, rightSideOperand, lineNumber);
 	}
 	/**
 	 * For "&gt;="
 	 */
-	public boolean isGreaterThanOrEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber, final int SCOPE_ID) {
-		return isGreaterThan(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID) ||
-				isEquals(leftSideOperand, rightSideOperand, lineNumber, SCOPE_ID);
+	public boolean isGreaterThanOrEquals(DataObject leftSideOperand, DataObject rightSideOperand, int lineNumber) {
+		return isGreaterThan(leftSideOperand, rightSideOperand, lineNumber) ||
+				isEquals(leftSideOperand, rightSideOperand, lineNumber);
 	}
 }

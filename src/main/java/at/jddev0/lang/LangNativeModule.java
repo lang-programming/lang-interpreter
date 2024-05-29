@@ -185,28 +185,28 @@ public abstract class LangNativeModule {
 		throw new DataObject.DataTypeConstraintException("Java object can not be converted to DataObject");
 	}
 	
-	protected final DataObject throwError(DataObject dataObject, final int SCOPE_ID) throws DataObject.DataTypeConstraintException {
+	protected final DataObject throwError(DataObject dataObject) throws DataObject.DataTypeConstraintException {
 		if(dataObject.getType() != DataObject.DataType.ERROR)
 			throw new DataObject.DataTypeConstraintException("DataObject must be of type " + DataObject.DataType.ERROR);
 		
-		return throwError(dataObject.getError(), SCOPE_ID);
+		return throwError(dataObject.getError());
 	}
 	
-	protected final DataObject throwError(DataObject.ErrorObject errorValue, final int SCOPE_ID) {
-		return throwError(errorValue.getInterprettingError(), errorValue.getMessage(), SCOPE_ID);
+	protected final DataObject throwError(DataObject.ErrorObject errorValue) {
+		return throwError(errorValue.getInterprettingError(), errorValue.getMessage());
 	}
 	
-	protected final DataObject throwError(LangInterpreter.InterpretingError error, final int SCOPE_ID) {
-		return interpreter.setErrnoErrorObject(error, SCOPE_ID);
+	protected final DataObject throwError(LangInterpreter.InterpretingError error) {
+		return interpreter.setErrnoErrorObject(error);
 	}
 	
-	protected final DataObject throwError(LangInterpreter.InterpretingError error, String message, final int SCOPE_ID) {
-		return interpreter.setErrnoErrorObject(error, message, SCOPE_ID);
+	protected final DataObject throwError(LangInterpreter.InterpretingError error, String message) {
+		return interpreter.setErrnoErrorObject(error, message);
 	}
 	
-	protected final DataObject throwError(Throwable throwableValue, final int SCOPE_ID) {
+	protected final DataObject throwError(Throwable throwableValue) {
 		return interpreter.setErrnoErrorObject(LangInterpreter.InterpretingError.SYSTEM_ERROR,
-				"Native Error (\"" + throwableValue.getClass().getSimpleName() + "\"): " + throwableValue.getMessage(), SCOPE_ID);
+				"Native Error (\"" + throwableValue.getClass().getSimpleName() + "\"): " + throwableValue.getMessage());
 	}
 	
 	protected final DataObject getPredefinedFunctionAsDataObject(String name) {
@@ -220,24 +220,24 @@ public abstract class LangNativeModule {
 				setVariableName(functionName);
 	}
 	
-	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList, int parentLineNumber, final int SCOPE_ID) {
+	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList, int parentLineNumber) {
 		if(func.getType() != DataObject.DataType.FUNCTION_POINTER)
 			throw new RuntimeException("\"func\" must be of type " + DataObject.DataType.FUNCTION_POINTER);
 		
-		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList, parentLineNumber, SCOPE_ID);
+		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList, parentLineNumber);
 	}
-	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList, final int SCOPE_ID) {
+	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList) {
 		if(func.getType() != DataObject.DataType.FUNCTION_POINTER)
 			throw new RuntimeException("\"func\" must be of type " + DataObject.DataType.FUNCTION_POINTER);
 		
-		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList, SCOPE_ID);
+		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList);
 	}
 	
-	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList, int parentLineNumber, final int SCOPE_ID) {
-		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList, parentLineNumber, SCOPE_ID);
+	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList, int parentLineNumber) {
+		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList, parentLineNumber);
 	}
-	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList, final int SCOPE_ID) {
-		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList, SCOPE_ID);
+	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList) {
+		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList);
 	}
 
 	/**
@@ -367,17 +367,15 @@ public abstract class LangNativeModule {
 	 * Will be called if the module is loaded
 	 * 
 	 * @param args provided to "func.loadModule()" [modulePath included] separated with ARGUMENT_SEPARATORs
-	 * @param SCOPE_ID the scope id for the module load execution
 	 * @return Will be returned for the "linker.loadModule()" call
 	 */
-	public abstract DataObject load(List<DataObject> args, final int SCOPE_ID);
+	public abstract DataObject load(List<DataObject> args);
 	
 	/**
 	 * Will be called if the module is unloaded
 	 * 
 	 * @param args provided to "func.unloadModule()" [modulePath included] separated with ARGUMENT_SEPARATORs
-	 * @param SCOPE_ID the scope id for the module unload execution
 	 * @return Will be returned for the "linker.unloadModule()" call
 	 */
-	public abstract DataObject unload(List<DataObject> args, final int SCOPE_ID);
+	public abstract DataObject unload(List<DataObject> args);
 }

@@ -94,8 +94,7 @@ public class LangBaseFunction {
         return builder.toString();
     }
 
-    public boolean isEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber,
-                            final int SCOPE_ID) {
+    public boolean isEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber) {
         if(this.varArgsParameterIndex != that.varArgsParameterIndex ||
                 this.textVarArgsParameter != that.textVarArgsParameter ||
                 this.parameterList.size() != that.parameterList.size() ||
@@ -104,8 +103,7 @@ public class LangBaseFunction {
             return false;
 
         for(int i = 0;i < this.parameterList.size();i++)
-            if(!interpreter.operators.isEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber,
-                    SCOPE_ID))
+            if(!interpreter.operators.isEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber))
                 return false;
 
         for(int i = 0;i < this.parameterDataTypeConstraintList.size();i++)
@@ -119,8 +117,7 @@ public class LangBaseFunction {
         return true;
     }
 
-    public boolean isStrictEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber,
-                                  final int SCOPE_ID) {
+    public boolean isStrictEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber) {
         if(this.varArgsParameterIndex != that.varArgsParameterIndex ||
                 this.textVarArgsParameter != that.textVarArgsParameter ||
                 this.parameterList.size() != that.parameterList.size() ||
@@ -129,8 +126,7 @@ public class LangBaseFunction {
             return false;
 
         for(int i = 0;i < this.parameterList.size();i++)
-            if(!interpreter.operators.isStrictEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber,
-                    SCOPE_ID))
+            if(!interpreter.operators.isStrictEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber))
                 return false;
 
         for(int i = 0;i < this.parameterDataTypeConstraintList.size();i++)

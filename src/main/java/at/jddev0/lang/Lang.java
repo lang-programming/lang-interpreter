@@ -168,7 +168,7 @@ public final class Lang {
 			}
 			
 			//Cache Lang translations
-			LANG_CACHE.putAll(interpreter.getData().get(0).lang);
+			LANG_CACHE.putAll(interpreter.getData().lang);
 			lastCachedLangFileName = langFile;
 			return new HashMap<>(LANG_CACHE);
 		}
@@ -218,7 +218,7 @@ public final class Lang {
 			}
 			
 			//Cache Lang translations
-			LANG_CACHE.putAll(interpreter.getData().get(0).lang);
+			LANG_CACHE.putAll(interpreter.getData().lang);
 			lastCachedLangFileName = langFile;
 			return new HashMap<>(LANG_CACHE);
 		}
@@ -403,7 +403,7 @@ public final class Lang {
 		if(writeToCache) {
 			synchronized(LANG_CACHE) {
 				LANG_CACHE.clear();
-				LANG_CACHE.putAll(interpreter.getData().get(0).lang);
+				LANG_CACHE.putAll(interpreter.getData().lang);
 				lastCachedLangFileName = langFile;
 			}
 		}

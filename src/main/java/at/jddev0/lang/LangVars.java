@@ -19,44 +19,44 @@ public final class LangVars {
 		this.interpreter = interpreter;
 	}
 	
-	private void addLangVar(String variableName, DataObject langVar, final int SCOPE_ID) {
-		interpreter.data.get(SCOPE_ID).var.put(variableName, langVar.setLangVar().setVariableName(variableName));
+	private void addLangVar(String variableName, DataObject langVar) {
+		interpreter.getData().var.put(variableName, langVar.setLangVar().setVariableName(variableName));
 	}
 	
-	private void addStaticLangVar(String variableName, DataObject langVar, final int SCOPE_ID) {
-		interpreter.data.get(SCOPE_ID).var.computeIfAbsent(variableName, key -> langVar.setStaticData(true).setLangVar().setVariableName(variableName));
+	private void addStaticLangVar(String variableName, DataObject langVar) {
+		interpreter.getData().var.computeIfAbsent(variableName, key -> langVar.setStaticData(true).setLangVar().setVariableName(variableName));
 	}
 	
-	public void addLangVars(DataObject langArgs, final int SCOPE_ID) {
-		interpreter.data.get(SCOPE_ID).var.put("&LANG_ARGS", langArgs == null?new DataObject().setArray(new DataObject[0]).
+	public void addLangVars(DataObject langArgs) {
+		interpreter.getData().var.put("&LANG_ARGS", langArgs == null?new DataObject().setArray(new DataObject[0]).
 				setFinalData(true).setLangVar().setVariableName("&LANG_ARGS"):langArgs);
 		
-		addSystemLangVars(SCOPE_ID);
-		addExectionLangVars(interpreter.getCurrentCallStackElement(), SCOPE_ID);
-		addNumberLangVars(SCOPE_ID);
-		addErrorLangVars(SCOPE_ID);
-		addTypeLangVars(SCOPE_ID);
-		addStructDefinitionLangVars(SCOPE_ID);
-		addClassDefinitionLangVars(SCOPE_ID);
+		addSystemLangVars();
+		addExectionLangVars(interpreter.getCurrentCallStackElement());
+		addNumberLangVars();
+		addErrorLangVars();
+		addTypeLangVars();
+		addStructDefinitionLangVars();
+		addClassDefinitionLangVars();
 	}
-	private void addSystemLangVars(final int SCOPE_ID) {
-		addLangVar("$LANG_VERSION", new DataObject(LangInterpreter.VERSION, true).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_NAME", new DataObject("Standard Lang", true).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_RAND_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_OS_NAME", new DataObject(System.getProperty("os.name")).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_OS_VER", new DataObject(System.getProperty("os.version")).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_OS_ARCH", new DataObject(System.getProperty("os.arch")).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_OS_FILE_SEPARATOR", new DataObject(System.getProperty("file.separator")).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_OS_LINE_SEPARATOR", new DataObject(System.getProperty("line.separator")).setFinalData(true), SCOPE_ID);
+	private void addSystemLangVars() {
+		addLangVar("$LANG_VERSION", new DataObject(LangInterpreter.VERSION, true).setFinalData(true));
+		addLangVar("$LANG_NAME", new DataObject("Standard Lang", true).setFinalData(true));
+		addLangVar("$LANG_RAND_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true));
+		addLangVar("$LANG_OS_NAME", new DataObject(System.getProperty("os.name")).setFinalData(true));
+		addLangVar("$LANG_OS_VER", new DataObject(System.getProperty("os.version")).setFinalData(true));
+		addLangVar("$LANG_OS_ARCH", new DataObject(System.getProperty("os.arch")).setFinalData(true));
+		addLangVar("$LANG_OS_FILE_SEPARATOR", new DataObject(System.getProperty("file.separator")).setFinalData(true));
+		addLangVar("$LANG_OS_LINE_SEPARATOR", new DataObject(System.getProperty("line.separator")).setFinalData(true));
 	}
-	private void addExectionLangVars(StackElement currentStackElement, final int SCOPE_ID) {
-		addLangVar("$LANG_PATH", new DataObject(currentStackElement.getLangPath(), true).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_FILE", new DataObject(currentStackElement.getLangFile(), true).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_CURRENT_FUNCTION", new DataObject(currentStackElement.getLangFunctionName(), true).setFinalData(true), SCOPE_ID);
+	private void addExectionLangVars(StackElement currentStackElement) {
+		addLangVar("$LANG_PATH", new DataObject(currentStackElement.getLangPath(), true).setFinalData(true));
+		addLangVar("$LANG_FILE", new DataObject(currentStackElement.getLangFile(), true).setFinalData(true));
+		addLangVar("$LANG_CURRENT_FUNCTION", new DataObject(currentStackElement.getLangFunctionName(), true).setFinalData(true));
 		
 		//Module vars
 		if(currentStackElement.module != null) {
-			addLangVar("$LANG_MODULE_STATE", new DataObject(currentStackElement.module.isLoad()?"load":"unload"), SCOPE_ID);
+			addLangVar("$LANG_MODULE_STATE", new DataObject(currentStackElement.module.isLoad()?"load":"unload"));
 			
 			String prefix = "<module:" + currentStackElement.module.getFile() + "[" + currentStackElement.module.getLangModuleConfiguration().getName() + "]>";
 			
@@ -64,54 +64,54 @@ public final class LangVars {
 			if(!modulePath.startsWith("/"))
 				modulePath = "/" + modulePath;
 			
-			addLangVar("$LANG_MODULE_PATH", new DataObject(modulePath, true), SCOPE_ID);
-			addLangVar("$LANG_MODULE_FILE", new DataObject(currentStackElement.getLangFile(), true), SCOPE_ID);
+			addLangVar("$LANG_MODULE_PATH", new DataObject(modulePath, true));
+			addLangVar("$LANG_MODULE_FILE", new DataObject(currentStackElement.getLangFile(), true));
 		}
 	}
-	private void addNumberLangVars(final int SCOPE_ID) {
-		addLangVar("$LANG_INT_MIN", new DataObject().setInt(Integer.MIN_VALUE).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_INT_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true), SCOPE_ID);
+	private void addNumberLangVars() {
+		addLangVar("$LANG_INT_MIN", new DataObject().setInt(Integer.MIN_VALUE).setFinalData(true));
+		addLangVar("$LANG_INT_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true));
 		
-		addLangVar("$LANG_LONG_MIN", new DataObject().setLong(Long.MIN_VALUE).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_LONG_MAX", new DataObject().setLong(Long.MAX_VALUE).setFinalData(true), SCOPE_ID);
+		addLangVar("$LANG_LONG_MIN", new DataObject().setLong(Long.MIN_VALUE).setFinalData(true));
+		addLangVar("$LANG_LONG_MAX", new DataObject().setLong(Long.MAX_VALUE).setFinalData(true));
 		
-		addLangVar("$LANG_FLOAT_NAN", new DataObject().setFloat(Float.NaN).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_FLOAT_POS_INF", new DataObject().setFloat(Float.POSITIVE_INFINITY).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_FLOAT_NEG_INF", new DataObject().setFloat(Float.NEGATIVE_INFINITY).setFinalData(true), SCOPE_ID);
+		addLangVar("$LANG_FLOAT_NAN", new DataObject().setFloat(Float.NaN).setFinalData(true));
+		addLangVar("$LANG_FLOAT_POS_INF", new DataObject().setFloat(Float.POSITIVE_INFINITY).setFinalData(true));
+		addLangVar("$LANG_FLOAT_NEG_INF", new DataObject().setFloat(Float.NEGATIVE_INFINITY).setFinalData(true));
 		
-		addLangVar("$LANG_DOUBLE_NAN", new DataObject().setDouble(Double.NaN).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_DOUBLE_POS_INF", new DataObject().setDouble(Double.POSITIVE_INFINITY).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_DOUBLE_NEG_INF", new DataObject().setDouble(Double.NEGATIVE_INFINITY).setFinalData(true), SCOPE_ID);
+		addLangVar("$LANG_DOUBLE_NAN", new DataObject().setDouble(Double.NaN).setFinalData(true));
+		addLangVar("$LANG_DOUBLE_POS_INF", new DataObject().setDouble(Double.POSITIVE_INFINITY).setFinalData(true));
+		addLangVar("$LANG_DOUBLE_NEG_INF", new DataObject().setDouble(Double.NEGATIVE_INFINITY).setFinalData(true));
 		
-		addLangVar("$LANG_MATH_PI", new DataObject().setDouble(Math.PI).setFinalData(true), SCOPE_ID);
-		addLangVar("$LANG_MATH_E", new DataObject().setDouble(Math.E).setFinalData(true), SCOPE_ID);
+		addLangVar("$LANG_MATH_PI", new DataObject().setDouble(Math.PI).setFinalData(true));
+		addLangVar("$LANG_MATH_E", new DataObject().setDouble(Math.E).setFinalData(true));
 	}
-	private void addErrorLangVars(final int SCOPE_ID) {
+	private void addErrorLangVars() {
 		for(InterpretingError error:InterpretingError.values()) {
 			String upperCaseErrorName = error.name().toUpperCase();
 			String variableName = "$LANG_ERROR_" + upperCaseErrorName;
-			addLangVar(variableName, new DataObject().setError(new ErrorObject(error)).setFinalData(true), SCOPE_ID);
+			addLangVar(variableName, new DataObject().setError(new ErrorObject(error)).setFinalData(true));
 			variableName = "$LANG_ERRNO_" + upperCaseErrorName;
-			addLangVar(variableName, new DataObject().setInt(error.getErrorCode()).setFinalData(true), SCOPE_ID);
+			addLangVar(variableName, new DataObject().setInt(error.getErrorCode()).setFinalData(true));
 		}
 		
 		//Non-final
-		addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)), SCOPE_ID);
+		addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)));
 	}
-	private void addTypeLangVars(final int SCOPE_ID) {
+	private void addTypeLangVars() {
 		for(DataType type:DataType.values()) {
 			String upperCaseTypeName = type.name().toUpperCase();
 			String variableName = "$LANG_TYPE_" + upperCaseTypeName;
-			addLangVar(variableName, new DataObject().setTypeValue(type).setFinalData(true), SCOPE_ID);
+			addLangVar(variableName, new DataObject().setTypeValue(type).setFinalData(true));
 		}
 	}
-	private void addStructDefinitionLangVars(final int SCOPE_ID) {
-		addStaticLangVar("&StackTraceElement", new DataObject().setStruct(LangCompositeTypes.STRUCT_STACK_TRACE_ELEMENT).setFinalData(true), SCOPE_ID);
-		addStaticLangVar("&Pair", new DataObject().setStruct(LangCompositeTypes.STRUCT_PAIR).setFinalData(true), SCOPE_ID);
+	private void addStructDefinitionLangVars() {
+		addStaticLangVar("&StackTraceElement", new DataObject().setStruct(LangCompositeTypes.STRUCT_STACK_TRACE_ELEMENT).setFinalData(true));
+		addStaticLangVar("&Pair", new DataObject().setStruct(LangCompositeTypes.STRUCT_PAIR).setFinalData(true));
 	}
-	private void addClassDefinitionLangVars(final int SCOPE_ID) {
-		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true), SCOPE_ID);
-		addStaticLangVar("&Maybe", new DataObject().setObject(LangCompositeTypes.CLASS_MAYBE).setFinalData(true), SCOPE_ID);
-		addStaticLangVar("&Complex", new DataObject().setObject(LangCompositeTypes.CLASS_COMPLEX).setFinalData(true), SCOPE_ID);
+	private void addClassDefinitionLangVars() {
+		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true));
+		addStaticLangVar("&Maybe", new DataObject().setObject(LangCompositeTypes.CLASS_MAYBE).setFinalData(true));
+		addStaticLangVar("&Complex", new DataObject().setObject(LangCompositeTypes.CLASS_COMPLEX).setFinalData(true));
 	}
 }

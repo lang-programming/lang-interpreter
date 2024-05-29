@@ -834,26 +834,24 @@ public class DataObject {
 			}
 		}
 
-		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber,
-								final int SCOPE_ID) {
+		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber) {
 			//Check for same reference of thisObjects
 			return this.functionPointerType == that.functionPointerType && this.thisObject == that.thisObject &&
 					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
 					(this.normalFunction == null || this.normalFunction.isEquals(that.normalFunction, interpreter,
-							lineNumber, SCOPE_ID))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
+							lineNumber))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
 					(this.nativeFunction == null || this.nativeFunction.isEquals(that.nativeFunction, interpreter,
-							lineNumber, SCOPE_ID)));
+							lineNumber)));
 		}
 
-		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber,
-									  final int SCOPE_ID) {
+		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber) {
 			//Check for same reference of thisObjects
 			return this.functionPointerType == that.functionPointerType && this.thisObject == that.thisObject &&
 					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
 					(this.normalFunction == null || this.normalFunction.isStrictEquals(that.normalFunction, interpreter,
-							lineNumber, SCOPE_ID))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
+							lineNumber))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
 					(this.nativeFunction == null || this.nativeFunction.isStrictEquals(that.nativeFunction, interpreter,
-							lineNumber, SCOPE_ID)));
+							lineNumber)));
 		}
 	}
 	public static final class VarPointerObject {
@@ -996,7 +994,7 @@ public class DataObject {
 						@LangFunction.AllowedTypes(DataType.OBJECT)
 						@SuppressWarnings("unused")
 						public DataObject getClassMethod(
-								LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+								LangInterpreter interpreter, LangObject thisObject
 						) {
 							return new DataObject().setObject(thisObject.getClassBaseDefinition());
 						}
@@ -1012,7 +1010,7 @@ public class DataObject {
 						@LangFunction.AllowedTypes(DataType.VOID)
 						@SuppressWarnings("unused")
 						public DataObject defaultConstructMethod(
-								LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject
+								LangInterpreter interpreter, LangObject thisObject
 						) {
 							return null;
 						}

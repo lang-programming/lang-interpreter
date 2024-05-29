@@ -164,25 +164,25 @@ public class LangNativeFunction {
 		internalFunctions.add(internalFunction);
 	}
 
-	public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList, int SCOPE_ID) {
-		return callFunc(interpreter, null, -1, argumentList, SCOPE_ID);
+	public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList) {
+		return callFunc(interpreter, null, -1, argumentList);
 	}
 
-	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel, List<DataObject> argumentList, int SCOPE_ID) {
+	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel, List<DataObject> argumentList) {
 		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-				interpreter, -1, SCOPE_ID);
+				interpreter, -1);
 		if(internalFunctions.size() == 1)
-			return internalFunctions.get(0).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList, SCOPE_ID);
+			return internalFunctions.get(0).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList);
 		
 		int index = LangUtils.getMostRestrictiveFunctionSignatureIndex(internalFunctions, combinedArgumentList);
 		
 		if(index == -1) {
 			return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
 					" Available function signatures:\n    " + functionName + internalFunctions.stream().map(InternalFunction::toFunctionSignatureSyntax).
-					collect(Collectors.joining("\n    " + functionName)), SCOPE_ID);
+					collect(Collectors.joining("\n    " + functionName)));
 		}
 		
-		return internalFunctions.get(index).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList, SCOPE_ID);
+		return internalFunctions.get(index).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList);
 	}
 	
 	public InternalFunction createInternalFunction(Object instance, Method functionBody)
@@ -210,29 +210,20 @@ public class LangNativeFunction {
 			throw new IllegalArgumentException("Method must not be annotated with both @AllowedTypes and @NotAllowedTypes");
 		
 		Parameter[] parameters = functionBody.getParameters();
-		if(parameters.length == 0)
-			throw new IllegalArgumentException("Method must have at least one parameter (int SCOPE_ID)");
 		
-		Parameter firstParam = parameters[0];
-		boolean hasInterpreterParameter = firstParam.getType().isAssignableFrom(LangInterpreter.class);
+		Parameter firstParam = parameters.length >= 1?parameters[0]:null;
+		boolean hasInterpreterParameter = firstParam != null && firstParam.getType().isAssignableFrom(LangInterpreter.class);
 		
 		Parameter secondParam = parameters.length >= 2?parameters[1]:null;
 
-		Parameter thirdParam = parameters.length >= 3?parameters[2]:null;
-		
-		if(hasInterpreterParameter?
-				secondParam == null || !secondParam.getType().isAssignableFrom(int.class):
-					!firstParam.getType().isAssignableFrom(int.class))
-				throw new IllegalArgumentException("The method must start with (LangInterpreter interpreter, int SCOPE_ID) or (int SCOPE_ID)");
-
-		if(method && (hasInterpreterParameter?thirdParam == null || !thirdParam.getType().isAssignableFrom(DataObject.LangObject.class):
-				(secondParam == null || !secondParam.getType().isAssignableFrom(DataObject.LangObject.class))))
+		if(method && (hasInterpreterParameter?secondParam == null || !secondParam.getType().isAssignableFrom(DataObject.LangObject.class):
+				(firstParam == null || !firstParam.getType().isAssignableFrom(DataObject.LangObject.class))))
 			throw new IllegalArgumentException("The method for LangObjects must start with " +
-					"(LangInterpreter interpreter, int SCOPE_ID, LangObject thisObject) or (int SCOPE_ID, LangObject thisObject)");
+					"(LangInterpreter interpreter, LangObject thisObject) or (LangObject thisObject)");
 
 
 
-		int diff = (hasInterpreterParameter?2:1) + (method?1:0);
+		int diff = (hasInterpreterParameter?1:0) + (method?1:0);
 		List<Class<?>> methodParameterTypeList = new ArrayList<>(parameters.length - diff);
 		List<DataObject> parameterList = new ArrayList<>(parameters.length - diff);
 		List<DataTypeConstraint> parameterDataTypeConstraintList = new ArrayList<>(parameters.length - diff);
@@ -247,7 +238,7 @@ public class LangNativeFunction {
 			
 			LangParameter langParameter = parameter.getAnnotation(LangParameter.class);
 			if(langParameter == null)
-				throw new IllegalArgumentException("Method parameters after the SCOPE_ID parameter must be annotated with @LangParameter");
+				throw new IllegalArgumentException("Method parameters after the optional LangInterpreter parameter must be annotated with @LangParameter");
 			
 			ParameterAnnotation parameterAnnotation;
 			
@@ -426,12 +417,12 @@ public class LangNativeFunction {
 		}
 		
 		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
-								   List<DataObject> argumentList, List<DataObject> combinedArgumentList, int SCOPE_ID) {
+								   List<DataObject> argumentList, List<DataObject> combinedArgumentList) {
 			if(method && thisObject == null)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is not bound for native function for LangObject", SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is not bound for native function for LangObject");
 
 			if(!method && thisObject != null)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is bound for native function", SCOPE_ID);
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is bound for native function");
 
 			int argCount = parameterList.size();
 			
@@ -442,22 +433,19 @@ public class LangNativeFunction {
 			
 			if(varArgsParameterIndex == -1) {
 				if(!combinatorFunction && combinedArgumentList.size() < argCount)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount), SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount));
 				if(combinedArgumentList.size() > argCount)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount), SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount));
 			}else {
 				//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
 				if((!combinatorFunction || combinatorFunctionCallCount > 0) && combinedArgumentList.size() < argCount - 1)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1), SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1));
 			}
 
-			int diff = (hasInterpreterParameter?2:1) + (method?1:0);
+			int diff = (hasInterpreterParameter?1:0) + (method?1:0);
 			Object[] methodArguments = new Object[diff + argCount];
 			if(hasInterpreterParameter) {
 				methodArguments[0] = interpreter;
-				methodArguments[1] = SCOPE_ID;
-			}else {
-				methodArguments[0] = SCOPE_ID;
 			}
 			if(method)
 				methodArguments[diff - 1] = thisObject;
@@ -465,7 +453,7 @@ public class LangNativeFunction {
 			int argumentIndex = 0;
 			for(int i = 0;i < argCount;i++) {
 				if(combinatorFunction && argumentIndex >= combinedArgumentList.size() && (varArgsParameterIndex == -1 || combinatorFunctionCallCount == 0))
-					return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList, SCOPE_ID);
+					return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList);
 				
 				String variableName = parameterList.get(i).getVariableName();
 				
@@ -474,12 +462,12 @@ public class LangNativeFunction {
 				
 				if(!ignoreTypeCheck && !parameterDataTypeConstraintList.get(i).isTypeAllowed(combinedArgumentList.get(argumentIndex).getType()))
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("The type of argument %d (\"%s\") must be one of %s", argumentIndex + 1,
-							variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()), SCOPE_ID);
+							variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()));
 				
 				Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?
-						interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), -1, SCOPE_ID):null;
+						interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), -1):null;
 				if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
-					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName), SCOPE_ID);
+					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName));
 				
 				Class<?> methodParameterType = methodParameterTypeList.get(i);
 				
@@ -490,7 +478,7 @@ public class LangNativeFunction {
 					}else if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
 						//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
 						if(combinatorFunction && combinatorFunctionCallCount == 0)
-							return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList, SCOPE_ID);
+							return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList);
 						
 						List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
 								map(DataObject::new).collect(Collectors.toList());
@@ -502,7 +490,7 @@ public class LangNativeFunction {
 								if(!typeConstraint.isTypeAllowed(varArgsArgument.getType()))
 									return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 											String.format("The type of argument %d (for var args parameter \"%s\") must be one of %s", i + j + 1,
-													variableName, typeConstraint.getAllowedTypes()), SCOPE_ID);
+													variableName, typeConstraint.getAllowedTypes()));
 							}
 						}
 						
@@ -523,9 +511,9 @@ public class LangNativeFunction {
 											break;
 								
 								DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy,
-										interpreter, -1, SCOPE_ID);
+										interpreter, -1);
 								argument = new DataObject(combinedArgument == null?"":interpreter.conversions.
-										toText(combinedArgument, -1, SCOPE_ID)).setVariableName(variableName);
+										toText(combinedArgument, -1)).setVariableName(variableName);
 							}else {
 								argument = new DataObject().setVariableName(variableName).
 										setArray(varArgsArgumentList.toArray(new DataObject[0]));
@@ -550,15 +538,15 @@ public class LangNativeFunction {
 					}else if(methodParameterType.isAssignableFrom(Number.class)) {
 						argument = argumentNumberValue;
 					}else if(methodParameterType.isAssignableFrom(boolean.class)) {
-						argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), -1, SCOPE_ID);
+						argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), -1);
 					}else {
-						return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "Invalid native method parameter argument type", SCOPE_ID);
+						return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "Invalid native method parameter argument type");
 					}
 					
 					methodArguments[i + diff] = argument;
 				}catch(DataTypeConstraintException e) {
 					return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
-							String.format("Native method contains invalid type constraint combinations for Argument %d (\"%s\"): %s", i + 1, variableName, e.getMessage()), SCOPE_ID);
+							String.format("Native method contains invalid type constraint combinations for Argument %d (\"%s\"): %s", i + 1, variableName, e.getMessage()));
 				}
 				
 				argumentIndex++;
@@ -567,32 +555,32 @@ public class LangNativeFunction {
 			try {
 				DataObject ret = (DataObject)functionBody.invoke(instance, methodArguments);
 
-				if(returnValueTypeConstraint != null && !interpreter.isThrownValue(SCOPE_ID)) {
+				if(returnValueTypeConstraint != null && !interpreter.isThrownValue()) {
 					//Thrown values are always allowed
 
 					DataObject retTmp = LangUtils.nullToLangVoid(ret);
 
 					if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
 						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-								"Invalid return value type \"" + retTmp.getType() + "\"", -1, SCOPE_ID);
+								"Invalid return value type \"" + retTmp.getType() + "\"", -1);
 				}
 
 				return ret;
 			}catch(IllegalAccessException|IllegalArgumentException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
-						"Native Error (\"" + e.getClass().getSimpleName() + "\"): " + e.getMessage(), SCOPE_ID);
+						"Native Error (\"" + e.getClass().getSimpleName() + "\"): " + e.getMessage());
 			}catch(InvocationTargetException e) {
 				Throwable t = e.getTargetException();
 				if(t == null)
 					t = e;
 				
 				return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
-						"Native Error (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage(), SCOPE_ID);
+						"Native Error (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage());
 			}
 		}
 		
 		private DataObject combinatorCall(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
-										  List<DataObject> combinedArgumentList, int SCOPE_ID) {
+										  List<DataObject> combinedArgumentList) {
 			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
 					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, valueDependencies);
 			
@@ -637,14 +625,13 @@ public class LangNativeFunction {
 		}
 
 		@Override
-		public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber,
-								final int SCOPE_ID) {
+		public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
 			if(!(baseFunction instanceof InternalFunction))
 				return false;
 
 			InternalFunction that = (InternalFunction)baseFunction;
 
-			if(!super.isEquals(that, interpreter, lineNumber, SCOPE_ID) ||
+			if(!super.isEquals(that, interpreter, lineNumber) ||
 					this.hasInterpreterParameter != that.hasInterpreterParameter ||
 					this.combinatorFunction != that.combinatorFunction ||
 					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
@@ -654,21 +641,20 @@ public class LangNativeFunction {
 
 			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
 				if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
-						that.combinatorProvidedArgumentList.get(i), lineNumber, SCOPE_ID))
+						that.combinatorProvidedArgumentList.get(i), lineNumber))
 					return false;
 
 			return true;
 		}
 
 		@Override
-		public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber,
-									  final int SCOPE_ID) {
+		public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
 			if(!(baseFunction instanceof InternalFunction))
 				return false;
 
 			InternalFunction that = (InternalFunction)baseFunction;
 
-			if(!super.isEquals(that, interpreter, lineNumber, SCOPE_ID) ||
+			if(!super.isEquals(that, interpreter, lineNumber) ||
 					this.hasInterpreterParameter != that.hasInterpreterParameter ||
 					this.combinatorFunction != that.combinatorFunction ||
 					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
@@ -678,7 +664,7 @@ public class LangNativeFunction {
 
 			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
 				if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
-						that.combinatorProvidedArgumentList.get(i), lineNumber, SCOPE_ID))
+						that.combinatorProvidedArgumentList.get(i), lineNumber))
 					return false;
 
 			return true;
@@ -717,8 +703,7 @@ public class LangNativeFunction {
 		return new ArrayList<>(internalFunctions);
 	}
 
-	public boolean isEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber,
-							final int SCOPE_ID) {
+	public boolean isEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber) {
 		if(this == that)
 			return true;
 
@@ -727,21 +712,20 @@ public class LangNativeFunction {
 			return false;
 
 		for(int i = 0;i < this.internalFunctions.size();i++)
-			if(!this.internalFunctions.get(i).isEquals(that.internalFunctions.get(i), interpreter, lineNumber, SCOPE_ID))
+			if(!this.internalFunctions.get(i).isEquals(that.internalFunctions.get(i), interpreter, lineNumber))
 				return false;
 
 		for(int i = 0;i < this.valueDependencies.length;i++)
 			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
 					!interpreter.operators.isEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-							lineNumber, SCOPE_ID):
+							lineNumber):
 					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
 		return true;
 	}
 
-	public boolean isStrictEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber,
-								  final int SCOPE_ID) {
+	public boolean isStrictEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber) {
 		if(this == that)
 			return true;
 
@@ -750,13 +734,13 @@ public class LangNativeFunction {
 			return false;
 
 		for(int i = 0;i < this.internalFunctions.size();i++)
-			if(!this.internalFunctions.get(i).isStrictEquals(that.internalFunctions.get(i), interpreter, lineNumber, SCOPE_ID))
+			if(!this.internalFunctions.get(i).isStrictEquals(that.internalFunctions.get(i), interpreter, lineNumber))
 				return false;
 
 		for(int i = 0;i < this.valueDependencies.length;i++)
 			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
 					!interpreter.operators.isStrictEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-							lineNumber, SCOPE_ID):
+							lineNumber):
 					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
