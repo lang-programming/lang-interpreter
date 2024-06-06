@@ -1127,55 +1127,6 @@ final class LangPredefinedFunctions {
 			return new DataObject().setDouble(Double.longBitsToDouble(number.longValue()));
 		}
 
-		@LangFunction("toInt")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject toIntFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setInt(number.intValue());
-		}
-
-		@LangFunction("toLong")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject toLongFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setLong(number.longValue());
-		}
-
-		@LangFunction("toFloat")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject toFloatFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setFloat(number.floatValue());
-		}
-
-		@LangFunction("toDouble")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject toDoubleFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setDouble(number.doubleValue());
-		}
-
-		@LangFunction("toNumber")
-		@AllowedTypes({DataObject.DataType.INT, DataObject.DataType.LONG, DataObject.DataType.FLOAT, DataObject.DataType.DOUBLE})
-		public static DataObject toNumberFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") DataObject numberObject
-		) {
-			numberObject = interpreter.conversions.convertToNumberAndCreateNewDataObject(numberObject, -1);
-			if(numberObject.getType() == DataType.NULL)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$number\") can not be converted to a number value");
-
-			return numberObject;
-		}
-
 		@LangFunction("ttoi")
 		@AllowedTypes(DataObject.DataType.INT)
 		public static DataObject ttoiFunction(
@@ -1293,24 +1244,6 @@ final class LangPredefinedFunctions {
 				return new DataObject().setBoolean(Double.isFinite(number.doubleValue()));
 
 			return new DataObject().setBoolean(false);
-		}
-
-		@LangFunction("isEven")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isEvenFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setBoolean(number.longValue() % 2 == 0);
-		}
-
-		@LangFunction("isOdd")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject isOddFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setBoolean(number.longValue() % 2 == 1);
 		}
 	}
 

@@ -1,0 +1,30 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Number Functions)
+
+fp.__toInt = ($number{number}):{INT} -> {
+    return $LANG_TYPE_INT($number)
+}
+
+fp.__toLong = ($number{number}):{LONG} -> {
+    return $LANG_TYPE_LONG($number)
+}
+
+fp.__toFloat = ($number{number}):{FLOAT} -> {
+    return $LANG_TYPE_FLOAT($number)
+}
+
+fp.__toDouble = ($number{number}):{DOUBLE} -> {
+    return $LANG_TYPE_DOUBLE($number)
+}
+
+fp.__toNumber = ($number{number}):{INT|LONG|FLOAT|DOUBLE} -> {
+    return $number
+}
+
+fp.__isEven = ($number{number}):{INT} -> {
+    return parser.op($LANG_TYPE_LONG($number) % 2 === 0L)
+}
+
+fp.__isOdd = ($number{number}):{INT} -> {
+    return parser.op($LANG_TYPE_LONG($number) % 2 === 1L)
+}

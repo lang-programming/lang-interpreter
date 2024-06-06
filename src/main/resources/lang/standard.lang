@@ -1,5 +1,5 @@
 lang.version = v1.0.0
 lang.name = Lang Standard Implementation
 
-# Composite types definitions
 linker.include(compositeTypes/types.lang)
+linker.include(predefinedFunctions/functions.lang)
