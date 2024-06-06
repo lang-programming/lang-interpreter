@@ -26,11 +26,18 @@ public final class LangVars {
 	private void addStaticLangVar(String variableName, DataObject langVar) {
 		interpreter.getData().var.computeIfAbsent(variableName, key -> langVar.setStaticData(true).setLangVar().setVariableName(variableName));
 	}
-	
-	public void addLangVars(DataObject langArgs) {
+
+	void addEssentialLangVars(DataObject langArgs) {
 		interpreter.getData().var.put("&LANG_ARGS", langArgs == null?new DataObject().setArray(new DataObject[0]).
 				setFinalData(true).setLangVar().setVariableName("&LANG_ARGS"):langArgs);
-		
+
+		//Non-final
+		addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)));
+	}
+
+	public void addLangVars(DataObject langArgs) {
+		addEssentialLangVars(langArgs);
+
 		addSystemLangVars();
 		addExectionLangVars(interpreter.getCurrentCallStackElement());
 		addNumberLangVars();
@@ -94,9 +101,6 @@ public final class LangVars {
 			variableName = "$LANG_ERRNO_" + upperCaseErrorName;
 			addLangVar(variableName, new DataObject().setInt(error.getErrorCode()).setFinalData(true));
 		}
-		
-		//Non-final
-		addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)));
 	}
 	private void addTypeLangVars() {
 		for(DataType type:DataType.values()) {
@@ -106,12 +110,12 @@ public final class LangVars {
 		}
 	}
 	private void addStructDefinitionLangVars() {
-		addStaticLangVar("&StackTraceElement", new DataObject().setStruct(LangCompositeTypes.STRUCT_STACK_TRACE_ELEMENT).setFinalData(true));
-		addStaticLangVar("&Pair", new DataObject().setStruct(LangCompositeTypes.STRUCT_PAIR).setFinalData(true));
+		addStaticLangVar("&StackTraceElement", interpreter.standardTypes.get("&StackTraceElement").setFinalData(true));
+		addStaticLangVar("&Pair", interpreter.standardTypes.get("&Pair").setFinalData(true));
 	}
 	private void addClassDefinitionLangVars() {
 		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true));
-		addStaticLangVar("&Maybe", new DataObject().setObject(LangCompositeTypes.CLASS_MAYBE).setFinalData(true));
-		addStaticLangVar("&Complex", new DataObject().setObject(LangCompositeTypes.CLASS_COMPLEX).setFinalData(true));
+		addStaticLangVar("&Maybe", interpreter.standardTypes.get("&Maybe").setFinalData(true));
+		addStaticLangVar("&Complex", interpreter.standardTypes.get("&Complex").setFinalData(true));
 	}
 }

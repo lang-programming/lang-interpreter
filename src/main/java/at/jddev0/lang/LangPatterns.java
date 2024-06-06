@@ -212,13 +212,13 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_STARTS_WITH_ARRAY_UNPACKING = Pattern.compile("(\\[\\[\\w+\\]\\]::)?&\\w+\\.\\.\\..*");
 	/**
-	 * RegEx: "<code>\{[?!]?([A-Z]+\|)*[A-Z]+\}.*</code>"
+	 * RegEx: "<code>\{[?!]?([A-Z_]+\|)*[A-Z_]+\}.*</code>"
 	 */
-	public static final Pattern PARSING_STARTS_TYPE_CONSTRAINT = Pattern.compile("\\{[?!]?([A-Z]+\\|)*[A-Z]+\\}.*");
+	public static final Pattern PARSING_STARTS_TYPE_CONSTRAINT = Pattern.compile("\\{[?!]?([A-Z_]+\\|)*[A-Z_]+\\}.*");
 	/**
-	 * RegEx: "<code>.*\)(:\{[?!]?([A-Z]+\|)*[A-Z]+\})? -> .*</code>"
+	 * RegEx: "<code>.*\)(:\{[?!]?([A-Z_]+\|)*[A-Z_]+\})? -> .*</code>"
 	 */
-	public static final Pattern PARSING_CONTAINS_WITH_FUNC_DEFINITION_END_WITH_OR_WITHOUT_TYPE_CONSTRAINT = Pattern.compile(".*\\)(:\\{[?!]?([A-Z]+\\|)*[A-Z]+\\})? -> .*");
+	public static final Pattern PARSING_CONTAINS_WITH_FUNC_DEFINITION_END_WITH_OR_WITHOUT_TYPE_CONSTRAINT = Pattern.compile(".*\\)(:\\{[?!]?([A-Z_]+\\|)*[A-Z_]+\\})? -> .*");
 	
 	//LangParser assignment specific
 	/**

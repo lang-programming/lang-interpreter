@@ -1,0 +1,229 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (&Complex)
+
+class &Complex {
+    +final:$real{DOUBLE}
+    +final:$imag{DOUBLE}
+
+    +construct = ($real{number}, $imag{number}):{VOID} -> {
+        ::$real $= double($real)
+        ::$imag $= double($imag)
+    }
+
+    +mp.conjugate = ():{OBJECT} -> {
+        return parser.op(&Complex(::$real, -::$imag))
+    }
+
+    +op:deepCopy = ():{OBJECT} -> {
+        return parser.op(&Complex(::$real, ::$imag))
+    }
+
+    +op:inv = ():{OBJECT} -> {
+        return parser.op(&Complex(-::$real, -::$imag))
+    }
+
+    +op:abs = ():{DOUBLE} -> {
+        return parser.op(hypot(::$real, ::$imag))
+    }
+
+    +op:add = (&z{OBJECT}):{OBJECT} -> {
+        if(!(&z ~~ &Complex)) {
+            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+        }
+
+        return parser.op(&Complex(::$real + &z::$real, ::$imag + &z::$imag))
+    }
+
+    +op:add = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex(::$real + $x, ::$imag))
+    }
+
+    +op:r-add = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex($x + ::$real, ::$imag))
+    }
+
+    +op:sub = (&z{OBJECT}):{OBJECT} -> {
+        if(!(&z ~~ &Complex)) {
+            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+        }
+
+        return parser.op(&Complex(::$real - &z::$real, ::$imag - &z::$imag))
+    }
+
+    +op:sub = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex(::$real - $x, ::$imag))
+    }
+
+    +op:r-sub = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex($x - ::$real, -::$imag))
+    }
+
+    +op:mul = (&z{OBJECT}):{OBJECT} -> {
+        if(!(&z ~~ &Complex)) {
+            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+        }
+
+        return parser.op(&Complex(::$real * &z::$real - ::$imag * &z::$imag, ::$real * &z::$imag + ::$imag * &z::$real))
+    }
+
+    +op:mul = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex(::$real * $x, ::$imag * $x))
+    }
+
+    +op:r-mul = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex($x * ::$real, $x * ::$imag))
+    }
+
+    +op:div = (&z{OBJECT}):{OBJECT} -> {
+        if(!(&z ~~ &Complex)) {
+            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+        }
+
+        $realNumerator $= ::$real * &z::$real + ::$imag * &z::$imag
+        $imagNumerator $= ::$imag * &z::$real - ::$real * &z::$imag
+
+        $denominator $= &z::$real * &z::$real + &z::$imag * &z::$imag
+
+        return parser.op(&Complex($realNumerator / $denominator, $imagNumerator / $denominator))
+    }
+
+    +op:div = ($x{number}):{OBJECT} -> {
+        return parser.op(&Complex(::$real / $x, ::$imag / $x))
+    }
+
+    +op:r-div = ($x{number}):{OBJECT} -> {
+        $realNumerator $= $x * ::$real
+        $imagNumerator $= - $x * ::$imag
+
+        $denominator $= ::$real * ::$real + ::$imag * ::$imag
+
+        return parser.op(&Complex($realNumerator / $denominator, $imagNumerator / $denominator))
+    }
+
+    +op:isEquals = ($operand):{INT} -> {
+        if(::$imag === 0.) {
+            return parser.op(::$real == $operand)
+        }
+
+        return parser.op($operand ~~ &Complex && ::$real == $operand::$real && ::$imag == $operand::$imag)
+    }
+
+    +op:r-isEquals = ($operand):{INT} -> {
+        if(::$imag === 0.) {
+            return parser.op($operand == ::$real)
+        }
+
+        return parser.op($operand ~~ &Complex && $operand::$real == ::$real && $operand::$imag == ::$imag)
+    }
+
+    +op:isStrictEquals = ($operand{OBJECT}):{INT} -> {
+        # Check for exact class type instead of instanceOf
+        return parser.op($operand::getClass() === &Complex && ::$real === $operand::$real && ::$imag === $operand::$imag)
+    }
+
+    +to:text = ():{TEXT} -> {
+        return parser.op(::$real ||| {{{ + }}} ||| ::$imag ||| {{{i}}})
+    }
+}
+
+
+fp.__complex = ($real{number}, $imag{number}):{OBJECT} -> {
+    return &Complex($real, $imag)
+}
+
+$__LANG_INFO__creal=Returns the real value of &z
+fp.__creal = (&z{OBJECT}):{DOUBLE} -> {
+    if(!(&z ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+    }
+
+    return parser.op(&z::real)
+}
+
+$__LANG_INFO__cimag=Returns the imaginary value of &z
+fp.__cimag = (&z{OBJECT}):{DOUBLE} -> {
+    if(!(&z ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+    }
+
+    return parser.op(&z::imag)
+}
+
+$__LANG_INFO__cabs=Returns the absolute value of &z
+fp.__cabs = (&z{OBJECT}):{DOUBLE} -> {
+    if(!(&z ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+    }
+
+    return parser.op(abs(&z))
+}
+
+$__LANG_INFO__conj=Returns a conjugated copy of &z
+fp.__conj = (&z{OBJECT}):{OBJECT} -> {
+    if(!(&z ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+    }
+
+    return parser.op(&z::conj())
+}
+
+$__LANG_INFO__cinv=Returns a negated copy of &z
+fp.__cinv = (&z{OBJECT}):{OBJECT} -> {
+    if(!(&z ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
+    }
+
+    return parser.op(-&z)
+}
+
+$__LANG_INFO__cadd=Returns &a + &b
+fp.__cadd = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+    if(!(&a ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
+    }
+
+    if(!(&b ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 2 ("\&b") must be of type "\&Complex")
+    }
+
+    return parser.op(&a + &b)
+}
+
+$__LANG_INFO__csub=Returns &a - &b
+fp.__csub = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+    if(!(&a ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
+    }
+
+    if(!(&b ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 2 ("\&b") must be of type "\&Complex")
+    }
+
+    return parser.op(&a - &b)
+}
+
+$__LANG_INFO__cmul=Returns &a * &b
+fp.__cmul = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+    if(!(&a ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
+    }
+
+    if(!(&b ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 2 ("\&b") must be of type "\&Complex")
+    }
+
+    return parser.op(&a * &b)
+}
+
+$__LANG_INFO__cdiv=Returns &a / &b
+fp.__cdiv = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+    if(!(&a ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
+    }
+
+    if(!(&b ~~ &Complex)) {
+        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 2 ("\&b") must be of type "\&Complex")
+    }
+
+    return parser.op(&a / &b)
+}

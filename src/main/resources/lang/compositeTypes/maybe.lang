@@ -1,0 +1,89 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (&Maybe)
+
+class &Maybe {
+    # TODO LangInfo: Creates a nothing &Maybe object
+    +static:final:fp.nothing = ():{OBJECT} -> {
+        return &Maybe()
+    }
+
+    # TODO LangInfo: Creates a just &Maybe object
+    +static:final:fp.just = ($value):{OBJECT} -> {
+        return &Maybe($value)
+    }
+
+    -final:$value
+    -final:$present{INT}
+
+    # TODO LangInfo: Creates a nothing &Maybe object
+    +construct = ():{VOID} -> {
+        ::$present $= 0
+        ::$value $= fn.randChoice() # VOID
+    }
+
+    # TODO LangInfo: Creates a just &Maybe object
+    +construct = ($value):{VOID} -> {
+        ::$present $= 1
+        ::$value $= $value
+    }
+
+    # TODO LangInfo: Returns 1 if a just &Maybe value is provided for nothing &Maybe value 0 is returned
+    +mp.isPresent = ():{INT} -> {
+        return parser.op(::$present)
+    }
+
+    # TODO LangInfo: Returns the value if a just &Maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown
+    +mp.get = () -> {
+        if(!::$present) {
+            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Value is not present)
+        }
+
+        return parser.op(::$value)
+    }
+
+    # TODO LangInfo: fp.mapper is executed which must return a new &Maybe value if value of &maybe is present otherwise a new empty maybe is returned
+    +mp.flatMap = (fp.mapper{FUNCTION_POINTER}):{OBJECT} -> {
+        if(::$present) {
+            $ret $= fp.mapper(::$value)
+            if(!($ret ~~ &Maybe)) {
+                throw fn.withErrorMessage($LANG_ERROR_INVALID_FUNC_PTR, {{{The value returned by fp.mapperFunc() must be of type "&Maybe"}}})
+            }
+
+            return $ret
+        }
+
+        return &Maybe()
+    }
+
+    # TODO LangInfo: fp.func is executed with the value of &Maybe if the value is present otherwise fp.func will not be called
+    +mp.ifPresent = (fp.func{FUNCTION_POINTER}):{VOID} -> {
+        if(::$present) {
+            parser.op(fp.func(::$value))
+        }
+    }
+
+    +op:deepCopy = ():{OBJECT} -> {
+        if(::$present) {
+            return parser.op(&Maybe(^::$value))
+        }
+
+        return &Maybe()
+    }
+
+    +op:isEquals = ($operand{OBJECT}):{INT} -> {
+        return parser.op($operand ~~ &Maybe && ::$present === $operand::$present && (!::$present || ::$value == $operand::$value)))
+    }
+
+    +op:isStrictEquals = ($operand{OBJECT}):{INT} -> {
+        # Check for exact class type instead of instanceOf
+        return parser.op($operand::getClass() === &Maybe && ::$present === $operand::$present && (!::$present || ::$value === $operand::$value)g)
+    }
+
+    +to:text = ():{TEXT} -> {
+        if(::$present) {
+            return parser.op({{{just(}}} ||| ::$value ||| {{{)}}})
+        }
+
+        return {{{nothing}}}
+    }
+}

@@ -1,0 +1,11 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (&StackTraceElement)
+
+struct &StackTraceElement {
+    $path{?TEXT}
+    $file{?TEXT}
+    $lineNumber{INT}
+    $functionName{?TEXT}
+    $modulePath{?TEXT}
+    $moduleFile{?TEXT}
+}

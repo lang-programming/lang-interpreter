@@ -98,7 +98,7 @@ public class LangNativeFunction {
 			
 			LangNativeFunction langNativeFunction = create(instance, methods.get(0), valueDependencies);
 			for(int i = 1;i < methods.size();i++)
-				langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, methods.get(i)));
+				langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, methods.get(i), null));
 			
 			String functionName = langNativeFunction.getFunctionName();
 			
@@ -137,8 +137,40 @@ public class LangNativeFunction {
 		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo, method,
 				linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, valueDependencies);
 
-		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody));
+		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody, null));
 		
+		return langNativeFunction;
+	}
+
+	public static LangNativeFunction wrap(Object instance, Method functionBody, String functionName,
+												String functionInfo, LangNormalFunction normalFunction)
+			throws IllegalArgumentException, DataTypeConstraintException {
+		LangFunction langFunction = functionBody.getAnnotation(LangFunction.class);
+		if(langFunction == null)
+			throw new IllegalArgumentException("Method must be annotated with @LangFunction");
+
+		if(!DataObject.class.isAssignableFrom(functionBody.getReturnType()))
+			throw new IllegalArgumentException("Method must be annotated with @LangFunction must return a DataObject");
+
+		boolean method = langFunction.isMethod();
+
+		boolean linkerFunction = langFunction.isLinkerFunction();
+
+		boolean deprecated = langFunction.isDeprecated();
+		String deprecatedRemoveVersion = langFunction.getDeprecatedRemoveVersion();
+		if(deprecatedRemoveVersion.equals(""))
+			deprecatedRemoveVersion = null;
+		String deprecatedReplacementFunction = langFunction.getDeprecatedReplacementFunction();
+		if(deprecatedReplacementFunction.equals(""))
+			deprecatedReplacementFunction = null;
+
+		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo, method,
+				linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, new Object[] {
+						normalFunction
+		});
+
+		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody, normalFunction));
+
 		return langNativeFunction;
 	}
 
@@ -185,7 +217,7 @@ public class LangNativeFunction {
 		return internalFunctions.get(index).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList);
 	}
 	
-	public InternalFunction createInternalFunction(Object instance, Method functionBody)
+	public InternalFunction createInternalFunction(Object instance, Method functionBody, LangNormalFunction normalFunction)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		LangFunction langFunction = functionBody.getAnnotation(LangFunction.class);
 		if(langFunction == null)
@@ -220,8 +252,6 @@ public class LangNativeFunction {
 				(firstParam == null || !firstParam.getType().isAssignableFrom(DataObject.LangObject.class))))
 			throw new IllegalArgumentException("The method for LangObjects must start with " +
 					"(LangInterpreter interpreter, LangObject thisObject) or (LangObject thisObject)");
-
-
 
 		int diff = (hasInterpreterParameter?1:0) + (method?1:0);
 		List<Class<?>> methodParameterTypeList = new ArrayList<>(parameters.length - diff);
@@ -378,13 +408,15 @@ public class LangNativeFunction {
 		
 		if(rawVarArgsParameter && parameterList.size() != 1)
 			throw new IllegalArgumentException("If @RawVarArgs is used there must be exactly one lang parameter");
-		
-		return new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
+
+		return new InternalFunction(normalFunction, methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
 				returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, combinatorFunction, 0, new ArrayList<>());
 	}
 	
 	public class InternalFunction extends LangBaseFunction {
+		private final LangNormalFunction normalFunction;
+
 		private final List<Class<?>> methodParameterTypeList;
 		private final List<String> parameterInfoList;
 		private final Object instance;
@@ -395,8 +427,8 @@ public class LangNativeFunction {
 		private final int combinatorFunctionCallCount;
 		private final List<DataObject> combinatorProvidedArgumentList;
 		
-		private InternalFunction(List<Class<?>> methodParameterTypeList, List<DataObject> parameterList,
-				List<DataTypeConstraint> parameterDataTypeConstraintList,
+		private InternalFunction(LangNormalFunction normalFunction, List<Class<?>> methodParameterTypeList,
+				List<DataObject> parameterList, List<DataTypeConstraint> parameterDataTypeConstraintList,
 				List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
 				int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
 				DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody,
@@ -405,6 +437,7 @@ public class LangNativeFunction {
 			super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, varArgsParameterIndex,
 					textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
+			this.normalFunction = normalFunction;
 			this.methodParameterTypeList = methodParameterTypeList;
 			this.parameterInfoList = parameterInfoList;
 			this.instance = instance;
@@ -415,7 +448,47 @@ public class LangNativeFunction {
 			this.combinatorFunctionCallCount = combinatorFunctionCallCount;
 			this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
 		}
-		
+
+		@Override
+		public List<DataObject> getParameterList() {
+			return (normalFunction == null)?super.getParameterList():normalFunction.getParameterList();
+		}
+
+		@Override
+		public List<DataTypeConstraint> getParameterDataTypeConstraintList() {
+			return (normalFunction == null)?super.getParameterDataTypeConstraintList():normalFunction.getParameterDataTypeConstraintList();
+		}
+
+		@Override
+		public List<ParameterAnnotation> getParameterAnnotationList() {
+			return (normalFunction == null)?super.getParameterAnnotationList():normalFunction.getParameterAnnotationList();
+		}
+
+		@Override
+		public int getVarArgsParameterIndex() {
+			return (normalFunction == null)?super.getVarArgsParameterIndex():normalFunction.getVarArgsParameterIndex();
+		}
+
+		@Override
+		public boolean isTextVarArgsParameter() {
+			return (normalFunction == null)?super.isTextVarArgsParameter():normalFunction.isTextVarArgsParameter();
+		}
+
+		@Override
+		public boolean isRawVarArgsParameter() {
+			return (normalFunction == null)?super.isRawVarArgsParameter():normalFunction.isRawVarArgsParameter();
+		}
+
+		@Override
+		public DataTypeConstraint getReturnValueTypeConstraint() {
+			return (normalFunction == null)?super.getReturnValueTypeConstraint():normalFunction.getReturnValueTypeConstraint();
+		}
+
+		@Override
+		public String toFunctionSignatureSyntax() {
+			return (normalFunction == null)?super.toFunctionSignatureSyntax():normalFunction.toFunctionSignatureSyntax();
+		}
+
 		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
 								   List<DataObject> argumentList, List<DataObject> combinedArgumentList) {
 			if(method && thisObject == null)
@@ -573,7 +646,7 @@ public class LangNativeFunction {
 				Throwable t = e.getTargetException();
 				if(t == null)
 					t = e;
-				
+
 				return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
 						"Native Error (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage());
 			}
@@ -584,9 +657,10 @@ public class LangNativeFunction {
 			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
 					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, valueDependencies);
 			
-			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
-							parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
-							returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, combinatorFunction,
+			InternalFunction internalFunction = new InternalFunction(normalFunction, methodParameterTypeList, parameterList,
+							parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList, varArgsParameterIndex,
+							textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint, instance, functionBody,
+							hasInterpreterParameter, combinatorFunction,
 							combinatorFunctionCallCount + 1, combinedArgumentList);
 			
 			langNativeFunction.addInternalFunction(internalFunction);

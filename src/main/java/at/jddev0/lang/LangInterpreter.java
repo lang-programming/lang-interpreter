@@ -1,22 +1,8 @@
 package at.jddev0.lang;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Locale;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -52,7 +38,8 @@ public final class LangInterpreter {
 	
 	final LangModuleManager moduleManager = new LangModuleManager(this);
 	final Map<String, LangModule> modules = new HashMap<>();
-	
+
+	private boolean isInitializingLangStandardImplementation = true;
 	private int scopeId = -1;
 	private StackElement currentCallStackElement;
 	private final LinkedList<StackElement> callStack;
@@ -75,7 +62,10 @@ public final class LangInterpreter {
 	
 	//DATA
 	private final Map<Integer, Data> data = new HashMap<>();
-	
+
+	//Lang Standard implementation data
+	final Map<String, DataObject> standardTypes = new HashMap<>();
+
 	//Predefined functions & linker functions (= Predefined functions)
 	Map<String, FunctionPointerObject> funcs = new HashMap<>();
 	{
@@ -122,7 +112,8 @@ public final class LangInterpreter {
 		currentCallStackElement = new StackElement(langPath, langFile, null, null);
 		this.term = term;
 		this.langPlatformAPI = langPlatformAPI;
-		
+
+		initLangStandard();
 		enterScope(langArgs);
 	}
 	
@@ -964,7 +955,10 @@ public final class LangInterpreter {
 									if(var.isFinalData() || var.isLangVar())
 										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getLineNumberFrom());
 									else
-										var.setStruct(LangCompositeTypes.createPair(new DataObject(memberName), struct.getMember(memberName)));
+										var.setStruct(new StructObject(standardTypes.get("&Pair").getStruct(), new DataObject[] {
+												new DataObject(memberName),
+												struct.getMember(memberName)
+										}));
 								}
 								
 								interpretAST(node.getLoopBody());
@@ -4263,6 +4257,72 @@ public final class LangInterpreter {
 		return scopeId;
 	}
 
+	private void initLangStandard() {
+		if(!isInitializingLangStandardImplementation)
+			throw new IllegalStateException("Initialization of lang standard implementation was already completed");
+
+		//Temporary scope for lang standard implementation in lang code
+		pushStackElement(new StackElement("<standard>", "standard.lang", null, null), -1);
+		enterScope();
+
+		try(BufferedReader langStandardImplementation = new BufferedReader(
+				new InputStreamReader(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("lang/standard.lang"))))
+		) {
+			langVars.addEssentialLangVars(null);
+
+			//Interpret lang standard implementation lang code
+			interpretLines(langStandardImplementation);
+
+			Map<String, String> langInfoTexts = new HashMap<>();
+			Map<String, DataObject> predefinedFunctions = new HashMap<>();
+
+			getData().var.forEach((variableName, variable) -> {
+				if(variableName.startsWith("$__LANG_INFO__") && variable.getType() == DataType.TEXT) {
+					langInfoTexts.put(variableName.substring(14), variable.getText());
+				}else if(variableName.startsWith("fp.__") && variable.getType() == DataType.FUNCTION_POINTER) {
+					String functionName = variableName.substring(5);
+					predefinedFunctions.put(functionName, new DataObject().setFunctionPointer(new FunctionPointerObject(
+							"<standard>", "standard.lang", "func." + functionName,
+							variable.getFunctionPointer().getNormalFunction())));
+				}else if(variable.getType() == DataType.STRUCT || variable.getType() == DataType.OBJECT) {
+					standardTypes.put(variableName, variable);
+				}
+			});
+
+			List<String> unusedLangInfoTexts = langInfoTexts.keySet().stream().filter(functionName -> !predefinedFunctions.containsKey(functionName)).collect(Collectors.toList());
+			if(!unusedLangInfoTexts.isEmpty())
+				throw new IllegalStateException("Invalid lang standard implementation in lang code: " +
+						"The following Lang Info texts are unused: " + String.join(", ", unusedLangInfoTexts));
+
+			//TODO Improve: Allow any function type in funcs list
+			predefinedFunctions.forEach((functionName, function) -> {
+				Object object = new Object() {
+					@LangFunction("")
+					public DataObject standardWrapperFunc(
+							@LangFunction.LangParameter("&args") @LangFunction.LangParameter.RawVarArgs List<DataObject> argumentList
+					) {
+						return callFunctionPointer(function.getFunctionPointer(), functionName, argumentList);
+					}
+				};
+
+				try {
+					funcs.put(functionName, new FunctionPointerObject(LangNativeFunction.wrap(object,
+							object.getClass().getDeclaredMethod("standardWrapperFunc", List.class),
+							functionName, langInfoTexts.get(functionName), function.getFunctionPointer().getNormalFunction())));
+				}catch(NoSuchMethodException ignore) {}
+			});
+		}catch(Exception e) {
+			throw new IllegalStateException("Could not load lang standard implementation in lang code", e);
+		} finally {
+			//Cleanup of temporary scope
+			popStackElement();
+
+			exitScope();
+
+			isInitializingLangStandardImplementation = false;
+		}
+	}
+
 	void enterScope() {
 		enterScope(null);
 	}
@@ -4283,8 +4343,11 @@ public final class LangInterpreter {
 	private void resetVarsAndFuncPtrs() {
 		DataObject langArgs = getData().var.get("&LANG_ARGS");
 		getData().var.clear();
-		
-		langVars.addLangVars(langArgs);
+
+		if(isInitializingLangStandardImplementation)
+			langVars.addEssentialLangVars(langArgs);
+		else
+			langVars.addLangVars(langArgs);
 	}
 	void resetVars() {
 		Set<Map.Entry<String, DataObject>> entrySet = new HashSet<>(getData().var.entrySet());
@@ -4299,7 +4362,7 @@ public final class LangInterpreter {
 	}
 
 	void exitScope() {
-		if(scopeId == 0) {
+		if(!isInitializingLangStandardImplementation && scopeId == 0) {
 			setErrno(InterpretingError.SYSTEM_ERROR, "Main scope can not be exited");
 			return;
 		}

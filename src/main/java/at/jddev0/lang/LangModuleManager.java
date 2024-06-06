@@ -38,21 +38,9 @@ final class LangModuleManager {
 		this.interpreter = interpreter;
 	}
 	
-	private static String removeDotsModuleFilePath(String file) {
-		//Remove "/./"
-		while(file.contains("/./"))
-			file = file.replaceAll("\\/\\.\\/", "/");
-		
-		//Remove "/../" and go to parent
-		while(file.matches(".*\\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\\/\\.\\.\\/.*"))
-			file = file.replaceAll("\\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\\/\\.\\.\\/", "/");
-		
-		return file;
-	}
-	
 	public static String getModuleFilePath(LangModule module, String currentPath, String file) {
 		if(file.startsWith("/"))
-			return removeDotsModuleFilePath(file);
+			return LangUtils.removeDotsFromFilePath(file);
 		
 		String prefix = "<module:" + module.getFile() + "[" + module.getLangModuleConfiguration().getName() + "]>";
 		currentPath = currentPath.substring(prefix.length());
@@ -62,7 +50,7 @@ final class LangModuleManager {
 		if(!path.startsWith("/"))
 			return "/" + path;
 		
-		return removeDotsModuleFilePath(path);
+		return LangUtils.removeDotsFromFilePath(path);
 	}
 	
 	/**
