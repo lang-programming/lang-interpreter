@@ -210,14 +210,13 @@ public abstract class LangNativeModule {
 	}
 	
 	protected final DataObject getPredefinedFunctionAsDataObject(String name) {
-		LangNativeFunction func = interpreter.funcs.get(name);
+		DataObject.FunctionPointerObject func = interpreter.funcs.get(name);
 		if(func == null)
 			return null;
 		
 		String functionName = (func.isLinkerFunction()?"linker.":"func.") + name;
 
-		return new DataObject().setFunctionPointer(new DataObject.FunctionPointerObject(functionName, func)).
-				setVariableName(functionName);
+		return new DataObject().setFunctionPointer(func).setVariableName(functionName);
 	}
 	
 	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList, int parentLineNumber) {
@@ -282,7 +281,7 @@ public abstract class LangNativeModule {
 
 		module.getExportedFunctions().add(functionName);
 
-		interpreter.funcs.put(functionName, func);
+		interpreter.funcs.put(functionName, new DataObject.FunctionPointerObject(func));
 	}
 	
 	protected final void exportNormalVariableFinal(String variableName, DataObject value) {

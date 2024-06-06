@@ -77,10 +77,16 @@ public final class LangInterpreter {
 	private final Map<Integer, Data> data = new HashMap<>();
 	
 	//Predefined functions & linker functions (= Predefined functions)
-	Map<String, LangNativeFunction> funcs = new HashMap<>();
+	Map<String, FunctionPointerObject> funcs = new HashMap<>();
 	{
-		LangPredefinedFunctions.addPredefinedFunctions(funcs);
-		LangPredefinedFunctions.addLinkerFunctions(funcs);
+		Map<String, LangNativeFunction> tmpFuncs = new HashMap<>();
+
+		LangPredefinedFunctions.addPredefinedFunctions(tmpFuncs);
+		LangPredefinedFunctions.addLinkerFunctions(tmpFuncs);
+
+		tmpFuncs.forEach((functionName, function) -> {
+			funcs.put(functionName, new FunctionPointerObject(function));
+		});
 	}
 	public final LangOperators operators = new LangOperators(this);
 	public final LangConversions conversions = new LangConversions(this);
@@ -553,7 +559,7 @@ public final class LangInterpreter {
 		return convertVariableNameToVariableNameNodeOrComposition(node.getLineNumberFrom(), node.getLineNumberTo(),
 		null, variableName, funcs.entrySet().stream().filter(entry -> {
 			return entry.getValue().isLinkerFunction() == isLinkerFunction;
-		}).map(Entry<String, LangNativeFunction>::getKey).collect(Collectors.toSet()), prefix, false, node.getLineNumberFrom());
+		}).map(Entry::getKey).collect(Collectors.toSet()), prefix, false, node.getLineNumberFrom());
 	}
 	
 	private Node processFunctionCallPreviousNodeValueNode(FunctionCallPreviousNodeValueNode node, DataObject previousValue) {
@@ -1875,7 +1881,7 @@ public final class LangInterpreter {
 							
 							if(variableName.startsWith("fp.")) {
 								final String functionNameCopy = variableName.substring(3);
-								Optional<Map.Entry<String, LangNativeFunction>> ret = funcs.entrySet().stream().filter(entry -> {
+								Optional<Map.Entry<String, FunctionPointerObject>> ret = funcs.entrySet().stream().filter(entry -> {
 									return functionNameCopy.equals(entry.getKey());
 								}).findFirst();
 								
@@ -2155,7 +2161,7 @@ public final class LangInterpreter {
 		}
 		
 		final String variableNameCopy = variableName;
-		Optional<Map.Entry<String, LangNativeFunction>> ret = funcs.entrySet().stream().filter(entry -> {
+		Optional<Map.Entry<String, FunctionPointerObject>> ret = funcs.entrySet().stream().filter(entry -> {
 			return entry.getValue().isLinkerFunction() == isLinkerFunction;
 		}).filter(entry -> {
 			return variableNameCopy.equals(entry.getKey());
@@ -2164,8 +2170,8 @@ public final class LangInterpreter {
 		if(!ret.isPresent())
 			return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + variableName + "\" was not found", node.getLineNumberFrom());
 
-		LangNativeFunction func = ret.get().getValue();
-		return new DataObject().setFunctionPointer(new FunctionPointerObject(node.getVariableName(), func)).setVariableName(node.getVariableName());
+		FunctionPointerObject func = ret.get().getValue();
+		return new DataObject().setFunctionPointer(func.withFunctionName(node.getVariableName())).setVariableName(node.getVariableName());
 	}
 	
 	/**
@@ -2751,7 +2757,7 @@ public final class LangInterpreter {
 			}
 			
 			final String functionNameCopy = functionName;
-			Optional<Map.Entry<String, LangNativeFunction>> ret = funcs.entrySet().stream().filter(entry -> {
+			Optional<Map.Entry<String, FunctionPointerObject>> ret = funcs.entrySet().stream().filter(entry -> {
 				return entry.getValue().isLinkerFunction() == isLinkerFunction && functionNameCopy.equals(entry.getKey());
 			}).findFirst();
 			
@@ -2759,7 +2765,7 @@ public final class LangInterpreter {
 				return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
 						"\": Native, predfined, or linker function was not found", node.getLineNumberFrom());
 			
-			fp = new FunctionPointerObject(originalFunctionName, ret.get().getValue());
+			fp = ret.get().getValue().withFunctionName(originalFunctionName);
 		}else if(isVarNameFuncPtrWithoutPrefix(functionName)) {
 			DataObject ret = variables.get(functionName);
 			if(ret == null || ret.getType() != DataType.FUNCTION_POINTER)
@@ -2782,12 +2788,12 @@ public final class LangInterpreter {
 				//Predefined/External function
 				
 				final String functionNameCopy = functionName;
-				Optional<Map.Entry<String, LangNativeFunction>> retPredefinedFunction = funcs.entrySet().stream().filter(entry -> {
+				Optional<Map.Entry<String, FunctionPointerObject>> retPredefinedFunction = funcs.entrySet().stream().filter(entry -> {
 					return !entry.getValue().isLinkerFunction() && functionNameCopy.equals(entry.getKey());
 				}).findFirst();
 				
 				if(retPredefinedFunction.isPresent()) {
-					fp = new FunctionPointerObject("func." + functionName, retPredefinedFunction.get().getValue());;
+					fp = retPredefinedFunction.get().getValue().withFunctionName("func." + functionName);
 				}else {
 					//Predefined linker function
 					retPredefinedFunction = funcs.entrySet().stream().filter(entry -> {
@@ -2798,7 +2804,7 @@ public final class LangInterpreter {
 						return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
 								"\": Normal, native, predfined, linker, or external function was not found", node.getLineNumberFrom());
 					
-					fp = new FunctionPointerObject("linker." + functionName, retPredefinedFunction.get().getValue());
+					fp = retPredefinedFunction.get().getValue().withFunctionName("linker." + functionName);
 				}
 			}else {
 				return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
@@ -4699,25 +4705,39 @@ public final class LangInterpreter {
 		 * If function already exists, it will be overridden<br>
 		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
 		 */
-		public void addPredefinedFunction(String funcName, LangNativeFunction function) {
+		public void addPredefinedFunction(String funcName, FunctionPointerObject function) {
 			interpreter.funcs.put(funcName, function);
+		}
+		/**
+		 * Creates a function which is accessible globally in the Interpreter (= in all scopes)<br>
+		 * If function already exists, it will be overridden<br>
+		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
+		 */
+		public void addPredefinedFunction(String funcName, LangNativeFunction function) {
+			interpreter.funcs.put(funcName, new FunctionPointerObject(function));
 		}
 		/**
 		 * Adds all static methods which are annotated with @LangFunction the object contains
 		 */
 		public void addPredefinedFunctions(Class<?> clazz) {
-			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(clazz));
+			LangNativeFunction.getLangFunctionsOfClass(clazz).forEach((functionName, function) -> {
+				interpreter.funcs.put(functionName, new FunctionPointerObject(function));
+			});
 		}
 		/**
 		 * Adds all non-static methods which are annotated with @LangFunction the object contains
 		 */
 		public void addPredefinedFunctions(Object obj) {
-			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsFromObject(obj));
+			LangNativeFunction.getLangFunctionsFromObject(obj).forEach((functionName, function) -> {
+				interpreter.funcs.put(functionName, new FunctionPointerObject(function));
+			});
 		}
 		public void addPredefinedFunctions(Map<String, LangNativeFunction> funcs) {
-			interpreter.funcs.putAll(funcs);
+			funcs.forEach((functionName, function) -> {
+				interpreter.funcs.put(functionName, new FunctionPointerObject(function));
+			});
 		}
-		public Map<String, LangNativeFunction> getPredefinedFunctions() {
+		public Map<String, FunctionPointerObject> getPredefinedFunctions() {
 			return interpreter.funcs;
 		}
 		

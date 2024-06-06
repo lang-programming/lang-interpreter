@@ -819,6 +819,14 @@ public class DataObject {
 			return functionPointerType;
 		}
 
+		public boolean isLinkerFunction() {
+			return functionPointerType == NATIVE && nativeFunction.isLinkerFunction();
+		}
+
+		public boolean isDeprecated() {
+			return functionPointerType == NATIVE && nativeFunction.isDeprecated();
+		}
+
 		@Override
 		public String toString() {
 			if(functionName != null)

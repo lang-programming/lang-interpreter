@@ -10371,7 +10371,7 @@ final class LangPredefinedFunctions {
 
 			FunctionPointerObject function = functionObject.getFunctionPointer();
 
-			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+			interpreter.funcs.put(functionName, new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("module-wrapped-func")
 				public DataObject moduleWrappedFuncFunction(
 						LangInterpreter interpreter,
@@ -10379,7 +10379,7 @@ final class LangPredefinedFunctions {
 				) {
 					return interpreter.callFunctionPointer(function, functionName, argumentList);
 				}
-			}, functionObject));
+			}, functionObject)));
 
 			return null;
 		}
@@ -10405,7 +10405,7 @@ final class LangPredefinedFunctions {
 
 			FunctionPointerObject function = functionObject.getFunctionPointer();
 
-			interpreter.funcs.put(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+			interpreter.funcs.put(functionName, new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="module-wrapped-linker-func", isLinkerFunction=true)
 				public DataObject moduleWrappedLinkerFunc(
 						LangInterpreter interpreter,
@@ -10413,7 +10413,7 @@ final class LangPredefinedFunctions {
 				) {
 					return interpreter.callFunctionPointer(function, functionName, argumentList);
 				}
-			}, functionObject));
+			}, functionObject)));
 
 			return null;
 		}
