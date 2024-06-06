@@ -1919,7 +1919,7 @@ final class LangPredefinedFunctions {
 			DataObject value = interpreter.conversions.convertToNumberAndCreateNewDataObject(valueObject, -1);
 			if(value.getType() == DataType.NULL)
 				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-						"Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.LIST);
+						"Argument 1 (\"$value\") can not be converted to type number");
 
 			return value;
 		}
