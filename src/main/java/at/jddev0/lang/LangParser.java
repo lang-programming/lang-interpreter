@@ -1704,7 +1704,7 @@ public final class LangParser {
 					String functionReturnValueTypeConstraint;
 					String functionBody;
 					if(lrvalue.charAt(parameterListEndIndex + 1) == ':') {
-						int endIndex = lrvalue.indexOf('}');
+						int endIndex = lrvalue.lastIndexOf('}');
 						String rawTypeConstraint = lrvalue.substring(parameterListEndIndex + 2, endIndex + 1);
 						
 						if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
