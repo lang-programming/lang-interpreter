@@ -2437,8 +2437,8 @@ public final class LangParser {
 
 							token += "...";
 						}
-						
-						if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
+
+						if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT_WITH_SPECIAL_TYPES)) {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
 							
 							continue;

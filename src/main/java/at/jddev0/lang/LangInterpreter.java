@@ -2422,7 +2422,7 @@ public final class LangInterpreter {
 							if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER) {
 								if(argumentValueList.size() > 0)
 									lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true,
-											this, -1);
+											this, lineNumberFrom);
 								else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
 									lastDataObject = new DataObject().setVoid();
 
@@ -2452,7 +2452,18 @@ public final class LangInterpreter {
 								lastDataObject = new DataObject().setVoid();
 
 							try {
-								DataObject newDataObject = new DataObject(lastDataObject).
+								DataObject value = lastDataObject;
+								if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.BOOLEAN) {
+									value = new DataObject().setBoolean(conversions.toBool(lastDataObject, lineNumberFrom));
+								}else if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.NUMBER) {
+									value = conversions.convertToNumberAndCreateNewDataObject(lastDataObject, lineNumberFrom);
+									if(value.getType() == DataType.NULL)
+										return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+												"Invalid argument value for function parameter \"" + variableName + "\" (Must be a number)",
+												lineNumberFrom);
+								}
+
+								DataObject newDataObject = new DataObject(value).
 										setVariableName(variableName);
 								if(typeConstraint != null)
 									newDataObject.setTypeConstraint(typeConstraint);
@@ -2840,9 +2851,16 @@ public final class LangInterpreter {
 				String rawVariableName = parameter.getVariableName();
 
 				String rawParameterTypeConstraint = parameter.getTypeConstraint();
+				LangBaseFunction.ParameterAnnotation parameterAnnotation = LangBaseFunction.ParameterAnnotation.NORMAL;
 				DataTypeConstraint parameterTypeConstraint;
 				if(rawParameterTypeConstraint == null) {
 					parameterTypeConstraint = null;
+				}else if(rawParameterTypeConstraint.equals("bool")) {
+					parameterTypeConstraint = null;
+					parameterAnnotation = LangBaseFunction.ParameterAnnotation.BOOLEAN;
+				}else if(rawParameterTypeConstraint.equals("number")) {
+					parameterTypeConstraint = null;
+					parameterAnnotation = LangBaseFunction.ParameterAnnotation.NUMBER;
 				}else {
 					DataObject errorOut = new DataObject().setVoid();
 					parameterTypeConstraint = interpretTypeConstraint(rawParameterTypeConstraint, errorOut, parameter.getLineNumberFrom());
@@ -2889,7 +2907,7 @@ public final class LangInterpreter {
 
 				parameterList.add(new DataObject().setVariableName(variableName));
 				parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
-				parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.NORMAL);
+				parameterAnnotationList.add(parameterAnnotation);
 				lineNumberFromList.add(node.getLineNumberFrom());
 				lineNumberToList.add(node.getLineNumberTo());
 			}catch(ClassCastException e) {

@@ -100,9 +100,13 @@ final class LangPatterns {
 	 */
 	public static final Pattern CONVERSION_METHOD_NAME = Pattern.compile("to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number)");
 	/**
-	 * RegEx: "<code>\{[?!]?([A-Z]+\|)*[A-Z]+\}</code>"
+	 * RegEx: "<code>\{[?!]?([A-Z_]+\|)*[A-Z_]+\}</code>"
 	 */
 	public static final Pattern TYPE_CONSTRAINT = Pattern.compile("\\{[?!]?([A-Z_]+\\|)*[A-Z_]+\\}");
+	/**
+	 * RegEx: "<code>\{(([?!]?([A-Z_]+\|)*[A-Z_]+)|(bool|number))\}</code>"
+	 */
+	public static final Pattern TYPE_CONSTRAINT_WITH_SPECIAL_TYPES = Pattern.compile("\\{(([?!]?([A-Z_]+\\|)*[A-Z_]+)|(bool|number))\\}");
 	
 	//Function call specific
 	/**
