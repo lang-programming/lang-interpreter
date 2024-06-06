@@ -1,0 +1,162 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Operation Functions)
+
+fp.__len = ($operand) -> {
+    return parser.op(@$operand)
+}
+
+fp.__deepCopy = ($operand) -> {
+    return parser.op(^$operand)
+}
+
+fp.__concat = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ||| $rightSideOperand)
+}
+
+fp.__spaceship = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand <=> $rightSideOperand)
+}
+
+fp.__elvis = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ?: $rightSideOperand)
+}
+
+fp.__nullCoalescing = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ?? $rightSideOperand)
+}
+
+fp.__inlineIf = ($leftSideOperand, $middleOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand?$middleOperand:$rightSideOperand)
+}
+
+fp.__inc = ($operand) -> {
+    return parser.op(+|$operand)
+}
+
+fp.__dec = ($operand) -> {
+    return parser.op(-|$operand)
+}
+
+fp.__pos = ($operand) -> {
+    return parser.op(+$operand)
+}
+
+fp.__inv = ($operand) -> {
+    return parser.op(-$operand)
+}
+
+fp.__add = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand + $rightSideOperand)
+}
+
+fp.__sub = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand - $rightSideOperand)
+}
+
+fp.__mul = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand * $rightSideOperand)
+}
+
+fp.__pow = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ** $rightSideOperand)
+}
+
+fp.__div = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand / $rightSideOperand)
+}
+
+fp.__truncDiv = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ~/ $rightSideOperand)
+}
+
+fp.__floorDiv = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand // $rightSideOperand)
+}
+
+fp.__ceilDiv = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ^/ $rightSideOperand)
+}
+
+fp.__mod = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand % $rightSideOperand)
+}
+
+fp.__and = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand & $rightSideOperand)
+}
+
+fp.__or = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand | $rightSideOperand)
+}
+
+fp.__xor = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand ^ $rightSideOperand)
+}
+
+fp.__not = ($operand) -> {
+    return parser.op(~$operand)
+}
+
+fp.__lshift = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand << $rightSideOperand)
+}
+
+fp.__rshift = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand >> $rightSideOperand)
+}
+
+fp.__rzshift = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand >>> $rightSideOperand)
+}
+
+fp.__getItem = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand[$rightSideOperand])
+}
+
+fp.__setItem = ($leftSideOperand, $middleOperand, $rightSideOperand) -> {
+    $leftSideOperand[$middleOperand] $= $rightSideOperand
+}
+
+fp.__conNot = ($operand{bool}) -> {
+    return parser.op(!$operand)
+}
+
+fp.__conAnd = ($leftSideOperand{bool}, $rightSideOperand{bool}) -> {
+    return parser.op($leftSideOperand && $rightSideOperand)
+}
+
+fp.__conOr = ($leftSideOperand{bool}, $rightSideOperand{bool}) -> {
+    return parser.op($leftSideOperand || $rightSideOperand)
+}
+
+fp.__conEquals = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand == $rightSideOperand)
+}
+
+fp.__conNotEquals = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand != $rightSideOperand)
+}
+
+fp.__conStrictEquals = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand === $rightSideOperand)
+}
+
+fp.__conStrictNotEquals = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand !== $rightSideOperand)
+}
+
+fp.__conLessThan = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand < $rightSideOperand)
+}
+
+fp.__conGreaterThan = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand > $rightSideOperand)
+}
+
+fp.__conLessThanOrEquals = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand <= $rightSideOperand)
+}
+
+fp.__conGreaterThanOrEquals = ($leftSideOperand, $rightSideOperand) -> {
+    return parser.op($leftSideOperand >= $rightSideOperand)
+}
