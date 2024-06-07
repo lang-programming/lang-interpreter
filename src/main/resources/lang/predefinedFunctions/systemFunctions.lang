@@ -85,3 +85,5 @@ fp.repeatUntil_overloaded_1 = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POIN
     return func.repeatUntil(fp.loop, fp.check, 0)
 }
 fp.__repeatUntil += fp.repeatUntil_overloaded_1
+
+fp.__pointerTo = ($[value]) -> return $value

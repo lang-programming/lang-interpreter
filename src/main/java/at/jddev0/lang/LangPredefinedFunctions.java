@@ -407,15 +407,6 @@ final class LangPredefinedFunctions {
 			return null;
 		}
 
-		@LangFunction("pointerTo")
-		@AllowedTypes(DataObject.DataType.VAR_POINTER)
-		public static DataObject pointerToFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$value") @CallByPointer DataObject pointerObject
-		) {
-			return pointerObject;
-		}
-
 		@LangFunction("exec")
 		public static DataObject execFunction(
 				LangInterpreter interpreter,
