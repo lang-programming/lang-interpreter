@@ -623,11 +623,17 @@ public final class LangOperators {
 				LinkedList<DataObject> listNew = new LinkedList<>(leftSideOperand.getList());
 				listNew.add(new DataObject(rightSideOperand));
 				return new DataObject().setList(listNew);
-			
+
+			case FUNCTION_POINTER:
+				if(rightSideOperand.getType() != DataType.FUNCTION_POINTER)
+					return null;
+
+				return new DataObject().setFunctionPointer(leftSideOperand.getFunctionPointer().
+						withAddedFunctions(rightSideOperand.getFunctionPointer()));
+
 			case BYTE_BUFFER:
 			case ERROR:
 			case VAR_POINTER:
-			case FUNCTION_POINTER:
 			case STRUCT:
 			case OBJECT:
 			case NULL:
