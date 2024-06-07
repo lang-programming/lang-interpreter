@@ -3191,8 +3191,11 @@ public final class LangOperators {
 				return leftSideOperand.getVarPointer().getVar() == rightSideOperand.getVarPointer().getVar();
 
 			case FUNCTION_POINTER:
-				return leftSideOperand.getFunctionPointer().isEquals(rightSideOperand.getFunctionPointer(),
-						interpreter, lineNumber);
+				if(rightSideOperand.getType() == DataType.FUNCTION_POINTER)
+					return leftSideOperand.getFunctionPointer().isEquals(rightSideOperand.getFunctionPointer(),
+							interpreter, lineNumber);
+
+				return false;
 
 			case ERROR:
 				switch(rightSideOperand.getType()) {
