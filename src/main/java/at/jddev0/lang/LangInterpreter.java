@@ -2829,6 +2829,7 @@ public final class LangInterpreter {
 		List<DataObject> parameterList = new ArrayList<>(children.size());
 		List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList = new ArrayList<>(children.size());
 		List<LangBaseFunction.ParameterAnnotation> parameterAnnotationList = new ArrayList<>(children.size());
+		List<String> parameterInfoList = new ArrayList<>(children.size());
 		int varArgsParameterIndex = -1;
 		boolean textVarArgsParameter = false;
 		List<Integer> lineNumberFromList = new ArrayList<>(children.size());
@@ -2881,6 +2882,7 @@ public final class LangInterpreter {
 					parameterList.add(new DataObject().setVariableName(variableName));
 					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.CONSTRAINT_NORMAL:parameterTypeConstraint);
 					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.VAR_ARGS);
+					parameterInfoList.add(null);
 					lineNumberFromList.add(node.getLineNumberFrom());
 					lineNumberToList.add(node.getLineNumberTo());
 
@@ -2893,6 +2895,7 @@ public final class LangInterpreter {
 					parameterList.add(new DataObject().setVariableName(variableName));
 					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
 					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER);
+					parameterInfoList.add(null);
 					lineNumberFromList.add(node.getLineNumberFrom());
 					lineNumberToList.add(node.getLineNumberTo());
 
@@ -2908,6 +2911,7 @@ public final class LangInterpreter {
 				parameterList.add(new DataObject().setVariableName(variableName));
 				parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
 				parameterAnnotationList.add(parameterAnnotation);
+				parameterInfoList.add(null);
 				lineNumberFromList.add(node.getLineNumberFrom());
 				lineNumberToList.add(node.getLineNumberTo());
 			}catch(ClassCastException e) {
@@ -2932,8 +2936,8 @@ public final class LangInterpreter {
 		StackElement currentStackElement = getCurrentCallStackElement();
 
 		LangNormalFunction normalFunction = new LangNormalFunction(parameterList, parameterDataTypeConstraintList,
-				parameterAnnotationList, varArgsParameterIndex, textVarArgsParameter, false,
-				returnValueTypeConstraint, lineNumberFromList, lineNumberToList, node.getFunctionBody());
+				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter,
+				false, returnValueTypeConstraint, lineNumberFromList, lineNumberToList, node.getFunctionBody());
 
 		return new DataObject().setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
 				currentStackElement.getLangFile(), normalFunction));

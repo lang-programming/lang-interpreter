@@ -8,17 +8,19 @@ public class LangBaseFunction {
     protected final List<DataObject> parameterList;
     protected final List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList;
     protected final List<ParameterAnnotation> parameterAnnotationList;
+    protected final List<String> parameterInfoList;
     protected final int varArgsParameterIndex;
     protected final boolean textVarArgsParameter;
     protected final boolean rawVarArgsParameter;
     protected final DataObject.DataTypeConstraint returnValueTypeConstraint;
 
     public LangBaseFunction(List<DataObject> parameterList, List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
-                            List<ParameterAnnotation> parameterAnnotationList, int varArgsParameterIndex, boolean textVarArgsParameter,
+                            List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList, int varArgsParameterIndex, boolean textVarArgsParameter,
                             boolean rawVarArgsParameter, DataObject.DataTypeConstraint returnValueTypeConstraint) {
         this.parameterList = parameterList;
         this.parameterDataTypeConstraintList = parameterDataTypeConstraintList;
         this.parameterAnnotationList = parameterAnnotationList;
+        this.parameterInfoList = parameterInfoList;
         this.varArgsParameterIndex = varArgsParameterIndex;
         this.textVarArgsParameter = textVarArgsParameter;
         this.rawVarArgsParameter = rawVarArgsParameter;
@@ -31,6 +33,10 @@ public class LangBaseFunction {
 
     public List<DataObject.DataTypeConstraint> getParameterDataTypeConstraintList() {
         return new ArrayList<>(parameterDataTypeConstraintList);
+    }
+
+    public List<String> getParameterInfoList() {
+        return parameterInfoList;
     }
 
     public List<ParameterAnnotation> getParameterAnnotationList() {

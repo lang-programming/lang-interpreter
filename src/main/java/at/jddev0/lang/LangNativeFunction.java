@@ -418,7 +418,6 @@ public class LangNativeFunction {
 		private final LangNormalFunction normalFunction;
 
 		private final List<Class<?>> methodParameterTypeList;
-		private final List<String> parameterInfoList;
 		private final Object instance;
 		private final Method functionBody;
 		private final boolean hasInterpreterParameter;
@@ -434,12 +433,11 @@ public class LangNativeFunction {
 				DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody,
 				boolean hasInterpreterParameter, boolean combinatorFunction, int combinatorFunctionCallCount,
 				List<DataObject> combinatorProvidedArgumentList) {
-			super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, varArgsParameterIndex,
-					textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
+			super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
+					varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
 			this.normalFunction = normalFunction;
 			this.methodParameterTypeList = methodParameterTypeList;
-			this.parameterInfoList = parameterInfoList;
 			this.instance = instance;
 			this.functionBody = functionBody;
 			functionBody.setAccessible(true);
@@ -462,6 +460,11 @@ public class LangNativeFunction {
 		@Override
 		public List<ParameterAnnotation> getParameterAnnotationList() {
 			return (normalFunction == null)?super.getParameterAnnotationList():normalFunction.getParameterAnnotationList();
+		}
+
+		@Override
+		public List<String> getParameterInfoList() {
+			return (normalFunction == null)?super.getParameterInfoList():normalFunction.getParameterInfoList();
 		}
 
 		@Override
@@ -680,10 +683,6 @@ public class LangNativeFunction {
 				fp = new FunctionPointerObject(fp, thisObject, superLevel);
 
 			return new DataObject().setFunctionPointer(fp);
-		}
-		
-		public List<String> getParameterInfoList() {
-			return new ArrayList<>(parameterInfoList);
 		}
 		
 		public boolean isCombinatorFunction() {

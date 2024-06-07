@@ -10,12 +10,12 @@ public class LangNormalFunction extends LangBaseFunction {
     private final AbstractSyntaxTree functionBody;
 
     LangNormalFunction(List<DataObject> parameterList, List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
-                              List<ParameterAnnotation> parameterAnnotationList, int varArgsParameterIndex, boolean textVarArgsParameter,
+                              List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList, int varArgsParameterIndex, boolean textVarArgsParameter,
                               boolean rawVarArgsParameter, DataObject.DataTypeConstraint returnValueTypeConstraint,
                               List<Integer> lineNumberFromList, List<Integer> lineNumberToList,
                               AbstractSyntaxTree functionBody) {
-        super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, varArgsParameterIndex,
-                textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
+        super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
+                varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
         this.lineNumberFromList = lineNumberFromList;
         this.lineNumberToList = lineNumberToList;
