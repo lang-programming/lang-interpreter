@@ -1,6 +1,7 @@
 lang.version = v1.0.0
 lang.name = Lang Standard Implementation (Functions)
 
+linker.include(systemFunctions.lang)
 linker.include(numberFunctions.lang)
 linker.include(operationFunctions.lang)
 linker.include(mathFunctions.lang)

@@ -1,0 +1,87 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (System Functions)
+
+fp.__repeat = (fp.loop{FUNCTION_POINTER}, $repeatCount{number}, $breakable{bool}):{VOID} -> {
+    $repeatCount $= $LANG_TYPE_LONG($repeatCount)
+    if($repeatCount < 0) {
+        throw $LANG_ERROR_NEGATIVE_REPEAT_COUNT
+    }
+
+    if($breakable) {
+        $shouldBreak = 0
+        $shouldBreakPtr = $[shouldBreak]
+
+        fp.break = () -> {
+            $*shouldBreakPtr = 1
+        }
+
+        $i
+        repeat($[i], $repeatCount) {
+            fp.loop($i, fp.break)
+            if($shouldBreak) {
+                con.break
+            }
+        }
+    }else {
+        $i
+        repeat($[i], $repeatCount) {
+            fp.loop($i)
+        }
+    }
+}
+fp.repeat_overloaded_1 = (fp.loop{FUNCTION_POINTER}, $repeatCount{number}) -> {
+    return func.repeat(fp.loop, $repeatCount, 0)
+}
+fp.__repeat += fp.repeat_overloaded_1
+
+fp.__repeatWhile = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $breakable{bool}):{VOID} -> {
+    if($breakable) {
+        $shouldBreak = 0
+        $shouldBreakPtr = $[shouldBreak]
+
+        fp.break = () -> {
+            $*shouldBreakPtr = 1
+        }
+
+        while(fp.check()) {
+            fp.loop(fp.break)
+            if($shouldBreak) {
+                con.break
+            }
+        }
+    }else {
+        while(fp.check()) {
+            fp.loop()
+        }
+    }
+}
+fp.repeatWhile_overloaded_1 = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}) -> {
+    return func.repeatWhile(fp.loop, fp.check, 0)
+}
+fp.__repeatWhile += fp.repeatWhile_overloaded_1
+
+fp.__repeatUntil = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $breakable{bool}):{VOID} -> {
+    if($breakable) {
+        $shouldBreak = 0
+        $shouldBreakPtr = $[shouldBreak]
+
+        fp.break = () -> {
+            $*shouldBreakPtr = 1
+        }
+
+        until(fp.check()) {
+            fp.loop(fp.break)
+            if($shouldBreak) {
+                con.break
+            }
+        }
+    }else {
+        until(fp.check()) {
+            fp.loop()
+        }
+    }
+}
+fp.repeatUntil_overloaded_1 = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}) -> {
+    return func.repeatUntil(fp.loop, fp.check, 0)
+}
+fp.__repeatUntil += fp.repeatUntil_overloaded_1
