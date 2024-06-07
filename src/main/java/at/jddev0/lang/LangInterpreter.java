@@ -4281,9 +4281,8 @@ public final class LangInterpreter {
 					langInfoTexts.put(variableName.substring(14), variable.getText());
 				}else if(variableName.startsWith("fp.__") && variable.getType() == DataType.FUNCTION_POINTER) {
 					String functionName = variableName.substring(5);
-					predefinedFunctions.put(functionName, new DataObject().setFunctionPointer(new FunctionPointerObject(
-							"<standard>", "standard.lang", "func." + functionName,
-							variable.getFunctionPointer().getNormalFunction())));
+					predefinedFunctions.put(functionName, new DataObject().setFunctionPointer(variable.getFunctionPointer().
+							withFunctionName("func." + functionName)));
 				}else if(variable.getType() == DataType.STRUCT || variable.getType() == DataType.OBJECT) {
 					standardTypes.put(variableName, variable);
 				}
@@ -4294,7 +4293,6 @@ public final class LangInterpreter {
 				throw new IllegalStateException("Invalid lang standard implementation in lang code: " +
 						"The following Lang Info texts are unused: " + String.join(", ", unusedLangInfoTexts));
 
-			//TODO Improve: Allow any function type in funcs list
 			predefinedFunctions.forEach((functionName, function) -> {
 				Object object = new Object() {
 					@LangFunction("")
