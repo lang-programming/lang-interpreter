@@ -166,18 +166,40 @@ public final class LangUtils {
 	public static List<String> getFunctionSignatures(DataObject.FunctionPointerObject[] functions) {
 		List<String> functionSignatures = new LinkedList<>();
 
-		for(DataObject.FunctionPointerObject function:functions) {
-			if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
-				functionSignatures.add(function.getNormalFunction().toFunctionSignatureSyntax());
-			}else if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
-				function.getNativeFunction().getInternalFunctions().stream().
-						map(LangBaseFunction::toFunctionSignatureSyntax).forEach(functionSignatures::add);
-			}else {
-				functionSignatures.add("<INVALID FUNCTION TYPE>");
-			}
-		}
+		for(DataObject.FunctionPointerObject function:functions)
+			function.getFunctions().stream().map(DataObject.FunctionPointerObject.InternalFunction::toFunctionSignatureSyntax).
+					forEach(functionSignatures::add);
 
 		return functionSignatures;
+	}
+
+	/**
+	 * @param functions Function signatures will be extracted from the FunctionPointerObject
+	 * @param argumentList The combined argument list
+	 *
+	 * @return Returns the most restrictive function for the provided arguments or null if no function signature matches the arguments
+	 */
+	public static DataObject.FunctionPointerObject.InternalFunction getMostRestrictiveFunction(DataObject.FunctionPointerObject functions,
+																							   List<DataObject> argumentList) {
+		int functionIndex = getMostRestrictiveFunctionIndex(functions, argumentList);
+
+		return functionIndex == -1?null:functions.getFunction(functionIndex);
+	}
+
+	/**
+	 * @param functions Function signatures will be extracted from the FunctionPointerObject
+	 * @param argumentList The combined argument list
+	 *
+	 * @return Returns the index of the most restrictive function for the provided arguments or -1 if no function signature matches the arguments
+	 */
+	public static int getMostRestrictiveFunctionIndex(DataObject.FunctionPointerObject functions, List<DataObject> argumentList) {
+		List<LangBaseFunction> functionSignatures = functions.getFunctions().stream().
+				map(DataObject.FunctionPointerObject.InternalFunction::getFunction).collect(Collectors.toList());
+
+		return getMostRestrictiveFunctionSignatureIndex(functionSignatures.stream().
+						map(LangBaseFunction::getParameterDataTypeConstraintList).collect(Collectors.toList()),
+				functionSignatures.stream().map(LangBaseFunction::getVarArgsParameterIndex).
+						collect(Collectors.toList()), argumentList);
 	}
 
 	/**
@@ -205,16 +227,9 @@ public final class LangUtils {
 		List<LangBaseFunction> functionSignatures = new LinkedList<>();
 		for(int i = 0;i < functions.length;i++) {
 			DataObject.FunctionPointerObject function = functions[i];
-			if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
-				functionSignatures.add(function.getNormalFunction());
-				langBaseFunctionCounts[i] = 1;
-			}else if(function.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
-				List<LangNativeFunction.InternalFunction> internalFunctions = function.getNativeFunction().getInternalFunctions();
-				functionSignatures.addAll(internalFunctions);
-				langBaseFunctionCounts[i] = internalFunctions.size();
-			}else {
-				return -1;
-			}
+			function.getFunctions().stream().map(DataObject.FunctionPointerObject.InternalFunction::getFunction).
+					forEach(functionSignatures::add);
+			langBaseFunctionCounts[i] = function.getOverloadedFunctionCount();
 		}
 
 		int index = getMostRestrictiveFunctionSignatureIndex(functionSignatures.stream().

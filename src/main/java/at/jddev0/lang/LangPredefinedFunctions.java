@@ -6501,16 +6501,16 @@ final class LangPredefinedFunctions {
 									args.stream().map(DataObject::new).collect(Collectors.toList())
 							));
 						}
-					}, f, x).getNativeFunction();
+					}, f, x).getFunction(0).getNativeFunction();
 
 					return new DataObject().setFunctionPointer(new FunctionPointerObject("<combY:anon:inner-func(" + xFunc + ")>", func));
 				}
-			}, f).getNativeFunction();
+			}, f).getFunction(0).getNativeFunction();
 
-			DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, new LinkedList<>());
+			DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
 			FunctionPointerObject retAnonFunc1Func = retAnonFunc1.getFunctionPointer();
 
-			DataObject retAnonFunc2 = anonFunc.callFunc(interpreter, new LinkedList<>());
+			DataObject retAnonFunc2 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
 
 			return interpreter.callFunctionPointer(retAnonFunc1Func, retAnonFunc1.getFunctionPointer().getFunctionName(), Arrays.asList(
 					retAnonFunc2

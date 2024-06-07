@@ -29,15 +29,11 @@ public final class LangConversions {
         if(operand.getType() != DataType.OBJECT || operand.getObject().isClass())
 			return null;
 
-		FunctionPointerObject[] method = operand.getObject().getMethods().get(methodName);
+		FunctionPointerObject method = operand.getObject().getMethods().get(methodName);
 		if(method == null)
 			return null;
 
-		FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method, new ArrayList<>(0));
-		if(fp == null)
-			return null;
-
-		DataObject ret = interpreter.callFunctionPointer(fp, methodName, new ArrayList<>(0), lineNumber);
+		DataObject ret = interpreter.callFunctionPointer(method, methodName, new ArrayList<>(0), lineNumber);
 		if(ret == null)
 			return new DataObject().setVoid();
 

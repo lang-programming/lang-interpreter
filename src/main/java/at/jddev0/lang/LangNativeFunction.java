@@ -18,12 +18,22 @@ import at.jddev0.lang.LangFunction.*;
 import at.jddev0.lang.LangFunction.LangParameter.*;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 
-import static at.jddev0.lang.LangBaseFunction.ParameterAnnotation;
+public class LangNativeFunction extends LangBaseFunction {
+	private final List<Class<?>> methodParameterTypeList;
+	private final Object instance;
+	private final Method functionBody;
 
-public class LangNativeFunction {
 	private final String functionName;
-	
-	private final List<InternalFunction> internalFunctions;
+
+	private final boolean hasInterpreterParameter;
+
+	private final boolean method;
+
+	private final boolean combinatorFunction;
+	private final int combinatorFunctionCallCount;
+	private final List<DataObject> combinatorProvidedArgumentList;
+
+	private final Object[] valueDependencies;
 
 	public static FunctionPointerObject getSingleLangFunctionFromObject(Object obj, Object... valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
@@ -31,7 +41,7 @@ public class LangNativeFunction {
 		if(functions.isEmpty())
 			throw new IllegalArgumentException("No methods which are annotated with @LangFunctions are defined in " + obj);
 
-		if(functions.size() > 1)
+		if(functions.size() > 1 || functions.values().iterator().next().getOverloadedFunctionCount() > 1)
 			throw new IllegalArgumentException("Multiple methods which are annotated with @LangFunctions are defined in " + obj);
 
 		return functions.values().iterator().next();
@@ -85,12 +95,13 @@ public class LangNativeFunction {
 			if(methods.size() >= 2 && (!methods.get(0).getAnnotation(LangFunction.class).hasInfo() || methods.get(1).getAnnotation(LangFunction.class).hasInfo()))
 				throw new IllegalArgumentException("The value of hasInfo() must be true for exactly one overloaded @LangFunction");
 			
-			LangNativeFunction langNativeFunction = create(instance, methods.get(0), valueDependencies);
+			List<LangNativeFunction> langNativeFunction = new LinkedList<>();
+			langNativeFunction.add(create(instance, methods.get(0), valueDependencies));
+			String functionName = langNativeFunction.get(0).getFunctionName();
+
 			LangFunction langFunction = methods.get(0).getAnnotation(LangFunction.class);
 			for(int i = 1;i < methods.size();i++)
-				langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, methods.get(i), valueDependencies));
-
-			String functionName = langNativeFunction.getFunctionName();
+				langNativeFunction.add(createFunction(instance, methods.get(i), functionName, valueDependencies));
 
 			boolean linkerFunction = langFunction.isLinkerFunction();
 
@@ -105,9 +116,10 @@ public class LangNativeFunction {
 			LangInfo langInfo = methods.get(0).getAnnotation(LangInfo.class);
 			String functionInfo = langInfo == null?null:langInfo.value();
 
-			langNativeFunctions.put(functionName, new FunctionPointerObject(langNativeFunction).withFunctionInfo(functionInfo).
-					withLinkerFunction(linkerFunction).withDeprecationInformation(deprecated, deprecatedRemoveVersion,
-							deprecatedReplacementFunction));
+			langNativeFunctions.put(functionName, new FunctionPointerObject(null, null, null, null,
+					functionInfo, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction,
+					langNativeFunction.stream().map(FunctionPointerObject.InternalFunction::new).
+							collect(Collectors.toList())));
 		}
 		
 		return langNativeFunctions;
@@ -124,48 +136,11 @@ public class LangNativeFunction {
 		
 		String functionName = langFunction.value();
 
-		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName);
-
-		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody, valueDependencies));
-		
-		return langNativeFunction;
-	}
-
-	private LangNativeFunction(String functionName) {
-		this.functionName = functionName;
-		this.internalFunctions = new ArrayList<>();
+		return createFunction(instance, functionBody, functionName, valueDependencies);
 	}
 	
-	public void addInternalFunction(InternalFunction internalFunction) {
-		if(internalFunctions.size() > 0 &&
-				(internalFunction.isCombinatorFunction() || internalFunctions.get(0).isCombinatorFunction()))
-			throw new IllegalArgumentException("Combinator functions can not be overloaded");
-		
-		internalFunctions.add(internalFunction);
-	}
-
-	public DataObject callFunc(LangInterpreter interpreter, List<DataObject> argumentList) {
-		return callFunc(interpreter, null, -1, argumentList);
-	}
-
-	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel, List<DataObject> argumentList) {
-		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-				interpreter, -1);
-		if(internalFunctions.size() == 1)
-			return internalFunctions.get(0).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList);
-		
-		int index = LangUtils.getMostRestrictiveFunctionSignatureIndex(internalFunctions, combinedArgumentList);
-		
-		if(index == -1) {
-			return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-					" Available function signatures:\n    " + functionName + internalFunctions.stream().map(InternalFunction::toFunctionSignatureSyntax).
-					collect(Collectors.joining("\n    " + functionName)));
-		}
-		
-		return internalFunctions.get(index).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList);
-	}
-	
-	public InternalFunction createInternalFunction(Object instance, Method functionBody, Object[] valueDependencies)
+	public static LangNativeFunction createFunction(Object instance, Method functionBody, String functionName,
+													Object[] valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		LangFunction langFunction = functionBody.getAnnotation(LangFunction.class);
 		if(langFunction == null)
@@ -359,350 +334,301 @@ public class LangNativeFunction {
 		if(rawVarArgsParameter && parameterList.size() != 1)
 			throw new IllegalArgumentException("If @RawVarArgs is used there must be exactly one lang parameter");
 
-		return new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
+		return new LangNativeFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
-				returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, method, combinatorFunction,
+				returnValueTypeConstraint, instance, functionBody, functionName, hasInterpreterParameter, method, combinatorFunction,
 				0, new ArrayList<>(), valueDependencies);
 	}
-	
-	public class InternalFunction extends LangBaseFunction {
-		private final List<Class<?>> methodParameterTypeList;
-		private final Object instance;
-		private final Method functionBody;
-		private final boolean hasInterpreterParameter;
 
-		private final boolean method;
+	private LangNativeFunction(List<Class<?>> methodParameterTypeList,
+							 List<DataObject> parameterList, List<DataTypeConstraint> parameterDataTypeConstraintList,
+							 List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
+							 int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
+							 DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody, String functionName,
+							 boolean hasInterpreterParameter, boolean method, boolean combinatorFunction, int combinatorFunctionCallCount,
+							 List<DataObject> combinatorProvidedArgumentList, Object[] valueDependencies) {
+		super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
+				varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
-		private final boolean combinatorFunction;
-		private final int combinatorFunctionCallCount;
-		private final List<DataObject> combinatorProvidedArgumentList;
+		this.methodParameterTypeList = methodParameterTypeList;
+		this.instance = instance;
+		this.functionBody = functionBody;
+		functionBody.setAccessible(true);
+		this.functionName = functionName;
+		this.hasInterpreterParameter = hasInterpreterParameter;
+		this.method = method;
+		this.combinatorFunction = combinatorFunction;
+		this.combinatorFunctionCallCount = combinatorFunctionCallCount;
+		this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
+		this.valueDependencies = valueDependencies;
+	}
 
-		private final Object[] valueDependencies;
-		
-		private InternalFunction(List<Class<?>> methodParameterTypeList,
-				List<DataObject> parameterList, List<DataTypeConstraint> parameterDataTypeConstraintList,
-				List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
-				int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
-				DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody,
-				boolean hasInterpreterParameter, boolean method, boolean combinatorFunction, int combinatorFunctionCallCount,
-				List<DataObject> combinatorProvidedArgumentList, Object[] valueDependencies) {
-			super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
-					varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
+	public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
+							   List<DataObject> argumentList, List<DataObject> combinedArgumentList) {
+		if(method && thisObject == null)
+			return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is not bound for native function for LangObject");
 
-			this.methodParameterTypeList = methodParameterTypeList;
-			this.instance = instance;
-			this.functionBody = functionBody;
-			functionBody.setAccessible(true);
-			this.hasInterpreterParameter = hasInterpreterParameter;
-			this.method = method;
-			this.combinatorFunction = combinatorFunction;
-			this.combinatorFunctionCallCount = combinatorFunctionCallCount;
-			this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
-			this.valueDependencies = valueDependencies;
+		if(!method && thisObject != null)
+			return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is bound for native function");
+
+		int argCount = parameterList.size();
+
+		if(combinatorFunction) {
+			combinedArgumentList = new ArrayList<>(combinedArgumentList.stream().map(DataObject::new).collect(Collectors.toList()));
+			combinedArgumentList.addAll(0, combinatorProvidedArgumentList);
 		}
 
-		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
-								   List<DataObject> argumentList, List<DataObject> combinedArgumentList) {
-			if(method && thisObject == null)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is not bound for native function for LangObject");
+		if(varArgsParameterIndex == -1) {
+			if(!combinatorFunction && combinedArgumentList.size() < argCount)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount));
+			if(combinedArgumentList.size() > argCount)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount));
+		}else {
+			//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
+			if((!combinatorFunction || combinatorFunctionCallCount > 0) && combinedArgumentList.size() < argCount - 1)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1));
+		}
 
-			if(!method && thisObject != null)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "This-object is bound for native function");
+		int diff = (hasInterpreterParameter?1:0) + (method?1:0);
+		Object[] methodArguments = new Object[diff + argCount];
+		if(hasInterpreterParameter) {
+			methodArguments[0] = interpreter;
+		}
+		if(method)
+			methodArguments[diff - 1] = thisObject;
 
-			int argCount = parameterList.size();
-			
-			if(combinatorFunction) {
-				combinedArgumentList = new ArrayList<>(combinedArgumentList.stream().map(DataObject::new).collect(Collectors.toList()));
-				combinedArgumentList.addAll(0, combinatorProvidedArgumentList);
-			}
-			
-			if(varArgsParameterIndex == -1) {
-				if(!combinatorFunction && combinedArgumentList.size() < argCount)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount));
-				if(combinedArgumentList.size() > argCount)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount));
-			}else {
-				//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
-				if((!combinatorFunction || combinatorFunctionCallCount > 0) && combinedArgumentList.size() < argCount - 1)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1));
-			}
+		int argumentIndex = 0;
+		for(int i = 0;i < argCount;i++) {
+			if(combinatorFunction && argumentIndex >= combinedArgumentList.size() && (varArgsParameterIndex == -1 || combinatorFunctionCallCount == 0))
+				return combinatorCall(thisObject, superLevel, combinedArgumentList);
 
-			int diff = (hasInterpreterParameter?1:0) + (method?1:0);
-			Object[] methodArguments = new Object[diff + argCount];
-			if(hasInterpreterParameter) {
-				methodArguments[0] = interpreter;
-			}
-			if(method)
-				methodArguments[diff - 1] = thisObject;
-			
-			int argumentIndex = 0;
-			for(int i = 0;i < argCount;i++) {
-				if(combinatorFunction && argumentIndex >= combinedArgumentList.size() && (varArgsParameterIndex == -1 || combinatorFunctionCallCount == 0))
-					return combinatorCall(functionName, thisObject, superLevel, combinedArgumentList);
-				
-				String variableName = parameterList.get(i).getVariableName();
-				
-				boolean ignoreTypeCheck = parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER || parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS ||
-						parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS;
-				
-				if(!ignoreTypeCheck && !parameterDataTypeConstraintList.get(i).isTypeAllowed(combinedArgumentList.get(argumentIndex).getType()))
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("The type of argument %d (\"%s\") must be one of %s", argumentIndex + 1,
-							variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()));
-				
-				Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?
-						interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), -1):null;
-				if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
-					return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName));
-				
-				Class<?> methodParameterType = methodParameterTypeList.get(i);
-				
-				try {
-					Object argument;
-					if(parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS) {
-						argument = new LinkedList<>(argumentList);
-					}else if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
-						//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
-						if(combinatorFunction && combinatorFunctionCallCount == 0)
-							return combinatorCall(functionName, thisObject, superLevel, combinedArgumentList);
-						
-						List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
-								map(DataObject::new).collect(Collectors.toList());
-						if(!textVarArgsParameter) {
-							DataTypeConstraint typeConstraint = parameterDataTypeConstraintList.get(i);
-							
-							for(int j = 0;j < varArgsArgumentList.size();j++) {
-								DataObject varArgsArgument = varArgsArgumentList.get(j);
-								if(!typeConstraint.isTypeAllowed(varArgsArgument.getType()))
-									return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-											String.format("The type of argument %d (for var args parameter \"%s\") must be one of %s", i + j + 1,
-													variableName, typeConstraint.getAllowedTypes()));
-							}
-						}
-						
-						if(methodParameterType.isAssignableFrom(DataObject.class)) {
-							if(textVarArgsParameter) {
-								List<DataObject> argumentListCopy = new ArrayList<>(argumentList);
-								
-								//Remove leading arguments
-								for(int j = 0;j < i;j++)
-									for(int k = 0;k < argumentListCopy.size();k++)
-										if(argumentListCopy.remove(0).getType() == DataType.ARGUMENT_SEPARATOR)
-											break;
-								
-								//Remove trailing arguments
-								for(int j = 0;j < argCount - i - 1;j++)
-									for(int k = argumentListCopy.size() - 1;k >= 0;k--)
-										if(argumentListCopy.remove(k).getType() == DataType.ARGUMENT_SEPARATOR)
-											break;
-								
-								DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy,
-										interpreter, -1);
-								argument = new DataObject(combinedArgument == null?"":interpreter.conversions.
-										toText(combinedArgument, -1)).setVariableName(variableName);
-							}else {
-								argument = new DataObject().setVariableName(variableName).
-										setArray(varArgsArgumentList.toArray(new DataObject[0]));
-							}
-						}else if(methodParameterType.isAssignableFrom(DataObject[].class)) {
-							argument = varArgsArgumentList.toArray(new DataObject[0]);
-						}else {
-							argument = new ArrayList<>(varArgsArgumentList);
-						}
-						
-						//Not "+1", because argumentIndex will be incremented at the end of the for loop
-						argumentIndex = combinedArgumentList.size() - argCount + i;
-					}else if(methodParameterType.isAssignableFrom(DataObject.class)) {
-						if(parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER) {
-							argument = new DataObject().setVariableName(variableName).
-									setVarPointer(new VarPointerObject(combinedArgumentList.get(argumentIndex))).
-									setTypeConstraint(parameterDataTypeConstraintList.get(i));
-						}else {
-							argument = new DataObject(combinedArgumentList.get(argumentIndex)).setVariableName(variableName).
-									setTypeConstraint(parameterDataTypeConstraintList.get(i));
-						}
-					}else if(methodParameterType.isAssignableFrom(Number.class)) {
-						argument = argumentNumberValue;
-					}else if(methodParameterType.isAssignableFrom(boolean.class)) {
-						argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), -1);
-					}else {
-						return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "Invalid native method parameter argument type");
-					}
-					
-					methodArguments[i + diff] = argument;
-				}catch(DataTypeConstraintException e) {
-					return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
-							String.format("Native method contains invalid type constraint combinations for Argument %d (\"%s\"): %s", i + 1, variableName, e.getMessage()));
-				}
-				
-				argumentIndex++;
-			}
-			
+			String variableName = parameterList.get(i).getVariableName();
+
+			boolean ignoreTypeCheck = parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER || parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS ||
+					parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS;
+
+			if(!ignoreTypeCheck && !parameterDataTypeConstraintList.get(i).isTypeAllowed(combinedArgumentList.get(argumentIndex).getType()))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("The type of argument %d (\"%s\") must be one of %s", argumentIndex + 1,
+						variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()));
+
+			Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?
+					interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), -1):null;
+			if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName));
+
+			Class<?> methodParameterType = methodParameterTypeList.get(i);
+
 			try {
-				DataObject ret = (DataObject)functionBody.invoke(instance, methodArguments);
+				Object argument;
+				if(parameterAnnotationList.get(i) == ParameterAnnotation.RAW_VAR_ARGS) {
+					argument = new LinkedList<>(argumentList);
+				}else if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
+					//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
+					if(combinatorFunction && combinatorFunctionCallCount == 0)
+						return combinatorCall(thisObject, superLevel, combinedArgumentList);
 
-				if(returnValueTypeConstraint != null && !interpreter.isThrownValue()) {
-					//Thrown values are always allowed
+					List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
+							map(DataObject::new).collect(Collectors.toList());
+					if(!textVarArgsParameter) {
+						DataTypeConstraint typeConstraint = parameterDataTypeConstraintList.get(i);
 
-					DataObject retTmp = LangUtils.nullToLangVoid(ret);
+						for(int j = 0;j < varArgsArgumentList.size();j++) {
+							DataObject varArgsArgument = varArgsArgumentList.get(j);
+							if(!typeConstraint.isTypeAllowed(varArgsArgument.getType()))
+								return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+										String.format("The type of argument %d (for var args parameter \"%s\") must be one of %s", i + j + 1,
+												variableName, typeConstraint.getAllowedTypes()));
+						}
+					}
 
-					if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
-						return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-								"Invalid return value type \"" + retTmp.getType() + "\"", -1);
+					if(methodParameterType.isAssignableFrom(DataObject.class)) {
+						if(textVarArgsParameter) {
+							List<DataObject> argumentListCopy = new ArrayList<>(argumentList);
+
+							//Remove leading arguments
+							for(int j = 0;j < i;j++)
+								for(int k = 0;k < argumentListCopy.size();k++)
+									if(argumentListCopy.remove(0).getType() == DataType.ARGUMENT_SEPARATOR)
+										break;
+
+							//Remove trailing arguments
+							for(int j = 0;j < argCount - i - 1;j++)
+								for(int k = argumentListCopy.size() - 1;k >= 0;k--)
+									if(argumentListCopy.remove(k).getType() == DataType.ARGUMENT_SEPARATOR)
+										break;
+
+							DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy,
+									interpreter, -1);
+							argument = new DataObject(combinedArgument == null?"":interpreter.conversions.
+									toText(combinedArgument, -1)).setVariableName(variableName);
+						}else {
+							argument = new DataObject().setVariableName(variableName).
+									setArray(varArgsArgumentList.toArray(new DataObject[0]));
+						}
+					}else if(methodParameterType.isAssignableFrom(DataObject[].class)) {
+						argument = varArgsArgumentList.toArray(new DataObject[0]);
+					}else {
+						argument = new ArrayList<>(varArgsArgumentList);
+					}
+
+					//Not "+1", because argumentIndex will be incremented at the end of the for loop
+					argumentIndex = combinedArgumentList.size() - argCount + i;
+				}else if(methodParameterType.isAssignableFrom(DataObject.class)) {
+					if(parameterAnnotationList.get(i) == ParameterAnnotation.CALL_BY_POINTER) {
+						argument = new DataObject().setVariableName(variableName).
+								setVarPointer(new VarPointerObject(combinedArgumentList.get(argumentIndex))).
+								setTypeConstraint(parameterDataTypeConstraintList.get(i));
+					}else {
+						argument = new DataObject(combinedArgumentList.get(argumentIndex)).setVariableName(variableName).
+								setTypeConstraint(parameterDataTypeConstraintList.get(i));
+					}
+				}else if(methodParameterType.isAssignableFrom(Number.class)) {
+					argument = argumentNumberValue;
+				}else if(methodParameterType.isAssignableFrom(boolean.class)) {
+					argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), -1);
+				}else {
+					return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "Invalid native method parameter argument type");
 				}
 
-				return ret;
-			}catch(IllegalAccessException|IllegalArgumentException e) {
+				methodArguments[i + diff] = argument;
+			}catch(DataTypeConstraintException e) {
 				return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
-						"Native Error (\"" + e.getClass().getSimpleName() + "\"): " + e.getMessage());
-			}catch(InvocationTargetException e) {
-				Throwable t = e.getTargetException();
-				if(t == null)
-					t = e;
-
-				return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
-						"Native Error (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage());
+						String.format("Native method contains invalid type constraint combinations for Argument %d (\"%s\"): %s", i + 1, variableName, e.getMessage()));
 			}
-		}
-		
-		private DataObject combinatorCall(String thisFunctionName, DataObject.LangObject thisObject, int superLevel,
-										  List<DataObject> combinedArgumentList) {
-			LangNativeFunction langNativeFunction = new LangNativeFunction(thisFunctionName);
 
-			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList,
-					parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList, varArgsParameterIndex,
-					textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint, instance, functionBody,
-					hasInterpreterParameter, method, combinatorFunction, combinatorFunctionCallCount + 1,
-					combinedArgumentList, valueDependencies);
-			
-			langNativeFunction.addInternalFunction(internalFunction);
-			
-			String functionNames = combinedArgumentList.stream().map(dataObject -> {
-				if(dataObject.getType() != DataType.FUNCTION_POINTER)
-					return "<arg>";
-				
-				String functionName = dataObject.getFunctionPointer().getFunctionName();
-				return functionName == null?dataObject.getVariableName():functionName;
-			}).collect(Collectors.joining(", "));
-			
-			String functionName = "<" + (varArgsParameterIndex == -1?"":"inf-") + thisFunctionName + "-func(" + functionNames + ")>";
-			
-			FunctionPointerObject fp = new FunctionPointerObject(functionName, langNativeFunction);
-			if(method)
-				fp = new FunctionPointerObject(fp, thisObject, superLevel);
-
-			return new DataObject().setFunctionPointer(fp);
+			argumentIndex++;
 		}
 
-		public boolean isMethod() {
-			return method;
-		}
+		try {
+			DataObject ret = (DataObject)functionBody.invoke(instance, methodArguments);
 
-		public boolean isCombinatorFunction() {
-			return combinatorFunction;
-		}
-		
-		public int getCombinatorFunctionCallCount() {
-			return combinatorFunctionCallCount;
-		}
-		
-		public List<DataObject> getCombinatorProvidedArgumentList() {
-			return new ArrayList<>(combinatorProvidedArgumentList);
-		}
+			if(returnValueTypeConstraint != null && !interpreter.isThrownValue()) {
+				//Thrown values are always allowed
 
-		@Override
-		public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
-			if(!(baseFunction instanceof InternalFunction))
-				return false;
+				DataObject retTmp = LangUtils.nullToLangVoid(ret);
 
-			InternalFunction that = (InternalFunction)baseFunction;
+				if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
+					return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+							"Invalid return value type \"" + retTmp.getType() + "\"", -1);
+			}
 
-			if(!super.isEquals(that, interpreter, lineNumber) ||
-					this.hasInterpreterParameter != that.hasInterpreterParameter ||
-					this.combinatorFunction != that.combinatorFunction ||
-					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
-					!Objects.equals(this.functionBody, that.functionBody) ||
-					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
-					this.valueDependencies.length != that.valueDependencies.length)
-				return false;
+			return ret;
+		}catch(IllegalAccessException|IllegalArgumentException e) {
+			return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
+					"Native Error (\"" + e.getClass().getSimpleName() + "\"): " + e.getMessage());
+		}catch(InvocationTargetException e) {
+			Throwable t = e.getTargetException();
+			if(t == null)
+				t = e;
 
-			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
-				if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
-						that.combinatorProvidedArgumentList.get(i), lineNumber))
-					return false;
-
-			for(int i = 0;i < this.valueDependencies.length;i++)
-				if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
-						!interpreter.operators.isEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-								lineNumber):
-						!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
-					return false;
-
-			return true;
-		}
-
-		@Override
-		public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
-			if(!(baseFunction instanceof InternalFunction))
-				return false;
-
-			InternalFunction that = (InternalFunction)baseFunction;
-
-			if(!super.isEquals(that, interpreter, lineNumber) ||
-					this.hasInterpreterParameter != that.hasInterpreterParameter ||
-					this.combinatorFunction != that.combinatorFunction ||
-					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
-					!Objects.equals(this.functionBody, that.functionBody) ||
-					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
-					this.valueDependencies.length != that.valueDependencies.length)
-				return false;
-
-			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
-				if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
-						that.combinatorProvidedArgumentList.get(i), lineNumber))
-					return false;
-
-			for(int i = 0;i < this.valueDependencies.length;i++)
-				if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
-						!interpreter.operators.isStrictEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-								lineNumber):
-						!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
-					return false;
-
-			return true;
+			return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
+					"Native Error (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage());
 		}
 	}
-	
+
+	private DataObject combinatorCall(DataObject.LangObject thisObject, int superLevel,
+									  List<DataObject> combinedArgumentList) {
+		LangNativeFunction langNativeFunction = new LangNativeFunction(methodParameterTypeList, parameterList,
+				parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList, varArgsParameterIndex,
+				textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint, instance, functionBody, functionName,
+				hasInterpreterParameter, method, combinatorFunction, combinatorFunctionCallCount + 1,
+				combinedArgumentList, valueDependencies);
+
+		String functionNames = combinedArgumentList.stream().map(dataObject -> {
+			if(dataObject.getType() != DataType.FUNCTION_POINTER)
+				return "<arg>";
+
+			String functionName = dataObject.getFunctionPointer().getFunctionName();
+			return functionName == null?dataObject.getVariableName():functionName;
+		}).collect(Collectors.joining(", "));
+
+		String functionName = "<" + (varArgsParameterIndex == -1?"":"inf-") + this.functionName + "-func(" + functionNames + ")>";
+
+		FunctionPointerObject fp = new FunctionPointerObject(functionName, langNativeFunction);
+		if(method)
+			fp = new FunctionPointerObject(fp, thisObject).withMappedFunctions(internalFunction ->
+					new FunctionPointerObject.InternalFunction(internalFunction, superLevel));
+
+		return new DataObject().setFunctionPointer(fp);
+	}
+
 	public String getFunctionName() {
 		return functionName;
 	}
-	
-	public List<InternalFunction> getInternalFunctions() {
-		return new ArrayList<>(internalFunctions);
+
+	public boolean isMethod() {
+		return method;
 	}
 
-	public boolean isEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber) {
-		if(this == that)
-			return true;
+	public boolean isCombinatorFunction() {
+		return combinatorFunction;
+	}
 
-		if(this.internalFunctions.size() != that.internalFunctions.size())
+	public int getCombinatorFunctionCallCount() {
+		return combinatorFunctionCallCount;
+	}
+
+	public List<DataObject> getCombinatorProvidedArgumentList() {
+		return new ArrayList<>(combinatorProvidedArgumentList);
+	}
+
+	@Override
+	public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
+		if(!(baseFunction instanceof LangNativeFunction))
 			return false;
 
-		for(int i = 0;i < this.internalFunctions.size();i++)
-			if(!this.internalFunctions.get(i).isEquals(that.internalFunctions.get(i), interpreter, lineNumber))
+		LangNativeFunction that = (LangNativeFunction)baseFunction;
+
+		if(!super.isEquals(that, interpreter, lineNumber) ||
+				this.hasInterpreterParameter != that.hasInterpreterParameter ||
+				this.combinatorFunction != that.combinatorFunction ||
+				!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
+				!Objects.equals(this.functionBody, that.functionBody) ||
+				this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
+				this.valueDependencies.length != that.valueDependencies.length)
+			return false;
+
+		for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
+			if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
+					that.combinatorProvidedArgumentList.get(i), lineNumber))
+				return false;
+
+		for(int i = 0;i < this.valueDependencies.length;i++)
+			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
+					!interpreter.operators.isEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
+							lineNumber):
+					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
 		return true;
 	}
 
-	public boolean isStrictEquals(LangNativeFunction that, LangInterpreter interpreter, int lineNumber) {
-		if(this == that)
-			return true;
-
-		if(this.internalFunctions.size() != that.internalFunctions.size())
+	@Override
+	public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
+		if(!(baseFunction instanceof LangNativeFunction))
 			return false;
 
-		for(int i = 0;i < this.internalFunctions.size();i++)
-			if(!this.internalFunctions.get(i).isStrictEquals(that.internalFunctions.get(i), interpreter, lineNumber))
+		LangNativeFunction that = (LangNativeFunction)baseFunction;
+
+		if(!super.isEquals(that, interpreter, lineNumber) ||
+				this.hasInterpreterParameter != that.hasInterpreterParameter ||
+				this.combinatorFunction != that.combinatorFunction ||
+				!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
+				!Objects.equals(this.functionBody, that.functionBody) ||
+				this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
+				this.valueDependencies.length != that.valueDependencies.length)
+			return false;
+
+		for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
+			if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
+					that.combinatorProvidedArgumentList.get(i), lineNumber))
+				return false;
+
+		for(int i = 0;i < this.valueDependencies.length;i++)
+			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
+					!interpreter.operators.isStrictEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
+							lineNumber):
+					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
 		return true;

@@ -56,16 +56,11 @@ public final class LangOperators {
 		if(langObject.getType() != DataType.OBJECT || langObject.getObject().isClass())
 			return null;
 
-		FunctionPointerObject[] method = langObject.getObject().getMethods().get(methodName);
+		FunctionPointerObject method = langObject.getObject().getMethods().get(methodName);
 		if(method == null)
 			return null;
 
-		FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(method,
-				LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber));
-		if(fp == null)
-			return null;
-
-		DataObject ret = interpreter.callFunctionPointer(fp, methodName, argumentList, lineNumber);
+		DataObject ret = interpreter.callFunctionPointer(method, methodName, argumentList, lineNumber);
 		if(ret == null)
 			return new DataObject().setVoid();
 
@@ -3003,17 +2998,9 @@ public final class LangOperators {
 		if(callee.getType() == DataType.OBJECT && callee.getObject().isClass()) {
 			DataObject createdObject = new DataObject().setObject(new DataObject.LangObject(callee.getObject()));
 
-			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+			FunctionPointerObject constructors = createdObject.getObject().getConstructors();
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors,
-					LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, interpreter, lineNumber));
-			if(constructorFunction == null)
-				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-						"No matching function signature was found for the given arguments." +
-								" Available function signatures:\n    construct" + String.join("\n    construct",
-								LangUtils.getFunctionSignatures(constructors)));
-
-			ret = interpreter.callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList,
+			ret = interpreter.callFunctionPointer(constructors, constructors.getFunctionName(), argumentList,
 					lineNumber);
 			if(ret == null)
 				ret = new DataObject().setVoid();

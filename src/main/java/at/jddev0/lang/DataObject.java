@@ -2,6 +2,7 @@ package at.jddev0.lang;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import at.jddev0.lang.LangInterpreter.InterpretingError;
@@ -650,10 +651,6 @@ public class DataObject {
 		 */
 		private final LangObject thisObject;
 		/**
-		 * For methods the super level of the class [= level of parent]
-		 */
-		private final int superLevel;
-		/**
 		 * If functionName is set, the function name from the stack frame element which is created for the function call will be overridden
 		 */
 		private final String functionName;
@@ -664,29 +661,7 @@ public class DataObject {
 		private final String deprecatedRemoveVersion;
 		private final String deprecatedReplacementFunction;
 
-		private final LangNormalFunction normalFunction;
-		private final LangNativeFunction nativeFunction;
-		private final int functionPointerType;
-
-		/**
-		 * For normal and native function pointer definition
-		 * Used for setting superLevel for objects
-		 */
-		public FunctionPointerObject(FunctionPointerObject func, int superLevel) throws DataTypeConstraintException {
-			this.langPath = func.langPath;
-			this.langFile = func.langFile;
-			this.thisObject = func.thisObject;
-			this.superLevel = superLevel;
-			this.functionName = func.functionName;
-			this.functionInfo = func.functionInfo;
-			this.linkerFunction = func.linkerFunction;
-			this.deprecated = func.deprecated;
-			this.deprecatedRemoveVersion = func.deprecatedRemoveVersion;
-			this.deprecatedReplacementFunction = func.deprecatedReplacementFunction;
-			this.normalFunction = func.normalFunction;
-			this.nativeFunction = func.nativeFunction;
-			this.functionPointerType = func.functionPointerType;
-		}
+		private final List<InternalFunction> functions;
 
 		/**
 		 * For normal and native function pointer definition
@@ -699,39 +674,32 @@ public class DataObject {
 			this.langPath = func.langPath;
 			this.langFile = func.langFile;
 			this.thisObject = thisObject;
-			this.superLevel = func.superLevel;
 			this.functionName = func.functionName;
 			this.functionInfo = func.functionInfo;
 			this.linkerFunction = func.linkerFunction;
 			this.deprecated = func.deprecated;
 			this.deprecatedRemoveVersion = func.deprecatedRemoveVersion;
 			this.deprecatedReplacementFunction = func.deprecatedReplacementFunction;
-			this.normalFunction = func.normalFunction;
-			this.nativeFunction = func.nativeFunction;
-			this.functionPointerType = func.functionPointerType;
+			this.functions = func.functions;
 		}
 
 		/**
 		 * For normal and native function pointer definition
-		 * Used for binding the this-object
 		 */
-		public FunctionPointerObject(FunctionPointerObject func, LangObject thisObject, int superLevel) throws DataTypeConstraintException {
-			if(thisObject.isClass())
-				throw new DataTypeConstraintException("The this-object must be an object");
-
-			this.langPath = func.langPath;
-			this.langFile = func.langFile;
+		public FunctionPointerObject(String langPath, String langFile, LangObject thisObject, String functionName,
+									 String functionInfo, boolean linkerFunction, boolean deprecated,
+									 String deprecatedRemoveVersion, String deprecatedReplacementFunction,
+									 List<InternalFunction> functions) {
+			this.langPath = langPath;
+			this.langFile = langFile;
 			this.thisObject = thisObject;
-			this.superLevel = superLevel;
-			this.functionName = func.functionName;
-			this.functionInfo = func.functionInfo;
-			this.linkerFunction = func.linkerFunction;
-			this.deprecated = func.deprecated;
-			this.deprecatedRemoveVersion = func.deprecatedRemoveVersion;
-			this.deprecatedReplacementFunction = func.deprecatedReplacementFunction;
-			this.normalFunction = func.normalFunction;
-			this.nativeFunction = func.nativeFunction;
-			this.functionPointerType = func.functionPointerType;
+			this.functionName = functionName;
+			this.functionInfo = functionInfo;
+			this.linkerFunction = linkerFunction;
+			this.deprecated = deprecated;
+			this.deprecatedRemoveVersion = deprecatedRemoveVersion;
+			this.deprecatedReplacementFunction = deprecatedReplacementFunction;
+			this.functions = new ArrayList<>(functions);
 		}
 
 		/**
@@ -743,16 +711,14 @@ public class DataObject {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.thisObject = null;
-			this.superLevel = -1;
 			this.functionName = functionName;
 			this.functionInfo = functionInfo;
 			this.linkerFunction = linkerFunction;
 			this.deprecated = deprecated;
 			this.deprecatedRemoveVersion = deprecatedRemoveVersion;
 			this.deprecatedReplacementFunction = deprecatedReplacementFunction;
-			this.normalFunction = normalFunction;
-			this.nativeFunction = null;
-			this.functionPointerType = NORMAL;
+			this.functions = new ArrayList<>();
+			functions.add(new InternalFunction(normalFunction));
 		}
 		/**
 		 * For normal function pointer definition
@@ -788,16 +754,14 @@ public class DataObject {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.thisObject = null;
-			this.superLevel = -1;
 			this.functionName = functionName == null?nativeFunction.getFunctionName():functionName;
 			this.functionInfo = functionInfo;
 			this.linkerFunction = linkerFunction;
 			this.deprecated = deprecated;
 			this.deprecatedRemoveVersion = deprecatedRemoveVersion;
 			this.deprecatedReplacementFunction = deprecatedReplacementFunction;
-			this.normalFunction = null;
-			this.nativeFunction = nativeFunction;
-			this.functionPointerType = NATIVE;
+			this.functions = new ArrayList<>();
+			functions.add(new InternalFunction(nativeFunction));
 		}
 		/**
 		 * For pointer to native function/linker function
@@ -825,56 +789,52 @@ public class DataObject {
 		}
 
 		public FunctionPointerObject withFunctionName(String functionName) {
-			switch(functionPointerType) {
-				case NORMAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
-				case NATIVE:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
-			}
-
-			return null;
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
 		}
 
 		public FunctionPointerObject withFunctionInfo(String functionInfo) {
-			switch(functionPointerType) {
-				case NORMAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
-				case NATIVE:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
-			}
-
-			return null;
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
 		}
 
 		public FunctionPointerObject withLinkerFunction(boolean linkerFunction) {
-			switch(functionPointerType) {
-				case NORMAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
-				case NATIVE:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
-			}
-
-			return null;
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
 		}
 
 		public FunctionPointerObject withDeprecationInformation(boolean deprecated, String deprecatedRemoveVersion,
 																String deprecatedReplacementFunction) {
-			switch(functionPointerType) {
-				case NORMAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
-				case NATIVE:
-					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
-							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
-			}
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
+		}
 
-			return null;
+		public FunctionPointerObject withFunctions(List<InternalFunction> functions) {
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
+		}
+
+		public FunctionPointerObject withAddedFunction(InternalFunction function) {
+			List<InternalFunction> functions = new ArrayList<>(this.functions);
+			functions.add(function);
+
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
+		}
+
+		public FunctionPointerObject withAddedFunctions(FunctionPointerObject function) {
+			List<InternalFunction> functions = new ArrayList<>(this.functions);
+			functions.addAll(function.getFunctions());
+
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
+		}
+
+		public FunctionPointerObject withMappedFunctions(UnaryOperator<InternalFunction> mapper) {
+			List<InternalFunction> functions = this.functions.stream().map(mapper).collect(Collectors.toList());
+
+			return new FunctionPointerObject(langPath, langFile, thisObject, functionName, functionInfo, linkerFunction, deprecated,
+					deprecatedRemoveVersion, deprecatedReplacementFunction, functions);
 		}
 
 		public String getLangPath() {
@@ -883,10 +843,6 @@ public class DataObject {
 
 		public String getLangFile() {
 			return langFile;
-		}
-
-		public int getSuperLevel() {
-			return superLevel;
 		}
 
 		public LangObject getThisObject() {
@@ -917,16 +873,16 @@ public class DataObject {
 			return deprecatedReplacementFunction;
 		}
 
-		public LangNormalFunction getNormalFunction() {
-			return normalFunction;
+		public List<InternalFunction> getFunctions() {
+			return new ArrayList<>(functions);
 		}
 
-		public LangNativeFunction getNativeFunction() {
-			return nativeFunction;
+		public InternalFunction getFunction(int index) {
+			return functions.get(index);
 		}
 
-		public int getFunctionPointerType() {
-			return functionPointerType;
+		public int getOverloadedFunctionCount() {
+			return functions.size();
 		}
 
 		@Override
@@ -934,34 +890,121 @@ public class DataObject {
 			if(functionName != null)
 				return functionName;
 
-			switch(functionPointerType) {
-				case NORMAL:
-					return "<Normal " + (thisObject == null?"Function":"Method") + ">";
-				case NATIVE:
-					return "<Native " + (thisObject == null?"Function":"Method") + ">";
-				default:
-					return "Error";
-			}
+			return thisObject == null?"<Function>":"<Method>";
 		}
 
 		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber) {
+			if(this == that)
+				return true;
+
 			//Check for same reference of thisObjects
-			return this.functionPointerType == that.functionPointerType && this.thisObject == that.thisObject &&
-					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
-					(this.normalFunction == null || this.normalFunction.isEquals(that.normalFunction, interpreter,
-							lineNumber))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
-					(this.nativeFunction == null || this.nativeFunction.isEquals(that.nativeFunction, interpreter,
-							lineNumber)));
+			if(this.thisObject != that.thisObject ||
+					this.functions.size() != that.functions.size())
+				return false;
+
+			for(int i = 0;i < this.functions.size();i++)
+				if(!this.functions.get(i).isEquals(that.functions.get(i), interpreter, lineNumber))
+					return false;
+
+			return true;
 		}
 
 		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber) {
+			if(this == that)
+				return true;
+
 			//Check for same reference of thisObjects
-			return this.functionPointerType == that.functionPointerType && this.thisObject == that.thisObject &&
-					this.superLevel == that.superLevel && ((this.normalFunction == null) == (that.normalFunction == null) &&
-					(this.normalFunction == null || this.normalFunction.isStrictEquals(that.normalFunction, interpreter,
-							lineNumber))) && ((this.nativeFunction == null) == (that.nativeFunction == null) &&
-					(this.nativeFunction == null || this.nativeFunction.isStrictEquals(that.nativeFunction, interpreter,
-							lineNumber)));
+			if(this.thisObject != that.thisObject ||
+					this.functions.size() != that.functions.size())
+				return false;
+
+			for(int i = 0;i < this.functions.size();i++)
+				if(!this.functions.get(i).isStrictEquals(that.functions.get(i), interpreter, lineNumber))
+					return false;
+
+			return true;
+		}
+
+		public static final class InternalFunction {
+			/**
+			 * For methods the super level of the class [= level of parent]
+			 */
+			private final int superLevel;
+
+			private final LangBaseFunction function;
+			private final int functionPointerType;
+
+			/**
+			 * For normal and native function pointer definition
+			 * Used for setting superLevel for objects
+			 */
+			public InternalFunction(InternalFunction func, int superLevel) throws DataTypeConstraintException {
+				this.superLevel = superLevel;
+				this.function = func.function;
+				this.functionPointerType = func.functionPointerType;
+			}
+
+			/**
+			 * For normal function pointer definition
+			 */
+			public InternalFunction(LangNormalFunction normalFunction) {
+				this.superLevel = -1;
+				this.function = normalFunction;
+				this.functionPointerType = NORMAL;
+			}
+
+			/**
+			 * For native function pointer definition
+			 */
+			public InternalFunction(LangNativeFunction nativeFunction) {
+				this.superLevel = -1;
+				this.function = nativeFunction;
+				this.functionPointerType = NATIVE;
+			}
+
+			public int getSuperLevel() {
+				return superLevel;
+			}
+
+			public LangBaseFunction getFunction() {
+				return function;
+			}
+
+			public LangNormalFunction getNormalFunction() {
+				if(functionPointerType != NORMAL)
+					return null;
+
+				return (LangNormalFunction)function;
+			}
+
+			public LangNativeFunction getNativeFunction() {
+				if(functionPointerType != NATIVE)
+					return null;
+
+				return (LangNativeFunction)function;
+			}
+
+			public int getFunctionPointerType() {
+				return functionPointerType;
+			}
+
+			public String toFunctionSignatureSyntax() {
+				return function.toFunctionSignatureSyntax();
+			}
+
+			public boolean isEquals(InternalFunction that, LangInterpreter interpreter, int lineNumber) {
+				//Check for same reference of thisObjects
+				return this.functionPointerType == that.functionPointerType &&
+						this.superLevel == that.superLevel &&
+						this.function.isEquals(that.function, interpreter, lineNumber);
+			}
+
+			public boolean isStrictEquals(InternalFunction that, LangInterpreter interpreter, int lineNumber) {
+				//Check for same reference of thisObjects
+				return this.functionPointerType == that.functionPointerType &&
+						this.superLevel == that.superLevel &&
+						this.function.isStrictEquals(that.function, interpreter, lineNumber);
+			}
 		}
 	}
 	public static final class VarPointerObject {
@@ -1096,36 +1139,32 @@ public class DataObject {
 	public static final class LangObject {
 		public static final LangObject OBJECT_CLASS;
 		static {
-			Map<String, FunctionPointerObject[]> methods = new HashMap<>();
+			Map<String, FunctionPointerObject> methods = new HashMap<>();
 			Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
-			methods.put("mp.getClass", new FunctionPointerObject[] {
-					LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
-						@LangFunction(value="mp.getClass", isMethod=true)
-						@LangFunction.AllowedTypes(DataType.OBJECT)
-						@SuppressWarnings("unused")
-						public DataObject getClassMethod(
-								LangInterpreter interpreter, LangObject thisObject
-						) {
-							return new DataObject().setObject(thisObject.getClassBaseDefinition());
-						}
-					})
-			});
+			methods.put("mp.getClass", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				@LangFunction(value="mp.getClass", isMethod=true)
+				@LangFunction.AllowedTypes(DataType.OBJECT)
+				@SuppressWarnings("unused")
+				public DataObject getClassMethod(
+						LangInterpreter interpreter, LangObject thisObject
+				) {
+					return new DataObject().setObject(thisObject.getClassBaseDefinition());
+				}
+			}));
 			methodOverrideFlags.put("mp.getClass", new Boolean[] {
 					false
 			});
 
-			FunctionPointerObject[] constructors = new FunctionPointerObject[] {
-					LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
-						@LangFunction(value="construct", isMethod=true)
-						@LangFunction.AllowedTypes(DataType.VOID)
-						@SuppressWarnings("unused")
-						public DataObject defaultConstructMethod(
-								LangInterpreter interpreter, LangObject thisObject
-						) {
-							return null;
-						}
-					})
-			};
+			FunctionPointerObject constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				@LangFunction(value="construct", isMethod=true)
+				@LangFunction.AllowedTypes(DataType.VOID)
+				@SuppressWarnings("unused")
+				public DataObject defaultConstructMethod(
+						LangInterpreter interpreter, LangObject thisObject
+				) {
+					return null;
+				}
+			});
 
 			OBJECT_CLASS = new LangObject(true, new DataObject[0], new String[0], new DataTypeConstraint[0],
 					new boolean[0], methods, methodOverrideFlags, constructors, null);
@@ -1138,8 +1177,8 @@ public class DataObject {
 		private final DataTypeConstraint[] memberTypeConstraints;
 		private final boolean[] memberFinalFlags;
 		private final DataObject[] members;
-		private final Map<String, FunctionPointerObject[]> methods;
-		private final FunctionPointerObject[] constructors;
+		private final Map<String, FunctionPointerObject> methods;
+		private final FunctionPointerObject constructors;
 		/**
 		 * If size = 0: This is the base object<br>
 		 * If size > 0: This is a normal object
@@ -1157,8 +1196,8 @@ public class DataObject {
 		private boolean initialized = false;
 
 		public LangObject(DataObject[] staticMembers, String[] memberNames, DataTypeConstraint[] memberTypeConstraints,
-						  boolean[] memberFinalFlags, Map<String, FunctionPointerObject[]> methods,
-						  Map<String, Boolean[]> methodOverrideFlags, FunctionPointerObject[] constructors,
+						  boolean[] memberFinalFlags, Map<String, FunctionPointerObject> methods,
+						  Map<String, Boolean[]> methodOverrideFlags, FunctionPointerObject constructors,
 						  LangObject[] parentClasses) throws DataTypeConstraintException {
 			this(false, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, methodOverrideFlags,
 					constructors, parentClasses);
@@ -1166,8 +1205,8 @@ public class DataObject {
 
 		private LangObject(boolean isBaseObject, DataObject[] staticMembers, String[] memberNames,
 						   DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
-						   Map<String, FunctionPointerObject[]> methods, Map<String, Boolean[]> methodOverrideFlags,
-						   FunctionPointerObject[] constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
+						   Map<String, FunctionPointerObject> methods, Map<String, Boolean[]> methodOverrideFlags,
+						   FunctionPointerObject constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
 			if(isBaseObject) {
 				this.parentClasses = parentClasses = new LangObject[0];
 			}else if(parentClasses == null || parentClasses.length == 0) {
@@ -1254,31 +1293,21 @@ public class DataObject {
 				}
 			}
 
-			Map<String, List<FunctionPointerObject>> rawMethods = new HashMap<>();
-			methods.forEach((k, v) -> rawMethods.put(k, new LinkedList<>(Arrays.stream(v).
-					map(fp -> new FunctionPointerObject(fp, 0)).
-					collect(Collectors.toList()))));
+			this.methods = new HashMap<>();
+			methods.forEach((k, v) -> this.methods.put(k, v.withMappedFunctions(
+					internalFunction -> new FunctionPointerObject.InternalFunction(internalFunction, 0))));
 			List<String> methodNames = new ArrayList<>(methods.keySet());
 			for(String methodName:methodNames) {
-				FunctionPointerObject[] overloadedMethods = methods.get(methodName);
+				FunctionPointerObject overloadedMethods = methods.get(methodName);
 				Boolean[] overloadedMethodOverrideFlags = methodOverrideFlags.get(methodName);
 
-				if(overloadedMethodOverrideFlags == null || overloadedMethods.length != overloadedMethodOverrideFlags.length)
+				if(overloadedMethodOverrideFlags == null || overloadedMethods.getOverloadedFunctionCount() != overloadedMethodOverrideFlags.length)
 					throw new DataTypeConstraintException("Invalid override flag values for \"" + methodName + "\"");
-				if(overloadedMethods.length == 0)
+				if(overloadedMethods.getOverloadedFunctionCount() == 0)
 					throw new DataTypeConstraintException("No method present for method \"" + methodName + "\"");
 
-				List<LangBaseFunction> functionSignatures = new LinkedList<>();
-				for(FunctionPointerObject overloadedMethod:overloadedMethods) {
-					if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
-						functionSignatures.add(overloadedMethod.getNormalFunction());
-					}else if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
-						List<LangNativeFunction.InternalFunction> internalFunctions = overloadedMethod.getNativeFunction().getInternalFunctions();
-						functionSignatures.addAll(internalFunctions);
-					}else {
-						throw new DataTypeConstraintException("Invalid function type \"" + overloadedMethod.getFunctionPointerType() + "\"");
-					}
-				}
+				List<LangBaseFunction> functionSignatures = overloadedMethods.getFunctions().stream().
+						map(FunctionPointerObject.InternalFunction::getFunction).collect(Collectors.toList());
 
 				for(int i = 0;i < functionSignatures.size();i++) {
 					for(int j = 0;j < functionSignatures.size();j++) {
@@ -1322,11 +1351,10 @@ public class DataObject {
 			{
 				for(LangObject parentClass:parentClasses) {
 					parentClass.getMethods().forEach((k, v) -> {
-						List<FunctionPointerObject> overloadedMethods = rawMethods.get(k);
+						FunctionPointerObject overloadedMethods = this.methods.get(k);
 						if(overloadedMethods == null) {
-							rawMethods.put(k, new LinkedList<>(Arrays.stream(v).
-									map(fp -> new FunctionPointerObject(fp, fp.getSuperLevel() + 1)).
-									collect(Collectors.toList())));
+							this.methods.put(k, v.withMappedFunctions(internalFunction -> new FunctionPointerObject.InternalFunction(
+									internalFunction, internalFunction.getSuperLevel() + 1)));
 
 							return;
 						}
@@ -1335,34 +1363,17 @@ public class DataObject {
 						Boolean[] overloadedMethodOverrideFlags = methodOverrideFlags.get(k);
 						List<LangBaseFunction> functionSignatures = new LinkedList<>();
 						List<Boolean> overrideFlags = new LinkedList<>();
-						for(int i = 0;i < overloadedMethods.size();i++) {
-							FunctionPointerObject overloadedMethod = overloadedMethods.get(i);
+						for(int i = 0;i < overloadedMethods.getOverloadedFunctionCount();i++) {
+							FunctionPointerObject.InternalFunction overloadedMethod = overloadedMethods.getFunction(i);
 
-							if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
-								functionSignatures.add(overloadedMethod.getNormalFunction());
-								overrideFlags.add(overloadedMethodOverrideFlags[i]);
-							}else if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
-								List<LangNativeFunction.InternalFunction> internalFunctions = overloadedMethod.getNativeFunction().getInternalFunctions();
-								functionSignatures.addAll(internalFunctions);
-								for(int j = 0;j < internalFunctions.size();j++)
-									overrideFlags.add(overloadedMethodOverrideFlags[i]);
-							}else {
-								throw new DataTypeConstraintException("Invalid function type \"" + overloadedMethod.getFunctionPointerType() + "\"");
-							}
+							functionSignatures.add(overloadedMethod.getFunction());
+							overrideFlags.add(overloadedMethodOverrideFlags[i]);
 						}
 
 						List<LangBaseFunction> superFunctionSignatures = new LinkedList<>();
-						for(int i = 0;i < parentClass.methods.get(k).length;i++) {
-							FunctionPointerObject overloadedMethod = parentClass.methods.get(k)[i];
-
-							if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
-								superFunctionSignatures.add(overloadedMethod.getNormalFunction());
-							}else if(overloadedMethod.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
-								List<LangNativeFunction.InternalFunction> internalFunctions = overloadedMethod.getNativeFunction().getInternalFunctions();
-								superFunctionSignatures.addAll(internalFunctions);
-							}else {
-								throw new DataTypeConstraintException("Invalid function type \"" + overloadedMethod.getFunctionPointerType() + "\"");
-							}
+						for(int i = 0;i < parentClass.methods.get(k).getOverloadedFunctionCount();i++) {
+							FunctionPointerObject.InternalFunction overloadedMethod = parentClass.methods.get(k).getFunction(i);
+							superFunctionSignatures.add(overloadedMethod.getFunction());
 						}
 
 						for(int i = 0;i < functionSignatures.size();i++) {
@@ -1385,33 +1396,22 @@ public class DataObject {
 							}
 						}
 
-                        for(FunctionPointerObject method:v)
-                            overloadedMethods.add(new FunctionPointerObject(method, method.getSuperLevel() + 1));
+						this.methods.put(k, overloadedMethods.withAddedFunctions(v.
+								withMappedFunctions(internalFunction -> new FunctionPointerObject.InternalFunction(
+										internalFunction, internalFunction.getSuperLevel() + 1))));
 					});
 				}
 			}
 
-			this.methods = new HashMap<>();
-			rawMethods.forEach((k, v) -> this.methods.put(k, v.toArray(new FunctionPointerObject[0])));
-
-			this.constructors = new FunctionPointerObject[constructors.length];
-			for(int i = 0;i < constructors.length;i++)
-				this.constructors[i] = new FunctionPointerObject(constructors[i], 0);
-			if(this.constructors.length < 1)
+			this.constructors = constructors.withFunctionName("construct").withMappedFunctions(
+					internalFunction -> new FunctionPointerObject.InternalFunction(internalFunction, 0));
+			if(this.constructors.getOverloadedFunctionCount() < 1)
 				throw new DataTypeConstraintException("There must be at least one constructor");
 
 			{
 				List<LangBaseFunction> functionSignatures = new LinkedList<>();
-				for(FunctionPointerObject constructor:constructors) {
-					if(constructor.getFunctionPointerType() == DataObject.FunctionPointerObject.NORMAL) {
-						functionSignatures.add(constructor.getNormalFunction());
-					}else if(constructor.getFunctionPointerType() == DataObject.FunctionPointerObject.NATIVE) {
-						List<LangNativeFunction.InternalFunction> internalFunctions = constructor.getNativeFunction().getInternalFunctions();
-						functionSignatures.addAll(internalFunctions);
-					}else {
-						throw new DataTypeConstraintException("Invalid function type \"" + constructor.getFunctionPointerType() + "\"");
-					}
-				}
+				for(FunctionPointerObject.InternalFunction constructor:constructors.getFunctions())
+					functionSignatures.add(constructor.getFunction());
 
 				for(int i = 0;i < functionSignatures.size();i++) {
 					for(int j = 0;j < functionSignatures.size();j++) {
@@ -1452,17 +1452,9 @@ public class DataObject {
 				this.members[i] = new DataObject().setNull().setVariableName(memberNames[i]);
 
 			this.methods = new HashMap<>(classBaseDefinition.methods);
-			this.methods.replaceAll((k, v) -> {
-				FunctionPointerObject[] arrayCopy = Arrays.copyOf(v, v.length);
-				for(int i = 0;i < arrayCopy.length;i++)
-					arrayCopy[i] = new FunctionPointerObject(arrayCopy[i], this);
+			this.methods.replaceAll((k, v) -> new FunctionPointerObject(v, this));
 
-				return arrayCopy;
-			});
-
-			this.constructors = Arrays.copyOf(classBaseDefinition.constructors, classBaseDefinition.constructors.length);
-			for(int i = 0;i < this.constructors.length;i++)
-				this.constructors[i] = new FunctionPointerObject(this.constructors[i], this);
+			this.constructors = new FunctionPointerObject(classBaseDefinition.constructors, this);
 
 			this.parentClasses = Arrays.copyOf(classBaseDefinition.parentClasses, classBaseDefinition.parentClasses.length);
 		}
@@ -1564,28 +1556,28 @@ public class DataObject {
 			return members[index];
 		}
 
-		public Map<String, FunctionPointerObject[]> getMethods() {
+		public Map<String, FunctionPointerObject> getMethods() {
 			return new HashMap<>(methods);
 		}
 
-		private Map<String, List<FunctionPointerObject>> getRawSuperMethods(int superLevel) {
-			Map<String, List<FunctionPointerObject>> rawSuperMethods = new HashMap<>();
+		private Map<String, FunctionPointerObject> getRawSuperMethods(int superLevel) {
+			Map<String, FunctionPointerObject> rawSuperMethods = new HashMap<>();
 			for(LangObject parentClass:parentClasses) {
 				if(superLevel > 0) {
-					Map<String, List<FunctionPointerObject>> superRawSuperMethods = parentClass.
+					Map<String, FunctionPointerObject> superRawSuperMethods = parentClass.
 							getRawSuperMethods(superLevel - 1);
 					superRawSuperMethods.forEach((k, v) -> {
-						if(!rawSuperMethods.containsKey(k))
-							rawSuperMethods.put(k, new LinkedList<>());
-
-						rawSuperMethods.get(k).addAll(v);
+						if(rawSuperMethods.containsKey(k))
+							rawSuperMethods.put(k, rawSuperMethods.get(k).withAddedFunctions(v));
+						else
+							rawSuperMethods.put(k, v);
 					});
 				}else {
 					parentClass.getMethods().forEach((k, v) -> {
-						if(!rawSuperMethods.containsKey(k))
-							rawSuperMethods.put(k, new LinkedList<>());
-
-						rawSuperMethods.get(k).addAll(Arrays.asList(v));
+						if(rawSuperMethods.containsKey(k))
+							rawSuperMethods.put(k, rawSuperMethods.get(k).withAddedFunctions(v));
+						else
+							rawSuperMethods.put(k, v);
 					});
 				}
 			}
@@ -1593,51 +1585,47 @@ public class DataObject {
 			return rawSuperMethods;
 		}
 
-		public Map<String, FunctionPointerObject[]> getSuperMethods() {
-			Map<String, List<FunctionPointerObject>> rawSuperMethods = getRawSuperMethods(this.superLevel);
-
-			Map<String, FunctionPointerObject[]> superMethods = new HashMap<>();
-			rawSuperMethods.forEach((k, v) -> superMethods.put(k, v.toArray(new FunctionPointerObject[0])));
-
-			return new HashMap<>(superMethods);
+		public Map<String, FunctionPointerObject> getSuperMethods() {
+			return getRawSuperMethods(this.superLevel);
 		}
 
-		public FunctionPointerObject[] getConstructors() {
-			return Arrays.copyOf(constructors, constructors.length);
+		public FunctionPointerObject getConstructors() {
+			return constructors;
 		}
 
 		/**
 		 * @return Returns all constructors for the current super level without going to super
 		 * [0 is current, 1 is parent, 2 is grandparent]
 		 */
-		public FunctionPointerObject[] getConstructorsForCurrentSuperLevel() {
+		public FunctionPointerObject getConstructorsForCurrentSuperLevel() {
 			if(superLevel == 0)
 				return getConstructors();
 
-			List<FunctionPointerObject> rawSuperMethods = getRawSuperConstructors(this.superLevel - 1);
-
-			return rawSuperMethods.toArray(new FunctionPointerObject[0]);
+			return getRawSuperConstructors(this.superLevel - 1);
 		}
 
-		private List<FunctionPointerObject> getRawSuperConstructors(int superLevel) {
-			List<FunctionPointerObject> rawSuperConstructors = new LinkedList<>();
+		private FunctionPointerObject getRawSuperConstructors(int superLevel) {
+			FunctionPointerObject rawSuperConstructors = null;
 			for(LangObject parentClass:parentClasses) {
 				if(superLevel > 0) {
-					List<FunctionPointerObject> superRawSuperConstructors = parentClass.
-							getRawSuperConstructors(superLevel - 1);
-					rawSuperConstructors.addAll(superRawSuperConstructors);
+					FunctionPointerObject superRawSuperConstructors = parentClass.getRawSuperConstructors(superLevel - 1);
+					if(rawSuperConstructors == null)
+						rawSuperConstructors = superRawSuperConstructors;
+					else
+						rawSuperConstructors = rawSuperConstructors.withAddedFunctions(superRawSuperConstructors);
 				}else {
-					rawSuperConstructors.addAll(Arrays.asList(parentClass.getConstructors()));
+					if(rawSuperConstructors == null)
+						rawSuperConstructors = parentClass.getConstructors();
+					else
+						rawSuperConstructors = rawSuperConstructors.withAddedFunctions(parentClass.getConstructors());
 				}
 			}
 
 			return rawSuperConstructors;
 		}
 
-		public FunctionPointerObject[] getSuperConstructors() {
-			List<FunctionPointerObject> rawSuperMethods = getRawSuperConstructors(this.superLevel);
-
-			return rawSuperMethods.toArray(new FunctionPointerObject[0]);
+		public FunctionPointerObject getSuperConstructors() {
+			return getRawSuperConstructors(this.superLevel);
 		}
 
 		public LangObject[] getParentClasses() {

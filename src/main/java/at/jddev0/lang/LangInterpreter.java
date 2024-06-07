@@ -1971,27 +1971,10 @@ public final class LangInterpreter {
 					if(variableName.startsWith("mp.")) {
 						compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("mp.")).forEach(entry -> {
 							String functionName = entry.getKey();
-							FunctionPointerObject[] functions = entry.getValue();
+							FunctionPointerObject functions = entry.getValue();
 
-							variables.put(functionName, new DataObject().setFunctionPointer(
-									LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
-										@LangFunction("<method-wrapper-func>")
-										@SuppressWarnings("unused")
-										public DataObject methodWrapperFuncFunction(
-												@LangFunction.LangParameter("&args") @LangFunction.LangParameter.RawVarArgs List<DataObject> argumentList
-										) {
-											FunctionPointerObject fp = LangUtils.getMostRestrictiveFunction(functions,
-													LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList, LangInterpreter.this, -1));
-											if(fp == null)
-												return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-														" Available function signatures:\n    " + functionName + LangUtils.getFunctionSignatures(functions).stream().
-														collect(Collectors.joining("\n    " + functionName)));
-
-											return callFunctionPointer(fp, functionName, argumentList);
-										}
-									}, Arrays.stream(functions).map(func -> new DataObject().setFunctionPointer(func)).toArray()).
-											withFunctionName(functionName)
-							).setVariableName(functionName).setFinalData(true));
+							variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
+									setVariableName(functionName).setFinalData(true));
 						});
 					}else {
 						for(DataObject staticMember:compositeType.getObject().getStaticMembers())
@@ -2285,10 +2268,6 @@ public final class LangInterpreter {
 
 		LangObject thisObject = fp.getThisObject();
 		int originalSuperLevel = -1;
-		if(thisObject != null && !thisObject.isClass()) {
-			originalSuperLevel = thisObject.getSuperLevel();
-			thisObject.setSuperLevel(fp.getSuperLevel());
-		}
 
 		try {
 			String functionLangPath = fp.getLangPath();
@@ -2301,10 +2280,31 @@ public final class LangInterpreter {
 			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
 					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
 					functionName, currentStackElement.getModule()), parentLineNumber);
-			
-			switch(fp.getFunctionPointerType()) {
+
+			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentValueList,
+					this, -1);
+
+			FunctionPointerObject.InternalFunction internalFunction;
+			if(fp.getOverloadedFunctionCount() == 1) {
+				internalFunction = fp.getFunction(0);
+			}else {
+				internalFunction = LangUtils.getMostRestrictiveFunction(fp, combinedArgumentList);
+			}
+
+			if(internalFunction == null)
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+						" Available function signatures:\n    " + functionName + fp.getFunctions().stream().
+						map(FunctionPointerObject.InternalFunction::toFunctionSignatureSyntax).
+						collect(Collectors.joining("\n    " + functionName)));
+
+			if(thisObject != null && !thisObject.isClass()) {
+				originalSuperLevel = thisObject.getSuperLevel();
+				thisObject.setSuperLevel(internalFunction.getSuperLevel());
+			}
+
+			switch(internalFunction.getFunctionPointerType()) {
 				case FunctionPointerObject.NORMAL:
-					LangNormalFunction normalFunction = fp.getNormalFunction();
+					LangNormalFunction normalFunction = internalFunction.getNormalFunction();
 					if(normalFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber);
 
@@ -2510,11 +2510,11 @@ public final class LangInterpreter {
 					return retTmp;
 				
 				case FunctionPointerObject.NATIVE:
-					LangNativeFunction nativeFunction = fp.getNativeFunction();
+					LangNativeFunction nativeFunction = internalFunction.getNativeFunction();
 					if(nativeFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber);
 					
-					DataObject ret = nativeFunction.callFunc(this, thisObject, fp.getSuperLevel(), argumentValueList);
+					DataObject ret = nativeFunction.callFunc(this, thisObject, internalFunction.getSuperLevel(), argumentValueList, combinedArgumentList);
 					if(fp.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 								fp.getDeprecatedRemoveVersion() == null?"the future":fp.getDeprecatedRemoveVersion(),
@@ -3176,7 +3176,7 @@ public final class LangInterpreter {
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
 						node.getLineNumberFrom());
 
-		Map<String, List<FunctionPointerObject>> rawMethods = new HashMap<>();
+		Map<String, FunctionPointerObject> methods = new HashMap<>();
 		Map<String, List<Boolean>> rawMethodOverrideFlags = new HashMap<>();
 		for(int i = 0;i < methodNames.size();i++) {
 			if(methodOverrideFlag.get(i) == null)
@@ -3184,44 +3184,46 @@ public final class LangInterpreter {
 						node.getLineNumberFrom());
 
 			String methodName = methodNames.get(i);
-			if(!rawMethods.containsKey(methodName)) {
-				rawMethods.put(methodName, new LinkedList<>());
-				rawMethodOverrideFlags.put(methodName, new LinkedList<>());
-			}
 
-			List<FunctionPointerObject> functions = rawMethods.get(methodName);
 			DataObject methodDefinition = interpretNode(null, methodDefinitions.get(i));
 			if(methodDefinition == null || methodDefinition.getType() != DataType.FUNCTION_POINTER)
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Methods must be of type \"" + DataType.FUNCTION_POINTER + "\"",
 						methodDefinitions.get(i).getLineNumberFrom());
 
-			functions.add(methodDefinition.getFunctionPointer());
+			if(methods.containsKey(methodName)) {
+				FunctionPointerObject functions = methods.get(methodName);
+				methods.put(methodName, functions.withAddedFunctions(methodDefinition.getFunctionPointer()));
+			}else {
+				methods.put(methodName, methodDefinition.getFunctionPointer());
+				rawMethodOverrideFlags.put(methodName, new LinkedList<>());
+			}
 
 			List<Boolean> methodOverrideFlags = rawMethodOverrideFlags.get(methodName);
-			methodOverrideFlags.add(methodOverrideFlag.get(i));
+			for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
+				methodOverrideFlags.add(methodOverrideFlag.get(i));
 		}
-
-		Map<String, FunctionPointerObject[]> methods = new HashMap<>();
-		rawMethods.forEach((k, v) -> methods.put(k, v.toArray(new FunctionPointerObject[0])));
 
 		Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
 		rawMethodOverrideFlags.forEach((k, v) -> methodOverrideFlags.put(k, v.toArray(new Boolean[0])));
 
 		List<Node> constructorDefinitions = node.getConstructorDefinitions();
 
-		FunctionPointerObject[] constructors = new FunctionPointerObject[Math.max(1, constructorDefinitions.size())];
+		FunctionPointerObject constructors = null;
 		for(int i = 0;i < constructorDefinitions.size();i++) {
 			DataObject constructorDefinition = interpretNode(null, constructorDefinitions.get(i));
 			if(constructorDefinition == null || constructorDefinition.getType() != DataType.FUNCTION_POINTER)
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Constructor must be of type \"" + DataType.FUNCTION_POINTER + "\"",
 						constructorDefinitions.get(i).getLineNumberFrom());
 
-			constructors[i] = constructorDefinition.getFunctionPointer();
+			if(constructors == null)
+				constructors = constructorDefinition.getFunctionPointer();
+			else
+				constructors = constructors.withAddedFunctions(constructorDefinition.getFunctionPointer());
 		}
 
 		//Set default constructor
 		if(constructorDefinitions.isEmpty()) {
-			constructors[0] = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+			constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="construct", isMethod=true)
 				@LangFunction.AllowedTypes(DataType.VOID)
 				@SuppressWarnings("unused")
@@ -3736,16 +3738,9 @@ public final class LangInterpreter {
 		if(langObject.isClass()) {
 			DataObject createdObject = new DataObject().setObject(new LangObject(langObject));
 
-			FunctionPointerObject[] constructors = createdObject.getObject().getConstructors();
+			FunctionPointerObject constructors = createdObject.getObject().getConstructors();
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					this, lineNumber));
-			if(constructorFunction == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
-						collect(Collectors.joining("\n    construct")));
-
-			DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, lineNumber);
+			DataObject ret = callFunctionPointer(constructors, constructors.getFunctionName(), argumentList, lineNumber);
 			if(ret == null)
 				ret = new DataObject().setVoid();
 
@@ -3768,16 +3763,9 @@ public final class LangInterpreter {
 						lineNumber);
 
 			//Current constructors for super level instead of normal constructors, because constructors are not overridden
-			FunctionPointerObject[] constructors = langObject.getConstructorsForCurrentSuperLevel();
+			FunctionPointerObject constructors = langObject.getConstructorsForCurrentSuperLevel();
 
-			FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(constructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					this, lineNumber));
-			if(constructorFunction == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-						" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(constructors).stream().
-						collect(Collectors.joining("\n    construct")));
-
-			DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, lineNumber);
+			DataObject ret = callFunctionPointer(constructors, constructors.getFunctionName(), argumentList, lineNumber);
 			if(ret == null)
 				ret = new DataObject().setVoid();
 
@@ -3803,7 +3791,7 @@ public final class LangInterpreter {
 
 		FunctionPointerObject fp;
 		try {
-			FunctionPointerObject[] methods = methodName == null?null:langObject.getMethods().get(methodName);
+			FunctionPointerObject methods = methodName == null?null:langObject.getMethods().get(methodName);
 			if(methods == null) {
 				if(rawMethodName.startsWith("mp."))
 					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
@@ -3829,14 +3817,7 @@ public final class LangInterpreter {
 
 				fp = member.getFunctionPointer();
 			}else {
-				int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-						this, lineNumber));
-
-				fp = functionIndex == -1?null:methods[functionIndex];
-				if(fp == null)
-					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-							" Available function signatures:\n    " + rawMethodName + LangUtils.getFunctionSignatures(methods).stream().
-							collect(Collectors.joining("\n    " + rawMethodName)));
+				fp = methods;
 			}
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
@@ -3855,21 +3836,13 @@ public final class LangInterpreter {
 		if(langObject.isInitialized())
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized", lineNumber);
 
-		FunctionPointerObject[] superConstructors = langObject.getSuperConstructors();
-
-		FunctionPointerObject constructorFunction = LangUtils.getMostRestrictiveFunction(superConstructors, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-				this, lineNumber));
-		if(constructorFunction == null)
-			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-					"No matching function signature was found for the given arguments in any super class of this object." +
-							" Available function signatures:\n    construct" + LangUtils.getFunctionSignatures(superConstructors).stream().
-							collect(Collectors.joining("\n    construct")));
+		FunctionPointerObject superConstructors = langObject.getSuperConstructors();
 
 		//Bind "&this" on super constructor
-		constructorFunction = new FunctionPointerObject(constructorFunction, langObject,
-				constructorFunction.getSuperLevel() + langObject.getSuperLevel() + 1);
+		superConstructors = new FunctionPointerObject(superConstructors, langObject).withMappedFunctions(internalFunction ->
+				new FunctionPointerObject.InternalFunction(internalFunction, internalFunction.getSuperLevel() + langObject.getSuperLevel() + 1));
 
-		DataObject ret = callFunctionPointer(constructorFunction, constructorFunction.getFunctionName(), argumentList, lineNumber);
+		DataObject ret = callFunctionPointer(superConstructors, superConstructors.getFunctionName(), argumentList, lineNumber);
 		if(ret == null)
 			ret = new DataObject().setVoid();
 
@@ -3890,24 +3863,17 @@ public final class LangInterpreter {
 
 		String methodName = rawMethodName.startsWith("mp.")?rawMethodName:("mp." + rawMethodName);
 
-		FunctionPointerObject[] methods = langObject.getSuperMethods().get(methodName);
+		FunctionPointerObject methods = langObject.getSuperMethods().get(methodName);
 		if(methods == null)
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"The method \"" + rawMethodName + "\" is not in any super class of this object",
 					lineNumber);
 
-		int functionIndex = LangUtils.getMostRestrictiveFunctionIndex(methods, LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-				this, lineNumber));
-
-		FunctionPointerObject fp = functionIndex == -1?null:methods[functionIndex];
-		if(fp == null)
-			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-					"No matching function signature was found for the given arguments in any super class of this object." +
-							" Available function signatures:\n    " + rawMethodName + LangUtils.getFunctionSignatures(methods).stream().
-							collect(Collectors.joining("\n    " + rawMethodName)));
+		FunctionPointerObject fp = methods;
 
 		//Bind "&this" on super method
-		fp = new FunctionPointerObject(fp, langObject, fp.getSuperLevel() + langObject.getSuperLevel() + 1);
+		fp = new FunctionPointerObject(fp, langObject).withMappedFunctions(internalFunction ->
+				new FunctionPointerObject.InternalFunction(internalFunction, internalFunction.getSuperLevel() + langObject.getSuperLevel() + 1));
 
 		return callFunctionPointer(fp, rawMethodName, argumentList, lineNumber);
 	}
