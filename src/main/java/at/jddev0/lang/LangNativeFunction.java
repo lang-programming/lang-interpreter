@@ -7,7 +7,6 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import at.jddev0.lang.DataObject.DataType;
@@ -23,22 +22,12 @@ import static at.jddev0.lang.LangBaseFunction.ParameterAnnotation;
 
 public class LangNativeFunction {
 	private final String functionName;
-	private final String functionInfo;
-
-	private final boolean method;
-	
-	private final boolean linkerFunction;
-	private final boolean deprecated;
-	private final String deprecatedRemoveVersion;
-	private final String deprecatedReplacementFunction;
 	
 	private final List<InternalFunction> internalFunctions;
 
-	private final Object[] valueDependencies;
-
-	public static LangNativeFunction getSingleLangFunctionFromObject(Object obj, Object... valueDependencies)
+	public static FunctionPointerObject getSingleLangFunctionFromObject(Object obj, Object... valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
-		Map<String, LangNativeFunction> functions = getLangFunctionsFromObject(obj, valueDependencies);
+		Map<String, FunctionPointerObject> functions = getLangFunctionsFromObject(obj, valueDependencies);
 		if(functions.isEmpty())
 			throw new IllegalArgumentException("No methods which are annotated with @LangFunctions are defined in " + obj);
 
@@ -48,26 +37,26 @@ public class LangNativeFunction {
 		return functions.values().iterator().next();
 	}
 	
-	public static Map<String, LangNativeFunction> getLangFunctionsFromObject(Object obj) {
+	public static Map<String, FunctionPointerObject> getLangFunctionsFromObject(Object obj) {
 		return getLangFunctionsFromObject(obj, new Object[0]);
 	}
 
-	private static Map<String, LangNativeFunction> getLangFunctionsFromObject(Object obj, Object... valueDependencies)
+	private static Map<String, FunctionPointerObject> getLangFunctionsFromObject(Object obj, Object... valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		return getLangFunctionsOfClass(obj, obj.getClass(), valueDependencies);
 	}
 
-	public static Map<String, LangNativeFunction> getLangFunctionsOfClass(Class<?> clazz)
+	public static Map<String, FunctionPointerObject> getLangFunctionsOfClass(Class<?> clazz)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		return getLangFunctionsOfClass(clazz, new Object[0]);
 	}
 
-	private static Map<String, LangNativeFunction> getLangFunctionsOfClass(Class<?> clazz, Object... valueDependencies)
+	private static Map<String, FunctionPointerObject> getLangFunctionsOfClass(Class<?> clazz, Object... valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		return getLangFunctionsOfClass(null, clazz, valueDependencies);
 	}
 	
-	private static Map<String, LangNativeFunction> getLangFunctionsOfClass(Object instance, Class<?> clazz,
+	private static Map<String, FunctionPointerObject> getLangFunctionsOfClass(Object instance, Class<?> clazz,
 																		   Object... valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		Map<String, List<Method>> methodsByLangFunctionName = new HashMap<>();
@@ -91,18 +80,34 @@ public class LangNativeFunction {
 			}
 		}
 		
-		Map<String, LangNativeFunction> langNativeFunctions = new HashMap<>();
+		Map<String, FunctionPointerObject> langNativeFunctions = new HashMap<>();
 		for(List<Method> methods:methodsByLangFunctionName.values()) {
 			if(methods.size() >= 2 && (!methods.get(0).getAnnotation(LangFunction.class).hasInfo() || methods.get(1).getAnnotation(LangFunction.class).hasInfo()))
 				throw new IllegalArgumentException("The value of hasInfo() must be true for exactly one overloaded @LangFunction");
 			
 			LangNativeFunction langNativeFunction = create(instance, methods.get(0), valueDependencies);
+			LangFunction langFunction = methods.get(0).getAnnotation(LangFunction.class);
 			for(int i = 1;i < methods.size();i++)
-				langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, methods.get(i), null));
-			
+				langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, methods.get(i), valueDependencies));
+
 			String functionName = langNativeFunction.getFunctionName();
-			
-			langNativeFunctions.put(functionName, langNativeFunction);
+
+			boolean linkerFunction = langFunction.isLinkerFunction();
+
+			boolean deprecated = langFunction.isDeprecated();
+			String deprecatedRemoveVersion = langFunction.getDeprecatedRemoveVersion();
+			if(deprecatedRemoveVersion.isEmpty())
+				deprecatedRemoveVersion = null;
+			String deprecatedReplacementFunction = langFunction.getDeprecatedReplacementFunction();
+			if(deprecatedReplacementFunction.isEmpty())
+				deprecatedReplacementFunction = null;
+
+			LangInfo langInfo = methods.get(0).getAnnotation(LangInfo.class);
+			String functionInfo = langInfo == null?null:langInfo.value();
+
+			langNativeFunctions.put(functionName, new FunctionPointerObject(langNativeFunction).withFunctionInfo(functionInfo).
+					withLinkerFunction(linkerFunction).withDeprecationInformation(deprecated, deprecatedRemoveVersion,
+							deprecatedReplacementFunction));
 		}
 		
 		return langNativeFunctions;
@@ -119,73 +124,16 @@ public class LangNativeFunction {
 		
 		String functionName = langFunction.value();
 
-		boolean method = langFunction.isMethod();
+		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName);
 
-		boolean linkerFunction = langFunction.isLinkerFunction();
-
-		boolean deprecated = langFunction.isDeprecated();
-		String deprecatedRemoveVersion = langFunction.getDeprecatedRemoveVersion();
-		if(deprecatedRemoveVersion.equals(""))
-			deprecatedRemoveVersion = null;
-		String deprecatedReplacementFunction = langFunction.getDeprecatedReplacementFunction();
-		if(deprecatedReplacementFunction.equals(""))
-			deprecatedReplacementFunction = null;
-
-		LangInfo langInfo = functionBody.getAnnotation(LangInfo.class);
-		String functionInfo = langInfo == null?null:langInfo.value();
-
-		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo, method,
-				linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, valueDependencies);
-
-		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody, null));
+		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody, valueDependencies));
 		
 		return langNativeFunction;
 	}
 
-	public static LangNativeFunction wrap(Object instance, Method functionBody, String functionName,
-												String functionInfo, LangNormalFunction normalFunction)
-			throws IllegalArgumentException, DataTypeConstraintException {
-		LangFunction langFunction = functionBody.getAnnotation(LangFunction.class);
-		if(langFunction == null)
-			throw new IllegalArgumentException("Method must be annotated with @LangFunction");
-
-		if(!DataObject.class.isAssignableFrom(functionBody.getReturnType()))
-			throw new IllegalArgumentException("Method must be annotated with @LangFunction must return a DataObject");
-
-		boolean method = langFunction.isMethod();
-
-		boolean linkerFunction = langFunction.isLinkerFunction();
-
-		boolean deprecated = langFunction.isDeprecated();
-		String deprecatedRemoveVersion = langFunction.getDeprecatedRemoveVersion();
-		if(deprecatedRemoveVersion.equals(""))
-			deprecatedRemoveVersion = null;
-		String deprecatedReplacementFunction = langFunction.getDeprecatedReplacementFunction();
-		if(deprecatedReplacementFunction.equals(""))
-			deprecatedReplacementFunction = null;
-
-		LangNativeFunction langNativeFunction = new LangNativeFunction(functionName, functionInfo, method,
-				linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, new Object[] {
-						normalFunction
-		});
-
-		langNativeFunction.addInternalFunction(langNativeFunction.createInternalFunction(instance, functionBody, normalFunction));
-
-		return langNativeFunction;
-	}
-
-	private LangNativeFunction(String functionName, String functionInfo, boolean method,
-							   boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion,
-							   String deprecatedReplacementFunction, Object[] valueDependencies) {
+	private LangNativeFunction(String functionName) {
 		this.functionName = functionName;
-		this.functionInfo = functionInfo;
-		this.method = method;
-		this.linkerFunction = linkerFunction;
-		this.deprecated = deprecated;
-		this.deprecatedRemoveVersion = deprecatedRemoveVersion;
-		this.deprecatedReplacementFunction = deprecatedReplacementFunction;
 		this.internalFunctions = new ArrayList<>();
-		this.valueDependencies = Arrays.copyOf(valueDependencies, valueDependencies.length);
 	}
 	
 	public void addInternalFunction(InternalFunction internalFunction) {
@@ -217,7 +165,7 @@ public class LangNativeFunction {
 		return internalFunctions.get(index).callFunc(interpreter, thisObject, superLevel, argumentList, combinedArgumentList);
 	}
 	
-	public InternalFunction createInternalFunction(Object instance, Method functionBody, LangNormalFunction normalFunction)
+	public InternalFunction createInternalFunction(Object instance, Method functionBody, Object[] valueDependencies)
 			throws IllegalArgumentException, DataTypeConstraintException {
 		LangFunction langFunction = functionBody.getAnnotation(LangFunction.class);
 		if(langFunction == null)
@@ -247,6 +195,8 @@ public class LangNativeFunction {
 		boolean hasInterpreterParameter = firstParam != null && firstParam.getType().isAssignableFrom(LangInterpreter.class);
 		
 		Parameter secondParam = parameters.length >= 2?parameters[1]:null;
+
+		boolean method = langFunction.isMethod();
 
 		if(method && (hasInterpreterParameter?secondParam == null || !secondParam.getType().isAssignableFrom(DataObject.LangObject.class):
 				(firstParam == null || !firstParam.getType().isAssignableFrom(DataObject.LangObject.class))))
@@ -409,87 +359,46 @@ public class LangNativeFunction {
 		if(rawVarArgsParameter && parameterList.size() != 1)
 			throw new IllegalArgumentException("If @RawVarArgs is used there must be exactly one lang parameter");
 
-		return new InternalFunction(normalFunction, methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
+		return new InternalFunction(methodParameterTypeList, parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter,
-				returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, combinatorFunction, 0, new ArrayList<>());
+				returnValueTypeConstraint, instance, functionBody, hasInterpreterParameter, method, combinatorFunction,
+				0, new ArrayList<>(), valueDependencies);
 	}
 	
 	public class InternalFunction extends LangBaseFunction {
-		private final LangNormalFunction normalFunction;
-
 		private final List<Class<?>> methodParameterTypeList;
 		private final Object instance;
 		private final Method functionBody;
 		private final boolean hasInterpreterParameter;
 
+		private final boolean method;
+
 		private final boolean combinatorFunction;
 		private final int combinatorFunctionCallCount;
 		private final List<DataObject> combinatorProvidedArgumentList;
+
+		private final Object[] valueDependencies;
 		
-		private InternalFunction(LangNormalFunction normalFunction, List<Class<?>> methodParameterTypeList,
+		private InternalFunction(List<Class<?>> methodParameterTypeList,
 				List<DataObject> parameterList, List<DataTypeConstraint> parameterDataTypeConstraintList,
 				List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
 				int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
 				DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody,
-				boolean hasInterpreterParameter, boolean combinatorFunction, int combinatorFunctionCallCount,
-				List<DataObject> combinatorProvidedArgumentList) {
+				boolean hasInterpreterParameter, boolean method, boolean combinatorFunction, int combinatorFunctionCallCount,
+				List<DataObject> combinatorProvidedArgumentList, Object[] valueDependencies) {
 			super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
 					varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
-			this.normalFunction = normalFunction;
 			this.methodParameterTypeList = methodParameterTypeList;
 			this.instance = instance;
 			this.functionBody = functionBody;
 			functionBody.setAccessible(true);
 			this.hasInterpreterParameter = hasInterpreterParameter;
+			this.method = method;
 			this.combinatorFunction = combinatorFunction;
 			this.combinatorFunctionCallCount = combinatorFunctionCallCount;
 			this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
-		}
-
-		@Override
-		public List<DataObject> getParameterList() {
-			return (normalFunction == null)?super.getParameterList():normalFunction.getParameterList();
-		}
-
-		@Override
-		public List<DataTypeConstraint> getParameterDataTypeConstraintList() {
-			return (normalFunction == null)?super.getParameterDataTypeConstraintList():normalFunction.getParameterDataTypeConstraintList();
-		}
-
-		@Override
-		public List<ParameterAnnotation> getParameterAnnotationList() {
-			return (normalFunction == null)?super.getParameterAnnotationList():normalFunction.getParameterAnnotationList();
-		}
-
-		@Override
-		public List<String> getParameterInfoList() {
-			return (normalFunction == null)?super.getParameterInfoList():normalFunction.getParameterInfoList();
-		}
-
-		@Override
-		public int getVarArgsParameterIndex() {
-			return (normalFunction == null)?super.getVarArgsParameterIndex():normalFunction.getVarArgsParameterIndex();
-		}
-
-		@Override
-		public boolean isTextVarArgsParameter() {
-			return (normalFunction == null)?super.isTextVarArgsParameter():normalFunction.isTextVarArgsParameter();
-		}
-
-		@Override
-		public boolean isRawVarArgsParameter() {
-			return (normalFunction == null)?super.isRawVarArgsParameter():normalFunction.isRawVarArgsParameter();
-		}
-
-		@Override
-		public DataTypeConstraint getReturnValueTypeConstraint() {
-			return (normalFunction == null)?super.getReturnValueTypeConstraint():normalFunction.getReturnValueTypeConstraint();
-		}
-
-		@Override
-		public String toFunctionSignatureSyntax() {
-			return (normalFunction == null)?super.toFunctionSignatureSyntax():normalFunction.toFunctionSignatureSyntax();
+			this.valueDependencies = valueDependencies;
 		}
 
 		public DataObject callFunc(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
@@ -529,7 +438,7 @@ public class LangNativeFunction {
 			int argumentIndex = 0;
 			for(int i = 0;i < argCount;i++) {
 				if(combinatorFunction && argumentIndex >= combinedArgumentList.size() && (varArgsParameterIndex == -1 || combinatorFunctionCallCount == 0))
-					return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList);
+					return combinatorCall(functionName, thisObject, superLevel, combinedArgumentList);
 				
 				String variableName = parameterList.get(i).getVariableName();
 				
@@ -554,7 +463,7 @@ public class LangNativeFunction {
 					}else if(parameterAnnotationList.get(i) == ParameterAnnotation.VAR_ARGS) {
 						//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
 						if(combinatorFunction && combinatorFunctionCallCount == 0)
-							return combinatorCall(interpreter, thisObject, superLevel, combinedArgumentList);
+							return combinatorCall(functionName, thisObject, superLevel, combinedArgumentList);
 						
 						List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
 								map(DataObject::new).collect(Collectors.toList());
@@ -655,16 +564,15 @@ public class LangNativeFunction {
 			}
 		}
 		
-		private DataObject combinatorCall(LangInterpreter interpreter, DataObject.LangObject thisObject, int superLevel,
+		private DataObject combinatorCall(String thisFunctionName, DataObject.LangObject thisObject, int superLevel,
 										  List<DataObject> combinedArgumentList) {
-			LangNativeFunction langNativeFunction = new LangNativeFunction(LangNativeFunction.this.functionName, functionInfo,
-					method, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction, valueDependencies);
-			
-			InternalFunction internalFunction = new InternalFunction(normalFunction, methodParameterTypeList, parameterList,
-							parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList, varArgsParameterIndex,
-							textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint, instance, functionBody,
-							hasInterpreterParameter, combinatorFunction,
-							combinatorFunctionCallCount + 1, combinedArgumentList);
+			LangNativeFunction langNativeFunction = new LangNativeFunction(thisFunctionName);
+
+			InternalFunction internalFunction = new InternalFunction(methodParameterTypeList, parameterList,
+					parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList, varArgsParameterIndex,
+					textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint, instance, functionBody,
+					hasInterpreterParameter, method, combinatorFunction, combinatorFunctionCallCount + 1,
+					combinedArgumentList, valueDependencies);
 			
 			langNativeFunction.addInternalFunction(internalFunction);
 			
@@ -676,7 +584,7 @@ public class LangNativeFunction {
 				return functionName == null?dataObject.getVariableName():functionName;
 			}).collect(Collectors.joining(", "));
 			
-			String functionName = "<" + (varArgsParameterIndex == -1?"":"inf-") + LangNativeFunction.this.functionName + "-func(" + functionNames + ")>";
+			String functionName = "<" + (varArgsParameterIndex == -1?"":"inf-") + thisFunctionName + "-func(" + functionNames + ")>";
 			
 			FunctionPointerObject fp = new FunctionPointerObject(functionName, langNativeFunction);
 			if(method)
@@ -684,7 +592,11 @@ public class LangNativeFunction {
 
 			return new DataObject().setFunctionPointer(fp);
 		}
-		
+
+		public boolean isMethod() {
+			return method;
+		}
+
 		public boolean isCombinatorFunction() {
 			return combinatorFunction;
 		}
@@ -709,12 +621,20 @@ public class LangNativeFunction {
 					this.combinatorFunction != that.combinatorFunction ||
 					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
 					!Objects.equals(this.functionBody, that.functionBody) ||
-					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size())
+					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
+					this.valueDependencies.length != that.valueDependencies.length)
 				return false;
 
 			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
 				if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
 						that.combinatorProvidedArgumentList.get(i), lineNumber))
+					return false;
+
+			for(int i = 0;i < this.valueDependencies.length;i++)
+				if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
+						!interpreter.operators.isEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
+								lineNumber):
+						!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 					return false;
 
 			return true;
@@ -732,12 +652,20 @@ public class LangNativeFunction {
 					this.combinatorFunction != that.combinatorFunction ||
 					!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
 					!Objects.equals(this.functionBody, that.functionBody) ||
-					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size())
+					this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
+					this.valueDependencies.length != that.valueDependencies.length)
 				return false;
 
 			for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
 				if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
 						that.combinatorProvidedArgumentList.get(i), lineNumber))
+					return false;
+
+			for(int i = 0;i < this.valueDependencies.length;i++)
+				if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
+						!interpreter.operators.isStrictEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
+								lineNumber):
+						!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 					return false;
 
 			return true;
@@ -748,30 +676,6 @@ public class LangNativeFunction {
 		return functionName;
 	}
 	
-	public String getFunctionInfo() {
-		return functionInfo;
-	}
-
-	public boolean isMethod() {
-		return method;
-	}
-
-	public boolean isLinkerFunction() {
-		return linkerFunction;
-	}
-	
-	public boolean isDeprecated() {
-		return deprecated;
-	}
-	
-	public String getDeprecatedRemoveVersion() {
-		return deprecatedRemoveVersion;
-	}
-	
-	public String getDeprecatedReplacementFunction() {
-		return deprecatedReplacementFunction;
-	}
-	
 	public List<InternalFunction> getInternalFunctions() {
 		return new ArrayList<>(internalFunctions);
 	}
@@ -780,19 +684,11 @@ public class LangNativeFunction {
 		if(this == that)
 			return true;
 
-		if(this.internalFunctions.size() != that.internalFunctions.size() ||
-				this.valueDependencies.length != that.valueDependencies.length)
+		if(this.internalFunctions.size() != that.internalFunctions.size())
 			return false;
 
 		for(int i = 0;i < this.internalFunctions.size();i++)
 			if(!this.internalFunctions.get(i).isEquals(that.internalFunctions.get(i), interpreter, lineNumber))
-				return false;
-
-		for(int i = 0;i < this.valueDependencies.length;i++)
-			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
-					!interpreter.operators.isEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-							lineNumber):
-					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
 		return true;
@@ -802,19 +698,11 @@ public class LangNativeFunction {
 		if(this == that)
 			return true;
 
-		if(this.internalFunctions.size() != that.internalFunctions.size() ||
-				this.valueDependencies.length != that.valueDependencies.length)
+		if(this.internalFunctions.size() != that.internalFunctions.size())
 			return false;
 
 		for(int i = 0;i < this.internalFunctions.size();i++)
 			if(!this.internalFunctions.get(i).isStrictEquals(that.internalFunctions.get(i), interpreter, lineNumber))
-				return false;
-
-		for(int i = 0;i < this.valueDependencies.length;i++)
-			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
-					!interpreter.operators.isStrictEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-							lineNumber):
-					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
 		return true;

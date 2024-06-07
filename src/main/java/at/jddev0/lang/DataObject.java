@@ -657,6 +657,13 @@ public class DataObject {
 		 * If functionName is set, the function name from the stack frame element which is created for the function call will be overridden
 		 */
 		private final String functionName;
+		private final String functionInfo;
+
+		private final boolean linkerFunction;
+		private final boolean deprecated;
+		private final String deprecatedRemoveVersion;
+		private final String deprecatedReplacementFunction;
+
 		private final LangNormalFunction normalFunction;
 		private final LangNativeFunction nativeFunction;
 		private final int functionPointerType;
@@ -671,6 +678,11 @@ public class DataObject {
 			this.thisObject = func.thisObject;
 			this.superLevel = superLevel;
 			this.functionName = func.functionName;
+			this.functionInfo = func.functionInfo;
+			this.linkerFunction = func.linkerFunction;
+			this.deprecated = func.deprecated;
+			this.deprecatedRemoveVersion = func.deprecatedRemoveVersion;
+			this.deprecatedReplacementFunction = func.deprecatedReplacementFunction;
 			this.normalFunction = func.normalFunction;
 			this.nativeFunction = func.nativeFunction;
 			this.functionPointerType = func.functionPointerType;
@@ -689,6 +701,11 @@ public class DataObject {
 			this.thisObject = thisObject;
 			this.superLevel = func.superLevel;
 			this.functionName = func.functionName;
+			this.functionInfo = func.functionInfo;
+			this.linkerFunction = func.linkerFunction;
+			this.deprecated = func.deprecated;
+			this.deprecatedRemoveVersion = func.deprecatedRemoveVersion;
+			this.deprecatedReplacementFunction = func.deprecatedReplacementFunction;
 			this.normalFunction = func.normalFunction;
 			this.nativeFunction = func.nativeFunction;
 			this.functionPointerType = func.functionPointerType;
@@ -707,6 +724,11 @@ public class DataObject {
 			this.thisObject = thisObject;
 			this.superLevel = superLevel;
 			this.functionName = func.functionName;
+			this.functionInfo = func.functionInfo;
+			this.linkerFunction = func.linkerFunction;
+			this.deprecated = func.deprecated;
+			this.deprecatedRemoveVersion = func.deprecatedRemoveVersion;
+			this.deprecatedReplacementFunction = func.deprecatedReplacementFunction;
 			this.normalFunction = func.normalFunction;
 			this.nativeFunction = func.nativeFunction;
 			this.functionPointerType = func.functionPointerType;
@@ -715,15 +737,28 @@ public class DataObject {
 		/**
 		 * For normal function pointer definition
 		 */
-		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNormalFunction normalFunction) {
+		public FunctionPointerObject(String langPath, String langFile, String functionName, String functionInfo,
+									 boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion,
+									 String deprecatedReplacementFunction, LangNormalFunction normalFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.thisObject = null;
 			this.superLevel = -1;
 			this.functionName = functionName;
+			this.functionInfo = functionInfo;
+			this.linkerFunction = linkerFunction;
+			this.deprecated = deprecated;
+			this.deprecatedRemoveVersion = deprecatedRemoveVersion;
+			this.deprecatedReplacementFunction = deprecatedReplacementFunction;
 			this.normalFunction = normalFunction;
 			this.nativeFunction = null;
 			this.functionPointerType = NORMAL;
+		}
+		/**
+		 * For normal function pointer definition
+		 */
+		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNormalFunction normalFunction) {
+			this(langPath, langFile, functionName, null, false, false, null, null, normalFunction);
 		}
 		/**
 		 * For normal function pointer definition
@@ -747,15 +782,28 @@ public class DataObject {
 		/**
 		 * For pointer to native function/linker function
 		 */
-		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNativeFunction nativeFunction) {
+		public FunctionPointerObject(String langPath, String langFile, String functionName, String functionInfo,
+									 boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion,
+									 String deprecatedReplacementFunction, LangNativeFunction nativeFunction) {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.thisObject = null;
 			this.superLevel = -1;
 			this.functionName = functionName == null?nativeFunction.getFunctionName():functionName;
+			this.functionInfo = functionInfo;
+			this.linkerFunction = linkerFunction;
+			this.deprecated = deprecated;
+			this.deprecatedRemoveVersion = deprecatedRemoveVersion;
+			this.deprecatedReplacementFunction = deprecatedReplacementFunction;
 			this.normalFunction = null;
 			this.nativeFunction = nativeFunction;
 			this.functionPointerType = NATIVE;
+		}
+		/**
+		 * For pointer to native function/linker function
+		 */
+		public FunctionPointerObject(String langPath, String langFile, String functionName, LangNativeFunction nativeFunction) {
+			this(langPath, langFile, functionName, null, false, false, null, null, nativeFunction);
 		}
 		/**
 		 * For pointer to native function/linker function
@@ -779,9 +827,51 @@ public class DataObject {
 		public FunctionPointerObject withFunctionName(String functionName) {
 			switch(functionPointerType) {
 				case NORMAL:
-					return new FunctionPointerObject(langPath, langFile, functionName, normalFunction);
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
 				case NATIVE:
-					return new FunctionPointerObject(langPath, langFile, functionName, nativeFunction);
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
+			}
+
+			return null;
+		}
+
+		public FunctionPointerObject withFunctionInfo(String functionInfo) {
+			switch(functionPointerType) {
+				case NORMAL:
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
+				case NATIVE:
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
+			}
+
+			return null;
+		}
+
+		public FunctionPointerObject withLinkerFunction(boolean linkerFunction) {
+			switch(functionPointerType) {
+				case NORMAL:
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
+				case NATIVE:
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
+			}
+
+			return null;
+		}
+
+		public FunctionPointerObject withDeprecationInformation(boolean deprecated, String deprecatedRemoveVersion,
+																String deprecatedReplacementFunction) {
+			switch(functionPointerType) {
+				case NORMAL:
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, normalFunction);
+				case NATIVE:
+					return new FunctionPointerObject(langPath, langFile, functionName, functionInfo, linkerFunction, deprecated,
+							deprecatedRemoveVersion, deprecatedReplacementFunction, nativeFunction);
 			}
 
 			return null;
@@ -807,6 +897,26 @@ public class DataObject {
 			return functionName;
 		}
 
+		public String getFunctionInfo() {
+			return functionInfo;
+		}
+
+		public boolean isLinkerFunction() {
+			return linkerFunction;
+		}
+
+		public boolean isDeprecated() {
+			return deprecated;
+		}
+
+		public String getDeprecatedRemoveVersion() {
+			return deprecatedRemoveVersion;
+		}
+
+		public String getDeprecatedReplacementFunction() {
+			return deprecatedReplacementFunction;
+		}
+
 		public LangNormalFunction getNormalFunction() {
 			return normalFunction;
 		}
@@ -817,14 +927,6 @@ public class DataObject {
 
 		public int getFunctionPointerType() {
 			return functionPointerType;
-		}
-
-		public boolean isLinkerFunction() {
-			return functionPointerType == NATIVE && nativeFunction.isLinkerFunction();
-		}
-
-		public boolean isDeprecated() {
-			return functionPointerType == NATIVE && nativeFunction.isDeprecated();
 		}
 
 		@Override
@@ -997,7 +1099,7 @@ public class DataObject {
 			Map<String, FunctionPointerObject[]> methods = new HashMap<>();
 			Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
 			methods.put("mp.getClass", new FunctionPointerObject[] {
-					new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction(value="mp.getClass", isMethod=true)
 						@LangFunction.AllowedTypes(DataType.OBJECT)
 						@SuppressWarnings("unused")
@@ -1006,14 +1108,14 @@ public class DataObject {
 						) {
 							return new DataObject().setObject(thisObject.getClassBaseDefinition());
 						}
-					}))
+					})
 			});
 			methodOverrideFlags.put("mp.getClass", new Boolean[] {
 					false
 			});
 
 			FunctionPointerObject[] constructors = new FunctionPointerObject[] {
-					new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction(value="construct", isMethod=true)
 						@LangFunction.AllowedTypes(DataType.VOID)
 						@SuppressWarnings("unused")
@@ -1022,7 +1124,7 @@ public class DataObject {
 						) {
 							return null;
 						}
-					}))
+					})
 			};
 
 			OBJECT_CLASS = new LangObject(true, new DataObject[0], new String[0], new DataTypeConstraint[0],

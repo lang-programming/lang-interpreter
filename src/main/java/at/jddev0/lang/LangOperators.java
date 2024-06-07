@@ -251,8 +251,7 @@ public final class LangOperators {
 				
 				final FunctionPointerObject aFunc = leftSideOperand.getFunctionPointer();
 				final FunctionPointerObject bFunc = rightSideOperand.getFunctionPointer();
-				return new DataObject().setFunctionPointer(new FunctionPointerObject("<concat-func(" + aFunc + ", " + bFunc + ")>",
-						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("concat-func")
 					@SuppressWarnings("unused")
 					public DataObject concatFuncFunction(
@@ -265,7 +264,7 @@ public final class LangOperators {
 								LangUtils.nullToLangVoid(retA)
 						));
 					}
-				}, leftSideOperand, rightSideOperand)));
+				}, leftSideOperand, rightSideOperand).withFunctionName("<concat-func(" + aFunc + ", " + bFunc + ")>"));
 			
 			case STRUCT:
 			case OBJECT:
@@ -317,8 +316,7 @@ public final class LangOperators {
 			
 			case FUNCTION_POINTER:
 				final FunctionPointerObject func = operand.getFunctionPointer();
-				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-unpack-func(" + func + ")>",
-						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("auto-unpack-func")
 					public DataObject autoUnpackFuncFunction(
 							LangInterpreter interpreter,
@@ -328,7 +326,7 @@ public final class LangOperators {
 								Arrays.stream(arrayObject.getArray()).map(DataObject::new).collect(Collectors.toList())
 						));
 					}
-				}, operand)));
+				}, operand).withFunctionName("<auto-unpack-func(" + func + ")>"));
 			
 			case STRUCT:
 			case TEXT:
@@ -369,8 +367,7 @@ public final class LangOperators {
 			
 			case FUNCTION_POINTER:
 				final FunctionPointerObject func = operand.getFunctionPointer();
-				return new DataObject().setFunctionPointer(new FunctionPointerObject("<auto-pack-func(" + func + ")>",
-						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("auto-pack-func")
 					@SuppressWarnings("unused")
 					public DataObject autoPackFuncFunction(
@@ -381,7 +378,7 @@ public final class LangOperators {
 								new DataObject().setArray(args.stream().map(DataObject::new).toArray(DataObject[]::new))
 						));
 					}
-				}, operand)));
+				}, operand).withFunctionName("<auto-pack-func(" + func + ")>"));
 			
 			case TEXT:
 			case ARRAY:
@@ -1129,8 +1126,7 @@ public final class LangOperators {
 				final FunctionPointerObject func = leftSideOperand.getFunctionPointer();
 				
 				if(count == 0)
-					return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
-							LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction("pow-func")
 						@SuppressWarnings("unused")
 						public DataObject powFuncFunction(
@@ -1139,10 +1135,9 @@ public final class LangOperators {
 						) {
 							return new DataObject().setVoid();
 						}
-					})));
+					}).withFunctionName("<" + func + " ** " + count + ">"));
 				
-				return new DataObject().setFunctionPointer(new FunctionPointerObject("<" + func + " ** " + count + ">",
-						LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 					@LangFunction("pow-func")
 					@SuppressWarnings("unused")
 					public DataObject powFuncFunction(
@@ -1161,7 +1156,7 @@ public final class LangOperators {
 						
 						return ret;
 					}
-				}, count, leftSideOperand)));
+				}, count, leftSideOperand).withFunctionName("<" + func + " ** " + count + ">"));
 			
 			case TEXT:
 			case CHAR:

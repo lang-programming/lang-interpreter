@@ -69,14 +69,8 @@ public final class LangInterpreter {
 	//Predefined functions & linker functions (= Predefined functions)
 	Map<String, FunctionPointerObject> funcs = new HashMap<>();
 	{
-		Map<String, LangNativeFunction> tmpFuncs = new HashMap<>();
-
-		LangPredefinedFunctions.addPredefinedFunctions(tmpFuncs);
-		LangPredefinedFunctions.addLinkerFunctions(tmpFuncs);
-
-		tmpFuncs.forEach((functionName, function) -> {
-			funcs.put(functionName, new FunctionPointerObject(function));
-		});
+		LangPredefinedFunctions.addPredefinedFunctions(funcs);
+		LangPredefinedFunctions.addLinkerFunctions(funcs);
 	}
 	public final LangOperators operators = new LangOperators(this);
 	public final LangConversions conversions = new LangConversions(this);
@@ -1980,7 +1974,7 @@ public final class LangInterpreter {
 							FunctionPointerObject[] functions = entry.getValue();
 
 							variables.put(functionName, new DataObject().setFunctionPointer(
-									new FunctionPointerObject(functionName, LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+									LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 										@LangFunction("<method-wrapper-func>")
 										@SuppressWarnings("unused")
 										public DataObject methodWrapperFuncFunction(
@@ -1995,7 +1989,8 @@ public final class LangInterpreter {
 
 											return callFunctionPointer(fp, functionName, argumentList);
 										}
-									}, Arrays.stream(functions).map(func -> new DataObject().setFunctionPointer(func)).toArray()))
+									}, Arrays.stream(functions).map(func -> new DataObject().setFunctionPointer(func)).toArray()).
+											withFunctionName(functionName)
 							).setVariableName(functionName).setFinalData(true));
 						});
 					}else {
@@ -2489,6 +2484,13 @@ public final class LangInterpreter {
 						//Add translations after call
 						getData().lang.putAll(scopeData.lang);
 					}
+
+					if(fp.isDeprecated()) {
+						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
+								fp.getDeprecatedRemoveVersion() == null?"the future":fp.getDeprecatedRemoveVersion(),
+								fp.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + fp.getDeprecatedReplacementFunction() + "\" instead!"));
+						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentLineNumber);
+					}
 					
 					DataTypeConstraint returnValueTypeConstraint = normalFunction.getReturnValueTypeConstraint();
 
@@ -2513,10 +2515,10 @@ public final class LangInterpreter {
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber);
 					
 					DataObject ret = nativeFunction.callFunc(this, thisObject, fp.getSuperLevel(), argumentValueList);
-					if(nativeFunction.isDeprecated()) {
+					if(fp.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
-						nativeFunction.getDeprecatedRemoveVersion() == null?"the future":nativeFunction.getDeprecatedRemoveVersion(),
-						nativeFunction.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + nativeFunction.getDeprecatedReplacementFunction() + "\" instead!"));
+								fp.getDeprecatedRemoveVersion() == null?"the future":fp.getDeprecatedRemoveVersion(),
+								fp.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + fp.getDeprecatedReplacementFunction() + "\" instead!"));
 						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentLineNumber);
 					}
 					
@@ -3219,7 +3221,7 @@ public final class LangInterpreter {
 
 		//Set default constructor
 		if(constructorDefinitions.isEmpty()) {
-			constructors[0] = new FunctionPointerObject(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+			constructors[0] = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="construct", isMethod=true)
 				@LangFunction.AllowedTypes(DataType.VOID)
 				@SuppressWarnings("unused")
@@ -3228,7 +3230,7 @@ public final class LangInterpreter {
 				) {
 					return null;
 				}
-			}));
+			});
 		}
 
 		try {
@@ -4278,15 +4280,15 @@ public final class LangInterpreter {
 			interpretLines(langStandardImplementation);
 
 			Map<String, String> langInfoTexts = new HashMap<>();
-			Map<String, DataObject> predefinedFunctions = new HashMap<>();
+			Map<String, FunctionPointerObject> predefinedFunctions = new HashMap<>();
 
 			getData().var.forEach((variableName, variable) -> {
 				if(variableName.startsWith("$__LANG_INFO__") && variable.getType() == DataType.TEXT) {
 					langInfoTexts.put(variableName.substring(14), variable.getText());
 				}else if(variableName.startsWith("fp.__") && variable.getType() == DataType.FUNCTION_POINTER) {
 					String functionName = variableName.substring(5);
-					predefinedFunctions.put(functionName, new DataObject().setFunctionPointer(variable.getFunctionPointer().
-							withFunctionName("func." + functionName)));
+					predefinedFunctions.put(functionName, variable.getFunctionPointer().
+							withFunctionName("func." + functionName));
 				}else if(variable.getType() == DataType.STRUCT || variable.getType() == DataType.OBJECT) {
 					standardTypes.put(variableName, variable);
 				}
@@ -4298,20 +4300,7 @@ public final class LangInterpreter {
 						"The following Lang Info texts are unused: " + String.join(", ", unusedLangInfoTexts));
 
 			predefinedFunctions.forEach((functionName, function) -> {
-				Object object = new Object() {
-					@LangFunction("")
-					public DataObject standardWrapperFunc(
-							@LangFunction.LangParameter("&args") @LangFunction.LangParameter.RawVarArgs List<DataObject> argumentList
-					) {
-						return callFunctionPointer(function.getFunctionPointer(), functionName, argumentList);
-					}
-				};
-
-				try {
-					funcs.put(functionName, new FunctionPointerObject(LangNativeFunction.wrap(object,
-							object.getClass().getDeclaredMethod("standardWrapperFunc", List.class),
-							functionName, langInfoTexts.get(functionName), function.getFunctionPointer().getNormalFunction())));
-				}catch(NoSuchMethodException ignore) {}
+				funcs.put(functionName, function.withFunctionInfo(langInfoTexts.get(functionName)));
 			});
 		}catch(Exception e) {
 			throw new IllegalStateException("Could not load lang standard implementation in lang code", e);
@@ -4774,33 +4763,19 @@ public final class LangInterpreter {
 			interpreter.funcs.put(funcName, function);
 		}
 		/**
-		 * Creates a function which is accessible globally in the Interpreter (= in all scopes)<br>
-		 * If function already exists, it will be overridden<br>
-		 * Function can be accessed with "func.[funcName]"/"fn.[funcName]" or with "linker.[funcName]"/"ln.[funcName]" and can't be removed nor changed by the Lang file
-		 */
-		public void addPredefinedFunction(String funcName, LangNativeFunction function) {
-			interpreter.funcs.put(funcName, new FunctionPointerObject(function));
-		}
-		/**
 		 * Adds all static methods which are annotated with @LangFunction the object contains
 		 */
 		public void addPredefinedFunctions(Class<?> clazz) {
-			LangNativeFunction.getLangFunctionsOfClass(clazz).forEach((functionName, function) -> {
-				interpreter.funcs.put(functionName, new FunctionPointerObject(function));
-			});
+			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(clazz));
 		}
 		/**
 		 * Adds all non-static methods which are annotated with @LangFunction the object contains
 		 */
 		public void addPredefinedFunctions(Object obj) {
-			LangNativeFunction.getLangFunctionsFromObject(obj).forEach((functionName, function) -> {
-				interpreter.funcs.put(functionName, new FunctionPointerObject(function));
-			});
+			interpreter.funcs.putAll(LangNativeFunction.getLangFunctionsFromObject(obj));
 		}
-		public void addPredefinedFunctions(Map<String, LangNativeFunction> funcs) {
-			funcs.forEach((functionName, function) -> {
-				interpreter.funcs.put(functionName, new FunctionPointerObject(function));
-			});
+		public void addPredefinedFunctions(Map<String, FunctionPointerObject> funcs) {
+			interpreter.funcs.putAll(funcs);
 		}
 		public Map<String, FunctionPointerObject> getPredefinedFunctions() {
 			return interpreter.funcs;

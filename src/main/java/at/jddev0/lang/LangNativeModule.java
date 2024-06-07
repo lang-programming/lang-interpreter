@@ -259,15 +259,15 @@ public abstract class LangNativeModule {
 	 * @param func A LangNativeFunction can be a normal function or a linker function
 	 *             The function name of the LangFunction will be used as the function name
 	 */
-	protected final void exportNativeFunction(LangNativeFunction func) {
+	protected final void exportNativeFunction(DataObject.FunctionPointerObject func) {
 		exportNativeFunction(func.getFunctionName(), func);
 	}
 
 	/**
 	 * @param functionName The name of the function
-	 * @param func A LangNativeFunction can be a normal function or a linker function
+	 * @param func A predefined function can be a normal function or a linker function
 	 */
-	protected final void exportNativeFunction(String functionName, LangNativeFunction func) {
+	protected final void exportNativeFunction(String functionName, DataObject.FunctionPointerObject func) {
 		if(!module.isLoad())
 			throw new RuntimeException("This method may only be used inside a module which is in the \"load\" state");
 
@@ -281,7 +281,7 @@ public abstract class LangNativeModule {
 
 		module.getExportedFunctions().add(functionName);
 
-		interpreter.funcs.put(functionName, new DataObject.FunctionPointerObject(func));
+		interpreter.funcs.put(functionName, func);
 	}
 	
 	protected final void exportNormalVariableFinal(String variableName, DataObject value) {
