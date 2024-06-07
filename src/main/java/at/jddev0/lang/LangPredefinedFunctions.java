@@ -2014,33 +2014,6 @@ final class LangPredefinedFunctions {
 			return null;
 		}
 
-		@LangFunction("inci")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject inciFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setInt(number.intValue() + 1);
-		}
-
-		@LangFunction("deci")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject deciFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setInt(number.intValue() - 1);
-		}
-
-		@LangFunction("invi")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject inviFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setInt(-number.intValue());
-		}
-
 		@LangFunction("addi")
 		@AllowedTypes(DataObject.DataType.INT)
 		public static DataObject addiFunction(
@@ -2060,16 +2033,6 @@ final class LangPredefinedFunctions {
 			}
 
 			return new DataObject().setInt(sum);
-		}
-
-		@LangFunction("subi")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject subiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() - rightNumber.intValue());
 		}
 
 		@LangFunction("muli")
@@ -2093,128 +2056,6 @@ final class LangPredefinedFunctions {
 			return new DataObject().setInt(prod);
 		}
 
-		@LangFunction("divi")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject diviFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			if(rightNumber.intValue() == 0)
-				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO);
-
-			return new DataObject().setInt(leftNumber.intValue() / rightNumber.intValue());
-		}
-
-		@LangFunction("modi")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject modiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			if(rightNumber.intValue() == 0)
-				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO);
-
-			return new DataObject().setInt(leftNumber.intValue() % rightNumber.intValue());
-		}
-
-		@LangFunction("andi")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject andiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() & rightNumber.intValue());
-		}
-
-		@LangFunction("ori")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject oriFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() | rightNumber.intValue());
-		}
-
-		@LangFunction("xori")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject xoriFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() ^ rightNumber.intValue());
-		}
-
-		@LangFunction("noti")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject notiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setInt(~number.intValue());
-		}
-
-		@LangFunction("lshifti")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject lshiftiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() << rightNumber.intValue());
-		}
-
-		@LangFunction("rshifti")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject rshiftiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() >> rightNumber.intValue());
-		}
-
-		@LangFunction("rzshifti")
-		@AllowedTypes(DataObject.DataType.INT)
-		public static DataObject rzshiftiFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setInt(leftNumber.intValue() >>> rightNumber.intValue());
-		}
-
-		@LangFunction("incl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject inclFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setLong(number.longValue() + 1);
-		}
-
-		@LangFunction("decl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject declFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setLong(number.longValue() - 1);
-		}
-
-		@LangFunction("invl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject invlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setLong(-number.longValue());
-		}
-
 		@LangFunction("addl")
 		@AllowedTypes(DataObject.DataType.LONG)
 		public static DataObject addlFunction(
@@ -2234,16 +2075,6 @@ final class LangPredefinedFunctions {
 			}
 
 			return new DataObject().setLong(sum);
-		}
-
-		@LangFunction("subl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject sublFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() - rightNumber.longValue());
 		}
 
 		@LangFunction("mull")
@@ -2267,128 +2098,6 @@ final class LangPredefinedFunctions {
 			return new DataObject().setLong(prod);
 		}
 
-		@LangFunction("divl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject divlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			if(rightNumber.longValue() == 0)
-				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO);
-
-			return new DataObject().setLong(leftNumber.longValue() / rightNumber.longValue());
-		}
-
-		@LangFunction("modl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject modlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			if(rightNumber.longValue() == 0)
-				return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO);
-
-			return new DataObject().setLong(leftNumber.longValue() % rightNumber.longValue());
-		}
-
-		@LangFunction("andl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject andlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() & rightNumber.longValue());
-		}
-
-		@LangFunction("orl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject orlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() | rightNumber.longValue());
-		}
-
-		@LangFunction("xorl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject xorlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() ^ rightNumber.longValue());
-		}
-
-		@LangFunction("notl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject notlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setLong(~number.longValue());
-		}
-
-		@LangFunction("lshiftl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject lshiftlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() << rightNumber.longValue());
-		}
-
-		@LangFunction("rshiftl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject rshiftlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() >> rightNumber.longValue());
-		}
-
-		@LangFunction("rzshiftl")
-		@AllowedTypes(DataObject.DataType.LONG)
-		public static DataObject rzshiftlFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setLong(leftNumber.longValue() >>> rightNumber.longValue());
-		}
-
-		@LangFunction("incf")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject incfFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setFloat(number.floatValue() + 1.f);
-		}
-
-		@LangFunction("decf")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject decfFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setFloat(number.floatValue() - 1.f);
-		}
-
-		@LangFunction("invf")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject invfFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setFloat(-number.floatValue());
-		}
-
 		@LangFunction("addf")
 		@AllowedTypes(DataObject.DataType.FLOAT)
 		public static DataObject addfFunction(
@@ -2408,16 +2117,6 @@ final class LangPredefinedFunctions {
 			}
 
 			return new DataObject().setFloat(sum);
-		}
-
-		@LangFunction("subf")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject subfFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setFloat(leftNumber.floatValue() - rightNumber.floatValue());
 		}
 
 		@LangFunction("mulf")
@@ -2441,43 +2140,6 @@ final class LangPredefinedFunctions {
 			return new DataObject().setFloat(prod);
 		}
 
-		@LangFunction("divf")
-		@AllowedTypes(DataObject.DataType.FLOAT)
-		public static DataObject divfFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setFloat(leftNumber.floatValue() / rightNumber.floatValue());
-		}
-
-		@LangFunction("incd")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject incdFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setDouble(number.doubleValue() + 1.d);
-		}
-
-		@LangFunction("decd")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject decdFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setDouble(number.doubleValue() - 1.d);
-		}
-
-		@LangFunction("invd")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject invdFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$number") @NumberValue Number number
-		) {
-			return new DataObject().setDouble(-number.doubleValue());
-		}
-
 		@LangFunction("addd")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
 		public static DataObject adddFunction(
@@ -2499,16 +2161,6 @@ final class LangPredefinedFunctions {
 			return new DataObject().setDouble(sum);
 		}
 
-		@LangFunction("subd")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject subdFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setDouble(leftNumber.doubleValue() - rightNumber.doubleValue());
-		}
-
 		@LangFunction("muld")
 		@AllowedTypes(DataObject.DataType.DOUBLE)
 		public static DataObject muldFunction(
@@ -2528,16 +2180,6 @@ final class LangPredefinedFunctions {
 			}
 
 			return new DataObject().setDouble(prod);
-		}
-
-		@LangFunction("divd")
-		@AllowedTypes(DataObject.DataType.DOUBLE)
-		public static DataObject divdFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @NumberValue Number leftNumber,
-				@LangParameter("$b") @NumberValue Number rightNumber
-		) {
-			return new DataObject().setDouble(leftNumber.doubleValue() / rightNumber.doubleValue());
 		}
 
 		@LangFunction("sqrt")
@@ -2742,36 +2384,7 @@ final class LangPredefinedFunctions {
 
 			return ret;
 		}
-
-		@LangFunction("min")
-		public static DataObject minFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$firstArg") DataObject firstArg,
-				@LangParameter("&args") @VarArgs List<DataObject> args
-		) {
-			DataObject min = firstArg;
-            for(DataObject dataObject:args)
-                if(interpreter.operators.isLessThan(dataObject, min, -1))
-                    min = dataObject;
-
-			return min;
-		}
-
-		@LangFunction("max")
-		public static DataObject maxFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$firstArg") DataObject firstArg,
-				@LangParameter("&args") @VarArgs List<DataObject> args
-		) {
-			DataObject max = firstArg;
-            for(DataObject dataObject:args)
-                if(interpreter.operators.isGreaterThan(dataObject, max, -1))
-                    max = dataObject;
-
-			return max;
-		}
 	}
-
 
 	@SuppressWarnings("unused")
 	public static final class LangPredefinedCombinatorFunctions {

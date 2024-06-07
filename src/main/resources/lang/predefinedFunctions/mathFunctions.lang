@@ -1,0 +1,172 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Math Functions)
+
+fp.__inci = ($number{number}) -> {
+    return parser.op($LANG_TYPE_INT($number) + 1)
+}
+
+fp.__deci = ($number{number}) -> {
+    return parser.op($LANG_TYPE_INT($number) - 1)
+}
+
+fp.__invi = ($number{number}) -> {
+    return parser.op(-$LANG_TYPE_INT($number))
+}
+
+fp.__subi = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) - $LANG_TYPE_INT($b))
+}
+
+fp.__divi = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) // $LANG_TYPE_INT($b))
+}
+
+fp.__modi = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) % $LANG_TYPE_INT($b))
+}
+
+fp.__andi = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) & $LANG_TYPE_INT($b))
+}
+
+fp.__ori = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) | $LANG_TYPE_INT($b))
+}
+
+fp.__xori = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) ^ $LANG_TYPE_INT($b))
+}
+
+fp.__noti = ($number{number}) -> {
+    return parser.op(~$LANG_TYPE_INT($number))
+}
+
+fp.__lshifti = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) << $LANG_TYPE_INT($b))
+}
+
+fp.__rshifti = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) >> $LANG_TYPE_INT($b))
+}
+
+fp.__rzshifti = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_INT($a) >>> $LANG_TYPE_INT($b))
+}
+
+fp.__incl = ($number{number}) -> {
+    return parser.op($LANG_TYPE_LONG($number) + 1)
+}
+
+fp.__decl = ($number{number}) -> {
+    return parser.op($LANG_TYPE_LONG($number) - 1)
+}
+
+fp.__invl = ($number{number}) -> {
+    return parser.op(-$LANG_TYPE_LONG($number))
+}
+
+fp.__subl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) - $LANG_TYPE_LONG($b))
+}
+
+fp.__divl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) // $LANG_TYPE_LONG($b))
+}
+
+fp.__modl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) % $LANG_TYPE_LONG($b))
+}
+
+fp.__andl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) & $LANG_TYPE_LONG($b))
+}
+
+fp.__orl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) | $LANG_TYPE_LONG($b))
+}
+
+fp.__xorl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) ^ $LANG_TYPE_LONG($b))
+}
+
+fp.__notl = ($number{number}) -> {
+    return parser.op(~$LANG_TYPE_LONG($number))
+}
+
+fp.__lshiftl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) << $LANG_TYPE_LONG($b))
+}
+
+fp.__rshiftl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) >> $LANG_TYPE_LONG($b))
+}
+
+fp.__rzshiftl = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_LONG($a) >>> $LANG_TYPE_LONG($b))
+}
+
+fp.__incf = ($number{number}) -> {
+    return parser.op($LANG_TYPE_FLOAT($number) + 1)
+}
+
+fp.__decf = ($number{number}) -> {
+    return parser.op($LANG_TYPE_FLOAT($number) - 1)
+}
+
+fp.__invf = ($number{number}) -> {
+    return parser.op(-$LANG_TYPE_FLOAT($number))
+}
+
+fp.__subf = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_FLOAT($a) - $LANG_TYPE_FLOAT($b))
+}
+
+fp.__divf = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_FLOAT($a) // $LANG_TYPE_FLOAT($b))
+}
+
+fp.__incd = ($number{number}) -> {
+    return parser.op($LANG_TYPE_DOUBLE($number) + 1)
+}
+
+fp.__decd = ($number{number}) -> {
+    return parser.op($LANG_TYPE_DOUBLE($number) - 1)
+}
+
+fp.__invd = ($number{number}) -> {
+    return parser.op(-$LANG_TYPE_DOUBLE($number))
+}
+
+fp.__subd = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_DOUBLE($a) - $LANG_TYPE_DOUBLE($b))
+}
+
+fp.__divd = ($a{number}, $b{number}) -> {
+    return parser.op($LANG_TYPE_DOUBLE($a) // $LANG_TYPE_DOUBLE($b))
+}
+
+fp.__min = ($firstArg, &args...) -> {
+    $min $= $firstArg
+
+    $ele
+    foreach($[ele], &args) {
+        if($ele < $min) {
+            $min $= $ele
+        }
+    }
+
+    return $min
+}
+
+fp.__max = ($firstArg, &args...) -> {
+    $max $= $firstArg
+
+    $ele
+    foreach($[ele], &args) {
+        if($ele > $max) {
+            $max $= $ele
+        }
+    }
+
+    return $max
+}

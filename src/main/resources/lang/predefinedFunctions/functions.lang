@@ -3,3 +3,4 @@ lang.name = Lang Standard Implementation (Functions)
 
 linker.include(numberFunctions.lang)
 linker.include(operationFunctions.lang)
+linker.include(mathFunctions.lang)
