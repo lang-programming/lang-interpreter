@@ -2263,8 +2263,8 @@ public final class LangInterpreter {
 						(!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId));
 	}
 
-	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList, int parentLineNumber) {
-		argumentValueList = new ArrayList<>(argumentValueList);
+	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentList, int parentLineNumber) {
+		argumentList = new ArrayList<>(argumentList);
 
 		LangObject thisObject = fp.getThisObject();
 		int originalSuperLevel = -1;
@@ -2281,7 +2281,7 @@ public final class LangInterpreter {
 					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
 					functionName, currentStackElement.getModule()), parentLineNumber);
 
-			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentValueList,
+			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
 					this, -1);
 
 			FunctionPointerObject.InternalFunction internalFunction;
@@ -2312,8 +2312,19 @@ public final class LangInterpreter {
 					List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList = normalFunction.getParameterDataTypeConstraintList();
 					List<LangBaseFunction.ParameterAnnotation> parameterAnnotationList = normalFunction.getParameterAnnotationList();
 					List<Integer> lineNumberFromList = normalFunction.getLineNumberFromList();
+					int argCount = parameterList.size();
 
 					AbstractSyntaxTree functionBody = normalFunction.getFunctionBody();
+
+					if(normalFunction.getVarArgsParameterIndex() == -1) {
+						if(combinedArgumentList.size() < argCount)
+							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount), parentLineNumber);
+						if(combinedArgumentList.size() > argCount)
+							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount), parentLineNumber);
+					}else {
+						if(combinedArgumentList.size() < argCount - 1)
+							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1), parentLineNumber);
+					}
 
 					try {
 						Data callerData = getData();
@@ -2339,22 +2350,16 @@ public final class LangInterpreter {
 						}
 
 						//Set arguments
-						DataObject lastDataObject = new DataObject().setVoid();
-						Iterator<DataObject> parameterListIterator = parameterList.iterator();
-						Iterator<DataObject.DataTypeConstraint> parameterDataTypeConstraintListIterator = parameterDataTypeConstraintList.iterator();
-						Iterator<LangBaseFunction.ParameterAnnotation> parameterAnnotationListIterator = parameterAnnotationList.iterator();
-						Iterator<Integer> lineNumberFromListIterator = lineNumberFromList.iterator();
-						boolean isLastDataObjectArgumentSeparator = argumentValueList.size() > 0 && argumentValueList.get(argumentValueList.size() - 1).getType() == DataType.ARGUMENT_SEPARATOR;
-						while(parameterListIterator.hasNext()) {
-							final DataObject parameter = parameterListIterator.next();
-							final DataObject.DataTypeConstraint typeConstraint = parameterDataTypeConstraintListIterator.next();
-							final LangBaseFunction.ParameterAnnotation parameterAnnotation = parameterAnnotationListIterator.next();
-							final int lineNumberFrom = lineNumberFromListIterator.next();
+						int argumentIndex = 0;
+						for(int i = 0;i < argCount;i++) {
+							final DataObject parameter = parameterList.get(i);
+							final DataObject.DataTypeConstraint typeConstraint = parameterDataTypeConstraintList.get(i);
+							final LangBaseFunction.ParameterAnnotation parameterAnnotation = parameterAnnotationList.get(i);
+							final int lineNumberFrom = lineNumberFromList.get(i);
 
 							final String variableName = parameter.getVariableName();
 
-							if(!parameterListIterator.hasNext() && parameterAnnotation == LangBaseFunction.ParameterAnnotation.VAR_ARGS) {
-								//Varargs (only the last parameter can be a varargs parameter)
+							if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.VAR_ARGS) {
 								if(variableName.startsWith("$")) {
 									//Text varargs
 									if(!typeConstraint.equals(DataObject.CONSTRAINT_NORMAL)) {
@@ -2363,8 +2368,22 @@ public final class LangInterpreter {
 												lineNumberFrom);
 									}
 
-									DataObject dataObject = LangUtils.combineDataObjects(argumentValueList,
-											this, -1);
+									List<DataObject> argumentListCopy = new ArrayList<>(argumentList);
+
+									//Remove leading arguments
+									for(int j = 0;j < i;j++)
+										for(int k = 0;k < argumentListCopy.size();k++)
+											if(argumentListCopy.remove(0).getType() == DataType.ARGUMENT_SEPARATOR)
+												break;
+
+									//Remove trailing arguments
+									for(int j = 0;j < argCount - i - 1;j++)
+										for(int k = argumentListCopy.size() - 1;k >= 0;k--)
+											if(argumentListCopy.remove(k).getType() == DataType.ARGUMENT_SEPARATOR)
+												break;
+
+									DataObject dataObject = LangUtils.combineDataObjects(argumentListCopy,
+											this, lineNumberFrom);
 									try {
 										DataObject newDataObject = new DataObject(conversions.toText(dataObject == null?
 												new DataObject().setVoid():dataObject, -1)).setVariableName(variableName);
@@ -2380,24 +2399,21 @@ public final class LangInterpreter {
 									}
 								}else {
 									//Array varargs
-									List<DataObject> varArgsTmpList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentValueList,
-													this, -1).stream().
+									List<DataObject> varArgsArgumentList = combinedArgumentList.subList(i, combinedArgumentList.size() - argCount + i + 1).stream().
 											map(DataObject::new).collect(Collectors.toList());
-									if(varArgsTmpList.isEmpty() && isLastDataObjectArgumentSeparator)
-										varArgsTmpList.add(new DataObject().setVoid());
 
-									for(int i = 0;i < varArgsTmpList.size();i++) {
-										DataObject varArgsArgument = varArgsTmpList.get(i);
+									for(int j = 0;j < varArgsArgumentList.size();j++) {
+										DataObject varArgsArgument = varArgsArgumentList.get(j);
 										if(!typeConstraint.isTypeAllowed(varArgsArgument.getType()))
 											return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-													"Invalid argument (Var args argument " + (i + 1) + ") value for var args function parameter \"" +
+													"Invalid argument (Argument " + (argumentIndex + j + 1) + ") value for var args function parameter \"" +
 															variableName + "\": Value must be one of " + typeConstraint.getAllowedTypes(),
 													lineNumberFrom);
 									}
 
 									try {
 										DataObject newDataObject = new DataObject().
-												setArray(varArgsTmpList.toArray(new DataObject[0])).
+												setArray(varArgsArgumentList.toArray(new DataObject[0])).
 												setVariableName(variableName);
 
 										DataObject old = getData().var.put(variableName, newDataObject);
@@ -2411,19 +2427,14 @@ public final class LangInterpreter {
 									}
 								}
 
-								break;
+								argumentIndex = combinedArgumentList.size() - argCount + i + 1;
+								continue;
 							}
 
 							if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER) {
-								if(argumentValueList.size() > 0)
-									lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true,
-											this, lineNumberFrom);
-								else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
-									lastDataObject = new DataObject().setVoid();
-
 								try {
 									DataObject newDataObject = new DataObject().
-											setVarPointer(new VarPointerObject(lastDataObject)).
+											setVarPointer(new VarPointerObject(combinedArgumentList.get(argumentIndex))).
 											setVariableName(variableName);
 									newDataObject.setTypeConstraint(typeConstraint);
 
@@ -2437,21 +2448,16 @@ public final class LangInterpreter {
 											lineNumberFrom);
 								}
 
+								argumentIndex++;
 								continue;
 							}
 
-							if(argumentValueList.size() > 0)
-								lastDataObject = LangUtils.getNextArgumentAndRemoveUsedDataObjects(argumentValueList, true,
-										this, -1);
-							else if(isLastDataObjectArgumentSeparator && lastDataObject.getType() != DataType.VOID)
-								lastDataObject = new DataObject().setVoid();
-
 							try {
-								DataObject value = lastDataObject;
+								DataObject value = combinedArgumentList.get(argumentIndex);
 								if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.BOOLEAN) {
-									value = new DataObject().setBoolean(conversions.toBool(lastDataObject, lineNumberFrom));
+									value = new DataObject().setBoolean(conversions.toBool(value, lineNumberFrom));
 								}else if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.NUMBER) {
-									value = conversions.convertToNumberAndCreateNewDataObject(lastDataObject, lineNumberFrom);
+									value = conversions.convertToNumberAndCreateNewDataObject(value, lineNumberFrom);
 									if(value.getType() == DataType.NULL)
 										return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 												"Invalid argument value for function parameter \"" + variableName + "\" (Must be a number)",
@@ -2472,6 +2478,8 @@ public final class LangInterpreter {
 										"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
 										lineNumberFrom);
 							}
+
+							argumentIndex++;
 						}
 
 						//Call function
@@ -2514,7 +2522,7 @@ public final class LangInterpreter {
 					if(nativeFunction == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber);
 					
-					DataObject ret = nativeFunction.callFunc(this, thisObject, internalFunction.getSuperLevel(), argumentValueList, combinedArgumentList);
+					DataObject ret = nativeFunction.callFunc(this, thisObject, internalFunction.getSuperLevel(), argumentList, combinedArgumentList);
 					if(fp.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 								fp.getDeprecatedRemoveVersion() == null?"the future":fp.getDeprecatedRemoveVersion(),
