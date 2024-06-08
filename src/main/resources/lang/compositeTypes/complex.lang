@@ -131,7 +131,7 @@ function complex($real{number}, $imag{number}):{OBJECT} {
     return &Complex($real, $imag)
 }
 
-$__LANG_INFO__creal=Returns the real value of &z
+## Returns the real value of &z
 function creal(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
@@ -140,7 +140,7 @@ function creal(&z{OBJECT}):{DOUBLE} {
     return parser.op(&z::real)
 }
 
-$__LANG_INFO__cimag=Returns the imaginary value of &z
+## Returns the imaginary value of &z
 function cimag(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
@@ -149,7 +149,7 @@ function cimag(&z{OBJECT}):{DOUBLE} {
     return parser.op(&z::imag)
 }
 
-$__LANG_INFO__cabs=Returns the absolute value of &z
+## Returns the absolute value of &z
 function cabs(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
@@ -158,7 +158,7 @@ function cabs(&z{OBJECT}):{DOUBLE} {
     return parser.op(abs(&z))
 }
 
-$__LANG_INFO__conj=Returns a conjugated copy of &z
+## Returns a conjugated copy of &z
 function conj(&z{OBJECT}):{OBJECT} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
@@ -167,7 +167,7 @@ function conj(&z{OBJECT}):{OBJECT} {
     return parser.op(&z::conj())
 }
 
-$__LANG_INFO__cinv=Returns a negated copy of &z
+## Returns a negated copy of &z
 function cinv(&z{OBJECT}):{OBJECT} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
@@ -176,7 +176,7 @@ function cinv(&z{OBJECT}):{OBJECT} {
     return parser.op(-&z)
 }
 
-$__LANG_INFO__cadd=Returns &a + &b
+## Returns &a + &b
 function cadd(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
@@ -189,7 +189,7 @@ function cadd(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     return parser.op(&a + &b)
 }
 
-$__LANG_INFO__csub=Returns &a - &b
+## Returns &a - &b
 function csub(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
@@ -202,7 +202,7 @@ function csub(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     return parser.op(&a - &b)
 }
 
-$__LANG_INFO__cmul=Returns &a * &b
+## Returns &a * &b
 function cmul(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
@@ -215,7 +215,7 @@ function cmul(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     return parser.op(&a * &b)
 }
 
-$__LANG_INFO__cdiv=Returns &a / &b
+## Returns &a / &b
 function cdiv(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")

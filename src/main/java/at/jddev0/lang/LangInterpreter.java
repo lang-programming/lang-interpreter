@@ -4337,28 +4337,13 @@ public final class LangInterpreter {
 			//Interpret lang standard implementation lang code
 			interpretLines(langStandardImplementation);
 
-			Map<String, String> langInfoTexts = new HashMap<>();
-			Map<String, FunctionPointerObject> predefinedFunctions = new HashMap<>();
-
 			getData().var.forEach((variableName, variable) -> {
-				if(variableName.startsWith("$__LANG_INFO__") && variable.getType() == DataType.TEXT) {
-					langInfoTexts.put(variableName.substring(14), variable.getText());
-				}else if(variableName.startsWith("fp.") && variable.getType() == DataType.FUNCTION_POINTER) {
+				if(variableName.startsWith("fp.") && variable.getType() == DataType.FUNCTION_POINTER) {
 					String functionName = variableName.substring(3);
-					predefinedFunctions.put(functionName, variable.getFunctionPointer().
-							withFunctionName("func." + functionName));
+					funcs.put(functionName, variable.getFunctionPointer().withFunctionName("func." + functionName));
 				}else if(variable.getType() == DataType.STRUCT || variable.getType() == DataType.OBJECT) {
 					standardTypes.put(variableName, variable);
 				}
-			});
-
-			List<String> unusedLangInfoTexts = langInfoTexts.keySet().stream().filter(functionName -> !predefinedFunctions.containsKey(functionName)).collect(Collectors.toList());
-			if(!unusedLangInfoTexts.isEmpty())
-				throw new IllegalStateException("Invalid lang standard implementation in lang code: " +
-						"The following Lang Info texts are unused: " + String.join(", ", unusedLangInfoTexts));
-
-			predefinedFunctions.forEach((functionName, function) -> {
-				funcs.put(functionName, function.withFunctionInfo(langInfoTexts.get(functionName)));
 			});
 		}catch(Exception e) {
 			throw new IllegalStateException("Could not load lang standard implementation in lang code", e);
