@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
  * @version v1.0.0
  */
 public final class LangParser {
+	private String langDocComment;
 	private String currentLine;
 	private int lineNumber;
 	
@@ -1772,17 +1773,20 @@ public final class LangParser {
 					}
 					
 					if(functionBody.trim().equals("{")) {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
 								functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
+						langDocComment = null;
 					}else if(lrvalue.endsWith("{") && (lrvalue.charAt(lrvalue.length() - 2) != '\\' ||
 							LangUtils.isBackslashAtIndexEscaped(lrvalue, lrvalue.length() - 2))) {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
 								functionReturnValueTypeConstraint, parseLines(functionBody, true, lines),
 								lineNumberFrom, lineNumber));
+						langDocComment = null;
 					}else {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
 								functionReturnValueTypeConstraint, parseLines(functionBody, true, null),
 								lineNumberFrom, lineNumber));
+						langDocComment = null;
 					}
 					
 					return ast;
@@ -1828,8 +1832,9 @@ public final class LangParser {
 
 		List<AbstractSyntaxTree.Node> parameterListNodes = parseFunctionParameterList(parameterList, true).getChildren();
 
-		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(functionName, overloaded, parameterListNodes,
-					functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
+		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(functionName, overloaded, langDocComment,
+				parameterListNodes,	functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
+		langDocComment = null;
 
 		 return ast;
 	}
@@ -2892,7 +2897,30 @@ public final class LangParser {
 	
 	private String prepareNextLine(String line, BufferedReader lines, List<AbstractSyntaxTree.Node> errorNodes) throws IOException {
 		line = parseMultilineTextAndLineContinuation(line, lines, errorNodes);
-		
+
+		//Lang doc comment
+		if(line != null && line.trim().startsWith("##")) {
+			String rawDocComment = parseMultilineTextAndLineContinuation(line.substring(line.indexOf('#') + 2), lines, errorNodes);
+			if(rawDocComment == null)
+				return null;
+
+			rawDocComment = LangUtils.unescapeString(rawDocComment);
+
+			StringBuilder stringBuilder = new StringBuilder();
+			for(String token:rawDocComment.split("\\n"))
+				stringBuilder.append(token.trim()).append('\n');
+
+			//Remove trailing "\n"
+			if(stringBuilder.length() > 0)
+				stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+
+			String docComment = stringBuilder.toString();
+			if(langDocComment == null)
+				langDocComment = docComment;
+			else
+				langDocComment += "\n" + docComment;
+		}
+
 		line = removeCommentsAndTrim(line);
 		
 		return line;

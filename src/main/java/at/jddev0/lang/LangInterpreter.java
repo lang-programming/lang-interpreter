@@ -2868,6 +2868,31 @@ public final class LangInterpreter {
 			}
 		}
 
+		String docComment = node.getDocComment();
+		Map<String, String> parameterDocComments = new HashMap<>();
+		StringBuilder stringBuilder = new StringBuilder();
+		if(docComment != null) {
+			for(String token:docComment.split("\\n")) {
+				if(token.startsWith("@param") && token.contains(":") && Character.isWhitespace(token.charAt(6))) {
+					int colonIndex = token.indexOf(':');
+
+					String name = token.substring(6, colonIndex).trim();
+					String comment = token.substring(colonIndex + 1).trim();
+					parameterDocComments.put(name, comment);
+
+					continue;
+				}
+
+				stringBuilder.append(token).append("\n");
+			}
+
+			//Remove trailing "\n"
+			if(stringBuilder.length() > 0)
+				stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+		}
+
+		String functionDocComment = stringBuilder.toString();
+
 		List<Node> children = node.getChildren();
 
 		List<DataObject> parameterList = new ArrayList<>(children.size());
@@ -2926,7 +2951,7 @@ public final class LangInterpreter {
 					parameterList.add(new DataObject().setVariableName(variableName));
 					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.CONSTRAINT_NORMAL:parameterTypeConstraint);
 					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.VAR_ARGS);
-					parameterInfoList.add(null);
+					parameterInfoList.add(parameterDocComments.remove(variableName));
 					lineNumberFromList.add(node.getLineNumberFrom());
 					lineNumberToList.add(node.getLineNumberTo());
 
@@ -2939,7 +2964,7 @@ public final class LangInterpreter {
 					parameterList.add(new DataObject().setVariableName(variableName));
 					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
 					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER);
-					parameterInfoList.add(null);
+					parameterInfoList.add(parameterDocComments.remove(variableName));
 					lineNumberFromList.add(node.getLineNumberFrom());
 					lineNumberToList.add(node.getLineNumberTo());
 
@@ -2955,7 +2980,7 @@ public final class LangInterpreter {
 				parameterList.add(new DataObject().setVariableName(variableName));
 				parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
 				parameterAnnotationList.add(parameterAnnotation);
-				parameterInfoList.add(null);
+				parameterInfoList.add(parameterDocComments.remove(variableName));
 				lineNumberFromList.add(node.getLineNumberFrom());
 				lineNumberToList.add(node.getLineNumberTo());
 			}catch(ClassCastException e) {
@@ -2977,6 +3002,11 @@ public final class LangInterpreter {
 				return errorOut;
 		}
 
+		if(!parameterDocComments.isEmpty()) {
+			setErrno(InterpretingError.INVALID_DOC_COMMENT, "The following parameters defined in the doc comment do not exist: " +
+					String.join(", ", parameterDocComments.keySet()), node.getLineNumberFrom());
+		}
+
 		StackElement currentStackElement = getCurrentCallStackElement();
 
 		LangNormalFunction normalFunction = new LangNormalFunction(parameterList, parameterDataTypeConstraintList,
@@ -2985,7 +3015,7 @@ public final class LangInterpreter {
 
 		if(functionPointerDataObject == null)
 			return new DataObject().setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
-					currentStackElement.getLangFile(), normalFunction));
+					currentStackElement.getLangFile(), normalFunction).withFunctionInfo(functionDocComment));
 
 		try {
 			if(overloaded) {
@@ -2993,7 +3023,7 @@ public final class LangInterpreter {
 						withAddedFunction(new FunctionPointerObject.InternalFunction(normalFunction)));
 			}else {
 				functionPointerDataObject.setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
-						currentStackElement.getLangFile(), normalFunction)).
+						currentStackElement.getLangFile(), normalFunction).withFunctionInfo(functionDocComment)).
 						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.FUNCTION_POINTER));
 			}
 		}catch(DataTypeConstraintViolatedException e) {
@@ -4641,8 +4671,9 @@ public final class LangInterpreter {
 		LANG_VER_WARNING       (-3, "Lang file's version is not compatible with this version"),
 		INVALID_EXEC_FLAG_DATA (-4, "Execution flag or Lang data is invalid"),
 		VAR_SHADOWING_WARNING  (-5, "Variable name shadows an other variable"),
-		UNDEF_ESCAPE_SEQUENCE  (-6, "An undefined escape sequence was used");
-		
+		UNDEF_ESCAPE_SEQUENCE  (-6, "An undefined escape sequence was used"),
+		INVALID_DOC_COMMENT    (-7, "Dangling or invalid doc comment syntax");
+
 		private final int errorCode;
 		private final String errorText;
 		

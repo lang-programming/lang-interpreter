@@ -814,17 +814,19 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class FunctionDefinitionNode implements Node {
 		private final String functionName;
 		private final boolean overloaded;
+		private final String docComment;
 		private final List<Node> parameterList;
 		private final String returnValueTypeConstraint;
 		private final AbstractSyntaxTree functionBody;
 		private final int lineNumberFrom;
 		private final int lineNumberTo;
 		
-		public FunctionDefinitionNode(String functionName, boolean overloaded, List<Node> parameterList,
-									  String returnValueTypeConstraint, AbstractSyntaxTree functionBody,
-									  int lineNumberFrom, int lineNumberTo) {
+		public FunctionDefinitionNode(String functionName, boolean overloaded, String docComment,
+									  List<Node> parameterList, String returnValueTypeConstraint,
+									  AbstractSyntaxTree functionBody, int lineNumberFrom, int lineNumberTo) {
 			this.functionName = functionName;
 			this.overloaded = overloaded;
+			this.docComment = docComment;
 			this.parameterList = new ArrayList<>(parameterList);
 			this.returnValueTypeConstraint = returnValueTypeConstraint;
 			this.functionBody = functionBody;
@@ -860,6 +862,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			return overloaded;
 		}
 
+		public String getDocComment() {
+			return docComment;
+		}
+
 		public String getReturnValueTypeConstraint() {
 			return returnValueTypeConstraint;
 		}
@@ -879,6 +885,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append(functionName);
 			builder.append("\", Overloaded: ");
 			builder.append(overloaded);
+			builder.append(", Doc Comment: ");
+			builder.append(docComment);
 			builder.append(", ParameterList: {\n");
 			parameterList.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -915,13 +923,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			
 			FunctionDefinitionNode that = (FunctionDefinitionNode)obj;
 			return this.getNodeType().equals(that.getNodeType()) && this.functionName.equals(that.functionName) &&
-					this.overloaded == that.overloaded && this.parameterList.equals(that.parameterList) &&
-					this.functionBody.equals(that.functionBody);
+					this.overloaded == that.overloaded && this.docComment.equals(that.docComment) &&
+					this.parameterList.equals(that.parameterList) && this.functionBody.equals(that.functionBody);
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(this.getNodeType(), this.functionName, this.overloaded, this.parameterList, this.functionBody);
+			return Objects.hash(this.getNodeType(), this.functionName, this.overloaded, this.docComment,
+					this.parameterList, this.functionBody);
 		}
 	}
 	
