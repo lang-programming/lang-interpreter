@@ -2834,6 +2834,40 @@ public final class LangInterpreter {
 	}
 	
 	private DataObject interpretFunctionDefinitionNode(FunctionDefinitionNode node) {
+		String functionName = node.getFunctionName();
+		boolean overloaded = node.isOverloaded();
+		DataObject functionPointerDataObject = null;
+		boolean[] flags = new boolean[] {false, false};
+		if(functionName != null) {
+			functionPointerDataObject = getOrCreateDataObjectFromVariableName(null, null, functionName,
+					false, false, !overloaded, flags,
+					node.getLineNumberFrom());
+			if(flags[0])
+				return functionPointerDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
+
+			if(functionPointerDataObject == null || (overloaded && functionPointerDataObject.getType() != DataType.FUNCTION_POINTER)) {
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Can not overload variable \"" + functionName +
+						"\" because the variable does not exist or is not of type function pointer", node.getLineNumberFrom());
+			}
+
+			if(!overloaded && functionPointerDataObject.getType() != DataType.NULL) {
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Can not set \"" + functionName +
+						"\" to function because the variable already exists (You should use \"function overload\" instead of \"function\" to overload a function)",
+						node.getLineNumberFrom());
+			}
+
+			if(functionPointerDataObject.getVariableName() == null) {
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom());
+			}
+
+			if(functionPointerDataObject.isFinalData() || functionPointerDataObject.isLangVar()) {
+				if(flags[1])
+					getData().var.remove(functionPointerDataObject.getVariableName());
+
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom());
+			}
+		}
+
 		List<Node> children = node.getChildren();
 
 		List<DataObject> parameterList = new ArrayList<>(children.size());
@@ -2949,8 +2983,28 @@ public final class LangInterpreter {
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter,
 				false, returnValueTypeConstraint, lineNumberFromList, lineNumberToList, node.getFunctionBody());
 
-		return new DataObject().setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
-				currentStackElement.getLangFile(), normalFunction));
+		if(functionPointerDataObject == null)
+			return new DataObject().setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
+					currentStackElement.getLangFile(), normalFunction));
+
+		try {
+			if(overloaded) {
+				functionPointerDataObject.setFunctionPointer(functionPointerDataObject.getFunctionPointer().
+						withAddedFunction(new FunctionPointerObject.InternalFunction(normalFunction)));
+			}else {
+				functionPointerDataObject.setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
+						currentStackElement.getLangFile(), normalFunction)).
+						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.FUNCTION_POINTER));
+			}
+		}catch(DataTypeConstraintViolatedException e) {
+			if(flags[1])
+				getData().var.remove(functionName);
+
+			return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for function definition: \"" +
+					functionName + "\" was already defined and cannot be set to a function definition", node.getLineNumberFrom());
+		}
+
+		return functionPointerDataObject;
 	}
 	
 	private DataObject interpretArrayNode(ArrayNode node) {
@@ -3029,7 +3083,7 @@ public final class LangInterpreter {
 				if(flags[1])
 					getData().var.remove(structName);
 
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for class definition: \"" +
+				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for struct definition: \"" +
 						structName + "\" was already defined and cannot be set to a struct definition", node.getLineNumberFrom());
 			}
 

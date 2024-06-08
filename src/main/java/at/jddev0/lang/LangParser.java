@@ -1532,6 +1532,67 @@ public final class LangParser {
 			return ast;
 		}
 
+		//Function definition
+		if(LangPatterns.matches(token, LangPatterns.PARSING_FUNCTION_DEFINITION)) {
+			//Skip "function "
+			token = token.substring(9);
+
+			boolean overloaded = token.startsWith("overload ");
+			if(overloaded)
+				token = token.substring(9);
+
+			int bracketIndex = token.indexOf('(');
+			String functionName = token.substring(0, bracketIndex).trim();
+
+			int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(token, bracketIndex, Integer.MAX_VALUE, '(', ')');
+			if(bracketEndIndex == -1) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in parameter list in function definition"));
+
+				return ast;
+			}
+
+			String parameterList = token.substring(bracketIndex + 1, bracketEndIndex);
+
+			token = token.substring(bracketEndIndex + 1, token.length() - 1).trim();
+
+			String typeConstraint = null;
+			if(token.startsWith(":")) {
+				bracketIndex = token.indexOf('{');
+
+				bracketEndIndex = LangUtils.getIndexOfMatchingBracket(token, bracketIndex, Integer.MAX_VALUE, '{', '}');
+				if(bracketEndIndex == -1) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in type constraint in function definition"));
+
+					return ast;
+				}
+
+				typeConstraint = token.substring(bracketIndex, bracketEndIndex);
+				if(!LangPatterns.matches(typeConstraint, LangPatterns.PARSING_STARTS_TYPE_CONSTRAINT)) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Invalid type constraint syntax in function definition"));
+
+					return ast;
+				}
+
+				typeConstraint = typeConstraint.substring(1, typeConstraint.length() - 1);
+			}
+
+			nodes.addAll(parseFunctionDefinition(functionName, overloaded, parameterList, typeConstraint, lines).getChildren());
+
+			return ast;
+		}
+
+		//Struct definition
+		if(LangPatterns.matches(token, LangPatterns.PARSING_STRUCT_DEFINITION)) {
+			//Skip "struct "
+			token = token.substring(7);
+
+			String structName = token.substring(0, token.length() - 1).trim();
+
+			nodes.addAll(parseStructDefinition(structName, lines).getChildren());
+
+			return ast;
+		}
+
 		//Class definition
 		if(LangPatterns.matches(token, LangPatterns.PARSING_CLASS_DEFINITION)) {
 			//Skip "class "
@@ -1552,18 +1613,6 @@ public final class LangParser {
 			}
 
 			nodes.addAll(parseClassDefinition(className, bracketIndex == -1?"":token.substring(1, token.length() - 1), lines).getChildren());
-
-			return ast;
-		}
-
-		//Struct definition
-		if(LangPatterns.matches(token, LangPatterns.PARSING_STRUCT_DEFINITION)) {
-			//Skip "struct "
-			token = token.substring(7);
-
-			String structName = token.substring(0, token.length() - 1).trim();
-
-			nodes.addAll(parseStructDefinition(structName, lines).getChildren());
 
 			return ast;
 		}
@@ -1721,15 +1770,15 @@ public final class LangParser {
 					}
 					
 					if(functionBody.trim().equals("{")) {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, parameterList,
 								functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
 					}else if(lrvalue.endsWith("{") && (lrvalue.charAt(lrvalue.length() - 2) != '\\' ||
 							LangUtils.isBackslashAtIndexEscaped(lrvalue, lrvalue.length() - 2))) {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, parameterList,
 								functionReturnValueTypeConstraint, parseLines(functionBody, true, lines),
 								lineNumberFrom, lineNumber));
 					}else {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, parameterList,
 								functionReturnValueTypeConstraint, parseLines(functionBody, true, null),
 								lineNumberFrom, lineNumber));
 					}
@@ -1766,6 +1815,21 @@ public final class LangParser {
 		nodes.addAll(parseToken(lrvalue, lines).getChildren());
 		
 		return ast;
+	}
+
+	private AbstractSyntaxTree parseFunctionDefinition(String functionName, boolean overloaded, String parameterList,
+													   String functionReturnValueTypeConstraint, BufferedReader lines) throws IOException {
+		AbstractSyntaxTree ast = new AbstractSyntaxTree();
+		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
+
+		int lineNumberFrom = lineNumber;
+
+		List<AbstractSyntaxTree.Node> parameterListNodes = parseFunctionParameterList(parameterList, true).getChildren();
+
+		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(functionName, overloaded, parameterListNodes,
+					functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
+
+		 return ast;
 	}
 
 	private AbstractSyntaxTree parseStructDefinition(String structName, BufferedReader lines) throws IOException {

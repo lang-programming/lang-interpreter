@@ -812,14 +812,19 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class FunctionDefinitionNode implements Node {
+		private final String functionName;
+		private final boolean overloaded;
 		private final List<Node> parameterList;
 		private final String returnValueTypeConstraint;
 		private final AbstractSyntaxTree functionBody;
 		private final int lineNumberFrom;
 		private final int lineNumberTo;
 		
-		public FunctionDefinitionNode(List<Node> parameterList, String returnValueTypeConstraint,
-				AbstractSyntaxTree functionBody, int lineNumberFrom, int lineNumberTo) {
+		public FunctionDefinitionNode(String functionName, boolean overloaded, List<Node> parameterList,
+									  String returnValueTypeConstraint, AbstractSyntaxTree functionBody,
+									  int lineNumberFrom, int lineNumberTo) {
+			this.functionName = functionName;
+			this.overloaded = overloaded;
 			this.parameterList = new ArrayList<>(parameterList);
 			this.returnValueTypeConstraint = returnValueTypeConstraint;
 			this.functionBody = functionBody;
@@ -846,7 +851,15 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public int getLineNumberTo() {
 			return lineNumberTo;
 		}
-		
+
+		public String getFunctionName() {
+			return functionName;
+		}
+
+		public boolean isOverloaded() {
+			return overloaded;
+		}
+
 		public String getReturnValueTypeConstraint() {
 			return returnValueTypeConstraint;
 		}
@@ -862,7 +875,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append(lineNumberFrom);
 			builder.append(", LineTo: ");
 			builder.append(lineNumberTo);
-			builder.append("}, ParameterList: {\n");
+			builder.append("}, FunctionName: \"");
+			builder.append(functionName);
+			builder.append("\", Overloaded: ");
+			builder.append(overloaded);
+			builder.append(", ParameterList: {\n");
 			parameterList.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -897,12 +914,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return false;
 			
 			FunctionDefinitionNode that = (FunctionDefinitionNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && this.parameterList.equals(that.parameterList) && this.functionBody.equals(that.functionBody);
+			return this.getNodeType().equals(that.getNodeType()) && this.functionName.equals(that.functionName) &&
+					this.overloaded == that.overloaded && this.parameterList.equals(that.parameterList) &&
+					this.functionBody.equals(that.functionBody);
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(this.getNodeType(), this.parameterList, this.functionBody);
+			return Objects.hash(this.getNodeType(), this.functionName, this.overloaded, this.parameterList, this.functionBody);
 		}
 	}
 	

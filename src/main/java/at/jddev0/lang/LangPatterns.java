@@ -168,6 +168,10 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_STARTS_WITH_VAR_NAME_PTR_OR_DEREFERENCE = Pattern.compile("(\\[\\[\\w+\\]\\]::)?\\$(\\*+\\w+|\\[+\\w+\\]+|\\*+\\[+\\w+\\]+).*");
 	/**
+	 * RegEx: "<code>function (overload )?(\$|fp\.)\w+\s*\(.*\)(:\{.*\})?\s*\{</code>"
+	 */
+	public static final Pattern PARSING_FUNCTION_DEFINITION = Pattern.compile("function (overload )?(\\$|fp\\.)\\w+\\s*\\(.*\\)(:\\{.*\\})?\\s*\\{");
+	/**
 	 * RegEx: "<code>struct (\$|&)\w+\s*\{</code>"
 	 */
 	public static final Pattern PARSING_STRUCT_DEFINITION = Pattern.compile("struct (\\$|&)\\w+\\s*\\{");
