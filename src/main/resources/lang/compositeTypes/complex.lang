@@ -127,12 +127,12 @@ class &Complex {
 }
 
 
-fp.__complex = ($real{number}, $imag{number}):{OBJECT} -> {
+function complex($real{number}, $imag{number}):{OBJECT} {
     return &Complex($real, $imag)
 }
 
 $__LANG_INFO__creal=Returns the real value of &z
-fp.__creal = (&z{OBJECT}):{DOUBLE} -> {
+function creal(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
@@ -141,7 +141,7 @@ fp.__creal = (&z{OBJECT}):{DOUBLE} -> {
 }
 
 $__LANG_INFO__cimag=Returns the imaginary value of &z
-fp.__cimag = (&z{OBJECT}):{DOUBLE} -> {
+function cimag(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
@@ -150,7 +150,7 @@ fp.__cimag = (&z{OBJECT}):{DOUBLE} -> {
 }
 
 $__LANG_INFO__cabs=Returns the absolute value of &z
-fp.__cabs = (&z{OBJECT}):{DOUBLE} -> {
+function cabs(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
@@ -159,7 +159,7 @@ fp.__cabs = (&z{OBJECT}):{DOUBLE} -> {
 }
 
 $__LANG_INFO__conj=Returns a conjugated copy of &z
-fp.__conj = (&z{OBJECT}):{OBJECT} -> {
+function conj(&z{OBJECT}):{OBJECT} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
@@ -168,7 +168,7 @@ fp.__conj = (&z{OBJECT}):{OBJECT} -> {
 }
 
 $__LANG_INFO__cinv=Returns a negated copy of &z
-fp.__cinv = (&z{OBJECT}):{OBJECT} -> {
+function cinv(&z{OBJECT}):{OBJECT} {
     if(!(&z ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
@@ -177,7 +177,7 @@ fp.__cinv = (&z{OBJECT}):{OBJECT} -> {
 }
 
 $__LANG_INFO__cadd=Returns &a + &b
-fp.__cadd = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+function cadd(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
     }
@@ -190,7 +190,7 @@ fp.__cadd = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
 }
 
 $__LANG_INFO__csub=Returns &a - &b
-fp.__csub = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+function csub(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
     }
@@ -203,7 +203,7 @@ fp.__csub = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
 }
 
 $__LANG_INFO__cmul=Returns &a * &b
-fp.__cmul = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+function cmul(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
     }
@@ -216,7 +216,7 @@ fp.__cmul = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
 }
 
 $__LANG_INFO__cdiv=Returns &a / &b
-fp.__cdiv = (&a{OBJECT}, &b{OBJECT}):{OBJECT} -> {
+function cdiv(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&a") must be of type "\&Complex")
     }

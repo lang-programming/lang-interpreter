@@ -1,151 +1,151 @@
 lang.version = v1.0.0
 lang.name = Lang Standard Implementation (Math Functions)
 
-fp.__inci = ($number{number}) -> {
+function inci($number{number}) {
     return parser.op($LANG_TYPE_INT($number) + 1)
 }
 
-fp.__deci = ($number{number}) -> {
+function deci($number{number}) {
     return parser.op($LANG_TYPE_INT($number) - 1)
 }
 
-fp.__invi = ($number{number}) -> {
+function invi($number{number}) {
     return parser.op(-$LANG_TYPE_INT($number))
 }
 
-fp.__subi = ($a{number}, $b{number}) -> {
+function subi($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) - $LANG_TYPE_INT($b))
 }
 
-fp.__divi = ($a{number}, $b{number}) -> {
+function divi($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) // $LANG_TYPE_INT($b))
 }
 
-fp.__modi = ($a{number}, $b{number}) -> {
+function modi($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) % $LANG_TYPE_INT($b))
 }
 
-fp.__andi = ($a{number}, $b{number}) -> {
+function andi($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) & $LANG_TYPE_INT($b))
 }
 
-fp.__ori = ($a{number}, $b{number}) -> {
+function ori($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) | $LANG_TYPE_INT($b))
 }
 
-fp.__xori = ($a{number}, $b{number}) -> {
+function xori($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) ^ $LANG_TYPE_INT($b))
 }
 
-fp.__noti = ($number{number}) -> {
+function noti($number{number}) {
     return parser.op(~$LANG_TYPE_INT($number))
 }
 
-fp.__lshifti = ($a{number}, $b{number}) -> {
+function lshifti($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) << $LANG_TYPE_INT($b))
 }
 
-fp.__rshifti = ($a{number}, $b{number}) -> {
+function rshifti($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) >> $LANG_TYPE_INT($b))
 }
 
-fp.__rzshifti = ($a{number}, $b{number}) -> {
+function rzshifti($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_INT($a) >>> $LANG_TYPE_INT($b))
 }
 
-fp.__incl = ($number{number}) -> {
+function incl($number{number}) {
     return parser.op($LANG_TYPE_LONG($number) + 1)
 }
 
-fp.__decl = ($number{number}) -> {
+function decl($number{number}) {
     return parser.op($LANG_TYPE_LONG($number) - 1)
 }
 
-fp.__invl = ($number{number}) -> {
+function invl($number{number}) {
     return parser.op(-$LANG_TYPE_LONG($number))
 }
 
-fp.__subl = ($a{number}, $b{number}) -> {
+function subl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) - $LANG_TYPE_LONG($b))
 }
 
-fp.__divl = ($a{number}, $b{number}) -> {
+function divl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) // $LANG_TYPE_LONG($b))
 }
 
-fp.__modl = ($a{number}, $b{number}) -> {
+function modl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) % $LANG_TYPE_LONG($b))
 }
 
-fp.__andl = ($a{number}, $b{number}) -> {
+function andl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) & $LANG_TYPE_LONG($b))
 }
 
-fp.__orl = ($a{number}, $b{number}) -> {
+function orl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) | $LANG_TYPE_LONG($b))
 }
 
-fp.__xorl = ($a{number}, $b{number}) -> {
+function xorl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) ^ $LANG_TYPE_LONG($b))
 }
 
-fp.__notl = ($number{number}) -> {
+function notl($number{number}) {
     return parser.op(~$LANG_TYPE_LONG($number))
 }
 
-fp.__lshiftl = ($a{number}, $b{number}) -> {
+function lshiftl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) << $LANG_TYPE_LONG($b))
 }
 
-fp.__rshiftl = ($a{number}, $b{number}) -> {
+function rshiftl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) >> $LANG_TYPE_LONG($b))
 }
 
-fp.__rzshiftl = ($a{number}, $b{number}) -> {
+function rzshiftl($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_LONG($a) >>> $LANG_TYPE_LONG($b))
 }
 
-fp.__incf = ($number{number}) -> {
+function incf($number{number}) {
     return parser.op($LANG_TYPE_FLOAT($number) + 1)
 }
 
-fp.__decf = ($number{number}) -> {
+function decf($number{number}) {
     return parser.op($LANG_TYPE_FLOAT($number) - 1)
 }
 
-fp.__invf = ($number{number}) -> {
+function invf($number{number}) {
     return parser.op(-$LANG_TYPE_FLOAT($number))
 }
 
-fp.__subf = ($a{number}, $b{number}) -> {
+function subf($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_FLOAT($a) - $LANG_TYPE_FLOAT($b))
 }
 
-fp.__divf = ($a{number}, $b{number}) -> {
+function divf($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_FLOAT($a) // $LANG_TYPE_FLOAT($b))
 }
 
-fp.__incd = ($number{number}) -> {
+function incd($number{number}) {
     return parser.op($LANG_TYPE_DOUBLE($number) + 1)
 }
 
-fp.__decd = ($number{number}) -> {
+function decd($number{number}) {
     return parser.op($LANG_TYPE_DOUBLE($number) - 1)
 }
 
-fp.__invd = ($number{number}) -> {
+function invd($number{number}) {
     return parser.op(-$LANG_TYPE_DOUBLE($number))
 }
 
-fp.__subd = ($a{number}, $b{number}) -> {
+function subd($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_DOUBLE($a) - $LANG_TYPE_DOUBLE($b))
 }
 
-fp.__divd = ($a{number}, $b{number}) -> {
+function divd($a{number}, $b{number}) {
     return parser.op($LANG_TYPE_DOUBLE($a) // $LANG_TYPE_DOUBLE($b))
 }
 
-fp.__min = ($firstArg, &args...) -> {
+function min($firstArg, &args...) {
     $min $= $firstArg
 
     $ele
@@ -158,7 +158,7 @@ fp.__min = ($firstArg, &args...) -> {
     return $min
 }
 
-fp.__max = ($firstArg, &args...) -> {
+function max($firstArg, &args...) {
     $max $= $firstArg
 
     $ele

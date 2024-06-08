@@ -4313,8 +4313,8 @@ public final class LangInterpreter {
 			getData().var.forEach((variableName, variable) -> {
 				if(variableName.startsWith("$__LANG_INFO__") && variable.getType() == DataType.TEXT) {
 					langInfoTexts.put(variableName.substring(14), variable.getText());
-				}else if(variableName.startsWith("fp.__") && variable.getType() == DataType.FUNCTION_POINTER) {
-					String functionName = variableName.substring(5);
+				}else if(variableName.startsWith("fp.") && variable.getType() == DataType.FUNCTION_POINTER) {
+					String functionName = variableName.substring(3);
 					predefinedFunctions.put(functionName, variable.getFunctionPointer().
 							withFunctionName("func." + functionName));
 				}else if(variable.getType() == DataType.STRUCT || variable.getType() == DataType.OBJECT) {

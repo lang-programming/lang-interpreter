@@ -7,12 +7,12 @@ struct &Pair {
 }
 
 
-fp.__pair = ($first, $second):{STRUCT} -> {
+function pair($first, $second):{STRUCT} {
     return &Pair($first, $second)
 }
 
 $__LANG_INFO__pfirst=Returns the first value of &pair
-fp.__pfirst = (&pair{STRUCT}) -> {
+function pfirst(&pair{STRUCT}) {
     if(!(&pair ~~ &Pair)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&pair") must be of type "\&Pair")
     }
@@ -21,7 +21,7 @@ fp.__pfirst = (&pair{STRUCT}) -> {
 }
 
 $__LANG_INFO__psecond=Returns the second value of &pair
-fp.__psecond = (&pair{STRUCT}) -> {
+function psecond(&pair{STRUCT}) {
     if(!(&pair ~~ &Pair)) {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&pair") must be of type "\&Pair")
     }

@@ -1,7 +1,7 @@
 lang.version = v1.0.0
 lang.name = Lang Standard Implementation (System Functions)
 
-fp.__repeat = (fp.loop{FUNCTION_POINTER}, $repeatCount{number}, $breakable{bool}):{VOID} -> {
+function repeat(fp.loop{FUNCTION_POINTER}, $repeatCount{number}, $breakable{bool}):{VOID} {
     $repeatCount $= $LANG_TYPE_LONG($repeatCount)
     if($repeatCount < 0) {
         throw $LANG_ERROR_NEGATIVE_REPEAT_COUNT
@@ -29,12 +29,11 @@ fp.__repeat = (fp.loop{FUNCTION_POINTER}, $repeatCount{number}, $breakable{bool}
         }
     }
 }
-fp.repeat_overloaded_1 = (fp.loop{FUNCTION_POINTER}, $repeatCount{number}) -> {
+function overload repeat(fp.loop{FUNCTION_POINTER}, $repeatCount{number}) {
     return func.repeat(fp.loop, $repeatCount, 0)
 }
-fp.__repeat += fp.repeat_overloaded_1
 
-fp.__repeatWhile = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $breakable{bool}):{VOID} -> {
+function repeatWhile(fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $breakable{bool}):{VOID} {
     if($breakable) {
         $shouldBreak = 0
         $shouldBreakPtr = $[shouldBreak]
@@ -55,12 +54,11 @@ fp.__repeatWhile = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $brea
         }
     }
 }
-fp.repeatWhile_overloaded_1 = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}) -> {
+function overload repeatWhile(fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}) {
     return func.repeatWhile(fp.loop, fp.check, 0)
 }
-fp.__repeatWhile += fp.repeatWhile_overloaded_1
 
-fp.__repeatUntil = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $breakable{bool}):{VOID} -> {
+function repeatUntil(fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $breakable{bool}):{VOID} {
     if($breakable) {
         $shouldBreak = 0
         $shouldBreakPtr = $[shouldBreak]
@@ -81,9 +79,10 @@ fp.__repeatUntil = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}, $brea
         }
     }
 }
-fp.repeatUntil_overloaded_1 = (fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}) -> {
+function overload repeatUntil(fp.loop{FUNCTION_POINTER}, fp.check{FUNCTION_POINTER}) {
     return func.repeatUntil(fp.loop, fp.check, 0)
 }
-fp.__repeatUntil += fp.repeatUntil_overloaded_1
 
-fp.__pointerTo = ($[value]) -> return $value
+function pointerTo($[value]) {
+    return $value
+}
