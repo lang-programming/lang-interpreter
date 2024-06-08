@@ -1563,14 +1563,14 @@ public final class LangParser {
 
 				bracketEndIndex = LangUtils.getIndexOfMatchingBracket(token, bracketIndex, Integer.MAX_VALUE, '{', '}');
 				if(bracketEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in type constraint in function definition"));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in return type constraint in function definition"));
 
 					return ast;
 				}
 
-				typeConstraint = token.substring(bracketIndex, bracketEndIndex);
+				typeConstraint = token.substring(bracketIndex, bracketEndIndex + 1);
 				if(!LangPatterns.matches(typeConstraint, LangPatterns.PARSING_STARTS_TYPE_CONSTRAINT)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Invalid type constraint syntax in function definition"));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Invalid return type constraint syntax in function definition"));
 
 					return ast;
 				}
