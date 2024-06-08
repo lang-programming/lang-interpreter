@@ -2891,7 +2891,7 @@ public final class LangInterpreter {
 				stringBuilder.deleteCharAt(stringBuilder.length() - 1);
 		}
 
-		String functionDocComment = stringBuilder.toString();
+		String functionDocComment = docComment == null?null:stringBuilder.toString();
 
 		List<Node> children = node.getChildren();
 
