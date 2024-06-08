@@ -1543,6 +1543,8 @@ public final class LangParser {
 
 			int bracketIndex = token.indexOf('(');
 			String functionName = token.substring(0, bracketIndex).trim();
+			if(!functionName.startsWith("fp.") || !functionName.startsWith("$"))
+				functionName = "fp." + functionName;
 
 			int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(token, bracketIndex, Integer.MAX_VALUE, '(', ')');
 			if(bracketEndIndex == -1) {
