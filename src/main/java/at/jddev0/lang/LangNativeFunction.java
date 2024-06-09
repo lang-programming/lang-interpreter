@@ -116,7 +116,7 @@ public class LangNativeFunction extends LangBaseFunction {
 			LangInfo langInfo = methods.get(0).getAnnotation(LangInfo.class);
 			String functionInfo = langInfo == null?null:langInfo.value();
 
-			langNativeFunctions.put(functionName, new FunctionPointerObject(null, null, null, null,
+			langNativeFunctions.put(functionName, new FunctionPointerObject(null, null,
 					functionInfo, linkerFunction, deprecated, deprecatedRemoveVersion, deprecatedReplacementFunction,
 					langNativeFunction.stream().map(FunctionPointerObject.InternalFunction::new).
 							collect(Collectors.toList())));
@@ -347,8 +347,8 @@ public class LangNativeFunction extends LangBaseFunction {
 							 DataTypeConstraint returnValueTypeConstraint, Object instance, Method functionBody, String functionName,
 							 boolean hasInterpreterParameter, boolean method, boolean combinatorFunction, int combinatorFunctionCallCount,
 							 List<DataObject> combinatorProvidedArgumentList, Object[] valueDependencies) {
-		super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
-				varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
+		super(null, null, parameterList, parameterDataTypeConstraintList, parameterAnnotationList,
+				parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
 		this.methodParameterTypeList = methodParameterTypeList;
 		this.instance = instance;

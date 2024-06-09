@@ -5,6 +5,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class LangBaseFunction {
+    /**
+     * If langPath is set, the Lang path from the stack frame element which is created for the function call will be overridden
+     */
+    protected final String langPath;
+
+    /**
+     * If langFile or langPath is set, the Lang file from the stack frame element which is created for the function call will be overridden<br>
+     * This behavior allows for keeping the "&lt;shell&gt;" special case - when the Lang file is null - if a function within a stack frame element where the Lang file is null is
+     * called from within a stack frame element where Lang file is not null.
+     */
+    protected final String langFile;
+
     protected final List<DataObject> parameterList;
     protected final List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList;
     protected final List<ParameterAnnotation> parameterAnnotationList;
@@ -14,9 +26,13 @@ public class LangBaseFunction {
     protected final boolean rawVarArgsParameter;
     protected final DataObject.DataTypeConstraint returnValueTypeConstraint;
 
-    public LangBaseFunction(List<DataObject> parameterList, List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
-                            List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList, int varArgsParameterIndex, boolean textVarArgsParameter,
-                            boolean rawVarArgsParameter, DataObject.DataTypeConstraint returnValueTypeConstraint) {
+    public LangBaseFunction(String langPath, String langFile, List<DataObject> parameterList,
+                            List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
+                            List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
+                            int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
+                            DataObject.DataTypeConstraint returnValueTypeConstraint) {
+        this.langPath = langPath;
+        this.langFile = langFile;
         this.parameterList = parameterList;
         this.parameterDataTypeConstraintList = parameterDataTypeConstraintList;
         this.parameterAnnotationList = parameterAnnotationList;
@@ -25,6 +41,14 @@ public class LangBaseFunction {
         this.textVarArgsParameter = textVarArgsParameter;
         this.rawVarArgsParameter = rawVarArgsParameter;
         this.returnValueTypeConstraint = returnValueTypeConstraint;
+    }
+
+    public String getLangPath() {
+        return langPath;
+    }
+
+    public String getLangFile() {
+        return langFile;
     }
 
     public List<DataObject> getParameterList() {

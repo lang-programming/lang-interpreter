@@ -2270,17 +2270,6 @@ public final class LangInterpreter {
 		int originalSuperLevel = -1;
 
 		try {
-			String functionLangPath = fp.getLangPath();
-			String functionLangFile = fp.getLangFile();
-			
-			functionName = (functionName == null || fp.getFunctionName() != null)?fp.toString():functionName;
-			
-			//Update call stack
-			StackElement currentStackElement = getCurrentCallStackElement();
-			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
-					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
-					functionName, currentStackElement.getModule()), parentLineNumber);
-
 			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
 					this, -1);
 
@@ -2301,6 +2290,18 @@ public final class LangInterpreter {
 				originalSuperLevel = thisObject.getSuperLevel();
 				thisObject.setSuperLevel(internalFunction.getSuperLevel());
 			}
+
+			String functionLangPath = internalFunction.getLangPath();
+			String functionLangFile = internalFunction.getLangFile();
+
+			functionName = (functionName == null || fp.getFunctionName() != null)?fp.toString():functionName;
+
+			//Update call stack
+			StackElement currentStackElement = getCurrentCallStackElement();
+			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
+					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
+					functionName, currentStackElement.getModule()), parentLineNumber);
+
 
 			switch(internalFunction.getFunctionPointerType()) {
 				case FunctionPointerObject.NORMAL:
@@ -3009,21 +3010,22 @@ public final class LangInterpreter {
 
 		StackElement currentStackElement = getCurrentCallStackElement();
 
-		LangNormalFunction normalFunction = new LangNormalFunction(parameterList, parameterDataTypeConstraintList,
+		LangNormalFunction normalFunction = new LangNormalFunction(currentStackElement.getLangPath(),
+				currentStackElement.getLangFile(), parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter,
 				false, returnValueTypeConstraint, lineNumberFromList, lineNumberToList, node.getFunctionBody());
 
 		if(functionPointerDataObject == null)
-			return new DataObject().setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
-					currentStackElement.getLangFile(), normalFunction).withFunctionInfo(functionDocComment));
+			return new DataObject().setFunctionPointer(new FunctionPointerObject(normalFunction).
+					withFunctionInfo(functionDocComment));
 
 		try {
 			if(overloaded) {
 				functionPointerDataObject.setFunctionPointer(functionPointerDataObject.getFunctionPointer().
 						withAddedFunction(new FunctionPointerObject.InternalFunction(normalFunction)));
 			}else {
-				functionPointerDataObject.setFunctionPointer(new FunctionPointerObject(currentStackElement.getLangPath(),
-						currentStackElement.getLangFile(), normalFunction).withFunctionInfo(functionDocComment)).
+				functionPointerDataObject.setFunctionPointer(new FunctionPointerObject(normalFunction).
+								withFunctionInfo(functionDocComment)).
 						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.FUNCTION_POINTER));
 			}
 		}catch(DataTypeConstraintViolatedException e) {

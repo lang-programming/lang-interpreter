@@ -9,12 +9,13 @@ public class LangNormalFunction extends LangBaseFunction {
     private final List<Integer> lineNumberToList;
     private final AbstractSyntaxTree functionBody;
 
-    LangNormalFunction(List<DataObject> parameterList, List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
-                              List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList, int varArgsParameterIndex, boolean textVarArgsParameter,
-                              boolean rawVarArgsParameter, DataObject.DataTypeConstraint returnValueTypeConstraint,
-                              List<Integer> lineNumberFromList, List<Integer> lineNumberToList,
-                              AbstractSyntaxTree functionBody) {
-        super(parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
+    LangNormalFunction(String langPath, String langFile, List<DataObject> parameterList,
+                       List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
+                       List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList, int varArgsParameterIndex, boolean textVarArgsParameter,
+                       boolean rawVarArgsParameter, DataObject.DataTypeConstraint returnValueTypeConstraint,
+                       List<Integer> lineNumberFromList, List<Integer> lineNumberToList,
+                       AbstractSyntaxTree functionBody) {
+        super(langPath, langFile, parameterList, parameterDataTypeConstraintList, parameterAnnotationList, parameterInfoList,
                 varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
 
         this.lineNumberFromList = lineNumberFromList;

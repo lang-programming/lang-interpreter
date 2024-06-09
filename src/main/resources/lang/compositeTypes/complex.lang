@@ -137,7 +137,7 @@ function creal(&z{OBJECT}):{DOUBLE} {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
 
-    return parser.op(&z::real)
+    return parser.op(&z::$real)
 }
 
 ## Returns the imaginary value of &z
@@ -146,7 +146,7 @@ function cimag(&z{OBJECT}):{DOUBLE} {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
 
-    return parser.op(&z::imag)
+    return parser.op(&z::$imag)
 }
 
 ## Returns the absolute value of &z
