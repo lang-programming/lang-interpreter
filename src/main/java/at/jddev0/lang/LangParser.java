@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 /**
  * Lang-Module<br>
- * Parsing of Lang files into an AST structure for LangInterpreter
+ * Parsing of Lang files into an AST structure for the LangInterpreter
  * 
  * @author JDDev0
  * @version v1.0.0
@@ -27,6 +27,7 @@ public final class LangParser {
 	
 	public void resetPositionVars() {
 		currentLine = null;
+		langDocComment = null;
 		lineNumber = 0;
 	}
 	
