@@ -164,7 +164,7 @@ function conj(&z{OBJECT}):{OBJECT} {
         throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Argument 1 ("\&z") must be of type "\&Complex")
     }
 
-    return parser.op(&z::conj())
+    return parser.op(&z::conjugate())
 }
 
 ## Returns a negated copy of &z
