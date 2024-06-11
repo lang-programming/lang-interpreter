@@ -122,7 +122,7 @@ function subf($a{number}, $b{number}) {
 }
 
 function divf($a{number}, $b{number}) {
-    return parser.op($LANG_TYPE_FLOAT($a) // $LANG_TYPE_FLOAT($b))
+    return parser.op($LANG_TYPE_FLOAT($a) / $LANG_TYPE_FLOAT($b))
 }
 
 function incd($number{number}) {
@@ -142,7 +142,7 @@ function subd($a{number}, $b{number}) {
 }
 
 function divd($a{number}, $b{number}) {
-    return parser.op($LANG_TYPE_DOUBLE($a) // $LANG_TYPE_DOUBLE($b))
+    return parser.op($LANG_TYPE_DOUBLE($a) / $LANG_TYPE_DOUBLE($b))
 }
 
 function min($firstArg, &args...) {
