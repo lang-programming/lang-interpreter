@@ -23,7 +23,7 @@ public final class LangConversions {
 	}
 
 	private DataObject callConversionMethod(String conversionName, DataObject operand,
-										  int lineNumber) {
+										  CodePosition pos) {
 		String methodName = "to:" + conversionName;
 
         if(operand.getType() != DataType.OBJECT || operand.getObject().isClass())
@@ -33,7 +33,7 @@ public final class LangConversions {
 		if(method == null)
 			return null;
 
-		DataObject ret = interpreter.callFunctionPointer(method, methodName, new ArrayList<>(0), lineNumber);
+		DataObject ret = interpreter.callFunctionPointer(method, methodName, new ArrayList<>(0), pos);
 		if(ret == null)
 			return new DataObject().setVoid();
 
@@ -41,7 +41,7 @@ public final class LangConversions {
 	}
 
 	//DataType conversion methods
-	private String convertByteBufferToText(DataObject operand, int lineNumber) {
+	private String convertByteBufferToText(DataObject operand, CodePosition pos) {
 		StringBuilder builder = new StringBuilder();
 		if(operand.getByteBuffer().length > 0) {
 			final String HEX_DIGITS = "0123456789ABCDEF";
@@ -57,7 +57,7 @@ public final class LangConversions {
 		return builder.toString();
 	}
 
-	private String convertToTextMaxRecursion(DataObject ele, int lineNumber) {
+	private String convertToTextMaxRecursion(DataObject ele, CodePosition pos) {
 		if(ele.getType() == DataType.ARRAY) {
 			return "<Array[" + ele.getArray().length + "]>";
 		}else if(ele.getType() == DataType.LIST) {
@@ -71,11 +71,11 @@ public final class LangConversions {
 		}
 	}
 
-	private String convertArrayToText(DataObject operand, int recursionStep, int lineNumber) {
+	private String convertArrayToText(DataObject operand, int recursionStep, CodePosition pos) {
 		StringBuilder builder = new StringBuilder("[");
 		if(operand.getArray().length > 0) {
 			for(DataObject ele:operand.getArray()) {
-				builder.append(toText(ele, recursionStep - 1, lineNumber));
+				builder.append(toText(ele, recursionStep - 1, pos));
 				builder.append(", ");
 			}
 			builder.delete(builder.length() - 2, builder.length());
@@ -84,11 +84,11 @@ public final class LangConversions {
 		return builder.toString();
 	}
 
-	private String convertListToText(DataObject operand, int recursionStep, int lineNumber) {
+	private String convertListToText(DataObject operand, int recursionStep, CodePosition pos) {
 		StringBuilder builder = new StringBuilder("[");
 		if(!operand.getList().isEmpty()) {
 			for(DataObject ele:operand.getList()) {
-				builder.append(toText(ele, recursionStep - 1, lineNumber));
+				builder.append(toText(ele, recursionStep - 1, pos));
 				builder.append(", ");
 			}
 			builder.delete(builder.length() - 2, builder.length());
@@ -97,7 +97,7 @@ public final class LangConversions {
 		return builder.toString();
 	}
 
-	private String convertStructToText(DataObject operand, int recursionStep, int lineNumber) {
+	private String convertStructToText(DataObject operand, int recursionStep, CodePosition pos) {
 		StringBuilder builder = new StringBuilder("{");
 		String[] memberNames = operand.getStruct().getMemberNames();
 		if(memberNames.length > 0) {
@@ -107,7 +107,7 @@ public final class LangConversions {
 			}else {
 				for(String memberName:memberNames) {
 					builder.append(memberName).append(": ");
-					builder.append(toText(operand.getStruct().getMember(memberName), recursionStep - 1, lineNumber));
+					builder.append(toText(operand.getStruct().getMember(memberName), recursionStep - 1, pos));
 					builder.append(", ");
 				}
 			}
@@ -118,13 +118,13 @@ public final class LangConversions {
 		return builder.toString();
 	}
 
-	private String toText(DataObject operand, int recursionStep, int lineNumber) {
-		DataObject ret = callConversionMethod("text", operand, lineNumber);
+	private String toText(DataObject operand, int recursionStep, CodePosition pos) {
+		DataObject ret = callConversionMethod("text", operand, pos);
 		if(ret != null)
 			operand = ret;
 
 		if(recursionStep <= 0) {
-			return convertToTextMaxRecursion(operand, lineNumber);
+			return convertToTextMaxRecursion(operand, pos);
 		}
 
 		switch(operand.getType()) {
@@ -132,14 +132,14 @@ public final class LangConversions {
 			case ARGUMENT_SEPARATOR:
 				return operand.getText();
 			case BYTE_BUFFER:
-				return convertByteBufferToText(operand, lineNumber);
+				return convertByteBufferToText(operand, pos);
 			case ARRAY:
-				return convertArrayToText(operand, recursionStep, lineNumber);
+				return convertArrayToText(operand, recursionStep, pos);
 			case LIST:
-				return convertListToText(operand, recursionStep, lineNumber);
+				return convertListToText(operand, recursionStep, pos);
 			case VAR_POINTER:
 				DataObject var = operand.getVarPointer().getVar();
-				return "-->{" + toText(var, recursionStep - 1, lineNumber) + "}";
+				return "-->{" + toText(var, recursionStep - 1, pos) + "}";
 
 			case FUNCTION_POINTER:
 				if(operand.getVariableName() != null)
@@ -147,7 +147,7 @@ public final class LangConversions {
 
 				return operand.getFunctionPointer().toString();
 			case STRUCT:
-				return convertStructToText(operand, recursionStep, lineNumber);
+				return convertStructToText(operand, recursionStep, pos);
 			case OBJECT:
 				return operand.getObject().toString();
 			case VOID:
@@ -172,11 +172,11 @@ public final class LangConversions {
 
 		return null;
 	}
-	public String toText(DataObject operand, int lineNumber) {
-		return toText(operand, MAX_TO_TEXT_RECURSION_DEPTH, lineNumber);
+	public String toText(DataObject operand, CodePosition pos) {
+		return toText(operand, MAX_TO_TEXT_RECURSION_DEPTH, pos);
 	}
-	public Character toChar(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("char", operand, lineNumber);
+	public Character toChar(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("char", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -209,8 +209,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public Integer toInt(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("int", operand, lineNumber);
+	public Integer toInt(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("int", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -256,8 +256,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public Long toLong(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("long", operand, lineNumber);
+	public Long toLong(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("long", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -303,8 +303,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public Float toFloat(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("float", operand, lineNumber);
+	public Float toFloat(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("float", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -355,8 +355,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public Double toDouble(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("double", operand, lineNumber);
+	public Double toDouble(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("double", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -407,8 +407,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public byte[] toByteBuffer(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("byteBuffer", operand, lineNumber);
+	public byte[] toByteBuffer(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("byteBuffer", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -438,8 +438,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public DataObject[] toArray(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("array", operand, lineNumber);
+	public DataObject[] toArray(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("array", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -477,8 +477,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public LinkedList<DataObject> toList(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("list", operand, lineNumber);
+	public LinkedList<DataObject> toList(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("list", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -518,8 +518,8 @@ public final class LangConversions {
 	}
 
 	//Special conversion methods
-	public boolean toBool(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("bool", operand, lineNumber);
+	public boolean toBool(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("bool", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -562,8 +562,8 @@ public final class LangConversions {
 		return false;
 	}
 
-	public Number toNumber(DataObject operand, int lineNumber) {
-		DataObject ret = callConversionMethod("number", operand, lineNumber);
+	public Number toNumber(DataObject operand, CodePosition pos) {
+		DataObject ret = callConversionMethod("number", operand, pos);
 		if(ret != null)
 			operand = ret;
 
@@ -636,8 +636,8 @@ public final class LangConversions {
 
 		return null;
 	}
-	public DataObject convertToNumberAndCreateNewDataObject(DataObject operand, int lineNumber) {
-		Number number = toNumber(operand, lineNumber);
+	public DataObject convertToNumberAndCreateNewDataObject(DataObject operand, CodePosition pos) {
+		Number number = toNumber(operand, pos);
 		if(number == null)
 			return new DataObject().setNull();
 

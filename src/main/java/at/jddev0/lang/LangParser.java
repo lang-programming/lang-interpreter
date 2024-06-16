@@ -73,8 +73,7 @@ public final class LangParser {
 				Token token = tokens.remove(0);
 
 				if(!tokens.isEmpty())
-					ast.addChild(new AbstractSyntaxTree.ParsingErrorNode(token.pos.lineNumberFrom,
-							token.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+					ast.addChild(new AbstractSyntaxTree.ParsingErrorNode(token.pos, ParsingError.LEXER_ERROR,
 							"Tokens after EOF are not allowed"));
 
 				break;
@@ -205,15 +204,13 @@ public final class LangParser {
 
 					switch(t.getTokenType()) {
 						case LITERAL_NULL:
-							leftNodes.add(new AbstractSyntaxTree.NullValueNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo));
+							leftNodes.add(new AbstractSyntaxTree.NullValueNode(t.pos));
 							break;
 
 						case LITERAL_TEXT:
 						case ASSIGNMENT:
 						case CLOSING_BRACKET:
-							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, t.getValue()));
+							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 							break;
 
@@ -224,15 +221,13 @@ public final class LangParser {
 
 						case ESCAPE_SEQUENCE:
 							if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-								leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-										t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+								leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 										"Invalid escape sequence: " + t.getValue()));
 
 								break;
 							}
 
-							leftNodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, t.getValue().charAt(1)));
+							leftNodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
 
 							break;
 
@@ -263,12 +258,11 @@ public final class LangParser {
 						t = tokens.remove(0);
 
 						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
-							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, t.getValue()));
+							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
-							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()
+							));
 					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
 
 					break;
@@ -332,8 +326,7 @@ public final class LangParser {
 					if(t.getTokenType() == Token.TokenType.OPENING_BRACKET && value.equals("(")) {
 						int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 						if(endIndex == -1) {
-							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.BRACKET_MISMATCH,
 									"Bracket in operator expression is missing"));
 
 							break tokenProcessing;
@@ -366,9 +359,8 @@ public final class LangParser {
 							List<Token> functionCall = new ArrayList<>(tokens.subList(1, endIndex));
 							tokens.subList(0, endIndex + 1).clear();
 
-							leftNodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "",
-									convertCommaOperatorsToArgumentSeparators(parseOperationExpr(functionCall, type)),
-									pos.lineNumberFrom, pos.lineNumberTo));
+							leftNodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode(pos, "", "",
+									convertCommaOperatorsToArgumentSeparators(parseOperationExpr(functionCall, type))));
 
 							continue tokenProcessing;
 						}
@@ -383,8 +375,8 @@ public final class LangParser {
 
 						int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, startsWithOptionalMarker?1:0, Integer.MAX_VALUE, "[", "]", true);
 						if(endIndex == -1) {
-							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
-									ParsingError.BRACKET_MISMATCH, "Bracket in operator expression is missing"));
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.BRACKET_MISMATCH,
+									"Bracket in operator expression is missing"));
 
 							break tokenProcessing;
 						}
@@ -950,8 +942,7 @@ public final class LangParser {
 
 						parseNumberToken(combinedNumberToken, leftNodes);
 					}else {
-						leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, value));
+						leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, value));
 					}
 
 					break;
@@ -980,8 +971,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
-					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for operation expression: \"" + t.getTokenType().name() + "\""));
 
 					break tokenProcessing;
@@ -1040,8 +1030,7 @@ public final class LangParser {
 				nodes.add(leftSideOperand);
 
 			//Add argument separator
-			nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(operatorNode.getLineNumberFrom(), operatorNode.getLineNumberTo(),
-					", "));
+			nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(operatorNode.getPos(), ", "));
 
 			//Add right side operand
 			nodes.add(operatorNode.getRightSideOperand());
@@ -1089,10 +1078,8 @@ public final class LangParser {
 				tokens.remove(0);
 
 				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(
-						variableNameToken.pos.lineNumberFrom, variableNameToken.pos.lineNumberTo,
-						variableNameToken.getValue()),
-						new AbstractSyntaxTree.NullValueNode(variableNameToken.pos.lineNumberFrom,
-								variableNameToken.pos.lineNumberTo));
+						variableNameToken.pos, variableNameToken.getValue()),
+						new AbstractSyntaxTree.NullValueNode(variableNameToken.pos));
 			}
 
 			return null;
@@ -1117,10 +1104,10 @@ public final class LangParser {
 				trimFirstLine(tokens);
 
 				//The assignment value for empty simple assignments will be set to empty text ""
-				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(pos.lineNumberFrom,
-						pos.lineNumberTo, lvalueTokens.get(0).getValue()), (isSimpleAssignment?
-						parseSimpleAssignmentValue(tokens):parseLRvalue(tokens, true)).
-						convertToNode());
+				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(
+						pos, lvalueTokens.get(0).getValue()),
+						(isSimpleAssignment?parseSimpleAssignmentValue(tokens):parseLRvalue(tokens, true)).
+								convertToNode());
 			}
 
 			String lvalue = lvalueTokens.stream().map(Token::toRawString).collect(Collectors.joining());
@@ -1140,9 +1127,9 @@ public final class LangParser {
 				tokens.subList(0, assignmentIndex + 1).clear();
 
 				//The translation value for empty simple translation will be set to empty text ""
-				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.TextValueNode(pos.lineNumberFrom,
-						pos.lineNumberTo, lvalue), (isSimpleAssignment?parseSimpleAssignmentValue(tokens):
-						parseLRvalue(tokens, true)).convertToNode());
+				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.TextValueNode(pos, lvalue),
+						(isSimpleAssignment?parseSimpleAssignmentValue(tokens):
+								parseLRvalue(tokens, true)).convertToNode());
 			}
 
 		}
@@ -1154,8 +1141,7 @@ public final class LangParser {
 			tokens.subList(0, tokenCountFirstLine).clear();
 
 			return new AbstractSyntaxTree.AssignmentNode((isVariableAssignment?parseLRvalue(lvalueTokens, false):parseTranslationKey(lvalueTokens)).convertToNode(),
-					new AbstractSyntaxTree.NullValueNode(assignmentToken.pos.lineNumberFrom,
-							assignmentToken.pos.lineNumberTo));
+					new AbstractSyntaxTree.NullValueNode(assignmentToken.pos));
 		}
 
 		if(!isInnerAssignment && LangPatterns.matches(assignmentToken.getValue(), LangPatterns.PARSING_ASSIGNMENT_OPERATOR)) {
@@ -1251,8 +1237,7 @@ public final class LangParser {
 				rvalueNode = returnedNode != null?returnedNode:parseLRvalue(tokens, true).convertToNode();
 			}else {
 				if(operator == null)
-					rvalueNode = new AbstractSyntaxTree.ParsingErrorNode(assignmentToken.pos.lineNumberFrom,
-							assignmentToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT);
+					rvalueNode = new AbstractSyntaxTree.ParsingErrorNode(assignmentToken.pos, ParsingError.INVALID_ASSIGNMENT);
 				else if(operator == AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON)
 					rvalueNode = parseCondition(tokens);
 				else if(operator == AbstractSyntaxTree.OperationNode.Operator.MATH_NON)
@@ -1310,8 +1295,7 @@ public final class LangParser {
 						tokens.get(0).getValue().equals("(")) {
 					int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 					if(argumentsEndIndex == -1) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-								tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
 								"Bracket for con.break or con.continue is missing"));
 						return ast;
 					}
@@ -1326,8 +1310,7 @@ public final class LangParser {
 				CodePosition pos = conExpressionToken.pos.combine(lastToken.pos);
 
 				AbstractSyntaxTree.Node numberNode = argumentNodes == null?null:(argumentNodes.size() == 1?argumentNodes.get(0):new AbstractSyntaxTree.ListNode(argumentNodes));
-				ast.addChild(new AbstractSyntaxTree.LoopStatementContinueBreakStatement(numberNode, pos.lineNumberFrom, pos.lineNumberTo,
-						conExpression.equals("con.continue")));
+				ast.addChild(new AbstractSyntaxTree.LoopStatementContinueBreakStatement(pos, numberNode, conExpression.equals("con.continue")));
 				return ast;
 			}else if(conExpression.equals("con.try") || conExpression.equals("con.softtry") || conExpression.equals("con.nontry")) {
 				List<AbstractSyntaxTree.TryStatementPartNode> tryStatmentParts = new ArrayList<>();
@@ -1358,16 +1341,14 @@ public final class LangParser {
 
 						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
 								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
-									ParsingError.INVALID_CON_PART));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						tokens.remove(tokenCountFirstLine - 1);
 
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine == 0 || tokens.get(0).getTokenType() != Token.TokenType.OTHER)
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
-									ParsingError.INVALID_CON_PART));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						conExpression = tokens.get(0).getValue();
 
@@ -1390,8 +1371,7 @@ public final class LangParser {
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(0).getValue().equals("(")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tryStatementPartToken.pos.lineNumberFrom,
-									tryStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tryStatementPartToken.pos, ParsingError.INVALID_CON_PART,
 									"Try/Softtry/Nontry/Finally/Else part with arguments"));
 
 							return ast;
@@ -1412,8 +1392,7 @@ public final class LangParser {
 									tokens.get(0).getValue().equals("(")) {
 								int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 								if(argumentsEndIndex == -1) {
-									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-											tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
 											"Missing catch statement arguments"));
 									return ast;
 								}
@@ -1426,8 +1405,8 @@ public final class LangParser {
 							}
 
 							if(tokenCountFirstLine != 0) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tryStatementPartToken.pos.lineNumberFrom,
-										tryStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART, "Trailing stuff behind arguments"));
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tryStatementPartToken.pos, ParsingError.INVALID_CON_PART,
+										"Trailing stuff behind arguments"));
 								return ast;
 							}
 						}
@@ -1437,40 +1416,43 @@ public final class LangParser {
 						break;
 					}else {
 						//TODO lineNumber
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "Try statement part is invalid"));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.INVALID_CON_PART,
+								"Try statement part is invalid"));
 						return ast;
 					}
 
 					AbstractSyntaxTree tryBody = parseTokens(tokens);
 					if(tryBody == null) {
 						//TODO line numbers
-						nodes.add(new AbstractSyntaxTree.TryStatementNode(tryStatmentParts, -1, -1));
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "In try body"));
+						nodes.add(new AbstractSyntaxTree.TryStatementNode(CodePosition.EMPTY, tryStatmentParts));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In try body"
+						));
 
 						return ast;
 					}
 
 					//TODO line numbers
 					if(conExpression.equals("con.try")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartTryNode(tryBody, -1, -1));
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartTryNode(CodePosition.EMPTY, tryBody));
 					}else if(conExpression.equals("con.softtry")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartSoftTryNode(tryBody, -1, -1));
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartSoftTryNode(CodePosition.EMPTY, tryBody));
 					}else if(conExpression.equals("con.nontry")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartNonTryNode(tryBody, -1, -1));
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartNonTryNode(CodePosition.EMPTY, tryBody));
 					}else if(conExpression.equals("con.catch")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartCatchNode(tryBody, -1, -1,
-								tryArguments == null?null:parseFunctionParameterList(tryArguments, false).getChildren()));
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartCatchNode(CodePosition.EMPTY, tryBody,
+								tryArguments == null?null:parseFunctionParameterList(tryArguments, false).
+										getChildren()));
 					}else if(conExpression.equals("con.else")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartElseNode(tryBody, -1, -1));
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartElseNode(CodePosition.EMPTY, tryBody));
 					}else if(conExpression.equals("con.finally")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartFinallyNode(tryBody, -1, -1));
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartFinallyNode(CodePosition.EMPTY, tryBody));
 					}
 
 					firstStatement = false;
 				}
 
 				//TODO line numbers
-				nodes.add(new AbstractSyntaxTree.TryStatementNode(tryStatmentParts, -1, -1));
+				nodes.add(new AbstractSyntaxTree.TryStatementNode(CodePosition.EMPTY, tryStatmentParts));
 				return ast;
 			}else if(conExpression.equals("con.loop") || conExpression.equals("con.while") || conExpression.equals("con.until") ||
 					conExpression.equals("con.repeat") || conExpression.equals("con.foreach")) {
@@ -1503,16 +1485,14 @@ public final class LangParser {
 
 						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
 								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
-									ParsingError.INVALID_CON_PART));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						tokens.remove(tokenCountFirstLine - 1);
 
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine == 0 || tokens.get(0).getTokenType() != Token.TokenType.OTHER)
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
-									ParsingError.INVALID_CON_PART));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						conExpression = tokens.get(0).getValue();
 
@@ -1534,8 +1514,7 @@ public final class LangParser {
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(0).getValue().equals("(")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
-									loopStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos, ParsingError.INVALID_CON_PART,
 									"Loop/Else part with arguments"));
 
 							return ast;
@@ -1548,8 +1527,8 @@ public final class LangParser {
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine == 0) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
-									loopStatementPartToken.pos.lineNumberTo, ParsingError.CONT_FLOW_ARG_MISSING, "Missing loop statement arguments"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos, ParsingError.CONT_FLOW_ARG_MISSING,
+									"Missing loop statement arguments"));
 
 							return ast;
 						}
@@ -1558,8 +1537,7 @@ public final class LangParser {
 								tokens.get(0).getValue().equals("(")) {
 							int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 							if(argumentsEndIndex == -1) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-										tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
 										"Missing loop statement arguments"));
 								return ast;
 							}
@@ -1568,14 +1546,14 @@ public final class LangParser {
 							tokens.subList(0, argumentsEndIndex + 1).clear();
 							tokenCountFirstLine -= argumentsEndIndex + 1;
 						}else {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
-									loopStatementPartToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH, "Bracket for loop statement is missing"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos, ParsingError.BRACKET_MISMATCH,
+									"Bracket for loop statement is missing"));
 							return ast;
 						}
 
 						if(tokenCountFirstLine != 0) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
-									loopStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART, "Trailing stuff behind loop arguments"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos, ParsingError.INVALID_CON_PART,
+									"Trailing stuff behind loop arguments"));
 							return ast;
 						}
 					}else if(!blockBracketFlag && conExpression.equals("con.endloop")) {
@@ -1584,32 +1562,36 @@ public final class LangParser {
 						break;
 					}else {
 						//TODO lineNumber
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "Loop statement part is invalid"));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.INVALID_CON_PART,
+								"Loop statement part is invalid"));
 						return ast;
 					}
 
 					AbstractSyntaxTree loopBody = parseTokens(tokens);
 					if(loopBody == null) {
 						//TODO line numbers
-						nodes.add(new AbstractSyntaxTree.LoopStatementNode(loopStatmentParts, -1, -1));
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "In loop body"));
+						nodes.add(new AbstractSyntaxTree.LoopStatementNode(CodePosition.EMPTY, loopStatmentParts));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In loop body"
+						));
 
 						return ast;
 					}
 
 					//TODO line numbers
 					if(conExpression.equals("con.else")) {
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartElseNode(loopBody, -1, -1));
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartElseNode(CodePosition.EMPTY, loopBody));
 					}else if(conExpression.equals("con.loop")) {
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartLoopNode(loopBody, -1, -1));
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartLoopNode(CodePosition.EMPTY, loopBody));
 					}else if(conExpression.equals("con.while")) {
 						AbstractSyntaxTree.OperationNode conNonNode = new AbstractSyntaxTree.OperationNode(parseOperationExpr(loopCondition),
 								AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartWhileNode(loopBody, -1, -1, conNonNode));
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartWhileNode(CodePosition.EMPTY, loopBody, conNonNode
+						));
 					}else if(conExpression.equals("con.until")) {
 						AbstractSyntaxTree.OperationNode conNonNode = new AbstractSyntaxTree.OperationNode(parseOperationExpr(loopCondition),
 								AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartUntilNode(loopBody, -1, -1, conNonNode));
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartUntilNode(CodePosition.EMPTY, loopBody, conNonNode
+						));
 					}else if(conExpression.startsWith("con.repeat") || conExpression.startsWith("con.foreach")) {
 						List<AbstractSyntaxTree.Node> arguments = convertCommaOperatorsToArgumentSeparators(parseOperationExpr(loopCondition));
 						Iterator<AbstractSyntaxTree.Node> argumentIter = arguments.iterator();
@@ -1627,7 +1609,8 @@ public final class LangParser {
 							varPointerNode = node;
 						}
 						if(!flag) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "con.repeat or con.foreach arguments are invalid"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.INVALID_CON_PART,
+									"con.repeat or con.foreach arguments are invalid"));
 							return ast;
 						}
 
@@ -1636,20 +1619,22 @@ public final class LangParser {
 							AbstractSyntaxTree.Node node = argumentIter.next();
 
 							if(node.getNodeType() == AbstractSyntaxTree.NodeType.ARGUMENT_SEPARATOR) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "con.repeat or con.foreach arguments are invalid"));
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.INVALID_CON_PART,
+										"con.repeat or con.foreach arguments are invalid"));
 								return ast;
 							}
 
 							repeatCountArgument.add(node);
 						}
 
-						AbstractSyntaxTree.Node repeatCountOrArrayOrTextNode = repeatCountArgument.size() == 1?repeatCountArgument.get(0):new AbstractSyntaxTree.ListNode(repeatCountArgument);
+						AbstractSyntaxTree.Node repeatCountOrArrayOrTextNode = repeatCountArgument.size() == 1?
+								repeatCountArgument.get(0):new AbstractSyntaxTree.ListNode(repeatCountArgument);
 
 						if(conExpression.equals("con.repeat"))
-							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartRepeatNode(loopBody, -1, -1,
+							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartRepeatNode(CodePosition.EMPTY, loopBody,
 									varPointerNode, repeatCountOrArrayOrTextNode));
 						else
-							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartForEachNode(loopBody, -1, -1,
+							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartForEachNode(CodePosition.EMPTY, loopBody,
 									varPointerNode, repeatCountOrArrayOrTextNode));
 					}
 
@@ -1657,7 +1642,7 @@ public final class LangParser {
 				}
 
 				//TODO line numbers
-				nodes.add(new AbstractSyntaxTree.LoopStatementNode(loopStatmentParts, -1, -1));
+				nodes.add(new AbstractSyntaxTree.LoopStatementNode(CodePosition.EMPTY, loopStatmentParts));
 
 				return ast;
 			}else if(conExpression.equals("con.if")) {
@@ -1690,16 +1675,14 @@ public final class LangParser {
 
 						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
 								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
-									ParsingError.INVALID_CON_PART));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						tokens.remove(tokenCountFirstLine - 1);
 
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine == 0 || tokens.get(0).getTokenType() != Token.TokenType.OTHER)
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
-									ParsingError.INVALID_CON_PART));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						conExpression = tokens.get(0).getValue();
 
@@ -1721,8 +1704,7 @@ public final class LangParser {
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(0).getValue().equals("(")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
-									ifStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos, ParsingError.INVALID_CON_PART,
 									"Else part with arguments"));
 
 							return ast;
@@ -1734,8 +1716,8 @@ public final class LangParser {
 						tokenCountFirstLine--;
 
 						if(tokenCountFirstLine == 0) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
-									ifStatementPartToken.pos.lineNumberTo, ParsingError.CONT_FLOW_ARG_MISSING, "Missing if statement arguments"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos, ParsingError.CONT_FLOW_ARG_MISSING,
+									"Missing if statement arguments"));
 
 							return ast;
 						}
@@ -1744,8 +1726,7 @@ public final class LangParser {
 								tokens.get(0).getValue().equals("(")) {
 							int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 							if(argumentsEndIndex == -1) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-										tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
 										"Missing if/elif statement arguments"));
 								return ast;
 							}
@@ -1754,14 +1735,14 @@ public final class LangParser {
 							tokens.subList(0, argumentsEndIndex + 1).clear();
 							tokenCountFirstLine -= argumentsEndIndex + 1;
 						}else {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
-									ifStatementPartToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH, "Bracket for if statement is missing"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos, ParsingError.BRACKET_MISMATCH,
+									"Bracket for if statement is missing"));
 							return ast;
 						}
 
 						if(tokenCountFirstLine != 0) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
-									ifStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART, "Trailing stuff behind if arguments"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos, ParsingError.INVALID_CON_PART,
+									"Trailing stuff behind if arguments"));
 							return ast;
 						}
 					}else if(!blockBracketFlag && conExpression.equals("con.endif")) {
@@ -1770,34 +1751,36 @@ public final class LangParser {
 						break;
 					}else {
 						//TODO lineNumber
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "If statement part is invalid"));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.INVALID_CON_PART,
+								"If statement part is invalid"));
 						return ast;
 					}
 
 					AbstractSyntaxTree ifBody = parseTokens(tokens);
 					if(ifBody == null) {
 						//TODO line numbers
-						nodes.add(new AbstractSyntaxTree.IfStatementNode(ifStatmentParts, -1, -1));
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "In if body"));
+						nodes.add(new AbstractSyntaxTree.IfStatementNode(CodePosition.EMPTY, ifStatmentParts));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In if body"
+						));
 
 						return ast;
 					}
 
 					//TODO line numbers
 					if(ifCondition == null) {
-						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartElseNode(ifBody, -1, -1));
+						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartElseNode(CodePosition.EMPTY, ifBody));
 					}else {
 						AbstractSyntaxTree.OperationNode conNonNode = new AbstractSyntaxTree.OperationNode(parseOperationExpr(ifCondition),
 								AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
 
-						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartIfNode(ifBody, -1, -1, conNonNode));
+						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartIfNode(CodePosition.EMPTY, ifBody, conNonNode));
 					}
 
 					firstStatement = false;
 				}
 
 				//TODO line numbers
-				nodes.add(new AbstractSyntaxTree.IfStatementNode(ifStatmentParts, -1, -1));
+				nodes.add(new AbstractSyntaxTree.IfStatementNode(CodePosition.EMPTY, ifStatmentParts));
 
 				return ast;
 			}else if(originalConExpression.startsWith("con.")) {
@@ -1811,8 +1794,7 @@ public final class LangParser {
 			//Return without value
 			if(tokenCountFirstLine == 1) {
 				Token returnStatementToken = tokens.remove(0);
-				nodes.add(new AbstractSyntaxTree.ReturnNode(returnStatementToken.pos.lineNumberFrom,
-						returnStatementToken.pos.lineNumberTo));
+				nodes.add(new AbstractSyntaxTree.ReturnNode(returnStatementToken.pos));
 
 				return ast;
 			}
@@ -1846,8 +1828,9 @@ public final class LangParser {
 			tokenCountFirstLine--;
 
 			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos.lineNumberFrom,
-						functionDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, "Invalid function definition: Whitespace is missing after \"function\""));
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+						"Invalid function definition: Whitespace is missing after \"function\""
+				));
 
 				return ast;
 			}
@@ -1868,9 +1851,9 @@ public final class LangParser {
 					LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_FUNCTION_WITHOUT_PREFIX)) &&
 					!(tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
 							LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.WORD))) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos.lineNumberFrom,
-						functionDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
-						"Invalid function definition: Invalid function identifier: " + tokens.get(0).getValue()));
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+						"Invalid function definition: Invalid function identifier: " + tokens.get(0).getValue()
+				));
 
 				return ast;
 			}
@@ -1889,8 +1872,7 @@ public final class LangParser {
 
 			if(tokens.get(0).getTokenType() != Token.TokenType.OPENING_BRACKET ||
 					!tokens.get(0).getValue().equals("(")) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos.lineNumberFrom,
-						functionDefinitionStartToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos, ParsingError.BRACKET_MISMATCH,
 						"Bracket is missing in parameter list in function definition"));
 
 				return ast;
@@ -1898,8 +1880,7 @@ public final class LangParser {
 
 			int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 			if(bracketEndIndex == -1) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos.lineNumberFrom,
-						functionNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos, ParsingError.BRACKET_MISMATCH,
 						"Bracket is missing in parameter list in function definition"));
 				return ast;
 			}
@@ -1916,9 +1897,9 @@ public final class LangParser {
 
 				bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
 				if(bracketEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos.lineNumberFrom,
-							functionNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
-							"Bracket is missing in return type constraint in function definition"));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos, ParsingError.BRACKET_MISMATCH,
+							"Bracket is missing in return type constraint in function definition"
+					));
 					return ast;
 				}
 
@@ -1935,8 +1916,7 @@ public final class LangParser {
 			}
 
 			if(tokenCountFirstLine != 1) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos.lineNumberFrom,
-						functionNameToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos, ParsingError.LEXER_ERROR,
 						"Invalid tokens after function return type constraint"));
 				return ast;
 			}
@@ -1958,8 +1938,8 @@ public final class LangParser {
 			tokenCountFirstLine--;
 
 			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
-						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, "Invalid struct definition: Whitespace is missing after \"struct\""));
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+						"Invalid struct definition: Whitespace is missing after \"struct\""));
 
 				return ast;
 			}
@@ -1969,9 +1949,9 @@ public final class LangParser {
 
 			if(tokens.get(0).getTokenType() != Token.TokenType.IDENTIFIER ||
 					!LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_ARRAY_WITHOUT_PREFIX)) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
-						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
-						"Invalid struct definition: Invalid struct identifier: " + tokens.get(0).getValue()));
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+						"Invalid struct definition: Invalid struct identifier: " + tokens.get(0).getValue()
+				));
 
 				return ast;
 			}
@@ -1987,8 +1967,7 @@ public final class LangParser {
 			}
 
 			if(tokenCountFirstLine != 1) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
-						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
 						"Invalid tokens after struct constraint"));
 				return ast;
 			}
@@ -2010,8 +1989,8 @@ public final class LangParser {
 			tokenCountFirstLine--;
 
 			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
-						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, "Invalid class definition: Whitespace is missing after \"class\""));
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+						"Invalid class definition: Whitespace is missing after \"class\""));
 
 				return ast;
 			}
@@ -2021,9 +2000,9 @@ public final class LangParser {
 
 			if(tokens.get(0).getTokenType() != Token.TokenType.IDENTIFIER ||
 					!LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_ARRAY_WITHOUT_PREFIX)) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
-						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
-						"Invalid class definition: Invalid class identifier: " + tokens.get(0).getValue()));
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+						"Invalid class definition: Invalid class identifier: " + tokens.get(0).getValue()
+				));
 
 				return ast;
 			}
@@ -2051,8 +2030,7 @@ public final class LangParser {
 					}
 				}
 				if(parentClassesEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-							tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
 							"Bracket is missing in class definition"));
 
 					return ast;
@@ -2069,8 +2047,7 @@ public final class LangParser {
 			}
 
 			if(tokenCountFirstLine != 1) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
-						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
 						"Invalid tokens after class definition"));
 				return ast;
 			}
@@ -2106,7 +2083,7 @@ public final class LangParser {
 		trimFirstLine(tokens);
 
 		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.TextValueNode(-1, -1, ""));
+		nodes.add(new AbstractSyntaxTree.TextValueNode(CodePosition.EMPTY, ""));
 
 		if(tokens.size() >= 2 && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
 				tokens.get(0).getValue().equals("%") &&
@@ -2143,8 +2120,7 @@ public final class LangParser {
 				case OTHER:
 					tokens.remove(0);
 
-					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue()));
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 					break;
 
@@ -2152,15 +2128,13 @@ public final class LangParser {
 					tokens.remove(0);
 
 					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 								"Invalid escape sequence: " + t.getValue()));
 
 						continue tokenProcessing;
 					}
 
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue().charAt(1)));
+					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
 
 					break;
 
@@ -2177,12 +2151,10 @@ public final class LangParser {
 						t = tokens.remove(0);
 
 						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
-							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, t.getValue()));
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
 					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
 
 					break;
@@ -2193,8 +2165,7 @@ public final class LangParser {
 							!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_FULL)) {
 						tokens.remove(0);
 
-						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, t.getValue()));
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						break;
 					}
@@ -2209,9 +2180,9 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""
+					));
 
 					break tokenProcessing;
 			}
@@ -2237,8 +2208,7 @@ public final class LangParser {
 
 				int parameterListEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 				if(parameterListEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-							tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
 							"Bracket is missing in function definition"));
 
 					return ast;
@@ -2257,9 +2227,9 @@ public final class LangParser {
 					int returnTypeConstraintEndIndex = LangUtils.getIndexOfMatchingBracket(tokens,
 							tokenIndex + 1, Integer.MAX_VALUE, "{", "}", true);
 					if(returnTypeConstraintEndIndex == -1) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
-								tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
-								"Bracket is missing in return type constraint of function definition"));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
+								"Bracket is missing in return type constraint of function definition"
+						));
 
 						return ast;
 					}
@@ -2282,15 +2252,15 @@ public final class LangParser {
 							tokens.get(0).getValue().equals("{")) {
 						tokens.remove(0);
 
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
-								returnTypeConstraint, parseTokens(tokens), -1, -1));
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, langDocComment, parameterList,
+								returnTypeConstraint, parseTokens(tokens)));
 						langDocComment = null;
 					}else {
 						List<Token> functionBody = new ArrayList<>(tokens.subList(0, tokenCountFirstLine));
 						tokens.subList(0, tokenCountFirstLine).clear();
 
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
-								returnTypeConstraint, parseTokens(functionBody), -1, -1));
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, langDocComment, parameterList,
+								returnTypeConstraint, parseTokens(functionBody)));
 						langDocComment = null;
 					}
 
@@ -2303,8 +2273,7 @@ public final class LangParser {
 				//Function pointer copying
 
 				Token t = tokens.remove(0);
-				nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(t.pos.lineNumberFrom,
-						t.pos.lineNumberTo, t.getValue()));
+				nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(t.pos, t.getValue()));
 				return ast;
 			}else if(tokenCountFirstLine == 1 && tokenCountFirstLine != tokens.size() &&
 					tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
@@ -2347,8 +2316,8 @@ public final class LangParser {
 		List<AbstractSyntaxTree.Node> parameterListNodes = parseFunctionParameterList(parameterListTokens, true).getChildren();
 
 		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(functionName, overloaded, langDocComment,
-				parameterListNodes,    functionReturnValueTypeConstraint, parseTokens(tokens), -1, -1));
+		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, functionName, overloaded, langDocComment,
+				parameterListNodes,    functionReturnValueTypeConstraint, parseTokens(tokens)));
 		langDocComment = null;
 
 		return ast;
@@ -2400,16 +2369,16 @@ public final class LangParser {
 						break tokenProcessing;
 					}
 
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""
+					));
 
 					return ast;
 
 				case IDENTIFIER:
 					if(!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT, "Invalid struct member name: \"" + t.getValue() + "\""));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
+								"Invalid struct member name: \"" + t.getValue() + "\""));
 
 						return ast;
 					}
@@ -2421,9 +2390,9 @@ public final class LangParser {
 							tokens.get(0).getValue().equals("{")) {
 						int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
 						if(bracketEndIndex == -1) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos.lineNumberFrom,
-									identifierToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
-									"Bracket is missing in type constraint in struct definition for member: \"" + identifierToken.getValue() + "\""));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos, ParsingError.BRACKET_MISMATCH,
+									"Bracket is missing in type constraint in struct definition for member: \"" +
+											identifierToken.getValue() + "\""));
 
 							return ast;
 						}
@@ -2435,9 +2404,9 @@ public final class LangParser {
 					}
 
 					if(memberNames.contains(identifierToken.getValue())) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos.lineNumberFrom,
-								identifierToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
-								"Duplicated struct member name: \"" + identifierToken.getValue() + "\""));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos, ParsingError.INVALID_ASSIGNMENT,
+								"Duplicated struct member name: \"" + identifierToken.getValue() + "\""
+						));
 
 						return ast;
 					}
@@ -2468,8 +2437,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""));
 
 					return ast;
@@ -2478,13 +2446,14 @@ public final class LangParser {
 
 		if(!hasEndBrace) {
 			//TODO line numbers
-			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, -1, ParsingError.EOF, "\"}\" is missing in struct definition"));
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "\"}\" is missing in struct definition"
+			));
 
 			return ast;
 		}
 
 		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(-1, -1, structName, memberNames, typeConstraints));
+		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(CodePosition.EMPTY, structName, memberNames, typeConstraints));
 
 		return ast;
 	}
@@ -2549,9 +2518,9 @@ public final class LangParser {
 						break tokenProcessing;
 					}
 
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""
+					));
 
 					return ast;
 
@@ -2559,17 +2528,16 @@ public final class LangParser {
 				case OPERATOR:
 					char visibility = t.getValue().charAt(0);
 					if(visibility != '-' && visibility != '~' && visibility != '+') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
-								"Invalid visibility specifier (One of [\"-\", \"~\", \"+\"] must be used)"));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+								"Invalid visibility specifier (One of [\"-\", \"~\", \"+\"] must be used)"
+						));
 
 						return ast;
 					}
 					tokens.remove(0);
 
 					if(tokens.isEmpty()) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.EOF,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 								"Missing value after visibility specifier"));
 
 						return ast;
@@ -2581,8 +2549,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing value after construct method"));
 
 							return ast;
@@ -2590,8 +2557,7 @@ public final class LangParser {
 
 						t = tokens.get(0);
 						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Invalid assignment for constructor (only \" = \" is allowed)"));
 
 							return ast;
@@ -2613,8 +2579,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing identifier after override keyword"));
 
 							return ast;
@@ -2629,8 +2594,7 @@ public final class LangParser {
 						String methodName = methodNameToken.getValue();
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing value after normal method"));
 
 							return ast;
@@ -2638,8 +2602,7 @@ public final class LangParser {
 
 						t = tokens.get(0);
 						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid assignment for method (only \" = \" is allowed)"));
 
 							return ast;
@@ -2659,8 +2622,7 @@ public final class LangParser {
 					if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("op") &&
 							tokens.get(1).getTokenType() == Token.TokenType.OPERATOR && tokens.get(1).getValue().equals(":")) {
 						if(visibility != '+') {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid visibility for operator method (only \"+\" is allowed)"));
 
 							return ast;
@@ -2672,8 +2634,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing identifier after operator method keyword"));
 
 							return ast;
@@ -2689,8 +2650,7 @@ public final class LangParser {
 							tokens.remove(0);
 
 							if(tokens.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-										t.pos.lineNumberTo, ParsingError.EOF,
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 										"Missing identifier after to operator method keyword"));
 
 								return ast;
@@ -2704,8 +2664,7 @@ public final class LangParser {
 							tokens.remove(0);
 
 							if(tokens.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-										t.pos.lineNumberTo, ParsingError.EOF,
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 										"Missing identifier after to operator method keyword"));
 
 								return ast;
@@ -2713,16 +2672,15 @@ public final class LangParser {
 						}
 
 						if(!LangPatterns.matches(methodName, LangPatterns.OPERATOR_METHOD_NAME)) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF, "Invalid operator method name: \"" + methodName + "\""));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+									"Invalid operator method name: \"" + methodName + "\""));
 
 							return ast;
 						}
 
 						t = tokens.get(0);
 						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid assignment for operator method (only \" = \" is allowed)"));
 
 							return ast;
@@ -2742,8 +2700,7 @@ public final class LangParser {
 					if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("to") &&
 							tokens.get(1).getTokenType() == Token.TokenType.OPERATOR && tokens.get(1).getValue().equals(":")) {
 						if(visibility != '+') {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid visibility for conversion method (only \"+\" is allowed)"));
 
 							return ast;
@@ -2755,8 +2712,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing identifier after conversion method keyword"));
 
 							return ast;
@@ -2769,8 +2725,7 @@ public final class LangParser {
 							tokens.remove(0);
 
 							if(tokens.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-										t.pos.lineNumberTo, ParsingError.EOF,
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 										"Missing identifier after to conversion method keyword"));
 
 								return ast;
@@ -2778,16 +2733,15 @@ public final class LangParser {
 						}
 
 						if(!LangPatterns.matches(methodName, LangPatterns.CONVERSION_METHOD_NAME)) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF, "Invalid conversion method name: \"" + methodName + "\""));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+									"Invalid conversion method name: \"" + methodName + "\""));
 
 							return ast;
 						}
 
 						t = tokens.get(0);
 						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid assignment for conversion method (only \" = \" is allowed)"));
 
 							return ast;
@@ -2805,8 +2759,7 @@ public final class LangParser {
 					}
 
 					if(isOverrideMethod) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 								"The override keyword can only be used for methods"));
 
 						return ast;
@@ -2821,8 +2774,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing identifier after static keyword"));
 
 							return ast;
@@ -2839,8 +2791,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing identifier after final keyword"));
 
 							return ast;
@@ -2859,8 +2810,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.EOF,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Missing identifier after static keyword"));
 
 							return ast;
@@ -2870,17 +2820,17 @@ public final class LangParser {
 					}
 
 					if(t.getTokenType() != Token.TokenType.IDENTIFIER) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-								"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+								"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""
+						));
 
 						return ast;
 					}
 
 					if(!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberFrom, ParsingError.INVALID_ASSIGNMENT,
-								"Invalid " + (isStaticMember?"static ":"") + "member name: \"" + t.getValue() + "\""));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
+								"Invalid " + (isStaticMember?"static ":"") + "member name: \"" + t.getValue() + "\""
+						));
 
 						return ast;
 					}
@@ -2893,10 +2843,10 @@ public final class LangParser {
 							tokens.get(0).getValue().equals("{")) {
 						int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
 						if(bracketEndIndex == -1) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos.lineNumberFrom,
-									memberNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos, ParsingError.BRACKET_MISMATCH,
 									"Bracket is missing in type constraint in class definition for " +
-											(isStaticMember?"static ":"") + "member: \"" + memberNameToken.getValue() + "\""));
+											(isStaticMember?"static ":"") + "member: \"" + memberNameToken.getValue() + "\""
+							));
 
 							return ast;
 						}
@@ -2908,9 +2858,9 @@ public final class LangParser {
 					}
 
 					if((isStaticMember?staticMemberNames:memberNames).contains(memberName)) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos.lineNumberFrom,
-								memberNameToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
-								"Duplicated " + (isStaticMember?"static ":"") + " member name: \"" + memberName + "\""));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos, ParsingError.INVALID_ASSIGNMENT,
+								"Duplicated " + (isStaticMember?"static ":"") + " member name: \"" + memberName + "\""
+						));
 
 						return ast;
 					}
@@ -2924,18 +2874,15 @@ public final class LangParser {
 							if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
 									tokens.get(0).getTokenType() == Token.TokenType.EOF) {
 								if(!assignmentOperator.equals("=") && !assignmentOperator.equals(" =")) {
-									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(assignmentToken.pos.lineNumberFrom,
-											assignmentToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(assignmentToken.pos, ParsingError.INVALID_ASSIGNMENT,
 											"Rvalue is missing in member assignment"));
 
 									return ast;
 								}
 
 								staticMemberValue = assignmentOperator.equals("=")?
-										new AbstractSyntaxTree.TextValueNode(assignmentToken.pos.lineNumberFrom,
-												assignmentToken.pos.lineNumberTo, ""):
-										new AbstractSyntaxTree.NullValueNode(assignmentToken.pos.lineNumberFrom,
-												assignmentToken.pos.lineNumberTo);
+										new AbstractSyntaxTree.TextValueNode(assignmentToken.pos, ""):
+										new AbstractSyntaxTree.NullValueNode(assignmentToken.pos);
 							}else {
 								switch(assignmentOperator) {
 									case "=":
@@ -2955,8 +2902,7 @@ public final class LangParser {
 										break;
 
 									default:
-										nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-												t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+										nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 												"Invalid assignment for static member (only the following operators are allowed: \"=\", \" = \", " +
 														"\" ?= \", \" := \", and \" $= \")"));
 
@@ -2999,9 +2945,9 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""
+					));
 
 					return ast;
 			}
@@ -3009,15 +2955,17 @@ public final class LangParser {
 
 		if(!hasEndBrace) {
 			//TODO line numbers
-			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "\"}\" is missing in class definition"));
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "\"}\" is missing in class definition"
+			));
 
 			return ast;
 		}
 
 		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(-1, -1, className, staticMemberNames,
+		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(CodePosition.EMPTY, className, staticMemberNames,
 				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, memberNames, memberTypeConstraints,
-				memberFinalFlag, methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses));
+				memberFinalFlag, methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses
+		));
 
 		return ast;
 	}
@@ -3046,8 +2994,7 @@ public final class LangParser {
 				case LITERAL_NULL:
 					tokens.remove(0);
 
-					nodes.add(new AbstractSyntaxTree.NullValueNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo));
+					nodes.add(new AbstractSyntaxTree.NullValueNode(t.pos));
 					break;
 
 				case LITERAL_TEXT:
@@ -3057,8 +3004,7 @@ public final class LangParser {
 				case WHITESPACE:
 					tokens.remove(0);
 
-					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue()));
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 					break;
 
@@ -3084,8 +3030,7 @@ public final class LangParser {
 						break;
 					}
 
-					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue()));
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 					break;
 
@@ -3107,9 +3052,9 @@ public final class LangParser {
 							List<Token> functionCall = new ArrayList<>(tokens.subList(1, endIndex));
 							tokens.subList(0, endIndex + 1).clear();
 
-							nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "",
-									parseFunctionParameterList(functionCall, false).getChildren(),
-									pos.lineNumberFrom, pos.lineNumberTo));
+							nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode(pos, "", "",
+									parseFunctionParameterList(functionCall, false).getChildren()
+							));
 
 							continue tokenProcessing;
 						}
@@ -3117,8 +3062,7 @@ public final class LangParser {
 
 					tokens.remove(0);
 
-					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue()));
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 					break;
 
@@ -3126,15 +3070,13 @@ public final class LangParser {
 					tokens.remove(0);
 
 					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 								"Invalid escape sequence: " + t.getValue()));
 
 						continue tokenProcessing;
 					}
 
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue().charAt(1)));
+					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
 
 					break;
 
@@ -3151,12 +3093,10 @@ public final class LangParser {
 						t = tokens.remove(0);
 
 						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
-							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, t.getValue()));
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
 					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
 
 					break;
@@ -3173,9 +3113,9 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""
+					));
 
 					break tokenProcessing;
 			}
@@ -3195,8 +3135,7 @@ public final class LangParser {
 			tokenCountFirstLine = tokens.size();
 
 		if(tokenCountFirstLine == 0 && tokenCountFirstLine != tokens.size()) {
-			nodes.add(new AbstractSyntaxTree.TextValueNode(tokens.get(0).pos.lineNumberFrom,
-					tokens.get(0).pos.lineNumberFrom, ""));
+			nodes.add(new AbstractSyntaxTree.TextValueNode(tokens.get(0).pos, ""));
 		}
 
 		tokenProcessing:
@@ -3228,8 +3167,7 @@ public final class LangParser {
 				case OTHER:
 					tokens.remove(0);
 
-					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue()));
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 					break;
 
@@ -3237,15 +3175,13 @@ public final class LangParser {
 					tokens.remove(0);
 
 					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 								"Invalid escape sequence: " + t.getValue()));
 
 						continue tokenProcessing;
 					}
 
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberTo, t.getValue().charAt(1)));
+					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
 
 					break;
 
@@ -3262,12 +3198,10 @@ public final class LangParser {
 						t = tokens.remove(0);
 
 						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
-							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, t.getValue()));
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
 					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
 
 					break;
@@ -3275,9 +3209,9 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-							"Invalid token type for simple assignment value expression: \"" + t.getTokenType().name() + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+							"Invalid token type for simple assignment value expression: \"" +
+									t.getTokenType().name() + "\""));
 
 					break tokenProcessing;
 			}
@@ -3296,13 +3230,13 @@ public final class LangParser {
 
 		//CHAR
 		if(value.length() == 1) {
-			nodes.add(new AbstractSyntaxTree.CharValueNode(pos.lineNumberFrom, pos.lineNumberTo, value.charAt(0)));
+			nodes.add(new AbstractSyntaxTree.CharValueNode(pos, value.charAt(0)));
 
 			return;
 		}
 
 		//TEXT
-		nodes.add(new AbstractSyntaxTree.TextValueNode(pos.lineNumberFrom, pos.lineNumberTo, value));
+		nodes.add(new AbstractSyntaxTree.TextValueNode(pos, value));
 	}
 
 	private void parseNumberToken(Token numberToken, List<AbstractSyntaxTree.Node> nodes) {
@@ -3310,8 +3244,7 @@ public final class LangParser {
 
 		//INT
 		try {
-			nodes.add(new AbstractSyntaxTree.IntValueNode(numberToken.pos.lineNumberFrom,
-					numberToken.pos.lineNumberTo, Integer.parseInt(token)));
+			nodes.add(new AbstractSyntaxTree.IntValueNode(numberToken.pos, Integer.parseInt(token)));
 
 			return;
 		}catch(NumberFormatException ignore) {}
@@ -3319,11 +3252,10 @@ public final class LangParser {
 		//LONG
 		try {
 			if(token.endsWith("l") || token.endsWith("L"))
-				nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos.lineNumberFrom,
-						numberToken.pos.lineNumberTo, Long.parseLong(token.substring(0, token.length() - 1))));
+				nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos, Long.parseLong(token.substring(0, token.length() - 1))
+				));
 			else
-				nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos.lineNumberFrom,
-						numberToken.pos.lineNumberTo, Long.parseLong(token)));
+				nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos, Long.parseLong(token)));
 
 
 			return;
@@ -3332,8 +3264,8 @@ public final class LangParser {
 		//FLOAT
 		if(token.endsWith("f") || token.endsWith("F")) {
 			try {
-				nodes.add(new AbstractSyntaxTree.FloatValueNode(numberToken.pos.lineNumberFrom,
-						numberToken.pos.lineNumberTo, Float.parseFloat(token.substring(0, token.length() - 1))));
+				nodes.add(new AbstractSyntaxTree.FloatValueNode(numberToken.pos, Float.parseFloat(token.substring(0, token.length() - 1))
+				));
 
 				return;
 			}catch(NumberFormatException ignore) {}
@@ -3341,8 +3273,7 @@ public final class LangParser {
 
 		//DOUBLE
 		try {
-			nodes.add(new AbstractSyntaxTree.DoubleValueNode(numberToken.pos.lineNumberFrom,
-					numberToken.pos.lineNumberTo, Double.parseDouble(token)));
+			nodes.add(new AbstractSyntaxTree.DoubleValueNode(numberToken.pos, Double.parseDouble(token)));
 
 			return;
 		}catch(NumberFormatException ignore) {}
@@ -3352,8 +3283,8 @@ public final class LangParser {
 		if(lexerErrorToken.getTokenType() != Token.TokenType.LEXER_ERROR)
 			return;
 
-		nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lexerErrorToken.pos.lineNumberFrom,
-				lexerErrorToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, lexerErrorToken.getValue()));
+		nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lexerErrorToken.pos, ParsingError.LEXER_ERROR, lexerErrorToken.getValue()
+		));
 	}
 
 	private AbstractSyntaxTree parseFunctionParameterList(List<Token> tokens, boolean functionDefinition) {
@@ -3383,14 +3314,14 @@ public final class LangParser {
 							tokens.remove(0);
 
 							if(nodes.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
-										ParsingError.INVALID_PARAMETER, "Empty function parameter"));
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_PARAMETER,
+										"Empty function parameter"));
 							}
 
 							if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
 									tokens.get(0).getTokenType() == Token.TokenType.EOF) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
-										ParsingError.INVALID_PARAMETER, "Empty function parameter"));
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_PARAMETER,
+										"Empty function parameter"));
 							}
 
 							break;
@@ -3406,9 +3337,9 @@ public final class LangParser {
 									tokens.get(0).getValue().equals("{")) {
 								int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
 								if(bracketEndIndex == -1) {
-									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(variableNameToken.pos.lineNumberFrom,
-											variableNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
-											"Bracket is missing in return type constraint in function parameter list definition for parameter \"" + variableName + "\""));
+									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(variableNameToken.pos, ParsingError.BRACKET_MISMATCH,
+											"Bracket is missing in return type constraint in function parameter list definition for parameter \"" +
+													variableName + "\""));
 									return ast;
 								}
 
@@ -3426,8 +3357,7 @@ public final class LangParser {
 								variableName += "...";
 							}
 
-							nodes.add(new AbstractSyntaxTree.VariableNameNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, variableName, typeConstraint));
+							nodes.add(new AbstractSyntaxTree.VariableNameNode(t.pos, variableName, typeConstraint));
 
 							break;
 
@@ -3453,9 +3383,9 @@ public final class LangParser {
 						case LINE_CONTINUATION:
 						case END_COMMENT:
 						case END_MULTILINE_TEXT:
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
-									"Invalid token type for function parameter list expression: \"" + t.getTokenType().name() + "\""));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+									"Invalid token type for function parameter list expression: \"" +
+											t.getTokenType().name() + "\""));
 
 							break tokenProcessing;
 					}
@@ -3482,16 +3412,15 @@ public final class LangParser {
 
 						if(nodes.isEmpty() || nodes.get(nodes.size() - 1) instanceof AbstractSyntaxTree.ArgumentSeparatorNode) {
 							//Add empty TextObject in between two and before first argument separator
-							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom, t.pos.lineNumberTo, ""));
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, ""));
 						}
 
-						nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
-								t.getValue()));
+						nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(t.pos, t.getValue()));
 
 						if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
 								tokens.get(0).getTokenType() == Token.TokenType.EOF) {
 							//Add empty TextObject after last argument separator
-							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom, t.pos.lineNumberTo, ""));
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, ""));
 						}
 
 						break;
@@ -3499,8 +3428,7 @@ public final class LangParser {
 					case LITERAL_NULL:
 						tokens.remove(0);
 
-						nodes.add(new AbstractSyntaxTree.NullValueNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo));
+						nodes.add(new AbstractSyntaxTree.NullValueNode(t.pos));
 						break;
 
 					case LITERAL_TEXT:
@@ -3509,8 +3437,7 @@ public final class LangParser {
 					case WHITESPACE:
 						tokens.remove(0);
 
-						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, t.getValue()));
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						break;
 
@@ -3537,8 +3464,7 @@ public final class LangParser {
 							break;
 						}
 
-						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, t.getValue()));
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						break;
 
@@ -3560,9 +3486,9 @@ public final class LangParser {
 								List<Token> functionCall = new ArrayList<>(tokens.subList(1, endIndex));
 								tokens.subList(0, endIndex + 1).clear();
 
-								nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "",
-										parseFunctionParameterList(functionCall, false).getChildren(),
-										pos.lineNumberFrom, pos.lineNumberTo));
+								nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode(pos, "", "",
+										parseFunctionParameterList(functionCall, false).getChildren()
+								));
 
 								continue tokenProcessing;
 							}
@@ -3570,8 +3496,7 @@ public final class LangParser {
 
 						tokens.remove(0);
 
-						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, t.getValue()));
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 						break;
 
@@ -3579,15 +3504,13 @@ public final class LangParser {
 						tokens.remove(0);
 
 						if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-									t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 									"Invalid escape sequence: " + t.getValue()));
 
 							continue tokenProcessing;
 						}
 
-						nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberTo, t.getValue().charAt(1)));
+						nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
 
 						break;
 
@@ -3604,12 +3527,10 @@ public final class LangParser {
 							t = tokens.remove(0);
 
 							if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
-								nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
-										t.pos.lineNumberTo, t.getValue()));
+								nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
 							if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-										t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
 						}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
 
 						break;
@@ -3627,8 +3548,7 @@ public final class LangParser {
 
 							CodePosition pos = identifierToken.pos.combine(operatorToken.pos);
 
-							nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(pos.lineNumberFrom,
-									pos.lineNumberTo, identifierToken.getValue() + "..."));
+							nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(pos, identifierToken.getValue() + "..."));
 						}else {
 							AbstractSyntaxTree.Node ret = isIdentifier?parseVariableNameAndFunctionCall(tokens):parseParserFunctionCall(tokens);
 							if(ret != null)
@@ -3640,8 +3560,7 @@ public final class LangParser {
 					case LINE_CONTINUATION:
 					case END_COMMENT:
 					case END_MULTILINE_TEXT:
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
-								t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 								"Invalid token type for function argument expression: \"" + t.getTokenType().name() + "\""));
 
 						break tokenProcessing;
@@ -3685,8 +3604,7 @@ public final class LangParser {
 
 		if(tokens.isEmpty() || tokens.get(0).getTokenType() != Token.TokenType.OPENING_BRACKET ||
 				!tokens.get(0).getValue().equals("(") || !LangPatterns.matches(identifierToken.getValue(), LangPatterns.VAR_NAME_FUNCS)) {
-			return new AbstractSyntaxTree.UnprocessedVariableNameNode(identifierToken.pos.lineNumberFrom,
-					identifierToken.pos.lineNumberTo, identifierToken.getValue());
+			return new AbstractSyntaxTree.UnprocessedVariableNameNode(identifierToken.pos, identifierToken.getValue());
 		}
 
 		return parseFunctionCall(identifierToken, tokens, type);
@@ -3698,9 +3616,8 @@ public final class LangParser {
 	private AbstractSyntaxTree.Node parseFunctionCall(Token identifierToken, List<Token> tokens, AbstractSyntaxTree.OperationNode.OperatorType type) {
 		int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 		if(endIndex == -1) {
-			return new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos.lineNumberFrom,
-					identifierToken.pos.lineNumberTo,
-					ParsingError.BRACKET_MISMATCH, "Bracket is missing in function call");
+			return new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos, ParsingError.BRACKET_MISMATCH,
+					"Bracket is missing in function call");
 		}
 
 		CodePosition pos = identifierToken.getPos().combine(tokens.get(endIndex).pos);
@@ -3709,12 +3626,11 @@ public final class LangParser {
 		tokens.subList(0, endIndex + 1).clear();
 
 		if(type == null)
-			return new AbstractSyntaxTree.FunctionCallNode(parseFunctionParameterList(functionParameterTokens, false).getChildren(),
-					pos.lineNumberFrom, pos.lineNumberTo, identifierToken.getValue());
+			return new AbstractSyntaxTree.FunctionCallNode(pos, parseFunctionParameterList(functionParameterTokens, false).
+					getChildren(), identifierToken.getValue());
 
-		return new AbstractSyntaxTree.FunctionCallNode(convertCommaOperatorsToArgumentSeparators(
-				parseOperationExpr(functionParameterTokens, type)), pos.lineNumberFrom, pos.lineNumberTo,
-				identifierToken.getValue());
+		return new AbstractSyntaxTree.FunctionCallNode(pos, convertCommaOperatorsToArgumentSeparators(
+				parseOperationExpr(functionParameterTokens, type)), identifierToken.getValue());
 	}
 
 	private AbstractSyntaxTree.Node parseParserFunctionCall(List<Token> tokens) {
@@ -3729,9 +3645,8 @@ public final class LangParser {
 
 		int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 		if(endIndex == -1) {
-			return new AbstractSyntaxTree.ParsingErrorNode(parserFunctionIdentifierToken.pos.lineNumberFrom,
-					parserFunctionIdentifierToken.pos.lineNumberTo,
-					ParsingError.BRACKET_MISMATCH, "Bracket is missing in parser function call");
+			return new AbstractSyntaxTree.ParsingErrorNode(parserFunctionIdentifierToken.pos, ParsingError.BRACKET_MISMATCH,
+					"Bracket is missing in parser function call");
 		}
 
 		List<Token> parameterTokens = new ArrayList<>(tokens.subList(1, endIndex));
@@ -3748,10 +3663,8 @@ public final class LangParser {
 				return parseOperationExpr(parameterTokens);
 		}
 
-		return new AbstractSyntaxTree.ParsingErrorNode(parserFunctionIdentifierToken.pos.lineNumberFrom,
-				parserFunctionIdentifierToken.pos.lineNumberTo,
-				ParsingError.INVALID_PARAMETER, "Invalid parser function: \"" +
-				parserFunctionIdentifierToken.getValue() + "\"");
+		return new AbstractSyntaxTree.ParsingErrorNode(parserFunctionIdentifierToken.pos, ParsingError.INVALID_PARAMETER,
+				"Invalid parser function: \"" + parserFunctionIdentifierToken.getValue() + "\"");
 	}
 
 	private String parseTypeConstraint(List<Token> tokens, boolean allowSpecialTypeConstraints, List<AbstractSyntaxTree.Node> errorNodes) {
@@ -3763,8 +3676,8 @@ public final class LangParser {
 				LangPatterns.PARSING_TYPE_CONSTRAINT)) {
 			CodePosition pos = tokens.get(0).pos.combine(tokens.get(tokens.size() - 1).pos);
 
-			errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom,
-					pos.lineNumberTo, ParsingError.BRACKET_MISMATCH, "Invalid type constraint syntax"));
+			errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.BRACKET_MISMATCH,
+					"Invalid type constraint syntax"));
 
 			return null;
 		}
@@ -3789,8 +3702,8 @@ public final class LangParser {
 				while(currentToken.getTokenType() != Token.TokenType.END_COMMENT) {
 					currentToken = tokens.remove(0);
 					if(currentToken.getTokenType() == Token.TokenType.LEXER_ERROR)
-						errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(currentToken.pos.lineNumberFrom,
-								currentToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, currentToken.getValue()));
+						errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(currentToken.pos, ParsingError.LEXER_ERROR,
+								currentToken.getValue()));
 
 					if(isDocComment) {
 						if(currentToken.getTokenType() == Token.TokenType.LITERAL_TEXT)

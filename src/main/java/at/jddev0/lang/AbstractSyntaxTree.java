@@ -21,12 +21,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		nodes = new ArrayList<>();
 	}
 	
-	public int getLineNumberFrom() {
-		return nodes.isEmpty()?-1:nodes.get(0).getLineNumberFrom();
-	}
-	
-	public int getLineNumberTo() {
-		return nodes.isEmpty()?-1:nodes.get(nodes.size() - 1).getLineNumberTo();
+	public CodePosition getPos() {
+		return nodes.isEmpty()?CodePosition.EMPTY:nodes.get(0).getPos().combine(nodes.get(nodes.size() - 1).getPos());
 	}
 	
 	public void addChild(Node node) {
@@ -88,9 +84,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static interface Node extends Iterable<Node> {
 		public List<Node> getChildren();
 		public NodeType getNodeType();
-		public int getLineNumberFrom();
-		public int getLineNumberTo();
-		
+		public CodePosition getPos();
+
 		@Override
 		public default Iterator<AbstractSyntaxTree.Node> iterator() {
 			return getChildren().iterator();
@@ -99,18 +94,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class ListNode implements Node {
 		private final List<Node> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
-		
-		public ListNode(List<Node> nodes, int lineNumberFrom, int lineNumberTo) {
+		private final CodePosition pos;
+
+		public ListNode(CodePosition pos, List<Node> nodes) {
 			this.nodes = new ArrayList<>(nodes);
 			
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		public ListNode(List<Node> nodes) {
-			this(nodes, nodes.isEmpty()?-1:nodes.get(0).getLineNumberFrom(),
-					nodes.isEmpty()?-1:nodes.get(nodes.size() - 1).getLineNumberTo());
+			this(nodes.isEmpty()?CodePosition.EMPTY:nodes.get(0).getPos().combine(
+					nodes.get(nodes.size() - 1).getPos()), nodes);
 		}
 		
 		@Override
@@ -122,25 +115,18 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public NodeType getNodeType() {
 			return NodeType.LIST;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
+		public CodePosition getPos() {
+			return pos;
 		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
-		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("ListNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Children: {\n");
+			builder.append("ListNode: Position: ");
+			builder.append(pos);
+			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -178,26 +164,19 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	//Is only super class for other nodes
 	public static abstract class ChildlessNode implements Node {
 		private final List<Node> nodes;
-		protected final int lineNumberFrom;
-		protected final int lineNumberTo;
-		
-		public ChildlessNode(int lineNumberFrom, int lineNumberTo) {
+		protected final CodePosition pos;
+
+		public ChildlessNode(CodePosition pos) {
 			this.nodes = new ArrayList<>(0);
 			
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
+		public CodePosition getPos() {
+			return pos;
 		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
-		}
-		
+
 		@Override
 		public List<Node> getChildren() {
 			return new ArrayList<>(nodes);
@@ -233,22 +212,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final ParsingError error;
 		private final String message;
 		
-		public ParsingErrorNode(int lineNumberFrom, int lineNumberTo, ParsingError error, String message) {
-			super(lineNumberFrom, lineNumberTo);
+		public ParsingErrorNode(CodePosition pos, ParsingError error, String message) {
+			super(pos);
 			
 			this.error = error;
 			this.message = message;
 		}
-		public ParsingErrorNode(int lineNumber, ParsingError error, String message) {
-			this(lineNumber, lineNumber, error, message);
+		public ParsingErrorNode(CodePosition pos, ParsingError error) {
+			this(pos, error, null);
 		}
-		public ParsingErrorNode(int lineNumberFrom, int lineNumberTo, ParsingError error) {
-			this(lineNumberFrom, lineNumberTo, error, null);
-		}
-		public ParsingErrorNode(int lineNumber, ParsingError error) {
-			this(lineNumber, lineNumber, error, null);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.PARSING_ERROR;
@@ -265,11 +238,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("ParsingErrorNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Error: \"");
+			builder.append("ParsingErrorNode: Position: ");
+			builder.append(pos);
+			builder.append(", Error: \"");
 			builder.append(error);
 			builder.append("\", Message: \"");
 			builder.append(message);
@@ -301,19 +272,17 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class AssignmentNode implements Node {
 		private final List<Node> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public AssignmentNode(Node lvalue, Node rvalue, int lineNumberFrom, int lineNumberTo) {
+		public AssignmentNode(CodePosition pos, Node lvalue, Node rvalue) {
 			nodes = new ArrayList<>(2);
 			nodes.add(lvalue);
 			nodes.add(rvalue);
 			
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		public AssignmentNode(Node lvalue, Node rvalue) {
-			this(lvalue, rvalue, lvalue.getLineNumberFrom(), rvalue.getLineNumberTo());
+			this(lvalue.getPos().combine(rvalue.getPos()), lvalue, rvalue);
 		}
 		
 		@Override
@@ -325,17 +294,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public NodeType getNodeType() {
 			return NodeType.ASSIGNMENT;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
+		public CodePosition getPos() {
+			return pos;
 		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
-		}
-		
+
 		public Node getLvalue() {
 			return nodes.get(0);
 		}
@@ -347,11 +311,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("AssignmentNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, lvalue: {\n");
+			builder.append("AssignmentNode: Position: ");
+			builder.append(pos);
+			builder.append(", lvalue: {\n");
 			String[] tokens = getLvalue().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -394,15 +356,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class EscapeSequenceNode extends ChildlessNode {
 		private final char c;
 		
-		public EscapeSequenceNode(int lineNumberFrom, int lineNumberTo, char c) {
-			super(lineNumberFrom, lineNumberTo);
+		public EscapeSequenceNode(CodePosition pos, char c) {
+			super(pos);
 			
 			this.c = c;
 		}
-		public EscapeSequenceNode(int lineNumber, char c) {
-			this(lineNumber, lineNumber, c);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.ESCAPE_SEQUENCE;
@@ -415,11 +374,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("EscapeSequenceNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Char: \"");
+			builder.append("EscapeSequenceNode: Position: ");
+			builder.append(pos);
+			builder.append(", Char: \"");
 			builder.append(c);
 			builder.append("\"\n");
 			
@@ -455,15 +412,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class UnprocessedVariableNameNode extends ChildlessNode {
 		private final String variableName;
 		
-		public UnprocessedVariableNameNode(int lineNumberFrom, int lineNumberTo, String variableName) {
-			super(lineNumberFrom, lineNumberTo);
+		public UnprocessedVariableNameNode(CodePosition pos, String variableName) {
+			super(pos);
 			
 			this.variableName = variableName;
 		}
-		public UnprocessedVariableNameNode(int lineNumber, String variableName) {
-			this(lineNumber, lineNumber, variableName);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.UNPROCESSED_VARIABLE_NAME;
@@ -476,11 +430,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("UnprocessedVariableNameNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, VariableName: \"");
+			builder.append("UnprocessedVariableNameNode: Position: ");
+			builder.append(pos);
+			builder.append(", VariableName: \"");
 			builder.append(variableName);
 			builder.append("\"\n");
 			
@@ -512,20 +464,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final String variableName;
 		private final String typeConstraint;
 		
-		public VariableNameNode(int lineNumberFrom, int lineNumberTo, String variableName, String typeConstraint) {
-			super(lineNumberFrom, lineNumberTo);
+		public VariableNameNode(CodePosition pos, String variableName, String typeConstraint) {
+			super(pos);
 			
 			this.variableName = variableName;
 			this.typeConstraint = typeConstraint;
 		}
-		public VariableNameNode(int lineNumber, String variableName, String typeConstraint) {
-			this(lineNumber, lineNumber, variableName, typeConstraint);
-		}
-		public VariableNameNode(int lineNumberFrom, int lineNumberTo, String variableName) {
-			this(lineNumberFrom, lineNumberTo, variableName, null);
-		}
-		public VariableNameNode(int lineNumber, String variableName) {
-			this(lineNumber, lineNumber, variableName);
+		public VariableNameNode(CodePosition pos, String variableName) {
+			this(pos, variableName, null);
 		}
 		
 		@Override
@@ -545,9 +491,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("VariableNameNode: LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
+			builder.append(pos);
 			builder.append(", VariableName: \"");
 			builder.append(variableName);
 			builder.append(", TypeConstraint: \"");
@@ -585,13 +529,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class ArgumentSeparatorNode extends ChildlessNode {
 		private final String originalText;
 		
-		public ArgumentSeparatorNode(int lineNumberFrom, int lineNumberTo, String originalText) {
-			super(lineNumberFrom, lineNumberTo);
+		public ArgumentSeparatorNode(CodePosition pos, String originalText) {
+			super(pos);
 			
 			this.originalText = originalText;
-		}
-		public ArgumentSeparatorNode(int lineNumber, String originalText) {
-			this(lineNumber, lineNumber, originalText);
 		}
 		
 		@Override
@@ -606,11 +547,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("ArgumentSeparatorNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, OriginalText: \"");
+			builder.append("ArgumentSeparatorNode: Position: ");
+			builder.append(pos);
+			builder.append(", OriginalText: \"");
 			builder.append(originalText);
 			builder.append("\"\n");
 			
@@ -640,15 +579,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class FunctionCallNode implements Node {
 		private final List<Node> argumentList;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		private final String functionName;
 		
-		public FunctionCallNode(List<Node> argumentList, int lineNumberFrom, int lineNumberTo, String functionName) {
+		public FunctionCallNode(CodePosition pos, List<Node> argumentList, String functionName) {
 			this.argumentList = new ArrayList<>(argumentList);
 			
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 			
 			this.functionName = functionName;
 		}
@@ -662,17 +599,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public NodeType getNodeType() {
 			return NodeType.FUNCTION_CALL;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
+		public CodePosition getPos() {
+			return pos;
 		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
-		}
-		
+
 		public String getFunctionName() {
 			return functionName;
 		}
@@ -680,11 +612,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("FunctionCallNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, FunctionName: \"");
+			builder.append("FunctionCallNode: Position: ");
+			builder.append(pos);
+			builder.append(", FunctionName: \"");
 			builder.append(functionName);
 			builder.append("\", ParameterList: {\n");
 			argumentList.forEach(node -> {
@@ -725,15 +655,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final String leadingWhitespace;
 		private final String trailingWhitespace;
 		private final List<Node> argumentList;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
-		
-		public FunctionCallPreviousNodeValueNode(String leadingWhitespace, String trailingWhitespace, List<Node> argumentList, int lineNumberFrom, int lineNumberTo) {
+		private final CodePosition pos;
+
+		public FunctionCallPreviousNodeValueNode(CodePosition pos, String leadingWhitespace, String trailingWhitespace,
+												 List<Node> argumentList) {
 			this.leadingWhitespace = leadingWhitespace;
 			this.trailingWhitespace = trailingWhitespace;
 			this.argumentList = new ArrayList<>(argumentList);
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		
 		public String getLeadingWhitespace() {
@@ -753,25 +682,18 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public NodeType getNodeType() {
 			return NodeType.FUNCTION_CALL_PREVIOUS_NODE_VALUE;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
+		public CodePosition getPos() {
+			return pos;
 		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
-		}
-		
+
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("FunctionCallPreviousNodeValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, ArgumentList: {\n");
+			builder.append("FunctionCallPreviousNodeValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", ArgumentList: {\n");
 			argumentList.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -818,20 +740,18 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final List<Node> parameterList;
 		private final String returnValueTypeConstraint;
 		private final AbstractSyntaxTree functionBody;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public FunctionDefinitionNode(String functionName, boolean overloaded, String docComment,
+		public FunctionDefinitionNode(CodePosition pos, String functionName, boolean overloaded, String docComment,
 									  List<Node> parameterList, String returnValueTypeConstraint,
-									  AbstractSyntaxTree functionBody, int lineNumberFrom, int lineNumberTo) {
+									  AbstractSyntaxTree functionBody) {
 			this.functionName = functionName;
 			this.overloaded = overloaded;
 			this.docComment = docComment;
 			this.parameterList = new ArrayList<>(parameterList);
 			this.returnValueTypeConstraint = returnValueTypeConstraint;
 			this.functionBody = functionBody;
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		
 		@Override
@@ -843,15 +763,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public NodeType getNodeType() {
 			return NodeType.FUNCTION_DEFINITION;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 
 		public String getFunctionName() {
@@ -877,11 +792,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("FunctionDefinitionNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, FunctionName: \"");
+			builder.append("FunctionDefinitionNode: Position: ");
+			builder.append(pos);
+			builder.append(", FunctionName: \"");
 			builder.append(functionName);
 			builder.append("\", Overloaded: ");
 			builder.append(overloaded);
@@ -938,8 +851,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static abstract class IfStatementPartNode extends ChildlessNode {
 		private final AbstractSyntaxTree ifBody;
 		
-		public IfStatementPartNode(AbstractSyntaxTree ifBody, int lineNumberFrom, int lineNumberTo) {
-			super(lineNumberFrom, lineNumberTo);
+		public IfStatementPartNode(CodePosition pos, AbstractSyntaxTree ifBody) {
+			super(pos);
 			
 			this.ifBody = ifBody;
 		}
@@ -977,8 +890,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class IfStatementPartIfNode extends IfStatementPartNode {
 		private final OperationNode condition;
 		
-		public IfStatementPartIfNode(AbstractSyntaxTree ifBody, int lineNumberFrom, int lineNumberTo, OperationNode condition) {
-			super(ifBody, lineNumberFrom, lineNumberTo);
+		public IfStatementPartIfNode(CodePosition pos, AbstractSyntaxTree ifBody, OperationNode condition) {
+			super(pos, ifBody);
 			
 			if(condition.getNodeType() != NodeType.CONDITION)
 				throw new IllegalStateException("Node type is not compatible with this node");
@@ -998,11 +911,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("IfStatementPartIfNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Condition: {\n");
+			builder.append("IfStatementPartIfNode: Position: ");
+			builder.append(pos);
+			builder.append(", Condition: {\n");
 			String[] tokens = condition.toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1043,8 +954,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class IfStatementPartElseNode extends IfStatementPartNode {
-		public IfStatementPartElseNode(AbstractSyntaxTree ifBody, int lineNumberFrom, int lineNumberTo) {
-			super(ifBody, lineNumberFrom, lineNumberTo);
+		public IfStatementPartElseNode(CodePosition pos, AbstractSyntaxTree ifBody) {
+			super(pos, ifBody);
 		}
 		
 		@Override
@@ -1055,11 +966,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("IfStatementPartElseNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, IfBody: {\n");
+			builder.append("IfStatementPartElseNode: Position: ");
+			builder.append(pos);
+			builder.append(", IfBody: {\n");
 			String[] tokens = getIfBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1094,14 +1003,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class IfStatementNode implements Node {
 		private final List<IfStatementPartNode> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public IfStatementNode(List<IfStatementPartNode> nodes, int lineNumberFrom, int lineNumberTo) {
+		public IfStatementNode(CodePosition pos, List<IfStatementPartNode> nodes) {
 			this.nodes = nodes;
 			
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		
 		@Override
@@ -1113,17 +1020,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public NodeType getNodeType() {
 			return NodeType.IF_STATEMENT;
 		}
-		
+
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
+		public CodePosition getPos() {
+			return pos;
 		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
-		}
-		
+
 		public List<IfStatementPartNode> getIfStatementPartNodes() {
 			return nodes;
 		}
@@ -1131,11 +1033,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("IfStatementNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Children: {\n");
+			builder.append("IfStatementNode: Position: ");
+			builder.append(pos);
+			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -1174,8 +1074,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static abstract class LoopStatementPartNode extends ChildlessNode {
 		private final AbstractSyntaxTree loopBody;
 		
-		public LoopStatementPartNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo) {
-			super(lineNumberFrom, lineNumberTo);
+		public LoopStatementPartNode(CodePosition pos, AbstractSyntaxTree loopBody) {
+			super(pos);
 			
 			this.loopBody = loopBody;
 		}
@@ -1211,8 +1111,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class LoopStatementPartLoopNode extends LoopStatementPartNode {
-		public LoopStatementPartLoopNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo) {
-			super(loopBody, lineNumberFrom, lineNumberTo);
+		public LoopStatementPartLoopNode(CodePosition pos, AbstractSyntaxTree loopBody) {
+			super(pos, loopBody);
 		}
 		
 		@Override
@@ -1223,11 +1123,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementPartLoopNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, LoopBody: {\n");
+			builder.append("LoopStatementPartLoopNode: Position: ");
+			builder.append(pos);
+			builder.append(", LoopBody: {\n");
 			String[] tokens = getLoopBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1263,8 +1161,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class LoopStatementPartWhileNode extends LoopStatementPartNode {
 		private final OperationNode condition;
 		
-		public LoopStatementPartWhileNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo, OperationNode condition) {
-			super(loopBody, lineNumberFrom, lineNumberTo);
+		public LoopStatementPartWhileNode(CodePosition pos, AbstractSyntaxTree loopBody, OperationNode condition) {
+			super(pos, loopBody);
 			
 			if(condition.getNodeType() != NodeType.CONDITION)
 				throw new IllegalStateException("Node type is not compatible with this node");
@@ -1284,11 +1182,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementPartWhileNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Condition: {\n");
+			builder.append("LoopStatementPartWhileNode: Position: ");
+			builder.append(pos);
+			builder.append(", Condition: {\n");
 			String[] tokens = condition.toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1331,8 +1227,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class LoopStatementPartUntilNode extends LoopStatementPartNode {
 		private final OperationNode condition;
 		
-		public LoopStatementPartUntilNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo, OperationNode condition) {
-			super(loopBody, lineNumberFrom, lineNumberTo);
+		public LoopStatementPartUntilNode(CodePosition pos, AbstractSyntaxTree loopBody, OperationNode condition) {
+			super(pos, loopBody);
 			
 			if(condition.getNodeType() != NodeType.CONDITION)
 				throw new IllegalStateException("Node type is not compatible with this node");
@@ -1352,11 +1248,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementPartUntilNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Condition: {\n");
+			builder.append("LoopStatementPartUntilNode: Position: ");
+			builder.append(pos);
+			builder.append(", Condition: {\n");
 			String[] tokens = condition.toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1400,8 +1294,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final Node varPointerNode;
 		private final Node repeatCountNode;
 		
-		public LoopStatementPartRepeatNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo, Node varPointerNode, Node repeatCountNode) {
-			super(loopBody, lineNumberFrom, lineNumberTo);
+		public LoopStatementPartRepeatNode(CodePosition pos, AbstractSyntaxTree loopBody, Node varPointerNode,
+										   Node repeatCountNode) {
+			super(pos, loopBody);
 			
 			this.varPointerNode = varPointerNode;
 			this.repeatCountNode = repeatCountNode;
@@ -1423,11 +1318,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementPartRepeatNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, varPointer: {\n");
+			builder.append("LoopStatementPartRepeatNode: Position: ");
+			builder.append(pos);
+			builder.append(", varPointer: {\n");
 			String[] tokens = varPointerNode.toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1479,8 +1372,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final Node varPointerNode;
 		private final Node compositeOrTextNode;
 		
-		public LoopStatementPartForEachNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo, Node varPointerNode, Node collectionOrTextNode) {
-			super(loopBody, lineNumberFrom, lineNumberTo);
+		public LoopStatementPartForEachNode(CodePosition pos, AbstractSyntaxTree loopBody, Node varPointerNode,
+											Node collectionOrTextNode) {
+			super(pos, loopBody);
 			
 			this.varPointerNode = varPointerNode;
 			this.compositeOrTextNode = collectionOrTextNode;
@@ -1502,11 +1396,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementPartForEachNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, varPointer: {\n");
+			builder.append("LoopStatementPartForEachNode: Position: ");
+			builder.append(pos);
+			builder.append(", varPointer: {\n");
 			String[] tokens = varPointerNode.toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1555,8 +1447,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class LoopStatementPartElseNode extends LoopStatementPartNode {
-		public LoopStatementPartElseNode(AbstractSyntaxTree loopBody, int lineNumberFrom, int lineNumberTo) {
-			super(loopBody, lineNumberFrom, lineNumberTo);
+		public LoopStatementPartElseNode(CodePosition pos, AbstractSyntaxTree loopBody) {
+			super(pos, loopBody);
 		}
 		
 		@Override
@@ -1567,11 +1459,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementPartElseNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, LoopBody: {\n");
+			builder.append("LoopStatementPartElseNode: Position: ");
+			builder.append(pos);
+			builder.append(", LoopBody: {\n");
 			String[] tokens = getLoopBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1606,13 +1496,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class LoopStatementNode implements Node {
 		private final List<LoopStatementPartNode> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public LoopStatementNode(List<LoopStatementPartNode> nodes, int lineNumberFrom, int lineNumberTo) {
+		public LoopStatementNode(CodePosition pos, List<LoopStatementPartNode> nodes) {
 			this.nodes = nodes;
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		
 		@Override
@@ -1626,13 +1514,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		public List<LoopStatementPartNode> getLoopStatementPartNodes() {
@@ -1642,11 +1525,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Children: {\n");
+			builder.append("LoopStatementNode: Position: ");
+			builder.append(pos);
+			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -1685,16 +1566,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final Node numberNode;
 		private final boolean continueNode;
 		
-		public LoopStatementContinueBreakStatement(Node numberNode, int lineNumberFrom, int lineNumberTo, boolean continueNode) {
-			super(lineNumberFrom, lineNumberTo);
+		public LoopStatementContinueBreakStatement(CodePosition pos, Node numberNode, boolean continueNode) {
+			super(pos);
 			
 			this.numberNode = numberNode;
 			this.continueNode = continueNode;
 		}
-		public LoopStatementContinueBreakStatement(Node numberNode, int lineNumber, boolean continueNode) {
-			this(numberNode, lineNumber, lineNumber, continueNode);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.LOOP_STATEMENT_CONTINUE_BREAK;
@@ -1711,11 +1589,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LoopStatementContinueBreakStatementNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, numberNode: {\n");
+			builder.append("LoopStatementContinueBreakStatementNode: Position: ");
+			builder.append(pos);
+			builder.append(", numberNode: {\n");
 			if(numberNode == null) {
 				builder.append("null");
 			}else {
@@ -1758,8 +1634,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static abstract class TryStatementPartNode extends ChildlessNode {
 		private final AbstractSyntaxTree tryBody;
 		
-		public TryStatementPartNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			super(lineNumberFrom, lineNumberTo);
+		public TryStatementPartNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			super(pos);
 			
 			this.tryBody = tryBody;
 		}
@@ -1795,8 +1671,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class TryStatementPartTryNode extends TryStatementPartNode {
-		public TryStatementPartTryNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			super(tryBody, lineNumberFrom, lineNumberTo);
+		public TryStatementPartTryNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			super(pos, tryBody);
 		}
 		
 		@Override
@@ -1807,11 +1683,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementPartTryNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, TryBody: {\n");
+			builder.append("TryStatementPartTryNode: Position: ");
+			builder.append(pos);
+			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1845,8 +1719,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class TryStatementPartSoftTryNode extends TryStatementPartNode {
-		public TryStatementPartSoftTryNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			super(tryBody, lineNumberFrom, lineNumberTo);
+		public TryStatementPartSoftTryNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			super(pos, tryBody);
 		}
 		
 		@Override
@@ -1857,11 +1731,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementPartSoftTryNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, TryBody: {\n");
+			builder.append("TryStatementPartSoftTryNode: Position: ");
+			builder.append(pos);
+			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1895,8 +1767,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class TryStatementPartNonTryNode extends TryStatementPartNode {
-		public TryStatementPartNonTryNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			super(tryBody, lineNumberFrom, lineNumberTo);
+		public TryStatementPartNonTryNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			super(pos, tryBody);
 		}
 		
 		@Override
@@ -1907,11 +1779,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementPartNonTryNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, TryBody: {\n");
+			builder.append("TryStatementPartNonTryNode: Position: ");
+			builder.append(pos);
+			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -1950,15 +1820,15 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		/**
 		 * Every error will be accepted
 		 */
-		public TryStatementPartCatchNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			this(tryBody, lineNumberFrom, lineNumberTo, null);
+		public TryStatementPartCatchNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			this(pos, tryBody, null);
 		}
 		
 		/**
 		 * @param errors Every error will be accepted if errors is null
 		 */
-		public TryStatementPartCatchNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo, List<Node> errors) {
-			super(tryBody, lineNumberFrom, lineNumberTo);
+		public TryStatementPartCatchNode(CodePosition pos, AbstractSyntaxTree tryBody, List<Node> errors) {
+			super(pos, tryBody);
 			
 			this.errors = errors == null?null:new ArrayList<>(errors);
 		}
@@ -1975,11 +1845,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementPartCatchNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Errors: {\n");
+			builder.append("TryStatementPartCatchNode: Position: ");
+			builder.append(pos);
+			builder.append(", Errors: {\n");
 			if(errors == null)
 				builder.append("\tnull\n");
 			else
@@ -2025,8 +1893,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class TryStatementPartElseNode extends TryStatementPartNode {
-		public TryStatementPartElseNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			super(tryBody, lineNumberFrom, lineNumberTo);
+		public TryStatementPartElseNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			super(pos, tryBody);
 		}
 		
 		@Override
@@ -2037,11 +1905,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementPartElseNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, TryBody: {\n");
+			builder.append("TryStatementPartElseNode: Position: ");
+			builder.append(pos);
+			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -2075,8 +1941,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class TryStatementPartFinallyNode extends TryStatementPartNode {
-		public TryStatementPartFinallyNode(AbstractSyntaxTree tryBody, int lineNumberFrom, int lineNumberTo) {
-			super(tryBody, lineNumberFrom, lineNumberTo);
+		public TryStatementPartFinallyNode(CodePosition pos, AbstractSyntaxTree tryBody) {
+			super(pos, tryBody);
 		}
 		
 		@Override
@@ -2087,11 +1953,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementPartFinallyNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, TryBody: {\n");
+			builder.append("TryStatementPartFinallyNode: Position: ");
+			builder.append(pos);
+			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -2126,13 +1990,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class TryStatementNode implements Node {
 		private final List<TryStatementPartNode> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public  TryStatementNode(List<TryStatementPartNode> nodes, int lineNumberFrom, int lineNumberTo) {
+		public  TryStatementNode(CodePosition pos, List<TryStatementPartNode> nodes) {
 			this.nodes = nodes;
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		
 		@Override
@@ -2146,13 +2008,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		public List<TryStatementPartNode> getTryStatementPartNodes() {
@@ -2162,11 +2019,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TryStatementNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Children: {\n");
+			builder.append("TryStatementNode: Position: ");
+			builder.append(pos);
+			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -2203,17 +2058,15 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class OperationNode implements Node {
 		private final List<Node> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
 		private final Operator operator;
 		private final OperatorType nodeType;
+		private final CodePosition pos;
 		
 		/**
 		 * For ternary operator
 		 */
-		public OperationNode(int lineNumberFrom, int lineNumberTo, Node leftSideOperand, Node middleOperand, Node rightSideOperand, Operator operator, OperatorType nodeType) {
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+		public OperationNode(CodePosition pos, Node leftSideOperand, Node middleOperand, Node rightSideOperand, Operator operator, OperatorType nodeType) {
+			this.pos = pos;
 			
 			if(!operator.isTernary())
 				throw new IllegalStateException("Non ternary operator \"" + operator.getSymbol() + "\" must not have 3 operands");
@@ -2235,15 +2088,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		 * For ternary operator
 		 */
 		public OperationNode(Node leftSideOperand, Node middleOperand, Node rightSideOperand, Operator operator, OperatorType nodeType) {
-			this(leftSideOperand.getLineNumberFrom(), rightSideOperand.getLineNumberTo(), leftSideOperand, middleOperand, rightSideOperand, operator, nodeType);
+			this(leftSideOperand.getPos().combine(rightSideOperand.getPos()), leftSideOperand, middleOperand, rightSideOperand, operator, nodeType);
 		}
 		
 		/**
 		 * For binary operator
 		 */
-		public OperationNode(int lineNumberFrom, int lineNumberTo, Node leftSideOperand, Node rightSideOperand, Operator operator, OperatorType nodeType) {
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+		public OperationNode(CodePosition pos, Node leftSideOperand, Node rightSideOperand, Operator operator, OperatorType nodeType) {
+			this.pos = pos;
 			
 			if(!operator.isBinary())
 				throw new IllegalStateException("Non binary operator \"" + operator.getSymbol() + "\" must not have 2 operand");
@@ -2264,15 +2116,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		 * For binary operator
 		 */
 		public OperationNode(Node leftSideOperand, Node rightSideOperand, Operator operator, OperatorType nodeType) {
-			this(leftSideOperand.getLineNumberFrom(), rightSideOperand.getLineNumberTo(), leftSideOperand, rightSideOperand, operator, nodeType);
+			this(leftSideOperand.getPos().combine(rightSideOperand.getPos()), leftSideOperand, rightSideOperand, operator, nodeType);
 		}
 		
 		/**
 		 * For unary operator
 		 */
-		public OperationNode(int lineNumberFrom, int lineNumberTo, Node operand, Operator operator, OperatorType nodeType) {
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+		public OperationNode(CodePosition pos, Node operand, Operator operator, OperatorType nodeType) {
+			this.pos = pos;
 			
 			if(!operator.isUnary())
 				throw new IllegalStateException("Non unary operator \"" + operator.getSymbol() + "\" must not have 1 operands");
@@ -2292,7 +2143,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		 * For unary operator
 		 */
 		public OperationNode(Node operand, Operator operator, OperatorType nodeType) {
-			this(operand.getLineNumberFrom(), operand.getLineNumberTo(), operand, operator, nodeType);
+			this(operand.getPos(), operand, operator, nodeType);
 		}
 		
 		@Override
@@ -2316,13 +2167,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		public Node getLeftSideOperand() {
@@ -2354,11 +2200,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("OperationNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, NodeType: \"");
+			builder.append("OperationNode: Position: ");
+			builder.append(pos);
+			builder.append(", NodeType: \"");
 			builder.append(nodeType);
 			builder.append("\", Operator: \"");
 			builder.append(operator);
@@ -2527,31 +2371,22 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class ReturnNode implements Node {
 		private final List<Node> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public ReturnNode(Node returnValue, int lineNumberFrom, int lineNumberTo) {
+		public ReturnNode(CodePosition pos, Node returnValue) {
 			nodes = new ArrayList<>(1);
 			nodes.add(returnValue);
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
-		}
-		public ReturnNode(Node returnValue, int lineNumber) {
-			this(returnValue, lineNumber, lineNumber);
+			this.pos = pos;
 		}
 		public ReturnNode(Node returnValue) {
-			this(returnValue, returnValue.getLineNumberFrom(), returnValue.getLineNumberTo());
+			this(returnValue.getPos(), returnValue);
 		}
 		
-		public ReturnNode(int lineNumberFrom, int lineNumberTo) {
+		public ReturnNode(CodePosition pos) {
 			nodes = new ArrayList<>(0);
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
-		public ReturnNode(int lineNumber) {
-			this(lineNumber, lineNumber);
-		}
-		
+
 		@Override
 		public List<Node> getChildren() {
 			return nodes;
@@ -2563,13 +2398,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		/**
@@ -2585,11 +2415,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("ReturnNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Children: {\n");
+			builder.append("ReturnNode: Position: ");
+			builder.append(pos);
+			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -2626,20 +2454,15 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class ThrowNode implements Node {
 		private final List<Node> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
-		
-		public ThrowNode(Node throwValue, int lineNumberFrom, int lineNumberTo) {
+		private final CodePosition pos;
+
+		public ThrowNode(CodePosition pos, Node throwValue) {
 			nodes = new ArrayList<>(1);
 			nodes.add(throwValue);
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
-		}
-		public ThrowNode(Node throwValue, int lineNumber) {
-			this(throwValue, lineNumber, lineNumber);
+			this.pos = pos;
 		}
 		public ThrowNode(Node throwValue) {
-			this(throwValue, throwValue.getLineNumberFrom(), throwValue.getLineNumberTo());
+			this(throwValue.getPos(), throwValue);
 		}
 		
 		@Override
@@ -2653,13 +2476,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		public Node getThrowValue() {
@@ -2669,11 +2487,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("ThrowNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, ThrowValue: {\n");
+			builder.append("ThrowNode: Position: ");
+			builder.append(pos);
+			builder.append(", ThrowValue: {\n");
 			String[] tokens = nodes.get(0).toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
@@ -2708,8 +2524,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	//Is only super class for other nodes
 	public static abstract class ValueNode extends ChildlessNode {
-		public ValueNode(int lineNumberFrom, int lineNumberTo) {
-			super(lineNumberFrom, lineNumberTo);
+		public ValueNode(CodePosition pos) {
+			super(pos);
 		}
 		
 		@Override
@@ -2741,15 +2557,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class IntValueNode extends ValueNode {
 		private final int i;
 		
-		public IntValueNode(int lineNumberFrom, int lineNumberTo, int i) {
-			super(lineNumberFrom, lineNumberTo);
+		public IntValueNode(CodePosition pos, int i) {
+			super(pos);
 			
 			this.i = i;
 		}
-		public IntValueNode(int lineNumber, int i) {
-			this(lineNumber, lineNumber, i);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.INT_VALUE;
@@ -2762,11 +2575,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("IntValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Value: \"");
+			builder.append("IntValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", Value: \"");
 			builder.append(i);
 			builder.append("\"\n");
 			
@@ -2797,13 +2608,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class LongValueNode extends ValueNode {
 		private final long l;
 		
-		public LongValueNode(int lineNumberFrom, int lineNumberTo, long l) {
-			super(lineNumberFrom, lineNumberTo);
+		public LongValueNode(CodePosition pos, long l) {
+			super(pos);
 			
 			this.l = l;
-		}
-		public LongValueNode(int lineNumber, long l) {
-			this(lineNumber, lineNumber, l);
 		}
 		
 		@Override
@@ -2818,11 +2626,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("LongValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Value: \"");
+			builder.append("LongValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", Value: \"");
 			builder.append(l);
 			builder.append("\"\n");
 			
@@ -2853,15 +2659,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class FloatValueNode extends ValueNode {
 		private final float f;
 		
-		public FloatValueNode(int lineNumberFrom, int lineNumberTo, float f) {
-			super(lineNumberFrom, lineNumberTo);
+		public FloatValueNode(CodePosition pos, float f) {
+			super(pos);
 			
 			this.f = f;
 		}
-		public FloatValueNode(int lineNumber, float f) {
-			this(lineNumber, lineNumber, f);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.FLOAT_VALUE;
@@ -2874,11 +2677,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("FloatValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Value: \"");
+			builder.append("FloatValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", Value: \"");
 			builder.append(f);
 			builder.append("\"\n");
 			
@@ -2909,15 +2710,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class DoubleValueNode extends ValueNode {
 		private final double d;
 		
-		public DoubleValueNode(int lineNumberFrom, int lineNumberTo, double d) {
-			super(lineNumberFrom, lineNumberTo);
+		public DoubleValueNode(CodePosition pos, double d) {
+			super(pos);
 			
 			this.d = d;
 		}
-		public DoubleValueNode(int lineNumber, double d) {
-			this(lineNumber, lineNumber, d);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.DOUBLE_VALUE;
@@ -2930,11 +2728,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("DoubleValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Value: \"");
+			builder.append("DoubleValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", Value: \"");
 			builder.append(d);
 			builder.append("\"\n");
 			
@@ -2965,15 +2761,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class CharValueNode extends ValueNode {
 		private final char c;
 		
-		public CharValueNode(int lineNumberFrom, int lineNumberTo, char c) {
-			super(lineNumberFrom, lineNumberTo);
+		public CharValueNode(CodePosition pos, char c) {
+			super(pos);
 			
 			this.c = c;
 		}
-		public CharValueNode(int lineNumber, char c) {
-			this(lineNumber, lineNumber, c);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.CHAR_VALUE;
@@ -2986,11 +2779,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("CharValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Value: \"");
+			builder.append("CharValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", Value: \"");
 			builder.append(c);
 			builder.append("\"\n");
 			
@@ -3021,15 +2812,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	public static final class TextValueNode extends ValueNode {
 		private final String text;
 		
-		public TextValueNode(int lineNumberFrom, int lineNumberTo, String text) {
-			super(lineNumberFrom, lineNumberTo);
+		public TextValueNode(CodePosition pos, String text) {
+			super(pos);
 			
 			this.text = text;
 		}
-		public TextValueNode(int lineNumber, String text) {
-			this(lineNumber, lineNumber, text);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.TEXT_VALUE;
@@ -3042,11 +2830,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("TextValueNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Value: \"");
+			builder.append("TextValueNode: Position: ");
+			builder.append(pos);
+			builder.append(", Value: \"");
 			builder.append(text);
 			builder.append("\"\n");
 			
@@ -3075,13 +2861,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class NullValueNode extends ValueNode {
-		public NullValueNode(int lineNumberFrom, int lineNumberTo) {
-			super(lineNumberFrom, lineNumberTo);
+		public NullValueNode(CodePosition pos) {
+			super(pos);
 		}
-		public NullValueNode(int lineNumber) {
-			this(lineNumber, lineNumber);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.NULL_VALUE;
@@ -3090,7 +2873,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("NullValueNode\n");
+			builder.append("NullValueNode: Position:");
+			builder.append(pos);
+			builder.append("\n");
 			
 			return builder.toString();
 		}
@@ -3117,13 +2902,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class VoidValueNode extends ValueNode {
-		public VoidValueNode(int lineNumberFrom, int lineNumberTo) {
-			super(lineNumberFrom, lineNumberTo);
+		public VoidValueNode(CodePosition pos) {
+			super(pos);
 		}
-		public VoidValueNode(int lineNumber) {
-			this(lineNumber, lineNumber);
-		}
-		
+
 		@Override
 		public NodeType getNodeType() {
 			return NodeType.VOID_VALUE;
@@ -3132,7 +2914,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("VoidValueNode\n");
+			builder.append("VoidValueNode: Position");
+			builder.append(pos);
+			builder.append("\n");
 			
 			return builder.toString();
 		}
@@ -3160,18 +2944,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	
 	public static final class ArrayNode implements Node {
 		private final List<Node> nodes;
-		private final int lineNumberFrom;
-		private final int lineNumberTo;
+		private final CodePosition pos;
 		
-		public ArrayNode(List<Node> nodes, int lineNumberFrom, int lineNumberTo) {
+		public ArrayNode(CodePosition pos, List<Node> nodes) {
 			this.nodes = new ArrayList<>(nodes);
 			
-			this.lineNumberFrom = lineNumberFrom;
-			this.lineNumberTo = lineNumberTo;
+			this.pos = pos;
 		}
 		public ArrayNode(List<Node> nodes) {
-			this(nodes, nodes.isEmpty()?-1:nodes.get(0).getLineNumberFrom(),
-					nodes.isEmpty()?-1:nodes.get(nodes.size() - 1).getLineNumberTo());
+			this(nodes.isEmpty()?CodePosition.EMPTY:nodes.get(0).getPos().combine(
+					nodes.get(nodes.size() - 1).getPos()), nodes);
 		}
 		
 		@Override
@@ -3185,23 +2967,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		@Override
-		public int getLineNumberFrom() {
-			return lineNumberFrom;
-		}
-		
-		@Override
-		public int getLineNumberTo() {
-			return lineNumberTo;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("ArrayNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, Elements: {\n");
+			builder.append("ArrayNode: Position: ");
+			builder.append(pos);
+			builder.append(", Elements: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
 				for(String token:tokens) {
@@ -3242,9 +3017,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final List<String> memberNames;
 		private final List<String> typeConstraints;
 		
-		public StructDefinitionNode(int lineNumberFrom, int lineNumberTo, String structName, List<String> memberNames,
+		public StructDefinitionNode(CodePosition pos, String structName, List<String> memberNames,
 									List<String> typeConstraints) {
-			super(lineNumberFrom, lineNumberTo);
+			super(pos);
 
 			this.structName = structName;
 
@@ -3275,11 +3050,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return "StructDefinitionNode: <INVALID>";
 			
 			StringBuilder builder = new StringBuilder();
-			builder.append("StructDefinitionNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, StructName: \"");
+			builder.append("StructDefinitionNode: Position: ");
+			builder.append(pos);
+			builder.append(", StructName: \"");
 			builder.append(structName);
 			builder.append("\", Members{TypeConstraints}: {\n");
 			for(int i = 0;i < memberNames.size();i++) {
@@ -3345,13 +3118,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		 */
 		private final List<AbstractSyntaxTree.Node> parentClasses;
 
-		public ClassDefinitionNode(int lineNumberFrom, int lineNumberTo, String className, List<String> staticMemberNames,
+		public ClassDefinitionNode(CodePosition pos, String className, List<String> staticMemberNames,
 								   List<String> staticMemberTypeConstraints, List<Node> staticMemberValues,
 								   List<Boolean> staticMemberFinalFlag, List<String> memberNames, List<String> memberTypeConstraints,
 								   List<Boolean> memberFinalFlag, List<String> methodNames, List<Node> methodDefinitions,
 								   List<Boolean> methodOverrideFlag, List<Node> constructorDefinitions,
-								   List<AbstractSyntaxTree.Node> parentClasses) {
-			super(lineNumberFrom, lineNumberTo);
+								   List<Node> parentClasses) {
+			super(pos);
 
 			this.className = className;
 
@@ -3440,11 +3213,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return "ClassDefinitionNode: <INVALID>";
 
 			StringBuilder builder = new StringBuilder();
-			builder.append("ClassDefinitionNode: Position: {LineFrom: ");
-			builder.append(lineNumberFrom);
-			builder.append(", LineTo: ");
-			builder.append(lineNumberTo);
-			builder.append("}, ClassName: \"");
+			builder.append("ClassDefinitionNode: Position: ");
+			builder.append(pos);
+			builder.append(", ClassName: \"");
 			builder.append(className);
 			builder.append("\", StaticMembers{TypeConstraints} = <value>: {\n");
 			for(int i = 0;i < staticMemberNames.size();i++) {

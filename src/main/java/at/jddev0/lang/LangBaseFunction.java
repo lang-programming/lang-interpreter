@@ -124,7 +124,7 @@ public class LangBaseFunction {
         return builder.toString();
     }
 
-    public boolean isEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber) {
+    public boolean isEquals(LangBaseFunction that, LangInterpreter interpreter, CodePosition pos) {
         if(this.varArgsParameterIndex != that.varArgsParameterIndex ||
                 this.textVarArgsParameter != that.textVarArgsParameter ||
                 this.parameterList.size() != that.parameterList.size() ||
@@ -133,7 +133,7 @@ public class LangBaseFunction {
             return false;
 
         for(int i = 0;i < this.parameterList.size();i++)
-            if(!interpreter.operators.isEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber))
+            if(!interpreter.operators.isEquals(this.parameterList.get(i), that.parameterList.get(i), pos))
                 return false;
 
         for(int i = 0;i < this.parameterDataTypeConstraintList.size();i++)
@@ -147,7 +147,7 @@ public class LangBaseFunction {
         return true;
     }
 
-    public boolean isStrictEquals(LangBaseFunction that, LangInterpreter interpreter, int lineNumber) {
+    public boolean isStrictEquals(LangBaseFunction that, LangInterpreter interpreter, CodePosition pos) {
         if(this.varArgsParameterIndex != that.varArgsParameterIndex ||
                 this.textVarArgsParameter != that.textVarArgsParameter ||
                 this.parameterList.size() != that.parameterList.size() ||
@@ -156,7 +156,7 @@ public class LangBaseFunction {
             return false;
 
         for(int i = 0;i < this.parameterList.size();i++)
-            if(!interpreter.operators.isStrictEquals(this.parameterList.get(i), that.parameterList.get(i), lineNumber))
+            if(!interpreter.operators.isStrictEquals(this.parameterList.get(i), that.parameterList.get(i), pos))
                 return false;
 
         for(int i = 0;i < this.parameterDataTypeConstraintList.size();i++)

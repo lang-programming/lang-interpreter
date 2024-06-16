@@ -4,7 +4,7 @@ lang.name = Lang Standard Implementation (&StackTraceElement)
 struct &StackTraceElement {
     $path{?TEXT}
     $file{?TEXT}
-    $lineNumber{INT}
+    $pos{STRUCT} # TODO replace with &CodePosition
     $functionName{?TEXT}
     $modulePath{?TEXT}
     $moduleFile{?TEXT}

@@ -116,10 +116,11 @@ final class LangModuleManager {
 
 		try {
 			//Update call stack (Path inside module archive)
-			interpreter.pushStackElement(new StackElement("<module:" + module.getFile()  + "[" + lmc.getName() + "]>", "<entryPoint>", null, module), -1);
+			interpreter.pushStackElement(new StackElement("<module:" + module.getFile()  + "[" + lmc.getName() + "]>",
+					"<entryPoint>", null, module), CodePosition.EMPTY);
 			
-			String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, -1).stream().map(ele ->
-					interpreter.conversions.toText(ele, -1)).
+			String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
+					interpreter.conversions.toText(ele, CodePosition.EMPTY)).
 					collect(Collectors.toList()).toArray(new String[0]);
 
 			interpreter.enterScope(langArgs);
@@ -212,10 +213,10 @@ final class LangModuleManager {
 		LangNativeModule nativeModule = lnmArray[0];
 		
 		interpreter.pushStackElement(new StackElement("<module:" + module.getFile() + "[" + module.getLangModuleConfiguration().getName() + "]>",
-				(moduleEntryPoint?"<entryPoint>":entryPoint), "<native:" + (load?"load":"unload") + ">", module), -1);
+				(moduleEntryPoint?"<entryPoint>":entryPoint), "<native:" + (load?"load":"unload") + ">", module), CodePosition.EMPTY);
 		
-		String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, -1).stream().map(ele ->
-				interpreter.conversions.toText(ele, -1)).collect(Collectors.toList()).toArray(new String[0]);
+		String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
+				interpreter.conversions.toText(ele, CodePosition.EMPTY)).collect(Collectors.toList()).toArray(new String[0]);
 
 		interpreter.enterScope(langArgs);
 		

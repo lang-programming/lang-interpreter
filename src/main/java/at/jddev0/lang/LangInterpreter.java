@@ -157,21 +157,21 @@ public final class LangInterpreter {
 		return new ArrayList<>(callStack);
 	}
 	
-	void pushStackElement(StackElement stackElement, int parentLineNumber) {
-		callStack.addLast(currentCallStackElement.withLineNumber(parentLineNumber));
+	void pushStackElement(StackElement stackElement, CodePosition parentPos) {
+		callStack.addLast(currentCallStackElement.withPos(parentPos));
 		currentCallStackElement = stackElement;
 	}
 	
 	StackElement popStackElement() {
-		currentCallStackElement = callStack.pollLast().withLineNumber(-1);
+		currentCallStackElement = callStack.pollLast().withPos(CodePosition.EMPTY);
 		return currentCallStackElement;
 	}
 	
-	String printStackTrace(int currentLineNumber) {
+	String printStackTrace(CodePosition pos) {
 		StringBuilder builder = new StringBuilder();
 		
 		ListIterator<StackElement> iter = callStack.listIterator(callStack.size());
-		builder.append(currentCallStackElement.withLineNumber(currentLineNumber));
+		builder.append(currentCallStackElement.withPos(pos));
 		if(!iter.hasPrevious())
 			return builder.toString();
 		
@@ -188,7 +188,7 @@ public final class LangInterpreter {
 	}
 	
 	boolean interpretCondition(OperationNode node) throws StoppedException {
-		return conversions.toBool(interpretOperationNode(node), node.getLineNumberFrom());
+		return conversions.toBool(interpretOperationNode(node), node.getPos());
 	}
 	
 	int getParserLineNumber() {
@@ -319,12 +319,12 @@ public final class LangInterpreter {
 						return interpretClassDefinitionNode((ClassDefinitionNode)node);
 					
 					case GENERAL:
-						setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+						setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 						return null;
 				}
 			}
 		}catch(ClassCastException e) {
-			setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 		}
 		
 		return null;
@@ -336,18 +336,17 @@ public final class LangInterpreter {
 	 * @param supportsPointerDereferencingAndReferencing If true, this node will return pointer reference or a dereferenced pointers as VariableNameNode<br>
 	 *                                   (e.g. $[abc] is not in variableNames, but $abc is -> $[abc] will return a VariableNameNode)
 	 */
-	private Node convertVariableNameToVariableNameNodeOrComposition(int lineNumberFrom, int lineNumberTo, String moduleName, String variableName,
-	Set<String> variableNames, String variablePrefixAppendAfterSearch, final boolean supportsPointerDereferencingAndReferencing, int lineNumber) {
+	private Node convertVariableNameToVariableNameNodeOrComposition(String moduleName, String variableName,
+	Set<String> variableNames, String variablePrefixAppendAfterSearch, final boolean supportsPointerDereferencingAndReferencing, CodePosition pos) {
 		Stream<String> variableNameStream;
 		if(moduleName == null) {
 			variableNameStream = variableNames.stream();
 		}else {
 			LangModule module = modules.get(moduleName);
 			if(module == null) {
-				setErrno(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", lineNumber);
+				setErrno(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", pos);
 				
-				return new TextValueNode(lineNumberFrom, lineNumberTo,
-						(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+				return new TextValueNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
 			}
 			
 			variableNameStream = module.getExportedVariables().keySet().stream();
@@ -370,15 +369,14 @@ public final class LangInterpreter {
 					startIndex = variableName.indexOf('*');
 					int endIndex = variableName.lastIndexOf('*') + 1;
 					if(endIndex >= variableName.length())
-						return new TextValueNode(lineNumberFrom, lineNumberTo,
-								(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+						return new TextValueNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
 					
 					dereferences = variableName.substring(startIndex, endIndex);
 					modifiedVariableName = variableName.substring(0, startIndex) + variableName.substring(endIndex);
 					
 					if(!modifiedVariableName.contains("[") && !modifiedVariableName.contains("]"))
-						returnedNode = convertVariableNameToVariableNameNodeOrComposition(lineNumberFrom, lineNumberTo,
-								moduleName, modifiedVariableName, variableNames, "", supportsPointerDereferencingAndReferencing, lineNumber);
+						returnedNode = convertVariableNameToVariableNameNodeOrComposition(
+								moduleName, modifiedVariableName, variableNames, "", supportsPointerDereferencingAndReferencing, pos);
 				}
 				
 				if(modifiedVariableName.contains("[") && modifiedVariableName.contains("]")) { //Check dereferenced variable name
@@ -397,10 +395,10 @@ public final class LangInterpreter {
 						}
 						
 						if(modifiedVariableName.indexOf('[', currentIndex) == -1) {
-							returnedNode = convertVariableNameToVariableNameNodeOrComposition(lineNumberFrom, lineNumberTo,
+							returnedNode = convertVariableNameToVariableNameNodeOrComposition(
 									moduleName, modifiedVariableName.substring(0, indexOpeningBracket) +
-									modifiedVariableName.substring(currentIndex, currentIndexMatchingBracket + 1), variableNames, "", supportsPointerDereferencingAndReferencing,
-									lineNumber);
+									modifiedVariableName.substring(currentIndex, currentIndexMatchingBracket + 1), variableNames,
+									"", supportsPointerDereferencingAndReferencing, pos);
 						}
 					}
 				}
@@ -411,64 +409,60 @@ public final class LangInterpreter {
 					switch(returnedNode.getNodeType()) {
 						case VARIABLE_NAME: //Variable was found without additional text -> valid pointer reference
 							if(text == null)
-								return new VariableNameNode(lineNumberFrom, lineNumberTo,
-										(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+								return new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) +
+										variablePrefixAppendAfterSearch + variableName);
 							
 							//Variable composition
 							List<Node> nodes = new ArrayList<>();
-							nodes.add(new VariableNameNode(lineNumberFrom, lineNumberTo,
-									(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + modifiedVariableName));
-							nodes.add(new TextValueNode(lineNumberFrom, lineNumberTo, text));
+							nodes.add(new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) +
+									variablePrefixAppendAfterSearch + modifiedVariableName));
+							nodes.add(new TextValueNode(pos, text));
 							return new ListNode(nodes);
 						
 						case LIST: //Variable was found with additional text -> no valid pointer reference
 						case TEXT_VALUE: //Variable was not found
 						default: //Default should never be reached
-							return new TextValueNode(lineNumberFrom, lineNumberTo,
-									(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+							return new TextValueNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) +
+									variablePrefixAppendAfterSearch + variableName);
 					}
 				}
 			}
 			
-			return new TextValueNode(lineNumberFrom, lineNumberTo,
-					(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+			return new TextValueNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
 		}
 		
 		String returendVariableName = optionalReturnedVariableName.get();
 		if(returendVariableName.length() == variableName.length())
-			return new VariableNameNode(lineNumberFrom, lineNumberTo,
-					(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+			return new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
 		
 		//Variable composition
 		List<Node> nodes = new ArrayList<>();
 		//Add matching part of variable as VariableNameNode
-		nodes.add(new VariableNameNode(lineNumberFrom, lineNumberTo,
-				(moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + returendVariableName));
-		nodes.add(new TextValueNode(lineNumberFrom, lineNumberTo,
-				variableName.substring(returendVariableName.length()))); //Add composition part as TextValueNode
+		nodes.add(new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + returendVariableName));
+		nodes.add(new TextValueNode(pos, variableName.substring(returendVariableName.length()))); //Add composition part as TextValueNode
 		return new ListNode(nodes);
 	}
 	private Node processUnprocessedVariableNameNode(DataObject compositeType, UnprocessedVariableNameNode node) {
 		String variableName = node.getVariableName();
 		
 		if(executionFlags.rawVariableNames)
-			return new VariableNameNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
+			return new VariableNameNode(node.getPos(), variableName);
 		
 		boolean isModuleVariable = variableName.startsWith("[[");
 		String moduleName = null;
 		if(isModuleVariable) {
 			int indexModuleIdientifierEnd = variableName.indexOf("]]::");
 			if(indexModuleIdientifierEnd == -1) {
-				setErrno(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom());
+				setErrno(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 				
-				return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
+				return new TextValueNode(node.getPos(), variableName);
 			}
 			
 			moduleName = variableName.substring(2, indexModuleIdientifierEnd);
 			if(!isAlphaNumericWithUnderline(moduleName)) {
-				setErrno(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom());
+				setErrno(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
 				
-				return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
+				return new TextValueNode(node.getPos(), variableName);
 			}
 			
 			variableName = variableName.substring(indexModuleIdientifierEnd + 4);
@@ -479,8 +473,8 @@ public final class LangInterpreter {
 			Set<String> variableNames = compositeType.getObject().getMethods().keySet().stream().
 					filter(key -> key.startsWith("mp.")).collect(Collectors.toSet());
 
-			return convertVariableNameToVariableNameNodeOrComposition(node.getLineNumberFrom(), node.getLineNumberTo(),
-					moduleName, variableName, variableNames, "", false, node.getLineNumberFrom());
+			return convertVariableNameToVariableNameNodeOrComposition(moduleName, variableName, variableNames,
+					"", false, node.getPos());
 		}
 		
 		if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp.")) {
@@ -495,22 +489,22 @@ public final class LangInterpreter {
 					if(!compositeType.getObject().isClass())
 						variableNames.addAll(Arrays.asList(compositeType.getObject().getMemberNames()));
 				}else {
-					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", node.getLineNumberFrom());
+					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", node.getPos());
 
-					return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
+					return new TextValueNode(node.getPos(), variableName);
 				}
 			}else {
 				variableNames = getData().var.keySet();
 			}
 			
-			return convertVariableNameToVariableNameNodeOrComposition(node.getLineNumberFrom(), node.getLineNumberTo(),
-					moduleName, variableName, variableNames, "", variableName.startsWith("$"), node.getLineNumberFrom());
+			return convertVariableNameToVariableNameNodeOrComposition(moduleName, variableName, variableNames,
+					"", variableName.startsWith("$"), node.getPos());
 		}
 		
 		if(compositeType != null) {
-			setErrno(InterpretingError.INVALID_AST_NODE, "Invalid composite type member name: \"" + variableName + "\"", node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, "Invalid composite type member name: \"" + variableName + "\"", node.getPos());
 			
-			return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
+			return new TextValueNode(node.getPos(), variableName);
 		}
 		
 		final boolean isLinkerFunction;
@@ -536,15 +530,15 @@ public final class LangInterpreter {
 			
 			variableName = variableName.substring(3);
 		}else {
-			setErrno(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 			
-			return new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), variableName);
+			return new TextValueNode(node.getPos(), variableName);
 		}
 		
-		return convertVariableNameToVariableNameNodeOrComposition(node.getLineNumberFrom(), node.getLineNumberTo(),
-		null, variableName, funcs.entrySet().stream().filter(entry -> {
-			return entry.getValue().isLinkerFunction() == isLinkerFunction;
-		}).map(Entry::getKey).collect(Collectors.toSet()), prefix, false, node.getLineNumberFrom());
+		return convertVariableNameToVariableNameNodeOrComposition(null, variableName,
+				funcs.entrySet().stream().filter(entry -> {
+					return entry.getValue().isLinkerFunction() == isLinkerFunction;
+				}).map(Entry::getKey).collect(Collectors.toSet()), prefix, false, node.getPos());
 	}
 	
 	private Node processFunctionCallPreviousNodeValueNode(FunctionCallPreviousNodeValueNode node, DataObject previousValue) {
@@ -562,9 +556,9 @@ public final class LangInterpreter {
 		
 		//Previous node value wasn't a function -> return children of node in between "(" and ")" as ListNode
 		List<Node> nodes = new ArrayList<>();
-		nodes.add(new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), "(" + node.getLeadingWhitespace()));
+		nodes.add(new TextValueNode(node.getPos(), "(" + node.getLeadingWhitespace()));
 		nodes.addAll(node.getChildren());
-		nodes.add(new TextValueNode(node.getLineNumberFrom(), node.getLineNumberTo(), node.getTrailingWhitespace() + ")"));
+		nodes.add(new TextValueNode(node.getPos(), node.getTrailingWhitespace() + ")"));
 		return new ListNode(nodes);
 	}
 	
@@ -586,7 +580,7 @@ public final class LangInterpreter {
 						dataObjects.add(interpretNode(null, ret));
 					}
 				}catch(ClassCastException e) {
-					dataObjects.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom()));
+					dataObjects.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos()));
 				}
 				
 				previousDataObject = dataObjects.get(dataObjects.size() - 1);
@@ -605,7 +599,7 @@ public final class LangInterpreter {
 			previousDataObject = ret;
 		}
 		
-		return LangUtils.combineDataObjects(dataObjects, this, node.getLineNumberFrom());
+		return LangUtils.combineDataObjects(dataObjects, this, node.getPos());
 	}
 	
 	private DataObject interpretValueNode(ValueNode node) {
@@ -632,7 +626,7 @@ public final class LangInterpreter {
 					break;
 			}
 		}catch(ClassCastException e) {
-			setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 		}
 		
 		return new DataObject().setError(new ErrorObject(InterpretingError.INVALID_AST_NODE));
@@ -671,7 +665,7 @@ public final class LangInterpreter {
 		if(error == null)
 			error = InterpretingError.INVALID_AST_NODE;
 		return setErrnoErrorObject(error, node.getMessage() == null?node.getError().getErrorText():node.getMessage(),
-				node.getLineNumberFrom());
+				node.getPos());
 	}
 	
 	/**
@@ -680,7 +674,7 @@ public final class LangInterpreter {
 	private boolean interpretIfStatementNode(IfStatementNode node) {
 		List<IfStatementPartNode> ifPartNodes = node.getIfStatementPartNodes();
 		if(ifPartNodes.isEmpty()) {
-			setErrno(InterpretingError.INVALID_AST_NODE, "Empty if statement", node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, "Empty if statement", node.getPos());
 			
 			return false;
 		}
@@ -700,7 +694,7 @@ public final class LangInterpreter {
 			switch(node.getNodeType()) {
 				case IF_STATEMENT_PART_IF:
 					if(!conversions.toBool(interpretOperationNode(((IfStatementPartIfNode)node).getCondition()),
-							node.getLineNumberFrom()))
+							node.getPos()))
 						return false;
 				case IF_STATEMENT_PART_ELSE:
 					interpretAST(node.getIfBody());
@@ -710,7 +704,7 @@ public final class LangInterpreter {
 					break;
 			}
 		}catch(ClassCastException e) {
-			setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 		}
 		
 		return false;
@@ -722,7 +716,7 @@ public final class LangInterpreter {
 	private boolean interpretLoopStatementNode(LoopStatementNode node) {
 		List<LoopStatementPartNode> loopPartNodes = node.getLoopStatementPartNodes();
 		if(loopPartNodes.isEmpty()) {
-			setErrno(InterpretingError.INVALID_AST_NODE, "Empty loop statement", node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, "Empty loop statement", node.getPos());
 			
 			return false;
 		}
@@ -781,7 +775,7 @@ public final class LangInterpreter {
 					}
 				case LOOP_STATEMENT_PART_WHILE:
 					while(conversions.toBool(interpretOperationNode(((LoopStatementPartWhileNode)node).getCondition()),
-							node.getLineNumberFrom())) {
+							node.getPos())) {
 						flag = true;
 						
 						interpretAST(node.getLoopBody());
@@ -797,7 +791,7 @@ public final class LangInterpreter {
 					break;
 				case LOOP_STATEMENT_PART_UNTIL:
 					while(!conversions.toBool(interpretOperationNode(((LoopStatementPartUntilNode)node).getCondition()),
-							node.getLineNumberFrom())) {
+							node.getPos())) {
 						flag = true;
 						
 						interpretAST(node.getLoopBody());
@@ -816,23 +810,23 @@ public final class LangInterpreter {
 					DataObject varPointer = interpretNode(null, repeatNode.getVarPointerNode());
 					if(varPointer.getType() != DataType.VAR_POINTER && varPointer.getType() != DataType.NULL) {
 						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.repeat needs a variablePointer or a null value for the current iteration variable",
-								node.getLineNumberFrom());
+								node.getPos());
 						return false;
 					}
 					DataObject var = varPointer.getType() == DataType.NULL?null:varPointer.getVarPointer().getVar();
 					
 					DataObject numberObject = interpretNode(null, repeatNode.getRepeatCountNode());
-					Number number = numberObject == null?null:conversions.toNumber(numberObject, repeatNode.getRepeatCountNode().getLineNumberFrom());
+					Number number = numberObject == null?null:conversions.toNumber(numberObject, repeatNode.getRepeatCountNode().getPos());
 					if(number == null) {
 						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.repeat needs a repeat count value",
-								node.getLineNumberFrom());
+								node.getPos());
 						return false;
 					}
 					
 					int iterations = number.intValue();
 					if(iterations < 0) {
 						setErrno(InterpretingError.INVALID_ARGUMENTS, "con.repeat repeat count can not be less than 0",
-								node.getLineNumberFrom());
+								node.getPos());
 						return false;
 					}
 					
@@ -842,12 +836,12 @@ public final class LangInterpreter {
 						if(var != null) {
 							if(var.isFinalData() || var.isLangVar())
 								setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.repeat current iteration value can not be set",
-										node.getLineNumberFrom());
+										node.getPos());
 							else if(var.getTypeConstraint().isTypeAllowed(DataType.INT))
 								var.setInt(i);
 							else
 								setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.repeat current iteration value can not be set",
-										node.getLineNumberFrom());
+										node.getPos());
 						}
 						
 						interpretAST(node.getLoopBody());
@@ -865,7 +859,7 @@ public final class LangInterpreter {
 					LoopStatementPartForEachNode forEachNode = (LoopStatementPartForEachNode)node;
 					varPointer = interpretNode(null, forEachNode.getVarPointerNode());
 					if(varPointer.getType() != DataType.VAR_POINTER) {
-						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.foreach needs a variablePointer for the current element variable", node.getLineNumberFrom());
+						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.foreach needs a variablePointer for the current element variable", node.getPos());
 						return false;
 					}
 					
@@ -879,7 +873,7 @@ public final class LangInterpreter {
 							
 							if(var != null) {
 								if(var.isFinalData() || var.isLangVar()) {
-									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getLineNumberFrom());
+									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
 									return false;
 								}else {
 									var.setData(arr[i]);
@@ -902,7 +896,7 @@ public final class LangInterpreter {
 							
 							if(var != null) {
 								if(var.isFinalData() || var.isLangVar()) {
-									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getLineNumberFrom());
+									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
 									return false;
 								}else {
 									var.setData(list.get(i));
@@ -926,7 +920,7 @@ public final class LangInterpreter {
 								
 								if(var != null) {
 									if(var.isFinalData() || var.isLangVar())
-										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getLineNumberFrom());
+										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
 									else
 										var.setText(struct.getMemberNames()[i]);
 								}
@@ -948,7 +942,7 @@ public final class LangInterpreter {
 								
 								if(var != null) {
 									if(var.isFinalData() || var.isLangVar())
-										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getLineNumberFrom());
+										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
 									else
 										var.setStruct(new StructObject(standardTypes.get("&Pair").getStruct(), new DataObject[] {
 												new DataObject(memberName),
@@ -973,7 +967,7 @@ public final class LangInterpreter {
 							
 							if(var != null) {
 								if(var.isFinalData() || var.isLangVar()) {
-									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getLineNumberFrom());
+									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
 									return false;
 								}else {
 									var.setChar(text.charAt(i));
@@ -990,7 +984,7 @@ public final class LangInterpreter {
 							}
 						}
 					}else {
-						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.foreach needs a composite or a text value to iterate over", node.getLineNumberFrom());
+						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.foreach needs a composite or a text value to iterate over", node.getPos());
 						return false;
 					}
 					
@@ -1004,9 +998,9 @@ public final class LangInterpreter {
 					break;
 			}
 		}catch(ClassCastException e) {
-			setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 		}catch(DataTypeConstraintException e) {
-			setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom());
+			setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getPos());
 			return false;
 		}
 		
@@ -1019,10 +1013,10 @@ public final class LangInterpreter {
 			executionState.breakContinueCount = 1;
 		}else {
 			DataObject numberObject = interpretNode(null, numberNode);
-			Number number = numberObject == null?null:conversions.toNumber(numberObject, numberNode.getLineNumberFrom());
+			Number number = numberObject == null?null:conversions.toNumber(numberObject, numberNode.getPos());
 			if(number == null) {
 				setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con." + (node.isContinueNode()?"continue":"break") + " needs either non value or a level number",
-						node.getLineNumberFrom());
+						node.getPos());
 				return;
 			}
 			
@@ -1030,7 +1024,7 @@ public final class LangInterpreter {
 			if(executionState.breakContinueCount < 1) {
 				executionState.breakContinueCount = 0;
 				
-				setErrno(InterpretingError.INVALID_ARGUMENTS, "con." + (node.isContinueNode()?"continue":"break") + " the level must be > 0", node.getLineNumberFrom());
+				setErrno(InterpretingError.INVALID_ARGUMENTS, "con." + (node.isContinueNode()?"continue":"break") + " the level must be > 0", node.getPos());
 				return;
 			}
 		}
@@ -1043,13 +1037,13 @@ public final class LangInterpreter {
 		savedExecutionState.stopExecutionFlag = executionState.stopExecutionFlag;
 		savedExecutionState.returnedOrThrownValue = executionState.returnedOrThrownValue;
 		savedExecutionState.isThrownValue = executionState.isThrownValue;
-		savedExecutionState.returnOrThrowStatementLineNumber = executionState.returnOrThrowStatementLineNumber;
+		savedExecutionState.returnOrThrowStatementPos = executionState.returnOrThrowStatementPos;
 		savedExecutionState.breakContinueCount = executionState.breakContinueCount;
 		savedExecutionState.isContinueStatement = executionState.isContinueStatement;
 		executionState.stopExecutionFlag = false;
 		executionState.returnedOrThrownValue = null;
 		executionState.isThrownValue = false;
-		executionState.returnOrThrowStatementLineNumber = -1;
+		executionState.returnOrThrowStatementPos = CodePosition.EMPTY;
 		executionState.breakContinueCount = 0;
 		executionState.isContinueStatement = false;
 	}
@@ -1059,7 +1053,7 @@ public final class LangInterpreter {
 	private boolean interpretTryStatementNode(TryStatementNode node) {
 		List<TryStatementPartNode> tryPartNodes = node.getTryStatementPartNodes();
 		if(tryPartNodes.isEmpty()) {
-			setErrno(InterpretingError.INVALID_AST_NODE, "Empty try statement", node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, "Empty try statement", node.getPos());
 			
 			return false;
 		}
@@ -1069,7 +1063,7 @@ public final class LangInterpreter {
 		TryStatementPartNode tryPart = tryPartNodes.get(0);
 		if(tryPart.getNodeType() != NodeType.TRY_STATEMENT_PART_TRY && tryPart.getNodeType() != NodeType.TRY_STATEMENT_PART_SOFT_TRY &&
 		tryPart.getNodeType() != NodeType.TRY_STATEMENT_PART_NON_TRY) {
-			setErrno(InterpretingError.INVALID_AST_NODE, "First part of try statement was no try nor soft try nor non try part", node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, "First part of try statement was no try nor soft try nor non try part", node.getPos());
 			
 			return false;
 		}
@@ -1142,7 +1136,7 @@ public final class LangInterpreter {
 			executionState.stopExecutionFlag = savedExecutionState.stopExecutionFlag;
 			executionState.returnedOrThrownValue = savedExecutionState.returnedOrThrownValue;
 			executionState.isThrownValue = savedExecutionState.isThrownValue;
-			executionState.returnOrThrowStatementLineNumber = savedExecutionState.returnOrThrowStatementLineNumber;
+			executionState.returnOrThrowStatementPos = savedExecutionState.returnOrThrowStatementPos;
 			executionState.breakContinueCount = savedExecutionState.breakContinueCount;
 			executionState.isContinueStatement = savedExecutionState.isContinueStatement;
 		}
@@ -1200,7 +1194,7 @@ public final class LangInterpreter {
 					if(catchNode.getExpections() != null) {
 						if(catchNode.getExpections().size() == 0) {
 							setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty catch part \"catch()\" is not allowed!\n"
-									+ "For checking all warnings \"catch\" without \"()\" should be used", node.getLineNumberFrom());
+									+ "For checking all warnings \"catch\" without \"()\" should be used", node.getPos());
 							
 							return false;
 						}
@@ -1220,7 +1214,7 @@ public final class LangInterpreter {
 										interpretedNodes.add(interpretNode(null, ret));
 									}
 								}catch(ClassCastException e) {
-									interpretedNodes.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom()));
+									interpretedNodes.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos()));
 								}
 								
 								previousDataObject = interpretedNodes.get(interpretedNodes.size() - 1);
@@ -1238,11 +1232,11 @@ public final class LangInterpreter {
 							interpretedNodes.add(argumentValue);
 							previousDataObject = argumentValue;
 						}
-						List<DataObject> errorList = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes, this, node.getLineNumberFrom());
+						List<DataObject> errorList = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes, this, node.getPos());
 						for(DataObject dataObject:errorList) {
 							if(dataObject.getType() != DataType.ERROR) {
 								setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Variable with type other than " + DataType.ERROR + " in catch statement",
-										node.getLineNumberFrom());
+										node.getPos());
 								
 								continue;
 							}
@@ -1277,7 +1271,7 @@ public final class LangInterpreter {
 					break;
 			}
 		}catch(ClassCastException e) {
-			setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 		}
 		
 		return flag;
@@ -1296,7 +1290,7 @@ public final class LangInterpreter {
 		if((leftSideOperand == null && (!node.getOperator().isUnary() || !node.getOperator().isLazyEvaluation())) ||
 				(!node.getOperator().isLazyEvaluation() && ((!node.getOperator().isUnary() && rightSideOperand == null) ||
 						(node.getOperator().isTernary() && middleOperand == null))))
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getPos());
 		
 		if(node.getOperatorType() == OperatorType.ALL) {
 			DataObject output;
@@ -1305,27 +1299,27 @@ public final class LangInterpreter {
 				case COMMA:
 					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 							"The COMMA operator is parser-only (If you meant the text value of \",\", you must escape the COMMA operator: \"\\,\")",
-							node.getLineNumberFrom());
+							node.getPos());
 				case OPTIONAL_GET_ITEM:
-					output = operators.opOptionalGetItem(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opOptionalGetItem(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case GET_ITEM:
-					output = operators.opGetItem(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opGetItem(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case MEMBER_ACCESS_POINTER:
 					if(leftSideOperand.getType() != DataType.VAR_POINTER)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access pointer operator (\"" + node.getOperator().getSymbol() + "\") must be a pointer",
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					leftSideOperand = leftSideOperand.getVarPointer().getVar();
 					if(leftSideOperand == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_PTR, node.getLineNumberFrom());
+						return setErrnoErrorObject(InterpretingError.INVALID_PTR, node.getPos());
 					
 					if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access pointer operator (\"" + node.getOperator().getSymbol() + "\") must be a pointer pointing to a composite type",
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					return interpretNode(leftSideOperand, node.getRightSideOperand());
 				case MEMBER_ACCESS:
@@ -1334,7 +1328,7 @@ public final class LangInterpreter {
 							leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					return interpretNode(leftSideOperand, node.getRightSideOperand());
 				case MEMBER_ACCESS_THIS:
@@ -1342,7 +1336,7 @@ public final class LangInterpreter {
 					if(compositeType == null || (compositeType.getType() != DataType.STRUCT && compositeType.getType() != DataType.OBJECT))
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"\"&this\" is not present or invalid for the member access this operator (\"" + node.getOperator().getSymbol() + "\")",
-								node.getLineNumberFrom());
+								node.getPos());
 
 					return interpretNode(compositeType, node.getLeftSideOperand());
 				case OPTIONAL_MEMBER_ACCESS:
@@ -1352,7 +1346,7 @@ public final class LangInterpreter {
 					if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
 						return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 								"The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					return interpretNode(leftSideOperand, node.getRightSideOperand());
 				
@@ -1363,7 +1357,7 @@ public final class LangInterpreter {
 			if(output == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The \"" + node.getOperator().getSymbol() + "\" operator is not defined for " + leftSideOperand.getType().name() + (
 					node.getOperator().isTernary()?", " + middleOperand.getType().name() + ",":"") + (!node.getOperator().isUnary()?" and " + rightSideOperand.getType().name():""),
-						node.getLineNumberFrom());
+						node.getPos());
 			
 			return output;
 		}else if(node.getOperatorType() == OperatorType.GENERAL) {
@@ -1373,26 +1367,26 @@ public final class LangInterpreter {
 				case NON:
 					return leftSideOperand;
 				case LEN:
-					output = operators.opLen(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opLen(leftSideOperand, node.getPos());
 					break;
 				case DEEP_COPY:
-					output = operators.opDeepCopy(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opDeepCopy(leftSideOperand, node.getPos());
 					break;
 				
 				//Binary
 				case CONCAT:
-					output = operators.opConcat(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opConcat(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case SPACESHIP:
-					output = operators.opSpaceship(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opSpaceship(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case ELVIS:
-					if(conversions.toBool(leftSideOperand, node.getLineNumberFrom()))
+					if(conversions.toBool(leftSideOperand, node.getPos()))
 						return leftSideOperand;
 					
 					rightSideOperand = interpretNode(null, node.getRightSideOperand());
 					if(rightSideOperand == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom());
+						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getPos());
 					return rightSideOperand;
 				case NULL_COALESCING:
 					if(leftSideOperand.getType() != DataType.NULL && leftSideOperand.getType() != DataType.VOID)
@@ -1400,17 +1394,17 @@ public final class LangInterpreter {
 					
 					rightSideOperand = interpretNode(null, node.getRightSideOperand());
 					if(rightSideOperand == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom());
+						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getPos());
 					return rightSideOperand;
 				
 				//Ternary
 				case INLINE_IF:
-					DataObject operand = conversions.toBool(leftSideOperand, node.getLineNumberFrom())?
+					DataObject operand = conversions.toBool(leftSideOperand, node.getPos())?
 							interpretNode(null, node.getMiddleOperand()):
 							interpretNode(null, node.getRightSideOperand());
 					
 					if(operand == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom());
+						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getPos());
 					return operand;
 				
 				default:
@@ -1420,7 +1414,7 @@ public final class LangInterpreter {
 			if(output == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The \"" + node.getOperator().getSymbol() + "\" operator is not defined for " + leftSideOperand.getType().name() + (
 					node.getOperator().isTernary()?", " + middleOperand.getType().name() + ",":"") + (!node.getOperator().isUnary()?" and " + rightSideOperand.getType().name():""),
-						node.getLineNumberFrom());
+						node.getPos());
 			
 			return output;
 		}else if(node.getOperatorType() == OperatorType.MATH) {
@@ -1432,66 +1426,66 @@ public final class LangInterpreter {
 					output = leftSideOperand;
 					break;
 				case POS:
-					output = operators.opPos(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opPos(leftSideOperand, node.getPos());
 					break;
 				case INV:
-					output = operators.opInv(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opInv(leftSideOperand, node.getPos());
 					break;
 				case BITWISE_NOT:
-					output = operators.opNot(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opNot(leftSideOperand, node.getPos());
 					break;
 				case INC:
-					output = operators.opInc(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opInc(leftSideOperand, node.getPos());
 					break;
 				case DEC:
-					output = operators.opDec(leftSideOperand, node.getLineNumberFrom());
+					output = operators.opDec(leftSideOperand, node.getPos());
 					break;
 				
 				//Binary
 				case POW:
-					output = operators.opPow(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opPow(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case MUL:
-					output = operators.opMul(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opMul(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case DIV:
-					output = operators.opDiv(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opDiv(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case TRUNC_DIV:
-					output = operators.opTruncDiv(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opTruncDiv(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case FLOOR_DIV:
-					output = operators.opFloorDiv(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opFloorDiv(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case CEIL_DIV:
-					output = operators.opCeilDiv(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opCeilDiv(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case MOD:
-					output = operators.opMod(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opMod(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case ADD:
-					output = operators.opAdd(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opAdd(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case SUB:
-					output = operators.opSub(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opSub(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case LSHIFT:
-					output = operators.opLshift(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opLshift(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case RSHIFT:
-					output = operators.opRshift(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opRshift(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case RZSHIFT:
-					output = operators.opRzshift(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opRzshift(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case BITWISE_AND:
-					output = operators.opAnd(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opAnd(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case BITWISE_XOR:
-					output = operators.opXor(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opXor(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case BITWISE_OR:
-					output = operators.opOr(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					output = operators.opOr(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				
 				default:
@@ -1501,7 +1495,7 @@ public final class LangInterpreter {
 			if(output == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The \"" + node.getOperator().getSymbol() + "\" operator is not defined for " + leftSideOperand.getType().name() + (
 					node.getOperator().isTernary()?", " + middleOperand.getType().name() + ",":"") + (!node.getOperator().isUnary()?" and " + rightSideOperand.getType().name():""),
-						node.getLineNumberFrom());
+						node.getPos());
 			
 			return output;
 		}else if(node.getOperatorType() == OperatorType.CONDITION) {
@@ -1511,7 +1505,7 @@ public final class LangInterpreter {
 				//Unary (Logical operators)
 				case CONDITIONAL_NON:
 				case NOT:
-					conditionOutput = conversions.toBool(leftSideOperand, node.getLineNumberFrom());
+					conditionOutput = conversions.toBool(leftSideOperand, node.getPos());
 					
 					if(node.getOperator() == Operator.NOT)
 						conditionOutput = !conditionOutput;
@@ -1519,25 +1513,25 @@ public final class LangInterpreter {
 				
 				//Binary (Logical operators)
 				case AND:
-					boolean leftSideOperandBoolean = conversions.toBool(leftSideOperand, node.getLineNumberFrom());
+					boolean leftSideOperandBoolean = conversions.toBool(leftSideOperand, node.getPos());
 					if(leftSideOperandBoolean) {
 						rightSideOperand = interpretNode(null, node.getRightSideOperand());
 						if(rightSideOperand == null)
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom());
-						conditionOutput = conversions.toBool(rightSideOperand, node.getLineNumberFrom());
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getPos());
+						conditionOutput = conversions.toBool(rightSideOperand, node.getPos());
 					}else {
 						conditionOutput = false;
 					}
 					break;
 				case OR:
-					leftSideOperandBoolean = conversions.toBool(leftSideOperand, node.getLineNumberFrom());
+					leftSideOperandBoolean = conversions.toBool(leftSideOperand, node.getPos());
 					if(leftSideOperandBoolean) {
 						conditionOutput = true;
 					}else {
 						rightSideOperand = interpretNode(null, node.getRightSideOperand());
 						if(rightSideOperand == null)
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getLineNumberFrom());
-						conditionOutput = conversions.toBool(rightSideOperand, node.getLineNumberFrom());
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing operand", node.getPos());
+						conditionOutput = conversions.toBool(rightSideOperand, node.getPos());
 					}
 					break;
 				
@@ -1557,7 +1551,7 @@ public final class LangInterpreter {
 
 						if(!typeStruct.isDefinition())
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
-									node.getOperator().getSymbol() + "\" operator must be a struct definition ", node.getLineNumberFrom());
+									node.getOperator().getSymbol() + "\" operator must be a struct definition ", node.getPos());
 
 						if(dataObject.getType() == DataType.STRUCT) {
 							StructObject dataStruct = dataObject.getStruct();
@@ -1577,7 +1571,7 @@ public final class LangInterpreter {
 
 						if(!typeClass.isClass())
 							return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
-									node.getOperator().getSymbol() + "\" operator must be a class", node.getLineNumberFrom());
+									node.getOperator().getSymbol() + "\" operator must be a class", node.getPos());
 
 						if(dataObject.getType() == DataType.OBJECT) {
 							LangObject langObject = dataObject.getObject();
@@ -1594,10 +1588,10 @@ public final class LangInterpreter {
 					
 					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
 							node.getOperator().getSymbol() + "\" operator must be of type " + DataType.TYPE + ", " +
-							DataType.STRUCT + ", or " + DataType.OBJECT, node.getLineNumberFrom());
+							DataType.STRUCT + ", or " + DataType.OBJECT, node.getPos());
 				case EQUALS:
 				case NOT_EQUALS:
-					conditionOutput = operators.isEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					conditionOutput = operators.isEquals(leftSideOperand, rightSideOperand, node.getPos());
 					
 					if(node.getOperator() == Operator.NOT_EQUALS)
 						conditionOutput = !conditionOutput;
@@ -1605,10 +1599,10 @@ public final class LangInterpreter {
 				case MATCHES:
 				case NOT_MATCHES:
 					try {
-						conditionOutput = LangRegEx.matches(conversions.toText(leftSideOperand, node.getLineNumberFrom()),
-								conversions.toText(rightSideOperand, node.getLineNumberFrom()));
+						conditionOutput = LangRegEx.matches(conversions.toText(leftSideOperand, node.getPos()),
+								conversions.toText(rightSideOperand, node.getPos()));
 					}catch(InvalidPaternSyntaxException e) {
-						return setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), node.getLineNumberFrom());
+						return setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), node.getPos());
 					}
 					
 					if(node.getOperator() == Operator.NOT_MATCHES)
@@ -1616,22 +1610,22 @@ public final class LangInterpreter {
 					break;
 				case STRICT_EQUALS:
 				case STRICT_NOT_EQUALS:
-					conditionOutput = operators.isStrictEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					conditionOutput = operators.isStrictEquals(leftSideOperand, rightSideOperand, node.getPos());
 					
 					if(node.getOperator() == Operator.STRICT_NOT_EQUALS)
 						conditionOutput = !conditionOutput;
 					break;
 				case LESS_THAN:
-					conditionOutput = operators.isLessThan(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					conditionOutput = operators.isLessThan(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case GREATER_THAN:
-					conditionOutput = operators.isGreaterThan(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					conditionOutput = operators.isGreaterThan(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case LESS_THAN_OR_EQUALS:
-					conditionOutput = operators.isLessThanOrEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					conditionOutput = operators.isLessThanOrEquals(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				case GREATER_THAN_OR_EQUALS:
-					conditionOutput = operators.isGreaterThanOrEquals(leftSideOperand, rightSideOperand, node.getLineNumberFrom());
+					conditionOutput = operators.isGreaterThanOrEquals(leftSideOperand, rightSideOperand, node.getPos());
 					break;
 				
 				default:
@@ -1649,7 +1643,7 @@ public final class LangInterpreter {
 		
 		executionState.returnedOrThrownValue = returnValueNode == null?null:interpretNode(null, returnValueNode);
 		executionState.isThrownValue = false;
-		executionState.returnOrThrowStatementLineNumber = node.getLineNumberFrom();
+		executionState.returnOrThrowStatementPos = node.getPos();
 		executionState.stopExecutionFlag = true;
 	}
 	
@@ -1662,7 +1656,7 @@ public final class LangInterpreter {
 		else
 			executionState.returnedOrThrownValue = errorObject;
 		executionState.isThrownValue = true;
-		executionState.returnOrThrowStatementLineNumber = node.getLineNumberFrom();
+		executionState.returnOrThrowStatementPos = node.getPos();
 		executionState.stopExecutionFlag = true;
 		
 		if(executionState.returnedOrThrownValue.getError().getErrno() > 0 && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
@@ -1671,27 +1665,27 @@ public final class LangInterpreter {
 		}
 	}
 	
-	private void interpretLangDataAndExecutionFlags(String langDataExecutionFlag, DataObject value, int lineNumber) {
+	private void interpretLangDataAndExecutionFlags(String langDataExecutionFlag, DataObject value, CodePosition pos) {
 		if(value == null)
 			value = new DataObject(); //Set value to null data object
 		
 		switch(langDataExecutionFlag) {
 			//Data
 			case "lang.version":
-				String langVer = conversions.toText(value, lineNumber);
+				String langVer = conversions.toText(value, pos);
 				Integer compVer = LangUtils.compareVersions(LangInterpreter.VERSION, langVer);
 				if(compVer == null) {
-					setErrno(InterpretingError.LANG_VER_ERROR, "lang.version has an invalid format", lineNumber);
+					setErrno(InterpretingError.LANG_VER_ERROR, "lang.version has an invalid format", pos);
 					
 					return;
 				}
 				
 				if(compVer > 0)
 					setErrno(InterpretingError.LANG_VER_WARNING, "Lang file's version is older than this version! The Lang file could not be executed correctly",
-							lineNumber);
+							pos);
 				else if(compVer < 0)
 					setErrno(InterpretingError.LANG_VER_ERROR, "Lang file's version is newer than this version! The Lang file will not be executed correctly!",
-							lineNumber);
+							pos);
 				
 				break;
 			
@@ -1701,34 +1695,34 @@ public final class LangInterpreter {
 			
 			//Flags
 			case "lang.allowTermRedirect":
-				Number number = conversions.toNumber(value, lineNumber);
+				Number number = conversions.toNumber(value, pos);
 				if(number == null) {
-					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.allowTermRedirect flag!", lineNumber);
+					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.allowTermRedirect flag!", pos);
 					
 					return;
 				}
 				executionFlags.allowTermRedirect = number.intValue() != 0;
 				break;
 			case "lang.errorOutput":
-				number = conversions.toNumber(value, lineNumber);
+				number = conversions.toNumber(value, pos);
 				if(number == null) {
-					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.errorOutput flag!", lineNumber);
+					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.errorOutput flag!", pos);
 					
 					return;
 				}
 				executionFlags.errorOutput = ExecutionFlags.ErrorOutputFlag.getErrorFlagFor(number.intValue());
 				break;
 			case "lang.test":
-				number = conversions.toNumber(value, lineNumber);
+				number = conversions.toNumber(value, pos);
 				if(number == null) {
-					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.test flag!", lineNumber);
+					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.test flag!", pos);
 					
 					return;
 				}
 				
 				boolean langTestNewValue = number.intValue() != 0;
 				if(executionFlags.langTest && !langTestNewValue) {
-					setErrno(InterpretingError.INVALID_ARGUMENTS, "The lang.test flag can not be changed if it was once set to true!", lineNumber);
+					setErrno(InterpretingError.INVALID_ARGUMENTS, "The lang.test flag can not be changed if it was once set to true!", pos);
 					
 					return;
 				}
@@ -1736,16 +1730,16 @@ public final class LangInterpreter {
 				executionFlags.langTest = langTestNewValue;
 				break;
 			case "lang.rawVariableNames":
-				number = conversions.toNumber(value, lineNumber);
+				number = conversions.toNumber(value, pos);
 				if(number == null) {
-					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.rawVariableNames flag!", lineNumber);
+					setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.rawVariableNames flag!", pos);
 					
 					return;
 				}
 				executionFlags.rawVariableNames = number.intValue() != 0;
 				break;
 			default:
-				setErrno(InterpretingError.INVALID_EXEC_FLAG_DATA, "\"" + langDataExecutionFlag + "\" is neither Lang data nor an execution flag", lineNumber);
+				setErrno(InterpretingError.INVALID_EXEC_FLAG_DATA, "\"" + langDataExecutionFlag + "\" is neither Lang data nor an execution flag", pos);
 		}
 	}
 	private DataObject interpretAssignmentNode(AssignmentNode node) {
@@ -1755,7 +1749,7 @@ public final class LangInterpreter {
 		
 		Node lvalueNode = node.getLvalue();
 		if(lvalueNode == null)
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Assignment without lvalue", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Assignment without lvalue", node.getPos());
 		
 		try {
 			if(lvalueNode.getNodeType() == NodeType.OPERATION || lvalueNode.getNodeType() == NodeType.CONDITION ||
@@ -1775,22 +1769,22 @@ public final class LangInterpreter {
 					if(lvalue == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 								"Invalid arguments for member access" + (isMemberAccessPointerOperator?" pointer":""),
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					String variableName = lvalue.getVariableName();
 					if(variableName == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT,
-								"Anonymous values can not be changed", node.getLineNumberFrom());
+								"Anonymous values can not be changed", node.getPos());
 					
 					if(lvalue.isFinalData() || lvalue.isLangVar())
 						return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE,
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					try {
 						lvalue.setData(rvalue);
 					}catch(DataTypeConstraintViolatedException e) {
 						return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-								"Incompatible type for rvalue in assignment", node.getLineNumberFrom());
+								"Incompatible type for rvalue in assignment", node.getPos());
 					}
 					
 					return rvalue;
@@ -1798,18 +1792,18 @@ public final class LangInterpreter {
 					DataObject compositeTypeObject = interpretNode(null, operationNode.getLeftSideOperand());
 					if(compositeTypeObject == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing composite type operand for set item",
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					DataObject indexObject = interpretNode(null, operationNode.getRightSideOperand());
 					if(indexObject == null)
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing index operand for set item",
-								node.getLineNumberFrom());
+								node.getPos());
 					
-					DataObject ret = operators.opSetItem(compositeTypeObject, indexObject, rvalue, operationNode.getLineNumberFrom());
+					DataObject ret = operators.opSetItem(compositeTypeObject, indexObject, rvalue, operationNode.getPos());
 					if(ret == null)
 						return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 								"Incompatible type for lvalue (composite type + index) or rvalue in assignment",
-								node.getLineNumberFrom());
+								node.getPos());
 					
 					return rvalue;
 				}
@@ -1828,12 +1822,12 @@ public final class LangInterpreter {
 					if(isModuleVariable) {
 						int indexModuleIdientifierEnd = variableName.indexOf("]]::");
 						if(indexModuleIdientifierEnd == -1) {
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom());
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 						}
 						
 						moduleName = variableName.substring(2, indexModuleIdientifierEnd);
 						if(!isAlphaNumericWithUnderline(moduleName)) {
-							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom());
+							return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
 						}
 						
 						variableName = variableName.substring(indexModuleIdientifierEnd + 4);
@@ -1843,20 +1837,20 @@ public final class LangInterpreter {
 						if(variableName.indexOf("[") == -1) { //Pointer redirection is no longer supported
 							boolean[] flags = new boolean[] {false, false};
 							DataObject lvalue = getOrCreateDataObjectFromVariableName(null, moduleName, variableName, false, true, true, flags,
-									node.getLineNumberFrom());
+									node.getPos());
 							if(flags[0])
 								return lvalue; //Forward error from getOrCreateDataObjectFromVariableName()
 							
 							variableName = lvalue.getVariableName();
 							if(variableName == null) {
-								return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom());
+								return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
 							}
 							
 							if(lvalue.isFinalData() || lvalue.isLangVar()) {
 								if(flags[1])
 									getData().var.remove(variableName);
 								
-								return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom());
+								return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
 							}
 							
 							try {
@@ -1865,7 +1859,7 @@ public final class LangInterpreter {
 								if(flags[1])
 									getData().var.remove(variableName);
 								
-								return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for rvalue in assignment", node.getLineNumberFrom());
+								return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for rvalue in assignment", node.getPos());
 							}
 							
 							if(variableName.startsWith("fp.")) {
@@ -1876,7 +1870,7 @@ public final class LangInterpreter {
 								
 								if(ret.isPresent())
 									setErrno(InterpretingError.VAR_SHADOWING_WARNING, "\"" + variableName + "\" shadows a predfined, linker, or external function",
-											node.getLineNumberFrom());
+											node.getPos());
 							}
 							break;
 						}
@@ -1928,21 +1922,21 @@ public final class LangInterpreter {
 				case CLASS_DEFINITION:
 					DataObject translationKeyDataObject = interpretNode(null, lvalueNode);
 					if(translationKeyDataObject == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getLineNumberFrom());
+						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getPos());
 					
-					String translationKey = conversions.toText(translationKeyDataObject, node.getLineNumberFrom());
+					String translationKey = conversions.toText(translationKeyDataObject, node.getPos());
 					if(translationKey.startsWith("lang."))
-						interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getLineNumberFrom());
+						interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getPos());
 					
-					getData().lang.put(translationKey, conversions.toText(rvalue, node.getLineNumberFrom()));
+					getData().lang.put(translationKey, conversions.toText(rvalue, node.getPos()));
 					break;
 					
 				case GENERAL:
 				case ARGUMENT_SEPARATOR:
-					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Neither lvalue nor translationKey", node.getLineNumberFrom());
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Neither lvalue nor translationKey", node.getPos());
 			}
 		}catch(ClassCastException e) {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 		}
 		
 		return rvalue;
@@ -1955,7 +1949,7 @@ public final class LangInterpreter {
 	 * @param flags Will set by this method in format: [error, created]
 	 */
 	private DataObject getOrCreateDataObjectFromVariableName(DataObject compositeType, String moduleName, String variableName, boolean supportsPointerReferencing,
-	boolean supportsPointerDereferencing, boolean shouldCreateDataObject, final boolean[] flags, int lineNumber) {
+	boolean supportsPointerDereferencing, boolean shouldCreateDataObject, final boolean[] flags, CodePosition pos) {
 		Map<String, DataObject> variables;
 		if(compositeType != null) {
 			if(compositeType.getType() == DataType.STRUCT) {
@@ -1964,7 +1958,7 @@ public final class LangInterpreter {
 					for(String memberName:compositeType.getStruct().getMemberNames())
 						variables.put(memberName, compositeType.getStruct().getMember(memberName));
 				}catch(DataTypeConstraintException e) {
-					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
 				}
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				variables = new HashMap<>();
@@ -1988,10 +1982,10 @@ public final class LangInterpreter {
 						}
 					}
 				}catch(DataTypeConstraintException e) {
-					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
 				}
 			}else {
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", lineNumber);
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", pos);
 			}
 		}else if(moduleName == null) {
 			variables = getData().var;
@@ -2001,7 +1995,7 @@ public final class LangInterpreter {
 				if(flags != null && flags.length == 2)
 					flags[0] = true;
 				
-				return setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", lineNumber);
+				return setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", pos);
 			}
 			
 			variables = module.getExportedVariables();
@@ -2015,11 +2009,11 @@ public final class LangInterpreter {
 			int index = variableName.indexOf('*');
 			String referencedVariableName = variableName.substring(0, index) + variableName.substring(index + 1);
 			DataObject referencedVariable = getOrCreateDataObjectFromVariableName(compositeType, moduleName, referencedVariableName,
-					supportsPointerReferencing, true, false, flags, lineNumber);
+					supportsPointerReferencing, true, false, flags, pos);
 			if(referencedVariable == null) {
 				if(flags != null && flags.length == 2)
 					flags[0] = true;
-				return setErrnoErrorObject(InterpretingError.INVALID_PTR, lineNumber);
+				return setErrnoErrorObject(InterpretingError.INVALID_PTR, pos);
 			}
 			
 			if(referencedVariable.getType() == DataType.VAR_POINTER)
@@ -2034,12 +2028,12 @@ public final class LangInterpreter {
 			if(indexMatchingBracket != variableName.length() - 1) {
 				if(flags != null && flags.length == 2)
 					flags[0] = true;
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Non matching referencing brackets", lineNumber);
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Non matching referencing brackets", pos);
 			}
 			
 			String dereferencedVariableName = variableName.substring(0, indexOpeningBracket) + variableName.substring(indexOpeningBracket + 1, indexMatchingBracket);
 			DataObject dereferencedVariable = getOrCreateDataObjectFromVariableName(compositeType, moduleName, dereferencedVariableName,
-					true, false, false, flags, lineNumber);
+					true, false, false, flags, pos);
 			if(dereferencedVariable != null)
 				return new DataObject().setVarPointer(new VarPointerObject(dereferencedVariable));
 			
@@ -2047,7 +2041,7 @@ public final class LangInterpreter {
 				if(flags != null && flags.length == 2)
 					flags[0] = true;
 				
-				return setErrnoErrorObject(InterpretingError.INVALID_PTR, "Pointer redirection is not supported", lineNumber);
+				return setErrnoErrorObject(InterpretingError.INVALID_PTR, "Pointer redirection is not supported", pos);
 			}
 		}
 		
@@ -2060,11 +2054,11 @@ public final class LangInterpreter {
 				flags[0] = true;
 			
 			if(compositeType != null)
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, "Composite type members can not be created", lineNumber);
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, "Composite type members can not be created", pos);
 			else if(moduleName == null)
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, lineNumber);
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, pos);
 			else
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, "Module variables can not be created", lineNumber);
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, "Module variables can not be created", pos);
 		}
 		
 		if(flags != null && flags.length == 2)
@@ -2085,32 +2079,32 @@ public final class LangInterpreter {
 		if(isModuleVariable) {
 			int indexModuleIdientifierEnd = variableName.indexOf("]]::");
 			if(indexModuleIdientifierEnd == -1) {
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 			}
 			
 			moduleName = variableName.substring(2, indexModuleIdientifierEnd);
 			if(!isAlphaNumericWithUnderline(moduleName)) {
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
 			}
 			
 			variableName = variableName.substring(indexModuleIdientifierEnd + 4);
 		}
 		
 		if(!isVarNameFullWithFuncsWithoutPrefix(variableName) && !isVarNamePtrAndDereferenceWithoutPrefix(variableName))
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 
 		if(variableName.startsWith("mp.") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
 				!compositeType.getObject().isClass()) {
 			return getOrCreateDataObjectFromVariableName(compositeType, moduleName, variableName, false,
-					variableName.startsWith("$"), false, null, node.getLineNumberFrom());
+					variableName.startsWith("$"), false, null, node.getPos());
 		}
 
 		if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp."))
 			return getOrCreateDataObjectFromVariableName(compositeType, moduleName, variableName, variableName.startsWith("$"),
-					variableName.startsWith("$"), true, null, node.getLineNumberFrom());
+					variableName.startsWith("$"), true, null, node.getPos());
 		
 		if(compositeType != null)
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid composite type member name: \"" + variableName + "\"", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid composite type member name: \"" + variableName + "\"", node.getPos());
 		
 		final boolean isLinkerFunction;
 		if(!isModuleVariable && variableName.startsWith("func.")) {
@@ -2130,7 +2124,7 @@ public final class LangInterpreter {
 			
 			variableName = variableName.substring(3);
 		}else {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 		}
 		
 		final String variableNameCopy = variableName;
@@ -2141,7 +2135,7 @@ public final class LangInterpreter {
 		}).findFirst();
 		
 		if(!ret.isPresent())
-			return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + variableName + "\" was not found", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + variableName + "\" was not found", node.getPos());
 
 		FunctionPointerObject func = ret.get().getValue();
 		return new DataObject().setFunctionPointer(func.withFunctionName(node.getVariableName())).setVariableName(node.getVariableName());
@@ -2205,7 +2199,7 @@ public final class LangInterpreter {
 			
 			//If no escape sequence: Remove "\" anyway
 			default:
-				setErrno(InterpretingError.UNDEF_ESCAPE_SEQUENCE, "\"\\" + node.getEscapeSequenceChar() + "\" was used", node.getLineNumberFrom());
+				setErrno(InterpretingError.UNDEF_ESCAPE_SEQUENCE, "\"\\" + node.getEscapeSequenceChar() + "\" was used", node.getPos());
 				
 				return new DataObject().setChar(node.getEscapeSequenceChar());
 		}
@@ -2221,29 +2215,32 @@ public final class LangInterpreter {
 		
 		if(executionState.isThrownValue && scopeId > -1)
 			setErrno(retTmp.getError().getInterprettingError(), retTmp.getError().getMessage(),
-					executionState.returnOrThrowStatementLineNumber);
+					executionState.returnOrThrowStatementPos);
 		
 		if(executionFlags.langTest && scopeId == langTestExpectedReturnValueScopeID) {
 			if(langTestExpectedThrowValue != null) {
 				InterpretingError gotError = executionState.isThrownValue?retTmp.getError().getInterprettingError():null;
 				langTestStore.addAssertResult(new LangTest.AssertResultThrow(gotError == langTestExpectedThrowValue,
-						printStackTrace(-1), langTestMessageForLastTestResult, gotError, langTestExpectedThrowValue));
+						printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, gotError, langTestExpectedThrowValue));
 				
 				langTestExpectedThrowValue = null;
 			}
 			
 			if(langTestExpectedReturnValue != null) {
 				langTestStore.addAssertResult(new LangTest.AssertResultReturn(!executionState.isThrownValue &&
-						operators.isStrictEquals(langTestExpectedReturnValue, retTmp, -1), printStackTrace(-1),
-						langTestMessageForLastTestResult, retTmp, retTmp == null?null:conversions.toText(retTmp, -1),
-						langTestExpectedReturnValue, conversions.toText(langTestExpectedReturnValue, -1)));
+						operators.isStrictEquals(langTestExpectedReturnValue, retTmp, CodePosition.EMPTY),
+						printStackTrace(CodePosition.EMPTY),
+						langTestMessageForLastTestResult, retTmp, retTmp == null?null:conversions.toText(retTmp,
+						CodePosition.EMPTY), langTestExpectedReturnValue, conversions.toText(langTestExpectedReturnValue,
+						CodePosition.EMPTY)));
 				
 				langTestExpectedReturnValue = null;
 			}
 			
 			if(langTestExpectedNoReturnValue) {
-				langTestStore.addAssertResult(new LangTest.AssertResultNoReturn(retTmp == null, printStackTrace(-1),
-						langTestMessageForLastTestResult, retTmp, retTmp == null?null:conversions.toText(retTmp, -1)));
+				langTestStore.addAssertResult(new LangTest.AssertResultNoReturn(retTmp == null,
+						printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, retTmp, retTmp == null?null
+						:conversions.toText(retTmp, CodePosition.EMPTY)));
 				
 				langTestExpectedNoReturnValue = false;
 			}
@@ -2253,7 +2250,8 @@ public final class LangInterpreter {
 		
 		executionState.isThrownValue = false;
 		
-		if(executionState.tryThrownError == null || executionState.tryBlockLevel == 0 || (executionState.isSoftTry && executionState.tryBodyScopeID != scopeId))
+		if(executionState.tryThrownError == null || executionState.tryBlockLevel == 0 || (executionState.isSoftTry &&
+				executionState.tryBodyScopeID != scopeId))
 			executionState.stopExecutionFlag = false;
 		
 		return retTmp == null?retTmp:new DataObject(retTmp);
@@ -2264,14 +2262,14 @@ public final class LangInterpreter {
 						(!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId));
 	}
 
-	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentList, int parentLineNumber) {
+	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentList, CodePosition parentPos) {
 		argumentList = new ArrayList<>(argumentList);
 
 		LangObject thisObject = fp.getThisObject();
 		int originalSuperLevel = -1;
 
 		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-				this, -1);
+				this, parentPos);
 
 		FunctionPointerObject.InternalFunction internalFunction;
 		if(fp.getOverloadedFunctionCount() == 1) {
@@ -2301,31 +2299,31 @@ public final class LangInterpreter {
 			StackElement currentStackElement = getCurrentCallStackElement();
 			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
 					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
-					functionName, currentStackElement.getModule()), parentLineNumber);
+					functionName, currentStackElement.getModule()), parentPos);
 
 
 			switch(internalFunction.getFunctionPointerType()) {
 				case FunctionPointerObject.NORMAL:
 					LangNormalFunction normalFunction = internalFunction.getNormalFunction();
 					if(normalFunction == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber);
+						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentPos);
 
 					List<DataObject> parameterList = normalFunction.getParameterList();
 					List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList = normalFunction.getParameterDataTypeConstraintList();
 					List<LangBaseFunction.ParameterAnnotation> parameterAnnotationList = normalFunction.getParameterAnnotationList();
-					List<Integer> lineNumberFromList = normalFunction.getLineNumberFromList();
+					List<CodePosition> argumentPosList = normalFunction.getArgumentPosList();
 					int argCount = parameterList.size();
 
 					AbstractSyntaxTree functionBody = normalFunction.getFunctionBody();
 
 					if(normalFunction.getVarArgsParameterIndex() == -1) {
 						if(combinedArgumentList.size() < argCount)
-							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount), parentLineNumber);
+							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount), parentPos);
 						if(combinedArgumentList.size() > argCount)
-							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount), parentLineNumber);
+							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount), parentPos);
 					}else {
 						if(combinedArgumentList.size() < argCount - 1)
-							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1), parentLineNumber);
+							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1), parentPos);
 					}
 
 					try {
@@ -2348,7 +2346,7 @@ public final class LangInterpreter {
 									setFinalData(true).setVariableName("&this"));
 							if(old != null && old.isStaticData())
 								setErrno(InterpretingError.VAR_SHADOWING_WARNING, "This-object \"&this\" shadows a static variable",
-										functionBody.getLineNumberFrom());
+										functionBody.getPos());
 						}
 
 						//Set arguments
@@ -2357,7 +2355,7 @@ public final class LangInterpreter {
 							final DataObject parameter = parameterList.get(i);
 							final DataObject.DataTypeConstraint typeConstraint = parameterDataTypeConstraintList.get(i);
 							final LangBaseFunction.ParameterAnnotation parameterAnnotation = parameterAnnotationList.get(i);
-							final int lineNumberFrom = lineNumberFromList.get(i);
+							final CodePosition argumentPos = argumentPosList.get(i);
 
 							final String variableName = parameter.getVariableName();
 
@@ -2367,7 +2365,7 @@ public final class LangInterpreter {
 									if(!typeConstraint.equals(DataObject.CONSTRAINT_NORMAL)) {
 										return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 												"function parameter \"" + variableName + "\": Text var args argument must not have a type constraint definition",
-												lineNumberFrom);
+												argumentPos);
 									}
 
 									List<DataObject> argumentListCopy = new ArrayList<>(argumentList);
@@ -2385,19 +2383,19 @@ public final class LangInterpreter {
 												break;
 
 									DataObject dataObject = LangUtils.combineDataObjects(argumentListCopy,
-											this, lineNumberFrom);
+											this, argumentPos);
 									try {
 										DataObject newDataObject = new DataObject(conversions.toText(dataObject == null?
-												new DataObject().setVoid():dataObject, -1)).setVariableName(variableName);
+												new DataObject().setVoid():dataObject, argumentPos)).setVariableName(variableName);
 
 										DataObject old = getData().var.put(variableName, newDataObject);
 										if(old != null && old.isStaticData())
 											setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-													lineNumberFrom);
+													argumentPos);
 									}catch(DataTypeConstraintException e) {
 										return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 												"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-												lineNumberFrom);
+												argumentPos);
 									}
 								}else {
 									//Array varargs
@@ -2410,7 +2408,7 @@ public final class LangInterpreter {
 											return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 													"Invalid argument (Argument " + (argumentIndex + j + 1) + ") value for var args function parameter \"" +
 															variableName + "\": Value must be one of " + typeConstraint.getAllowedTypes(),
-													lineNumberFrom);
+													argumentPos);
 									}
 
 									try {
@@ -2421,11 +2419,11 @@ public final class LangInterpreter {
 										DataObject old = getData().var.put(variableName, newDataObject);
 										if(old != null && old.isStaticData())
 											setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-													lineNumberFrom);
+													argumentPos);
 									}catch(DataTypeConstraintException e) {
 										return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 												"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-												lineNumberFrom);
+												argumentPos);
 									}
 								}
 
@@ -2443,11 +2441,11 @@ public final class LangInterpreter {
 									DataObject old = getData().var.put(variableName, newDataObject);
 									if(old != null && old.isStaticData())
 										setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-												lineNumberFrom);
+												argumentPos);
 								}catch(DataTypeConstraintException e) {
 									return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
 											"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-											lineNumberFrom);
+											argumentPos);
 								}
 
 								argumentIndex++;
@@ -2457,13 +2455,13 @@ public final class LangInterpreter {
 							try {
 								DataObject value = combinedArgumentList.get(argumentIndex);
 								if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.BOOLEAN) {
-									value = new DataObject().setBoolean(conversions.toBool(value, lineNumberFrom));
+									value = new DataObject().setBoolean(conversions.toBool(value, argumentPos));
 								}else if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.NUMBER) {
-									value = conversions.convertToNumberAndCreateNewDataObject(value, lineNumberFrom);
+									value = conversions.convertToNumberAndCreateNewDataObject(value, argumentPos);
 									if(value.getType() == DataType.NULL)
 										return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 												"Invalid argument value for function parameter \"" + variableName + "\" (Must be a number)",
-												lineNumberFrom);
+												argumentPos);
 								}
 
 								DataObject newDataObject = new DataObject(value).
@@ -2474,11 +2472,11 @@ public final class LangInterpreter {
 								DataObject old = getData().var.put(variableName, newDataObject);
 								if(old != null && old.isStaticData())
 									setErrno(InterpretingError.VAR_SHADOWING_WARNING, "Parameter \"" + variableName + "\" shadows a static variable",
-											lineNumberFrom);
+											argumentPos);
 							}catch(DataTypeConstraintViolatedException e) {
 								return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 										"Invalid argument value for function parameter \"" + variableName + "\" (" + e.getMessage() + ")",
-										lineNumberFrom);
+										argumentPos);
 							}
 
 							argumentIndex++;
@@ -2499,12 +2497,12 @@ public final class LangInterpreter {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 								fp.getDeprecatedRemoveVersion() == null?"the future":fp.getDeprecatedRemoveVersion(),
 								fp.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + fp.getDeprecatedReplacementFunction() + "\" instead!"));
-						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentLineNumber);
+						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentPos);
 					}
 					
 					DataTypeConstraint returnValueTypeConstraint = normalFunction.getReturnValueTypeConstraint();
 
-					int returnOrThrowStatementLineNumber = executionState.returnOrThrowStatementLineNumber;
+					CodePosition returnOrThrowStatementPos = executionState.returnOrThrowStatementPos;
 					
 					DataObject retTmp = LangUtils.nullToLangVoid(getAndResetReturnValue());
 
@@ -2514,7 +2512,7 @@ public final class LangInterpreter {
 						if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
 							return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 									"Invalid return value type \"" + retTmp.getType() + "\"",
-									returnOrThrowStatementLineNumber);
+									returnOrThrowStatementPos);
 					}
 					
 					return retTmp;
@@ -2522,21 +2520,21 @@ public final class LangInterpreter {
 				case FunctionPointerObject.NATIVE:
 					LangNativeFunction nativeFunction = internalFunction.getNativeFunction();
 					if(nativeFunction == null)
-						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentLineNumber);
+						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP", parentPos);
 					
 					DataObject ret = nativeFunction.callFunc(this, thisObject, internalFunction.getSuperLevel(), argumentList, combinedArgumentList);
 					if(fp.isDeprecated()) {
 						String message = String.format("Use of deprecated function \"%s\". This function will no longer be supported in \"%s\"!%s", functionName,
 								fp.getDeprecatedRemoveVersion() == null?"the future":fp.getDeprecatedRemoveVersion(),
 								fp.getDeprecatedReplacementFunction() == null?"":("\nUse \"" + fp.getDeprecatedReplacementFunction() + "\" instead!"));
-						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentLineNumber);
+						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentPos);
 					}
 					
 					//Return non copy if copyStaticAndFinalModifiers flag is set for "func.asStatic()" and "func.asFinal()"
 					return ret == null?new DataObject().setVoid():(ret.isCopyStaticAndFinalModifiers()?ret:new DataObject(ret));
 
 				default:
-					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP type", parentLineNumber);
+					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "Function call of invalid FP type", parentPos);
 			}
 		}finally {
 			try {
@@ -2549,7 +2547,7 @@ public final class LangInterpreter {
 		}
 	}
 	DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList) {
-		return callFunctionPointer(fp, functionName, argumentValueList, -1);
+		return callFunctionPointer(fp, functionName, argumentValueList, CodePosition.EMPTY);
 	}
 	private List<DataObject> interpretFunctionPointerArguments(List<Node> argumentList) {
 		List<DataObject> argumentValueList = new LinkedList<>();
@@ -2565,7 +2563,7 @@ public final class LangInterpreter {
 						argumentValueList.add(interpretNode(null, ret));
 					}
 				}catch(ClassCastException e) {
-					argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, argument.getLineNumberFrom()));
+					argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, argument.getPos()));
 				}
 				
 				previousDataObject = argumentValueList.get(argumentValueList.size() - 1);
@@ -2583,14 +2581,14 @@ public final class LangInterpreter {
 						if(isModuleVariable) {
 							int indexModuleIdientifierEnd = variableName.indexOf("]]::");
 							if(indexModuleIdientifierEnd == -1) {
-								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", argument.getLineNumberFrom()));
+								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", argument.getPos()));
 								
 								continue;
 							}
 							
 							moduleName = variableName.substring(2, indexModuleIdientifierEnd);
 							if(!isAlphaNumericWithUnderline(moduleName)) {
-								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", argument.getLineNumberFrom()));
+								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", argument.getPos()));
 								
 								continue;
 							}
@@ -2601,10 +2599,10 @@ public final class LangInterpreter {
 						if(variableName.startsWith("&")) {
 							DataObject dataObject = getOrCreateDataObjectFromVariableName(null, moduleName, variableName.
 									substring(0, variableName.length() - 3), false, false,
-									false, null, argument.getLineNumberFrom());
+									false, null, argument.getPos());
 							if(dataObject == null) {
 								argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARR_PTR, "Unpacking of undefined variable",
-										argument.getLineNumberFrom()));
+										argument.getPos()));
 								
 								continue;
 							}
@@ -2635,13 +2633,13 @@ public final class LangInterpreter {
 							}
 							
 							argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARR_PTR, "Unpacking of unsupported composite type variable",
-									argument.getLineNumberFrom()));
+									argument.getPos()));
 							
 							continue;
 						}
 					}
 				}catch(ClassCastException e) {
-					argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, argument.getLineNumberFrom()));
+					argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, argument.getPos()));
 				}
 			}
 			
@@ -2668,10 +2666,10 @@ public final class LangInterpreter {
 		if(functionName.startsWith("mp.")) {
 			if(compositeType == null || (compositeType.getType() != DataType.OBJECT &&
 					!(compositeType.getType() == DataType.TEXT && compositeType.getText().equals("super"))))
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method call without object", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method call without object", node.getPos());
 
 			if(compositeType.getType() == DataType.OBJECT && compositeType.getObject().isClass())
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method can not be called on classes", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method can not be called on classes", node.getPos());
 		}
 
 		boolean isModuleVariable = compositeType == null && functionName.startsWith("[[");
@@ -2679,19 +2677,19 @@ public final class LangInterpreter {
 		if(isModuleVariable) {
 			int indexModuleIdientifierEnd = functionName.indexOf("]]::");
 			if(indexModuleIdientifierEnd == -1) {
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid function name", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid function name", node.getPos());
 			}
 			
 			String moduleName = functionName.substring(2, indexModuleIdientifierEnd);
 			if(!isAlphaNumericWithUnderline(moduleName)) {
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
 			}
 			
 			functionName = functionName.substring(indexModuleIdientifierEnd + 4);
 			
 			LangModule module = modules.get(moduleName);
 			if(module == null) {
-				return setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", node.getPos());
 			}
 			
 			variables = module.getExportedVariables();
@@ -2711,11 +2709,11 @@ public final class LangInterpreter {
 
 					if(member.getType() != DataType.FUNCTION_POINTER)
 						return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
-								"\": Function pointer is invalid", node.getLineNumberFrom());
+								"\": Function pointer is invalid", node.getPos());
 
 					fp = member.getFunctionPointer();
 				}catch(DataTypeConstraintException e) {
-					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getLineNumberFrom());
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getPos());
 				}
 			}else if(compositeType.getType() == DataType.TEXT && compositeType.getText().equals("super")) {
 				compositeType = getData().var.get("&this");
@@ -2727,18 +2725,18 @@ public final class LangInterpreter {
 				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren()));
 
 				if(functionName.equals("construct"))
-					return callSuperConstructor(compositeType.getObject(), argumentList, node.getLineNumberFrom());
+					return callSuperConstructor(compositeType.getObject(), argumentList, node.getPos());
 
-				return callSuperMethod(compositeType.getObject(), functionName, argumentList, node.getLineNumberFrom());
+				return callSuperMethod(compositeType.getObject(), functionName, argumentList, node.getPos());
 			}else if(compositeType.getType() == DataType.OBJECT) {
 				List<DataObject> argumentList = new LinkedList<>(interpretFunctionPointerArguments(node.getChildren()));
 
 				if(functionName.equals("construct"))
-					return callConstructor(compositeType.getObject(), argumentList, node.getLineNumberFrom());
+					return callConstructor(compositeType.getObject(), argumentList, node.getPos());
 
-				return callMethod(compositeType.getObject(), functionName, argumentList, node.getLineNumberFrom());
+				return callMethod(compositeType.getObject(), functionName, argumentList, node.getPos());
 			}else {
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", node.getPos());
 			}
 		}else if(!isModuleVariable && isFuncName(functionName)) {
 			final boolean isLinkerFunction;
@@ -2759,7 +2757,7 @@ public final class LangInterpreter {
 				
 				functionName = functionName.substring(3);
 			}else {
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid native, predfined, or linker function name", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid native, predfined, or linker function name", node.getPos());
 			}
 			
 			final String functionNameCopy = functionName;
@@ -2769,14 +2767,14 @@ public final class LangInterpreter {
 			
 			if(!ret.isPresent())
 				return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
-						"\": Native, predfined, or linker function was not found", node.getLineNumberFrom());
+						"\": Native, predfined, or linker function was not found", node.getPos());
 			
 			fp = ret.get().getValue().withFunctionName(originalFunctionName);
 		}else if(isVarNameFuncPtrWithoutPrefix(functionName)) {
 			DataObject ret = variables.get(functionName);
 			if(ret == null || ret.getType() != DataType.FUNCTION_POINTER)
 				return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
-						"\": Function pointer was not found or is invalid", node.getLineNumberFrom());
+						"\": Function pointer was not found or is invalid", node.getPos());
 			
 			fp = ret.getFunctionPointer();
 		}else {
@@ -2787,7 +2785,7 @@ public final class LangInterpreter {
 			if(ret != null) {
 				if(ret.getType() != DataType.FUNCTION_POINTER)
 					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
-							"\": Function pointer is invalid", node.getLineNumberFrom());
+							"\": Function pointer is invalid", node.getPos());
 					
 				fp = ret.getFunctionPointer();
 			}else if(!isModuleVariable) {
@@ -2808,31 +2806,31 @@ public final class LangInterpreter {
 					
 					if(!retPredefinedFunction.isPresent())
 						return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
-								"\": Normal, native, predfined, linker, or external function was not found", node.getLineNumberFrom());
+								"\": Normal, native, predfined, linker, or external function was not found", node.getPos());
 					
 					fp = retPredefinedFunction.get().getValue().withFunctionName("linker." + functionName);
 				}
 			}else {
 				return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
-						"\": Normal, native, predfined, linker, or external function was not found", node.getLineNumberFrom());
+						"\": Normal, native, predfined, linker, or external function was not found", node.getPos());
 			}
 		}
 
 		List<DataObject> argumentList = interpretFunctionPointerArguments(node.getChildren());
-		return callFunctionPointer(fp, functionName, argumentList, node.getLineNumberFrom());
+		return callFunctionPointer(fp, functionName, argumentList, node.getPos());
 	}
 	
 	private DataObject interpretFunctionCallPreviousNodeValueNode(FunctionCallPreviousNodeValueNode node, DataObject previousValue) {
 		if(previousValue == null)
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Missing previous value for FunctionCallPreviousNodeValueNode",
-					node.getLineNumberFrom());
+					node.getPos());
 
 		DataObject ret = operators.opCall(previousValue, interpretFunctionPointerArguments(node.getChildren()),
-				node.getLineNumberFrom());
+				node.getPos());
 		if(ret != null)
 			return ret;
 		
-		return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid data type", node.getLineNumberFrom());
+		return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid data type", node.getPos());
 	}
 	
 	private DataObject interpretFunctionDefinitionNode(FunctionDefinitionNode node) {
@@ -2843,30 +2841,30 @@ public final class LangInterpreter {
 		if(functionName != null) {
 			functionPointerDataObject = getOrCreateDataObjectFromVariableName(null, null, functionName,
 					false, false, !overloaded, flags,
-					node.getLineNumberFrom());
+					node.getPos());
 			if(flags[0])
 				return functionPointerDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
 			if(functionPointerDataObject == null || (overloaded && functionPointerDataObject.getType() != DataType.FUNCTION_POINTER)) {
 				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Can not overload variable \"" + functionName +
-						"\" because the variable does not exist or is not of type function pointer", node.getLineNumberFrom());
+						"\" because the variable does not exist or is not of type function pointer", node.getPos());
 			}
 
 			if(!overloaded && functionPointerDataObject.getType() != DataType.NULL) {
 				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Can not set \"" + functionName +
 						"\" to function because the variable already exists (You should use \"function overload\" instead of \"function\" to overload a function)",
-						node.getLineNumberFrom());
+						node.getPos());
 			}
 
 			if(functionPointerDataObject.getVariableName() == null) {
-				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
 			}
 
 			if(functionPointerDataObject.isFinalData() || functionPointerDataObject.isLangVar()) {
 				if(flags[1])
 					getData().var.remove(functionPointerDataObject.getVariableName());
 
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
 			}
 		}
 
@@ -2903,8 +2901,7 @@ public final class LangInterpreter {
 		List<String> parameterInfoList = new ArrayList<>(children.size());
 		int varArgsParameterIndex = -1;
 		boolean textVarArgsParameter = false;
-		List<Integer> lineNumberFromList = new ArrayList<>(children.size());
-		List<Integer> lineNumberToList = new ArrayList<>(children.size());
+		List<CodePosition> argumentPosList = new ArrayList<>(children.size());
 
 		Iterator<Node> childrenIterator = children.listIterator();
 		int index = 0;
@@ -2916,7 +2913,7 @@ public final class LangInterpreter {
 						return interpretNode(null, child);
 					else
 						return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-								"Invalid AST node type for parameter", node.getLineNumberFrom());
+								"Invalid AST node type for parameter", node.getPos());
 				}
 				
 				VariableNameNode parameter = (VariableNameNode)child;
@@ -2935,7 +2932,7 @@ public final class LangInterpreter {
 					parameterAnnotation = LangBaseFunction.ParameterAnnotation.NUMBER;
 				}else {
 					DataObject errorOut = new DataObject().setVoid();
-					parameterTypeConstraint = interpretTypeConstraint(rawParameterTypeConstraint, errorOut, parameter.getLineNumberFrom());
+					parameterTypeConstraint = interpretTypeConstraint(rawParameterTypeConstraint, errorOut, parameter.getPos());
 
 					if(errorOut.getType() == DataType.ERROR)
 						return errorOut;
@@ -2954,8 +2951,7 @@ public final class LangInterpreter {
 					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.CONSTRAINT_NORMAL:parameterTypeConstraint);
 					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.VAR_ARGS);
 					parameterInfoList.add(parameterDocComments.remove(variableName));
-					lineNumberFromList.add(node.getLineNumberFrom());
-					lineNumberToList.add(node.getLineNumberTo());
+					argumentPosList.add(node.getPos());
 
 					continue;
 				}
@@ -2967,15 +2963,14 @@ public final class LangInterpreter {
 					parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
 					parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER);
 					parameterInfoList.add(parameterDocComments.remove(variableName));
-					lineNumberFromList.add(node.getLineNumberFrom());
-					lineNumberToList.add(node.getLineNumberTo());
+					argumentPosList.add(node.getPos());
 
 					continue;
 				}
 
 				if(!isVarNameWithoutPrefix(rawVariableName) || isLangVarWithoutPrefix(rawVariableName))
 					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-							"Invalid parameter: \"" + rawVariableName + "\"", node.getLineNumberFrom());
+							"Invalid parameter: \"" + rawVariableName + "\"", node.getPos());
 
 				String variableName = rawVariableName;
 
@@ -2983,10 +2978,9 @@ public final class LangInterpreter {
 				parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
 				parameterAnnotationList.add(parameterAnnotation);
 				parameterInfoList.add(parameterDocComments.remove(variableName));
-				lineNumberFromList.add(node.getLineNumberFrom());
-				lineNumberToList.add(node.getLineNumberTo());
+				argumentPosList.add(node.getPos());
 			}catch(ClassCastException e) {
-				setErrno(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+				setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
 			}
 
 			index++;
@@ -2998,7 +2992,7 @@ public final class LangInterpreter {
 			returnValueTypeConstraint = DataObject.CONSTRAINT_NORMAL;
 		}else {
 			DataObject errorOut = new DataObject().setVoid();
-			returnValueTypeConstraint = interpretTypeConstraint(rawReturnTypeConstraint, errorOut, node.getLineNumberFrom());
+			returnValueTypeConstraint = interpretTypeConstraint(rawReturnTypeConstraint, errorOut, node.getPos());
 			
 			if(errorOut.getType() == DataType.ERROR)
 				return errorOut;
@@ -3006,7 +3000,7 @@ public final class LangInterpreter {
 
 		if(!parameterDocComments.isEmpty()) {
 			setErrno(InterpretingError.INVALID_DOC_COMMENT, "The following parameters defined in the doc comment do not exist: " +
-					String.join(", ", parameterDocComments.keySet()), node.getLineNumberFrom());
+					String.join(", ", parameterDocComments.keySet()), node.getPos());
 		}
 
 		StackElement currentStackElement = getCurrentCallStackElement();
@@ -3014,7 +3008,7 @@ public final class LangInterpreter {
 		LangNormalFunction normalFunction = new LangNormalFunction(currentStackElement.getLangPath(),
 				currentStackElement.getLangFile(), parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter,
-				false, returnValueTypeConstraint, lineNumberFromList, lineNumberToList, node.getFunctionBody());
+				false, returnValueTypeConstraint, argumentPosList, node.getFunctionBody());
 
 		if(functionPointerDataObject == null)
 			return new DataObject().setFunctionPointer(new FunctionPointerObject(normalFunction).
@@ -3034,7 +3028,7 @@ public final class LangInterpreter {
 				getData().var.remove(functionName);
 
 			return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for function definition: \"" +
-					functionName + "\" was already defined and cannot be set to a function definition", node.getLineNumberFrom());
+					functionName + "\" was already defined and cannot be set to a function definition", node.getPos());
 		}
 
 		return functionPointerDataObject;
@@ -3051,7 +3045,7 @@ public final class LangInterpreter {
 		}
 		
 		List<DataObject> elements = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes,
-				this, node.getLineNumberFrom());
+				this, node.getPos());
 		return new DataObject().setArray(elements.toArray(new DataObject[0]));
 	}
 	
@@ -3061,19 +3055,19 @@ public final class LangInterpreter {
 		boolean[] flags = new boolean[] {false, false};
 		if(structName != null) {
 			structDataObject = getOrCreateDataObjectFromVariableName(null, null, structName, false, false, true, flags,
-					node.getLineNumberFrom());
+					node.getPos());
 			if(flags[0])
 				return structDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
 			if(structDataObject.getVariableName() == null) {
-				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
 			}
 
 			if(structDataObject.isFinalData() || structDataObject.isLangVar()) {
 				if(flags[1])
 					getData().var.remove(structDataObject.getVariableName());
 
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
 			}
 		}
 
@@ -3081,14 +3075,14 @@ public final class LangInterpreter {
 		List<String> typeConstraints = node.getTypeConstraints();
 		
 		if(memberNames.size() != typeConstraints.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 		
 		for(String memberName:memberNames)
 			if(!isVarNameWithoutPrefix(memberName))
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + memberName + "\" is no valid struct member name", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + memberName + "\" is no valid struct member name", node.getPos());
 		
 		if(new HashSet<>(memberNames).size() < memberNames.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Struct member name may not be duplicated", node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Struct member name may not be duplicated", node.getPos());
 		
 		DataTypeConstraint[] typeConstraintsArray = new DataTypeConstraint[typeConstraints.size()];
 		for(int i = 0;i < typeConstraintsArray.length;i++) {
@@ -3097,7 +3091,7 @@ public final class LangInterpreter {
 				continue;
 			
 			DataObject errorOut = new DataObject().setVoid();
-			typeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getLineNumberFrom());
+			typeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
 			
 			if(errorOut.getType() == DataType.ERROR)
 				return errorOut;
@@ -3117,12 +3111,12 @@ public final class LangInterpreter {
 					getData().var.remove(structName);
 
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for struct definition: \"" +
-						structName + "\" was already defined and cannot be set to a struct definition", node.getLineNumberFrom());
+						structName + "\" was already defined and cannot be set to a struct definition", node.getPos());
 			}
 
 			return structDataObject;
 		}catch(DataTypeConstraintException e) {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
 		}
 	}
 
@@ -3132,19 +3126,19 @@ public final class LangInterpreter {
 		boolean[] flags = new boolean[] {false, false};
 		if(className != null) {
 			classDataObject = getOrCreateDataObjectFromVariableName(null, null, className, false, false, true, flags,
-					node.getLineNumberFrom());
+					node.getPos());
 			if(flags[0])
 				return classDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
 			if(classDataObject.getVariableName() == null) {
-				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
 			}
 
 			if(classDataObject.isFinalData() || classDataObject.isLangVar()) {
 				if(flags[1])
 					getData().var.remove(classDataObject.getVariableName());
 
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getLineNumberFrom());
+				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
 			}
 		}
 
@@ -3152,13 +3146,13 @@ public final class LangInterpreter {
 
 		List<DataObject> parentClassList = new LinkedList<>(interpretFunctionPointerArguments(parentClasses));
 		List<DataObject> combinedParentClassList = LangUtils.combineArgumentsWithoutArgumentSeparators(parentClassList,
-				this, node.getLineNumberFrom());
+				this, node.getPos());
 
 		List<LangObject> parentClassObjectList = new LinkedList<>();
 		for(DataObject parentClass:combinedParentClassList) {
 			if(parentClass.getType() != DataType.OBJECT || !parentClass.getObject().isClass())
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Parent classes must be classes",
-						node.getLineNumberFrom());
+						node.getPos());
 
 			parentClassObjectList.add(parentClass.getObject());
 		}
@@ -3170,16 +3164,16 @@ public final class LangInterpreter {
 
 		if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size() ||
 				staticMemberNames.size() != staticMemberFinalFlag.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		for(String staticMemberName:staticMemberNames)
 			if(!isVarNameWithoutPrefix(staticMemberName))
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + staticMemberName + "\" is no valid static member name",
-						node.getLineNumberFrom());
+						node.getPos());
 
 		if(new HashSet<>(staticMemberNames).size() < staticMemberNames.size())
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Static member name may not be duplicated",
-					node.getLineNumberFrom());
+					node.getPos());
 
 		DataTypeConstraint[] staticMemberTypeConstraintsArray = new DataTypeConstraint[staticMemberTypeConstraints.size()];
 		for(int i = 0;i < staticMemberTypeConstraintsArray.length;i++) {
@@ -3188,7 +3182,7 @@ public final class LangInterpreter {
 				continue;
 
 			DataObject errorOut = new DataObject().setVoid();
-			staticMemberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getLineNumberFrom());
+			staticMemberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
 
 			if(errorOut.getType() == DataType.ERROR)
 				return errorOut;
@@ -3198,7 +3192,7 @@ public final class LangInterpreter {
 		for(int i = 0;i < staticMemberFinalFlagArray.length;i++) {
 			if(staticMemberFinalFlag.get(i) == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for static member at index " + i,
-						node.getLineNumberFrom());
+						node.getPos());
 
 			staticMemberFinalFlagArray[i] = staticMemberFinalFlag.get(i);
 		}
@@ -3218,7 +3212,7 @@ public final class LangInterpreter {
 					staticMembers[i].setFinalData(true);
 			}
 		}catch(DataTypeConstraintException e) {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
 		}
 
 		List<String> memberNames = node.getMemberNames();
@@ -3226,16 +3220,16 @@ public final class LangInterpreter {
 		List<Boolean> memberFinalFlag = node.getMemberFinalFlag();
 
 		if(memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		for(String memberName:memberNames)
 			if(!isVarNameWithoutPrefix(memberName))
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + memberName + "\" is no valid member name",
-						node.getLineNumberFrom());
+						node.getPos());
 
 		if(new HashSet<>(memberNames).size() < memberNames.size())
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Member name may not be duplicated",
-					node.getLineNumberFrom());
+					node.getPos());
 
 		DataTypeConstraint[] memberTypeConstraintsArray = new DataTypeConstraint[memberTypeConstraints.size()];
 		for(int i = 0;i < memberTypeConstraintsArray.length;i++) {
@@ -3244,7 +3238,7 @@ public final class LangInterpreter {
 				continue;
 
 			DataObject errorOut = new DataObject().setVoid();
-			memberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getLineNumberFrom());
+			memberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
 
 			if(errorOut.getType() == DataType.ERROR)
 				return errorOut;
@@ -3254,7 +3248,7 @@ public final class LangInterpreter {
 		for(int i = 0;i < memberFinalFlagArray.length;i++) {
 			if(memberFinalFlag.get(i) == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for member at index " + i,
-						node.getLineNumberFrom());
+						node.getPos());
 
 			memberFinalFlagArray[i] = memberFinalFlag.get(i);
 		}
@@ -3264,26 +3258,26 @@ public final class LangInterpreter {
 		List<Boolean> methodOverrideFlag = node.getMethodOverrideFlag();
 
 		if(methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		for(String methodName:methodNames)
 			if(!isMethodName(methodName) && !isOperatorMethodName(methodName) && !isConversionMethodName(methodName))
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
-						node.getLineNumberFrom());
+						node.getPos());
 
 		Map<String, FunctionPointerObject> methods = new HashMap<>();
 		Map<String, List<Boolean>> rawMethodOverrideFlags = new HashMap<>();
 		for(int i = 0;i < methodNames.size();i++) {
 			if(methodOverrideFlag.get(i) == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for method at index " + i,
-						node.getLineNumberFrom());
+						node.getPos());
 
 			String methodName = methodNames.get(i);
 
 			DataObject methodDefinition = interpretNode(null, methodDefinitions.get(i));
 			if(methodDefinition == null || methodDefinition.getType() != DataType.FUNCTION_POINTER)
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Methods must be of type \"" + DataType.FUNCTION_POINTER + "\"",
-						methodDefinitions.get(i).getLineNumberFrom());
+						methodDefinitions.get(i).getPos());
 
 			if(methods.containsKey(methodName)) {
 				FunctionPointerObject functions = methods.get(methodName);
@@ -3308,7 +3302,7 @@ public final class LangInterpreter {
 			DataObject constructorDefinition = interpretNode(null, constructorDefinitions.get(i));
 			if(constructorDefinition == null || constructorDefinition.getType() != DataType.FUNCTION_POINTER)
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Constructor must be of type \"" + DataType.FUNCTION_POINTER + "\"",
-						constructorDefinitions.get(i).getLineNumberFrom());
+						constructorDefinitions.get(i).getPos());
 
 			if(constructors == null)
 				constructors = constructorDefinition.getFunctionPointer();
@@ -3346,18 +3340,18 @@ public final class LangInterpreter {
 					getData().var.remove(className);
 
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for class definition: \"" +
-						className + "\" was already defined and cannot be set to a class", node.getLineNumberFrom());
+						className + "\" was already defined and cannot be set to a class", node.getPos());
 			}
 
 			return classDataObject;
 		}catch(DataTypeConstraintException e) {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getLineNumberFrom());
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
 		}
 	}
 	
-	private DataTypeConstraint interpretTypeConstraint(String typeConstraint, DataObject errorOut, int lineNumber) {
+	private DataTypeConstraint interpretTypeConstraint(String typeConstraint, DataObject errorOut, CodePosition pos) {
 		if(typeConstraint.isEmpty())
-			errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty type constraint is not allowed", lineNumber));
+			errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty type constraint is not allowed", pos));
 		
 		boolean nullable = typeConstraint.charAt(0) == '?';
 		boolean inverted = typeConstraint.charAt(0) == '!';
@@ -3373,7 +3367,7 @@ public final class LangInterpreter {
 			String type = pipeIndex > -1?typeConstraint.substring(0, pipeIndex):typeConstraint;
 			
 			if(type.isEmpty() || pipeIndex == typeConstraint.length() - 1)
-				errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty type constraint is not allowed", lineNumber));
+				errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty type constraint is not allowed", pos));
 			
 			typeConstraint = pipeIndex > -1?typeConstraint.substring(pipeIndex + 1):"";
 			
@@ -3381,7 +3375,7 @@ public final class LangInterpreter {
 				DataType typeValue = DataType.valueOf(type);
 				typeValues.add(typeValue);
 			}catch(IllegalArgumentException e) {
-				errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid type: \"" + type + "\"", lineNumber));
+				errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid type: \"" + type + "\"", pos));
 			}
 		}while(pipeIndex > -1);
 		
@@ -3588,7 +3582,7 @@ public final class LangInterpreter {
 			if(sizeArgumentIndex == null && argumentList.isEmpty())
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT;
 			DataObject dataObject = sizeArgumentIndex == null?argumentList.remove(0):fullArgumentList.get(sizeArgumentIndex);
-			Number number = conversions.toNumber(dataObject, -1);
+			Number number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 			if(number == null)
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 			
@@ -3600,7 +3594,7 @@ public final class LangInterpreter {
 			if(decimalPlacesCountIndex == null && argumentList.isEmpty())
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT;
 			DataObject dataObject = decimalPlacesCountIndex == null?argumentList.remove(0):fullArgumentList.get(decimalPlacesCountIndex);
-			Number number = conversions.toNumber(dataObject, -1);
+			Number number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 			if(number == null)
 				return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 			
@@ -3616,7 +3610,7 @@ public final class LangInterpreter {
 		DataObject dataObject = formatType == 'n'?null:(valueSpecifiedIndex == null?argumentList.remove(0):fullArgumentList.get(valueSpecifiedIndex));
 		switch(formatType) {
 			case 'd':
-				Number number = conversions.toNumber(dataObject, -1);
+				Number number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3630,7 +3624,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'b':
-				number = conversions.toNumber(dataObject, -1);
+				number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3644,7 +3638,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'o':
-				number = conversions.toNumber(dataObject, -1);
+				number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3658,7 +3652,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'x':
-				number = conversions.toNumber(dataObject, -1);
+				number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3672,7 +3666,7 @@ public final class LangInterpreter {
 				break;
 			
 			case 'f':
-				number = conversions.toNumber(dataObject, -1);
+				number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3701,7 +3695,7 @@ public final class LangInterpreter {
 				break;
 				
 			case 'c':
-				number = conversions.toNumber(dataObject, -1);
+				number = conversions.toNumber(dataObject, CodePosition.EMPTY);
 				if(number == null)
 					return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 				
@@ -3710,12 +3704,12 @@ public final class LangInterpreter {
 				break;
 				
 			case 's':
-				output = conversions.toText(dataObject, -1);
+				output = conversions.toText(dataObject, CodePosition.EMPTY);
 				
 				break;
 				
 			case 't':
-				String translationKey = conversions.toText(dataObject, -1);
+				String translationKey = conversions.toText(dataObject, CodePosition.EMPTY);
 				
 				output = getData().lang.get(translationKey);
 				if(output == null)
@@ -3732,7 +3726,7 @@ public final class LangInterpreter {
 				break;
 				
 			case '?':
-				output = conversions.toBool(dataObject, -1)?"true":"false";
+				output = conversions.toBool(dataObject, CodePosition.EMPTY)?"true":"false";
 				
 				break;
 				
@@ -3829,57 +3823,57 @@ public final class LangInterpreter {
 		return new DataObject(builder.toString());
 	}
 
-	public DataObject callConstructor(LangObject langObject, List<DataObject> argumentList, int lineNumber) {
+	public DataObject callConstructor(LangObject langObject, List<DataObject> argumentList, CodePosition pos) {
 		if(langObject.isClass()) {
 			DataObject createdObject = new DataObject().setObject(new LangObject(langObject));
 
 			FunctionPointerObject constructors = createdObject.getObject().getConstructors();
 
-			DataObject ret = callFunctionPointer(constructors, constructors.getFunctionName(), argumentList, lineNumber);
+			DataObject ret = callFunctionPointer(constructors, constructors.getFunctionName(), argumentList, pos);
 			if(ret == null)
 				ret = new DataObject().setVoid();
 
 			if(ret.getType() != DataType.VOID)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",
-						lineNumber);
+						pos);
 
 			try {
 				createdObject.getObject().postConstructor();
 			}catch(DataTypeConstraintException e) {
 				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 						"Invalid constructor implementation (Some members have invalid types): " + e.getMessage(),
-						lineNumber);
+						pos);
 			}
 
 			return createdObject;
 		}else {
 			if(langObject.isInitialized())
 				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized",
-						lineNumber);
+						pos);
 
 			//Current constructors for super level instead of normal constructors, because constructors are not overridden
 			FunctionPointerObject constructors = langObject.getConstructorsForCurrentSuperLevel();
 
-			DataObject ret = callFunctionPointer(constructors, constructors.getFunctionName(), argumentList, lineNumber);
+			DataObject ret = callFunctionPointer(constructors, constructors.getFunctionName(), argumentList, pos);
 			if(ret == null)
 				ret = new DataObject().setVoid();
 
 			if(ret.getType() != DataType.VOID)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid constructor implementation: VOID must be returned",
-						lineNumber);
+						pos);
 
 			return ret;
 		}
 	}
 	public DataObject callConstructor(LangObject langObject, List<DataObject> argumentList) {
-		return callConstructor(langObject, argumentList, -1);
+		return callConstructor(langObject, argumentList, CodePosition.EMPTY);
 	}
 
-	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber) {
+	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, CodePosition pos) {
 		if(rawMethodName.startsWith("fn.") || rawMethodName.startsWith("func.") ||
 				rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker."))
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-					"The method \"" + rawMethodName + "\" is not part of this object", lineNumber);
+					"The method \"" + rawMethodName + "\" is not part of this object", pos);
 
 		String methodName = (langObject.isClass() || rawMethodName.startsWith("fp."))?
 				null:((rawMethodName.startsWith("mp.")?"":"mp.") + rawMethodName);
@@ -3891,7 +3885,7 @@ public final class LangInterpreter {
 				if(rawMethodName.startsWith("mp."))
 					return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 							"The method \"" + rawMethodName + "\" is not part of this object",
-							lineNumber);
+							pos);
 
 				if(!rawMethodName.startsWith("fp."))
 					rawMethodName = "fp." + rawMethodName;
@@ -3901,35 +3895,35 @@ public final class LangInterpreter {
 					member = langObject.getStaticMember(rawMethodName);
 				}catch(DataTypeConstraintException e) {
 					if(langObject.isClass())
-						return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
+						return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
 
 					member = langObject.getMember(rawMethodName);
 				}
 
 				if(member.getType() != DataType.FUNCTION_POINTER)
 					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + rawMethodName +
-							"\": Function pointer is invalid", lineNumber);
+							"\": Function pointer is invalid", pos);
 
 				fp = member.getFunctionPointer();
 			}else {
 				fp = methods;
 			}
 		}catch(DataTypeConstraintException e) {
-			return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), lineNumber);
+			return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
 		}
 
-		return callFunctionPointer(fp, rawMethodName, argumentList, lineNumber);
+		return callFunctionPointer(fp, rawMethodName, argumentList, pos);
 	}
 	public DataObject callMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList) {
-		return callMethod(langObject, rawMethodName, argumentList, -1);
+		return callMethod(langObject, rawMethodName, argumentList, CodePosition.EMPTY);
 	}
 
-	public DataObject callSuperConstructor(LangObject langObject, List<DataObject> argumentList, int lineNumber) {
+	public DataObject callSuperConstructor(LangObject langObject, List<DataObject> argumentList, CodePosition pos) {
 		if(langObject.isClass())
-			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Super constructor can not be called on class", lineNumber);
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Super constructor can not be called on class", pos);
 
 		if(langObject.isInitialized())
-			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized", lineNumber);
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Object is already initialized", pos);
 
 		FunctionPointerObject superConstructors = langObject.getSuperConstructors();
 
@@ -3937,7 +3931,7 @@ public final class LangInterpreter {
 		superConstructors = new FunctionPointerObject(superConstructors, langObject).withMappedFunctions(internalFunction ->
 				new FunctionPointerObject.InternalFunction(internalFunction, internalFunction.getSuperLevel() + langObject.getSuperLevel() + 1));
 
-		DataObject ret = callFunctionPointer(superConstructors, superConstructors.getFunctionName(), argumentList, lineNumber);
+		DataObject ret = callFunctionPointer(superConstructors, superConstructors.getFunctionName(), argumentList, pos);
 		if(ret == null)
 			ret = new DataObject().setVoid();
 
@@ -3947,14 +3941,14 @@ public final class LangInterpreter {
 		return ret;
 	}
 	public DataObject callSuperConstructor(LangObject langObject, List<DataObject> argumentList) {
-		return callSuperConstructor(langObject, argumentList, -1);
+		return callSuperConstructor(langObject, argumentList, CodePosition.EMPTY);
 	}
 
-	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, int lineNumber) {
+	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList, CodePosition pos) {
 		if(rawMethodName.startsWith("fp.") || rawMethodName.startsWith("fn.") ||
 				rawMethodName.startsWith("func.") || rawMethodName.startsWith("ln.") || rawMethodName.startsWith("linker."))
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-					"The method \"" + rawMethodName + "\" is not part of this object", lineNumber);
+					"The method \"" + rawMethodName + "\" is not part of this object", pos);
 
 		String methodName = rawMethodName.startsWith("mp.")?rawMethodName:("mp." + rawMethodName);
 
@@ -3962,7 +3956,7 @@ public final class LangInterpreter {
 		if(methods == null)
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"The method \"" + rawMethodName + "\" is not in any super class of this object",
-					lineNumber);
+					pos);
 
 		FunctionPointerObject fp = methods;
 
@@ -3970,10 +3964,10 @@ public final class LangInterpreter {
 		fp = new FunctionPointerObject(fp, langObject).withMappedFunctions(internalFunction ->
 				new FunctionPointerObject.InternalFunction(internalFunction, internalFunction.getSuperLevel() + langObject.getSuperLevel() + 1));
 
-		return callFunctionPointer(fp, rawMethodName, argumentList, lineNumber);
+		return callFunctionPointer(fp, rawMethodName, argumentList, pos);
 	}
 	public DataObject callSuperMethod(LangObject langObject, String rawMethodName, List<DataObject> argumentList) {
-		return callSuperMethod(langObject, rawMethodName, argumentList, -1);
+		return callSuperMethod(langObject, rawMethodName, argumentList, CodePosition.EMPTY);
 	}
 
 	/**
@@ -4329,7 +4323,8 @@ public final class LangInterpreter {
 			throw new IllegalStateException("Initialization of lang standard implementation was already completed");
 
 		//Temporary scope for lang standard implementation in lang code
-		pushStackElement(new StackElement("<standard>", "standard.lang", null, null), -1);
+		pushStackElement(new StackElement("<standard>", "standard.lang", null, null),
+				CodePosition.EMPTY);
 		enterScope();
 
 		try(BufferedReader langStandardImplementation = new BufferedReader(
@@ -4355,6 +4350,8 @@ public final class LangInterpreter {
 			popStackElement();
 
 			exitScope();
+
+			resetParserPositionVars();
 
 			isInitializingLangStandardImplementation = false;
 		}
@@ -4410,18 +4407,18 @@ public final class LangInterpreter {
 	}
 	
 	void setErrno(InterpretingError error) {
-		setErrno(error, null);
+		setErrno(error, (String)null);
 	}
-	void setErrno(InterpretingError error, int lineNumber) {
-		setErrno(error, null, lineNumber);
+	void setErrno(InterpretingError error, CodePosition pos) {
+		setErrno(error, null, pos);
 	}
 	void setErrno(InterpretingError error, String message) {
-		setErrno(error, message, -1, false);
+		setErrno(error, message, CodePosition.EMPTY, false);
 	}
-	void setErrno(InterpretingError error, String message, int lineNumber) {
-		setErrno(error, message, lineNumber, false);
+	void setErrno(InterpretingError error, String message, CodePosition pos) {
+		setErrno(error, message, pos, false);
 	}
-	private void setErrno(InterpretingError error, String message, int lineNumber, boolean forceNoErrorOutput) {
+	private void setErrno(InterpretingError error, String message, CodePosition pos, boolean forceNoErrorOutput) {
 		int currentErrno = getData().var.get("$LANG_ERRNO").getInt();
 		int newErrno = error.getErrorCode();
 		
@@ -4441,10 +4438,10 @@ public final class LangInterpreter {
 			String langFunctionName = currentStackElement.getLangFunctionName();
 			
 			String output = String.format("A%s %s occurred in \"%s:%s\" (FUNCTION: \"%s\", SCOPE_ID: \"%d\")!\n%s: %s (%d)%s\nStack trace:\n%s",
-					newErrno < 0?"":"n", newErrno < 0?"warning":"error", langPathWithFile, lineNumber > 0?lineNumber:"x",
-							langFunctionName == null?"<main>":langFunctionName, scopeId, newErrno < 0?"Warning":"Error",
+					newErrno < 0?"":"n", newErrno < 0?"warning":"error", langPathWithFile, pos.equals(CodePosition.EMPTY)?"x":
+							pos.toCompactString(), langFunctionName == null?"<main>":langFunctionName, scopeId, newErrno < 0?"Warning":"Error",
 									error.getErrorText(), error.getErrorCode(), message.isEmpty()?"":"\nMessage: " + message,
-											printStackTrace(lineNumber));
+											printStackTrace(pos));
 			if(term == null)
 				System.err.println(output);
 			else
@@ -4458,19 +4455,19 @@ public final class LangInterpreter {
 	}
 	
 	DataObject setErrnoErrorObject(InterpretingError error) {
-		return setErrnoErrorObject(error, null);
+		return setErrnoErrorObject(error, (String)null);
 	}
-	DataObject setErrnoErrorObject(InterpretingError error, int lineNumber) {
-		return setErrnoErrorObject(error, null, lineNumber);
+	DataObject setErrnoErrorObject(InterpretingError error, CodePosition pos) {
+		return setErrnoErrorObject(error, null, pos);
 	}
 	DataObject setErrnoErrorObject(InterpretingError error, String message) {
-		return setErrnoErrorObject(error, message, -1, false);
+		return setErrnoErrorObject(error, message, CodePosition.EMPTY, false);
 	}
-	DataObject setErrnoErrorObject(InterpretingError error, String message, int lineNumber) {
-		return setErrnoErrorObject(error, message, lineNumber, false);
+	DataObject setErrnoErrorObject(InterpretingError error, String message, CodePosition pos) {
+		return setErrnoErrorObject(error, message, pos, false);
 	}
-	private DataObject setErrnoErrorObject(InterpretingError error, String message, int lineNumber, boolean forceNoErrorOutput) {
-		setErrno(error, message, lineNumber, forceNoErrorOutput);
+	private DataObject setErrnoErrorObject(InterpretingError error, String message, CodePosition pos, boolean forceNoErrorOutput) {
+		setErrno(error, message, pos, forceNoErrorOutput);
 		
 		return new DataObject().setError(new ErrorObject(error, message));
 	}
@@ -4491,23 +4488,23 @@ public final class LangInterpreter {
 	public static final class StackElement {
 		private final String langPath;
 		private final String langFile;
-		private final int lineNumber;
+		private final CodePosition pos;
 		private final String langFunctionName;
 		final LangModule module;
 		
-		public StackElement(String langPath, String langFile, int lineNumber, String langFunctionName, LangModule module) {
+		public StackElement(String langPath, String langFile, CodePosition pos, String langFunctionName, LangModule module) {
 			this.langPath = langPath;
 			this.langFile = langFile;
 			this.langFunctionName = langFunctionName;
-			this.lineNumber = lineNumber;
+			this.pos = pos;
 			this.module = module;
 		}
 		public StackElement(String langPath, String langFile, String langFunctionName, LangModule module) {
-			this(langPath, langFile, -1, langFunctionName, module);
+			this(langPath, langFile, CodePosition.EMPTY, langFunctionName, module);
 		}
 		
-		public StackElement withLineNumber(int lineNumber) {
-			return new StackElement(langPath, langFile, lineNumber, langFunctionName, module);
+		public StackElement withPos(CodePosition pos) {
+			return new StackElement(langPath, langFile, pos, langFunctionName, module);
 		}
 		
 		public String getLangPath() {
@@ -4518,8 +4515,8 @@ public final class LangInterpreter {
 			return langFile;
 		}
 		
-		public int getLineNumber() {
-			return lineNumber;
+		public CodePosition getPos() {
+			return pos;
 		}
 		
 		public String getLangFunctionName() {
@@ -4533,7 +4530,8 @@ public final class LangInterpreter {
 		@Override
 		public String toString() {
 			String langPathWithFile = langPath + (langPath.endsWith("/")?"":"/") + (langFile == null?"<shell>":langFile);
-			return String.format("    at \"%s:%s\" in function \"%s\"", langPathWithFile, lineNumber > 0?lineNumber:"x", langFunctionName == null?"<main>":langFunctionName);
+			return String.format("    at \"%s:%s\" in function \"%s\"", langPathWithFile, pos.equals(CodePosition.EMPTY)?"x":
+							pos.toCompactString(), langFunctionName == null?"<main>":langFunctionName);
 		}
 	}
 	
@@ -4584,7 +4582,7 @@ public final class LangInterpreter {
 		//Fields for return statements
 		private DataObject returnedOrThrownValue;
 		private boolean isThrownValue;
-		private int returnOrThrowStatementLineNumber = -1;
+		private CodePosition returnOrThrowStatementPos = CodePosition.EMPTY;
 		
 		//Fields for continue & break statements
 		/**
@@ -4776,26 +4774,26 @@ public final class LangInterpreter {
 		public void setErrno(InterpretingError error) {
 			setErrno(error, "");
 		}
-		public void setErrno(InterpretingError error, int lineNumber) {
-			setErrno(error, "", lineNumber);
+		public void setErrno(InterpretingError error, CodePosition pos) {
+			setErrno(error, "", pos);
 		}
 		public void setErrno(InterpretingError error, String message) {
 			interpreter.setErrno(error, message);
 		}
-		public void setErrno(InterpretingError error, String message, int lineNumber) {
-			interpreter.setErrno(error, message, lineNumber);
+		public void setErrno(InterpretingError error, String message, CodePosition pos) {
+			interpreter.setErrno(error, message, pos);
 		}
 		public DataObject setErrnoErrorObject(InterpretingError error) {
 			return setErrnoErrorObject(error, "");
 		}
-		public DataObject setErrnoErrorObject(InterpretingError error, int lineNumber) {
-			return setErrnoErrorObject(error, "", lineNumber);
+		public DataObject setErrnoErrorObject(InterpretingError error, CodePosition pos) {
+			return setErrnoErrorObject(error, "", pos);
 		}
 		public DataObject setErrnoErrorObject(InterpretingError error, String message) {
 			return interpreter.setErrnoErrorObject(error, message);
 		}
-		public DataObject setErrnoErrorObject(InterpretingError error, String message, int lineNumber) {
-			return interpreter.setErrnoErrorObject(error, message, lineNumber);
+		public DataObject setErrnoErrorObject(InterpretingError error, String message, CodePosition pos) {
+			return interpreter.setErrnoErrorObject(error, message, pos);
 		}
 		public InterpretingError getAndClearErrnoErrorObject() {
 			return interpreter.getAndClearErrnoErrorObject();
@@ -4869,8 +4867,8 @@ public final class LangInterpreter {
 		public boolean isReturnedValueThrowValue() {
 			return interpreter.executionState.isThrownValue;
 		}
-		public int getThrowStatementLineNumber() {
-			return interpreter.executionState.returnOrThrowStatementLineNumber;
+		public CodePosition getThrowStatementPos() {
+			return interpreter.executionState.returnOrThrowStatementPos;
 		}
 		public DataObject getAndResetReturnValue() {
 			return interpreter.getAndResetReturnValue();
@@ -4891,8 +4889,8 @@ public final class LangInterpreter {
 			return interpreter.interpretFunctionCallNode(null, node);
 		}
 		public DataObject interpretFunctionPointer(FunctionPointerObject fp, String functionName, List<Node> argumentList,
-				int parentLineNumber) throws StoppedException {
-			return interpreter.callFunctionPointer(fp, functionName, interpreter.interpretFunctionPointerArguments(argumentList), parentLineNumber);
+				CodePosition parentPos) throws StoppedException {
+			return interpreter.callFunctionPointer(fp, functionName, interpreter.interpretFunctionPointerArguments(argumentList), parentPos);
 		}
 		public DataObject interpretFunctionPointer(FunctionPointerObject fp, String functionName, List<Node> argumentList) throws StoppedException {
 			return interpreter.callFunctionPointer(fp, functionName, interpreter.interpretFunctionPointerArguments(argumentList));
@@ -4911,8 +4909,8 @@ public final class LangInterpreter {
 		}
 		
 		public DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList,
-				int parentLineNumber) throws StoppedException {
-			return interpreter.callFunctionPointer(fp, functionName, argumentValueList, parentLineNumber);
+				CodePosition parentPos) throws StoppedException {
+			return interpreter.callFunctionPointer(fp, functionName, argumentValueList, parentPos);
 		}
 		public DataObject callFunctionPointer(FunctionPointerObject fp, String functionName, List<DataObject> argumentValueList) throws StoppedException {
 			return interpreter.callFunctionPointer(fp, functionName, argumentValueList);

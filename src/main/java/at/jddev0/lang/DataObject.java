@@ -842,7 +842,7 @@ public class DataObject {
 			return thisObject == null?"<Function>":"<Method>";
 		}
 
-		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber) {
+		public boolean isEquals(FunctionPointerObject that, LangInterpreter interpreter, CodePosition pos) {
 			if(this == that)
 				return true;
 
@@ -852,13 +852,13 @@ public class DataObject {
 				return false;
 
 			for(int i = 0;i < this.functions.size();i++)
-				if(!this.functions.get(i).isEquals(that.functions.get(i), interpreter, lineNumber))
+				if(!this.functions.get(i).isEquals(that.functions.get(i), interpreter, pos))
 					return false;
 
 			return true;
 		}
 
-		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, int lineNumber) {
+		public boolean isStrictEquals(FunctionPointerObject that, LangInterpreter interpreter, CodePosition pos) {
 			if(this == that)
 				return true;
 
@@ -868,7 +868,7 @@ public class DataObject {
 				return false;
 
 			for(int i = 0;i < this.functions.size();i++)
-				if(!this.functions.get(i).isStrictEquals(that.functions.get(i), interpreter, lineNumber))
+				if(!this.functions.get(i).isStrictEquals(that.functions.get(i), interpreter, pos))
 					return false;
 
 			return true;
@@ -949,18 +949,18 @@ public class DataObject {
 				return function.getLangFile();
 			}
 
-			public boolean isEquals(InternalFunction that, LangInterpreter interpreter, int lineNumber) {
+			public boolean isEquals(InternalFunction that, LangInterpreter interpreter, CodePosition pos) {
 				//Check for same reference of thisObjects
 				return this.functionPointerType == that.functionPointerType &&
 						this.superLevel == that.superLevel &&
-						this.function.isEquals(that.function, interpreter, lineNumber);
+						this.function.isEquals(that.function, interpreter, pos);
 			}
 
-			public boolean isStrictEquals(InternalFunction that, LangInterpreter interpreter, int lineNumber) {
+			public boolean isStrictEquals(InternalFunction that, LangInterpreter interpreter, CodePosition pos) {
 				//Check for same reference of thisObjects
 				return this.functionPointerType == that.functionPointerType &&
 						this.superLevel == that.superLevel &&
-						this.function.isStrictEquals(that.function, interpreter, lineNumber);
+						this.function.isStrictEquals(that.function, interpreter, pos);
 			}
 		}
 	}

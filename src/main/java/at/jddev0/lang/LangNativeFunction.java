@@ -412,7 +412,7 @@ public class LangNativeFunction extends LangBaseFunction {
 						variableName, parameterDataTypeConstraintList.get(i).getAllowedTypes()));
 
 			Number argumentNumberValue = parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER?
-					interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), -1):null;
+					interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), CodePosition.EMPTY):null;
 			if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName));
 
@@ -458,9 +458,9 @@ public class LangNativeFunction extends LangBaseFunction {
 										break;
 
 							DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy,
-									interpreter, -1);
+									interpreter, CodePosition.EMPTY);
 							argument = new DataObject(combinedArgument == null?"":interpreter.conversions.
-									toText(combinedArgument, -1)).setVariableName(variableName);
+									toText(combinedArgument, CodePosition.EMPTY)).setVariableName(variableName);
 						}else {
 							argument = new DataObject().setVariableName(variableName).
 									setArray(varArgsArgumentList.toArray(new DataObject[0]));
@@ -485,7 +485,7 @@ public class LangNativeFunction extends LangBaseFunction {
 				}else if(methodParameterType.isAssignableFrom(Number.class)) {
 					argument = argumentNumberValue;
 				}else if(methodParameterType.isAssignableFrom(boolean.class)) {
-					argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), -1);
+					argument = interpreter.conversions.toBool(combinedArgumentList.get(argumentIndex), CodePosition.EMPTY);
 				}else {
 					return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR, "Invalid native method parameter argument type");
 				}
@@ -509,7 +509,7 @@ public class LangNativeFunction extends LangBaseFunction {
 
 				if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
 					return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
-							"Invalid return value type \"" + retTmp.getType() + "\"", -1);
+							"Invalid return value type \"" + retTmp.getType() + "\"");
 			}
 
 			return ret;
@@ -573,13 +573,13 @@ public class LangNativeFunction extends LangBaseFunction {
 	}
 
 	@Override
-	public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
+	public boolean isEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, CodePosition pos) {
 		if(!(baseFunction instanceof LangNativeFunction))
 			return false;
 
 		LangNativeFunction that = (LangNativeFunction)baseFunction;
 
-		if(!super.isEquals(that, interpreter, lineNumber) ||
+		if(!super.isEquals(that, interpreter, pos) ||
 				this.hasInterpreterParameter != that.hasInterpreterParameter ||
 				this.combinatorFunction != that.combinatorFunction ||
 				!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
@@ -590,13 +590,13 @@ public class LangNativeFunction extends LangBaseFunction {
 
 		for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
 			if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
-					that.combinatorProvidedArgumentList.get(i), lineNumber))
+					that.combinatorProvidedArgumentList.get(i), pos))
 				return false;
 
 		for(int i = 0;i < this.valueDependencies.length;i++)
 			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
 					!interpreter.operators.isEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-							lineNumber):
+							pos):
 					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 
@@ -604,13 +604,13 @@ public class LangNativeFunction extends LangBaseFunction {
 	}
 
 	@Override
-	public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, int lineNumber) {
+	public boolean isStrictEquals(LangBaseFunction baseFunction, LangInterpreter interpreter, CodePosition pos) {
 		if(!(baseFunction instanceof LangNativeFunction))
 			return false;
 
 		LangNativeFunction that = (LangNativeFunction)baseFunction;
 
-		if(!super.isEquals(that, interpreter, lineNumber) ||
+		if(!super.isEquals(that, interpreter, pos) ||
 				this.hasInterpreterParameter != that.hasInterpreterParameter ||
 				this.combinatorFunction != that.combinatorFunction ||
 				!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
@@ -621,13 +621,13 @@ public class LangNativeFunction extends LangBaseFunction {
 
 		for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
 			if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
-					that.combinatorProvidedArgumentList.get(i), lineNumber))
+					that.combinatorProvidedArgumentList.get(i), pos))
 				return false;
 
 		for(int i = 0;i < this.valueDependencies.length;i++)
 			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
 					!interpreter.operators.isStrictEquals((DataObject)this.valueDependencies[i], (DataObject)that.valueDependencies[i],
-							lineNumber):
+							pos):
 					!Objects.equals(this.valueDependencies[i], that.valueDependencies[i]))
 				return false;
 

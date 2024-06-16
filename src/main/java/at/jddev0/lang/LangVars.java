@@ -110,6 +110,7 @@ public final class LangVars {
 		}
 	}
 	private void addStructDefinitionLangVars() {
+		addStaticLangVar("&CodePosition", interpreter.standardTypes.get("&CodePosition").setFinalData(true));
 		addStaticLangVar("&StackTraceElement", interpreter.standardTypes.get("&StackTraceElement").setFinalData(true));
 		addStaticLangVar("&Pair", interpreter.standardTypes.get("&Pair").setFinalData(true));
 	}

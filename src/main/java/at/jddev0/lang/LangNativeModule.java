@@ -219,11 +219,11 @@ public abstract class LangNativeModule {
 		return new DataObject().setFunctionPointer(func).setVariableName(functionName);
 	}
 	
-	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList, int parentLineNumber) {
+	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList, CodePosition parentPos) {
 		if(func.getType() != DataObject.DataType.FUNCTION_POINTER)
 			throw new RuntimeException("\"func\" must be of type " + DataObject.DataType.FUNCTION_POINTER);
 		
-		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList, parentLineNumber);
+		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList, parentPos);
 	}
 	protected final DataObject callFunctionPointer(DataObject func, List<DataObject> argumentValueList) {
 		if(func.getType() != DataObject.DataType.FUNCTION_POINTER)
@@ -232,8 +232,8 @@ public abstract class LangNativeModule {
 		return interpreter.callFunctionPointer(func.getFunctionPointer(), func.getVariableName(), argumentValueList);
 	}
 	
-	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList, int parentLineNumber) {
-		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList, parentLineNumber);
+	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList, CodePosition parentPos) {
+		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList, parentPos);
 	}
 	protected final DataObject callPredefinedFunction(String funcName, List<DataObject> argumentValueList) {
 		return callFunctionPointer(getPredefinedFunctionAsDataObject(funcName), argumentValueList);

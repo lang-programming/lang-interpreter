@@ -25,11 +25,33 @@ public class CodePosition {
     }
 
     public CodePosition combine(CodePosition codePosition) {
+        if(this.equals(EMPTY))
+            return codePosition;
+
+        if(codePosition.equals(EMPTY))
+            return this;
+
+        int columnFrom;
+        if(this.lineNumberFrom == codePosition.lineNumberFrom)
+            columnFrom = Math.min(this.columnFrom, codePosition.columnFrom);
+        else if(this.lineNumberFrom < codePosition.lineNumberFrom)
+            columnFrom = this.columnFrom;
+        else
+            columnFrom = codePosition.columnFrom;
+
+        int columnTo;
+        if(this.lineNumberTo == codePosition.lineNumberTo)
+            columnTo = Math.max(this.columnTo, codePosition.columnTo);
+        else if(this.lineNumberTo > codePosition.lineNumberTo)
+            columnTo = this.columnTo;
+        else
+            columnTo = codePosition.columnTo;
+
         return new CodePosition(
                 Math.min(this.lineNumberFrom, codePosition.lineNumberFrom),
                 Math.max(this.lineNumberTo, codePosition.lineNumberTo),
-                Math.min(this.columnFrom, codePosition.columnFrom),
-                Math.max(this.columnTo, codePosition.columnTo)
+
+                columnFrom, columnTo
         );
     }
 
@@ -69,7 +91,10 @@ public class CodePosition {
 
     @Override
     public String toString() {
-        return String.format("%5d:%3d - %5d:%3d", lineNumberFrom, lineNumberTo,
-                columnFrom, columnTo);
+        return String.format("%5d:%3d - %5d:%3d", lineNumberFrom, columnFrom, lineNumberTo, columnTo);
+    }
+
+    public String toCompactString() {
+        return String.format("%d:%d-%d:%d", lineNumberFrom, columnFrom, lineNumberTo, columnTo);
     }
 }
