@@ -76,7 +76,7 @@ class &Maybe {
 
     +op:isStrictEquals = ($operand{OBJECT}):{INT} -> {
         # Check for exact class type instead of instanceOf
-        return parser.op($operand::getClass() === &Maybe && ::$present === $operand::$present && (!::$present || ::$value === $operand::$value)g)
+        return parser.op($operand::getClass() === &Maybe && ::$present === $operand::$present && (!::$present || ::$value === $operand::$value))
     }
 
     +to:text = ():{TEXT} -> {

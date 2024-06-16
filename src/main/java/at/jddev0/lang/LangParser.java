@@ -2,133 +2,147 @@ package at.jddev0.lang;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Lang-Module<br>
  * Parsing of Lang files into an AST structure for the LangInterpreter
- * 
+ *
  * @author JDDev0
  * @version v1.0.0
  */
 public final class LangParser {
+	private final LangLexer lexer = new LangLexer();
+
 	private String langDocComment;
-	private String currentLine;
-	private int lineNumber;
-	
+
 	public LangParser() {
 		resetPositionVars();
 	}
-	
+
 	public void resetPositionVars() {
-		currentLine = null;
 		langDocComment = null;
-		lineNumber = 0;
+		lexer.resetPositionVars();
 	}
-	
+
 	public int getLineNumber() {
-		return lineNumber;
+		return lexer.getLineNumber();
 	}
-	
+
 	public void setLineNumber(int lineNumber) {
-		this.lineNumber = lineNumber;
+		lexer.setLineNumber(lineNumber);
+		lexer.setColumn(1);
 	}
-	
+
 	public AbstractSyntaxTree parseLines(BufferedReader lines) throws IOException {
-		return parseLines(null, false, lines);
+		return parseTokens(lexer.readTokens(lines));
 	}
-	
-	public AbstractSyntaxTree parseLines(String firstLine, boolean endBlockBeforeSecondLineOfCurrentBlock, BufferedReader lines) throws IOException {
-		if(firstLine == null && (lines == null || !lines.ready()))
+
+	public AbstractSyntaxTree parseTokens(List<Token> tokens) {
+		removeLineContinuationTokens(tokens);
+		if(tokens.isEmpty())
 			return null;
-		
-		boolean hasFirstLine = firstLine != null;
-		
+
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		int blockPos = 0;
-		
-		do {
-			if(firstLine == null && hasFirstLine && endBlockBeforeSecondLineOfCurrentBlock) {
-				blockPos--;
-				
-				if(blockPos < 0)
-					break;
-			}
-			
-			String line = firstLine == null?nextLine(lines):firstLine;
-			firstLine = null;
-			if(line == null) {
-				currentLine = null;
-				
-				break;
-			}
-			
-			List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
-			line = currentLine = prepareNextLine(line, lines, errorNodes);
-			if(errorNodes.size() > 0) {
+
+		List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
+
+		while(!tokens.isEmpty()) {
+			trimFirstLine(tokens);
+
+			parseCommentTokens(tokens, errorNodes);
+			if(!errorNodes.isEmpty()) {
 				errorNodes.forEach(ast::addChild);
 				return ast;
 			}
-			
-			if(line != null) {
-				//Blocks
-				if(line.equals("{")) {
-					blockPos++;
-					
-					continue;
-				}else if(line.startsWith("}")) { //"startsWith" is needed for parsing of control flow statements
-					blockPos--;
-					
-					if(blockPos < 0)
-						break;
-					continue;
-				}
-				
-				//Assignments
-				if(!line.startsWith("return ") && !line.startsWith("throw ")) {
-					AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(line, lines, false);
-					if(returnedNode != null) {
-						ast.addChild(returnedNode);
-						continue;
-					}
-				}
-				
-				//Non assignments
-				AbstractSyntaxTree returnedAst = parseLine(line, lines);
-				if(returnedAst == null) //End of if
-					return ast;
-				
-				ast.addChild(returnedAst.convertToNode());
+
+			trimFirstLine(tokens);
+
+			if(tokens.isEmpty())
+				break;
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.EOL) {
+				tokens.remove(0);
+
+				continue;
 			}
-		}while(lines != null && lines.ready());
-		
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.EOF) {
+				Token token = tokens.remove(0);
+
+				if(!tokens.isEmpty())
+					ast.addChild(new AbstractSyntaxTree.ParsingErrorNode(token.pos.lineNumberFrom,
+							token.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+							"Tokens after EOF are not allowed"));
+
+				break;
+			}
+
+			Token currentToken = tokens.get(0);
+
+			//Blocks
+			if(currentToken.getTokenType() == Token.TokenType.OPENING_BRACKET &&
+					currentToken.getValue().equals("{")) {
+				tokens.remove(0);
+
+				blockPos++;
+
+				continue;
+			}else if(currentToken.getTokenType() == Token.TokenType.CLOSING_BRACKET &&
+					currentToken.getValue().startsWith("}")) { //"startsWith" is needed for parsing of control flow statements
+				tokens.remove(0);
+
+				blockPos--;
+
+				if(blockPos < 0)
+					break;
+
+				continue;
+			}
+
+			//Assignments
+			if(tokens.isEmpty() || tokens.get(0).getTokenType() != Token.TokenType.OTHER ||
+					!(tokens.get(0).getValue().equals("return") || tokens.get(0).getValue().equals("throw"))) {
+				AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens, false);
+				if(returnedNode != null) {
+					ast.addChild(returnedNode);
+					continue;
+				}
+			}
+
+			//Non assignments
+			AbstractSyntaxTree returnedAst = parseLine(tokens);
+			if(returnedAst == null) //End of if
+				return ast;
+
+			ast.addChild(returnedAst.convertToNode());
+		}
+
 		return ast;
 	}
-	
-	private AbstractSyntaxTree.OperationNode parseCondition(String condition) throws IOException {
-		return parseOperationExpr(condition, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
+
+	private AbstractSyntaxTree.OperationNode parseCondition(List<Token> tokens) {
+		return parseOperationExpr(tokens, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
 	}
-	
-	private AbstractSyntaxTree.OperationNode parseMathExpr(String mathExpr) throws IOException {
-		return parseOperationExpr(mathExpr, AbstractSyntaxTree.OperationNode.OperatorType.MATH);
+
+	private AbstractSyntaxTree.OperationNode parseMathExpr(List<Token> tokens) {
+		return parseOperationExpr(tokens, AbstractSyntaxTree.OperationNode.OperatorType.MATH);
 	}
-	
-	private AbstractSyntaxTree.OperationNode parseOperationExpr(String token) throws IOException {
-		return parseOperationExpr(token, AbstractSyntaxTree.OperationNode.OperatorType.GENERAL);
+
+	private AbstractSyntaxTree.OperationNode parseOperationExpr(List<Token> tokens) {
+		return parseOperationExpr(tokens, AbstractSyntaxTree.OperationNode.OperatorType.GENERAL);
 	}
-	private AbstractSyntaxTree.OperationNode parseOperationExpr(String token, AbstractSyntaxTree.OperationNode.OperatorType type) throws IOException {
-		return parseOperationExpr(token, null, null, 0, type);
+	private AbstractSyntaxTree.OperationNode parseOperationExpr(List<Token> tokens, AbstractSyntaxTree.OperationNode.OperatorType type) {
+		return parseOperationExpr(tokens, null, null, 0, type);
 	}
-	private AbstractSyntaxTree.OperationNode parseOperationExpr(String token, StringBuilder tokensLeft, StringBuilder tokensLeftBehindMiddlePartEnd, int currentOperatorPrecedence,
-	AbstractSyntaxTree.OperationNode.OperatorType type) throws IOException {
-		if(token == null)
-			return null;
-		
+	private AbstractSyntaxTree.OperationNode parseOperationExpr(List<Token> tokens, List<Token> tokensLeft,
+																List<Token> tokensLeftBehindMiddlePartEnd,
+																int currentOperatorPrecedence,
+																AbstractSyntaxTree.OperationNode.OperatorType type) {
+		trimFirstLine(tokens);
+
 		final AbstractSyntaxTree.OperationNode.Operator nonOperator;
 		switch(type) {
 			case MATH:
@@ -140,901 +154,1015 @@ public final class LangParser {
 			case GENERAL:
 				nonOperator = AbstractSyntaxTree.OperationNode.Operator.NON;
 				break;
-			
+
 			default:
 				return null;
 		}
-		
-		token = token.trim();
-		
+
+		trimFirstLine(tokens);
+
 		AbstractSyntaxTree.OperationNode.Operator operator = null;
 		List<AbstractSyntaxTree.Node> leftNodes = new ArrayList<>();
 		AbstractSyntaxTree.Node middleNode = null;
 		AbstractSyntaxTree.Node rightNode = null;
-		
-		StringBuilder whitespaces = new StringBuilder();
-		
-		StringBuilder builder = new StringBuilder();
-		while(token.length() > 0) {
-			//Ignore whitespaces between operators
-			if(LangPatterns.matches(token, LangPatterns.PARSING_LEADING_WHITSPACE)) {
-				if(token.length() == 1)
+
+		List<Token> whitespaces = new LinkedList<>();
+
+		List<Token> otherTokens = new LinkedList<>();
+		tokenProcessing:
+		while(!tokens.isEmpty()) {
+			Token t = tokens.get(0);
+
+			switch(t.getTokenType()) {
+				case EOL:
+				case EOF:
+					break tokenProcessing;
+
+				case START_COMMENT:
+				case START_DOC_COMMENT:
+					parseCommentTokens(tokens, leftNodes);
+
 					break;
-				
-				whitespaces.append(token.charAt(0));
-				token = token.substring(1);
-				
-				continue;
-			}
-			
-			//Unescaping
-			if(token.startsWith("\\")) {
-				if(whitespaces.length() > 0) {
-					builder.append(whitespaces.toString());
-					whitespaces.delete(0, whitespaces.length());
-				}
-				
-				if(builder.length() > 0) {
-					leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-					builder.delete(0, builder.length());
-				}
-				
-				if(token.length() == 1)
-					break;
-				
-				leftNodes.add(new AbstractSyntaxTree.EscapeSequenceNode(lineNumber, token.charAt(1)));
-				
-				if(token.length() == 2)
-					break;
-				
-				token = token.substring(2);
-				
-				continue;
-			}
-			
-			//Parse module variable prefix
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_MODULE_VAR_IDENTIFIER)) {
-				if(whitespaces.length() > 0) {
-					builder.append(whitespaces.toString());
-					whitespaces.delete(0, whitespaces.length());
-				}
-				
-				int startIndexVariable = token.indexOf(':') + 2;
-				builder.append(token.subSequence(0, startIndexVariable));
-				token = token.substring(startIndexVariable);
-				
-				continue;
-			}
-			
-			//Var pointer referencing and dereferencing
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_VAR_NAME_PTR_OR_DEREFERENCE)) {
-				if(whitespaces.length() > 0) {
-					builder.append(whitespaces.toString());
-					whitespaces.delete(0, whitespaces.length());
-				}
-				
-				builder.append('$');
-				token = token.substring(1);
-				
-				while(token.charAt(0) == '*') {
-					builder.append('*');
-					token = token.substring(1);
-				}
-				
-				int openingBracketCount = 0;
-				while(token.charAt(0) == '[') {
-					builder.append('[');
-					token = token.substring(1);
-					
-					openingBracketCount++;
-				}
-				if(openingBracketCount > 0) {
-					builder.append(token.substring(0, openingBracketCount));
-					token = token.substring(openingBracketCount);
-					
-					int closingBracketCount = 0;
-					while(token.length() > 0 && token.charAt(0) == ']' && closingBracketCount < openingBracketCount) {
-						builder.append(']');
-						token = token.substring(1);
-						
-						closingBracketCount++;
+
+				case LITERAL_NULL:
+				case LITERAL_TEXT:
+				case LITERAL_NUMBER:
+				case ESCAPE_SEQUENCE:
+				case ASSIGNMENT:
+				case CLOSING_BRACKET:
+				case LEXER_ERROR:
+					if(!whitespaces.isEmpty()) {
+						otherTokens.addAll(whitespaces);
+						whitespaces.clear();
 					}
-				}
-				
-				continue;
-			}
-			
-			//Grouping
-			if(token.startsWith("(")) {
-				int endIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '(', ')');
-				if(endIndex == -1) {
-					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket in operator expression is missing"));
-					
-					break;
-				}
-				
-				//Parse "()" as function call previous value if something was before
-				if(builder.length() == 0 && leftNodes.isEmpty()) {
-					if(whitespaces.length() > 0)
-						whitespaces.delete(0, whitespaces.length());
-					
-					leftNodes.add(parseOperationExpr(token.substring(1, endIndex), type));
-					token = token.substring(endIndex + 1);
-					
-					continue;
-				}else {
-					if(whitespaces.length() > 0) {
-						builder.append(whitespaces.toString());
-						whitespaces.delete(0, whitespaces.length());
+
+					if(!otherTokens.isEmpty()) {
+						parseTextAndCharValue(otherTokens, leftNodes);
+						otherTokens.clear();
 					}
-					
-					if(builder.length() > 0) {
-						leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-						builder.delete(0, builder.length());
-					}
-					
-					int lineNumberFrom = lineNumber;
-					
-					int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '(', ')');
-					if(parameterEndIndex == -1) {
-						leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket in condition is missing"));
-						
-						break;
-					}
-					
-					String functionCall = token.substring(0, parameterEndIndex + 1);
-					token = token.substring(parameterEndIndex + 1);
-					
-					String functionParameterList = functionCall.substring(1, functionCall.length() - 1);
-					
-					leftNodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "", convertCommaOperatorsToArgumentSeparators(
-							parseOperationExpr(functionParameterList, type)), lineNumberFrom, lineNumber));
-					
-					continue;
-				}
-			}else if(token.startsWith("[") || token.startsWith("?.[")) {
-				boolean startsWithOptionalMarker = token.startsWith("?.");
-				
-				int endIndex = LangUtils.getIndexOfMatchingBracket(token, startsWithOptionalMarker?2:0, Integer.MAX_VALUE, '[', ']');
-				if(endIndex == -1) {
-					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket in operator expression is missing"));
-					
-					break;
-				}
-				//Binary operator if something was before else unary operator
-				if(AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type) && (builder.length() > 0 || leftNodes.size() > 0)) {
-					AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
-					
-					if(startsWithOptionalMarker)
-						operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_GET_ITEM;
-					else
-						operator = AbstractSyntaxTree.OperationNode.Operator.GET_ITEM;
-					
-					if(tokensLeft != null && currentOperatorPrecedence <= operator.getPrecedence()) {
-						tokensLeft.append(token.trim());
-						
-						if(whitespaces.length() > 0)
-							whitespaces.delete(0, whitespaces.length());
-						
-						operator = oldOperator;
-						
-						break;
-					}
-					
-					if(whitespaces.length() > 0)
-						whitespaces.delete(0, whitespaces.length());
-					
-					if(builder.length() > 0) {
-						leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-						builder.delete(0, builder.length());
-					}
-					
-					AbstractSyntaxTree.OperationNode node = parseOperationExpr(
-							token.substring(startsWithOptionalMarker?3:1, endIndex), type);
-					token = token.substring(endIndex + 1);
-					if(token.isEmpty()) {
-						//Add node directly if node has NON operator
-						if(node.getOperator() == nonOperator)
-							rightNode = node.getLeftSideOperand();
-						else
-							rightNode = node;
-						
-						break;
-					}else {
-						AbstractSyntaxTree.Node innerRightNode;
-						
-						//Add node directly if node has NON operator
-						if(node.getOperator() == nonOperator)
-							innerRightNode = node.getLeftSideOperand();
-						else
-							innerRightNode = node;
-						
-						AbstractSyntaxTree.Node leftNode;
-						if(leftNodes.size() == 1)
-							leftNode = leftNodes.get(0);
-						else
-							leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
-						
-						leftNodes.clear();
-						leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerRightNode, operator, type));
-						operator = null;
-						continue;
-					}
-				}else if(AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type) && !startsWithOptionalMarker) {
-					if(whitespaces.length() > 0)
-						whitespaces.delete(0, whitespaces.length());
-					
-					if(builder.length() > 0) {
-						leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-						builder.delete(0, builder.length());
-					}
-					
-					//Array creation
-					leftNodes.add(new AbstractSyntaxTree.ArrayNode(convertCommaOperatorsToArgumentSeparators(
-							parseOperationExpr(token.substring(1, endIndex), type))));
-					token = token.substring(endIndex + 1);
-					
-					if(token.isEmpty()) {
-						operator = null;
-						
-						break;
-					}
-					
-					continue;
-				}else {
-					//Incompatible type
-					if(whitespaces.length() > 0) {
-						builder.append(whitespaces.toString());
-						whitespaces.delete(0, whitespaces.length());
-					}
-				}
-			}else if(token.startsWith("**")) {
-				AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
-				
-				operator = AbstractSyntaxTree.OperationNode.Operator.POW;
-				
-				//If something is before operator and operator type is compatible with type
-				if(operator.getOperatorType().isCompatibleWith(type) && (builder.length() > 0 || leftNodes.size() >= 0)) {
-					if(tokensLeft != null && currentOperatorPrecedence < operator.getPrecedence()) { //No "<=" because it should be parsed right-to-left
-						tokensLeft.append(token.trim());
-						
-						if(whitespaces.length() > 0)
-							whitespaces.delete(0, whitespaces.length());
-						
-						operator = oldOperator;
-						
-						break;
-					}
-					
-					//Add as value if nothing is behind operator
-					if(token.length() == 2) {
-						if(whitespaces.length() > 0) {
-							builder.append(whitespaces.toString());
-							whitespaces.delete(0, whitespaces.length());
-						}
-						
-						operator = null;
-						builder.append(token);
-						
-						break;
-					}
-					
-					if(whitespaces.length() > 0)
-						whitespaces.delete(0, whitespaces.length());
-					
-					if(builder.length() > 0) {
-						leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-						builder.delete(0, builder.length());
-					}
-					
-					StringBuilder innerTokensLeft = new StringBuilder();
-					AbstractSyntaxTree.OperationNode node = parseOperationExpr(token.substring(2), innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
-					if(node == null) //End was reached inside middle part of a ternary operator
-						return null;
-					
-					token = innerTokensLeft.toString();
-					
-					if(token.isEmpty()) {
-						//Add node directly if node has NON operator
-						if(node.getOperator() == nonOperator)
-							rightNode = node.getLeftSideOperand();
-						else
-							rightNode = node;
-						
-						break;
-					}else {
-						AbstractSyntaxTree.Node innerRightNode;
-						
-						//Add node directly if node has NON operator
-						if(node.getOperator() == nonOperator)
-							innerRightNode = node.getLeftSideOperand();
-						else
-							innerRightNode = node;
-						
-						AbstractSyntaxTree.Node leftNode;
-						if(leftNodes.size() == 1)
-							leftNode = leftNodes.get(0);
-						else
-							leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
-						
-						leftNodes.clear();
-						leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerRightNode, operator, type));
-						operator = null;
-						continue;
-					}
-				}else {
-					operator = oldOperator;
-					
-					//Ignore operator: nothing was before for binary operator or operator type is not compatible with type
-					if(whitespaces.length() > 0) {
-						builder.append(whitespaces.toString());
-						whitespaces.delete(0, whitespaces.length());
-					}
-				}
-			}else if(token.startsWith("!==") || token.startsWith("!=~") || token.startsWith("!=") || token.startsWith("===") || token.startsWith("=~") || token.startsWith("==") ||
-			token.startsWith("<=") || token.startsWith(">=") || token.startsWith("<") || token.startsWith(">") || token.startsWith("|||") || token.startsWith("&&") || token.startsWith("||") ||
-			token.startsWith("!") || token.startsWith("&") || token.startsWith("~~") || token.startsWith("~/") || token.startsWith("~") || token.startsWith("\u25b2") || token.startsWith("\u25bc") ||
-			token.startsWith("*") || token.startsWith("//") || token.startsWith("^/") || token.startsWith("/") || token.startsWith("%") || token.startsWith("^") || token.startsWith("|") ||
-			token.startsWith("<<") || token.startsWith(">>>") || token.startsWith(">>") || token.startsWith("+|") || token.startsWith("-|") || token.startsWith("+") || token.startsWith("-") ||
-			token.startsWith("@") || token.startsWith("?:") || token.startsWith("??") || token.startsWith(",") || token.startsWith("?::") || token.startsWith("::")) {
-				boolean somethingBeforeOperator = builder.length() > 0 || leftNodes.size() > 0;
-				
-				AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
-				int operatorLength = 1;
-				if(token.startsWith("!==") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_NOT_EQUALS;
-				}else if(token.startsWith("!=~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.NOT_MATCHES;
-				}else if(token.startsWith("!=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.NOT_EQUALS;
-				}else if(token.startsWith("===") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_EQUALS;
-				}else if(token.startsWith("=~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.MATCHES;
-				}else if(token.startsWith("==") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.EQUALS;
-				}else if(token.startsWith("?::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_MEMBER_ACCESS;
-				}else if(token.startsWith("::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-					operatorLength = 2;
-					if(somethingBeforeOperator)
-						operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS;
-					else
-						operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_THIS;
-				}else if(token.startsWith("->") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_POINTER;
-				}else if(token.startsWith("<<") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.LSHIFT;
-				}else if(token.startsWith(">>>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.RZSHIFT;
-				}else if(token.startsWith(">>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.RSHIFT;
-				}else if(token.startsWith("<=>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.SPACESHIP;
-				}else if(token.startsWith("<=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN_OR_EQUALS;
-				}else if(token.startsWith(">=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN_OR_EQUALS;
-				}else if(token.startsWith("<") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN;
-				}else if(token.startsWith(">") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN;
-				}else if(token.startsWith("|||") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-					operatorLength = 3;
-					operator = AbstractSyntaxTree.OperationNode.Operator.CONCAT;
-				}else if(token.startsWith("&&") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.AND;
-				}else if(token.startsWith("||") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.OR;
-				}else if(token.startsWith("!") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.NOT;
-				}else if(token.startsWith("&") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type) &&
-						(!LangPatterns.matches(builder.toString(), LangPatterns.PARSING_ENDS_WITH_MODULE_VAR_IDENTIFIER) || whitespaces.length() > 0)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_AND;
-				}else if(token.startsWith("~~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.INSTANCE_OF;
-				}else if(token.startsWith("~/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.TRUNC_DIV;
-				}else if(token.startsWith("~") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_NOT;
-				}else if(token.startsWith("\u25b2") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.INC;
-				}else if(token.startsWith("\u25bc") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
-				}else if(token.startsWith("+|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.INC;
-				}else if(token.startsWith("-|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
-				}else if(token.startsWith("*") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.MUL;
-				}else if(token.startsWith("^/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.CEIL_DIV;
-				}else if(token.startsWith("//") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.FLOOR_DIV;
-				}else if(token.startsWith("/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.DIV;
-				}else if(token.startsWith("%") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.MOD;
-				}else if(token.startsWith("^")) {
-					if(somethingBeforeOperator && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type))
-						operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_XOR;
-					else if(!somethingBeforeOperator && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type))
-						operator = AbstractSyntaxTree.OperationNode.Operator.DEEP_COPY;
-				}else if(token.startsWith("|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_OR;
-				}else if(token.startsWith("+") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.ADD:AbstractSyntaxTree.OperationNode.Operator.POS;
-				}else if(token.startsWith("-") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-					operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.SUB:AbstractSyntaxTree.OperationNode.Operator.INV;
-				}else if(token.startsWith("@") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.LEN;
-				}else if(token.startsWith("?:") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.ELVIS;
-				}else if(token.startsWith("??") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-					operatorLength = 2;
-					operator = AbstractSyntaxTree.OperationNode.Operator.NULL_COALESCING;
-				}else if(token.startsWith(",") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-					operator = AbstractSyntaxTree.OperationNode.Operator.COMMA;
-				}else {
-					operator = null;
-				}
-				
-				if(operator != null && operator.isBinary() && somethingBeforeOperator) {
-					//Binary
-					
-					if(tokensLeft != null && currentOperatorPrecedence <= operator.getPrecedence()) {
-						tokensLeft.append(token.trim());
-						
-						if(whitespaces.length() > 0)
-							whitespaces.delete(0, whitespaces.length());
-						
-						operator = oldOperator;
-						
-						break;
-					}
-					
-					//Add as value if nothing is behind "operator"
-					if(token.length() == operatorLength) {
-						if(whitespaces.length() > 0) {
-							builder.append(whitespaces.toString());
-							whitespaces.delete(0, whitespaces.length());
-						}
-						
-						operator = null;
-						builder.append(token);
-						
-						break;
-					}
-					
-					if(whitespaces.length() > 0)
-						whitespaces.delete(0, whitespaces.length());
-					
-					if(builder.length() > 0) {
-						leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-						builder.delete(0, builder.length());
-					}
-					
-					StringBuilder innerTokensLeft = new StringBuilder();
-					AbstractSyntaxTree.OperationNode node = parseOperationExpr(token.substring(operatorLength), innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
-					if(node == null) //End was reached inside middle part of a ternary operator
-						return null;
-					
-					token = innerTokensLeft.toString();
-					
-					if(token.isEmpty()) {
-						//Add node directly if node has NON operator
-						if(node.getOperator() == nonOperator)
-							rightNode = node.getLeftSideOperand();
-						else
-							rightNode = node;
-						
-						break;
-					}else {
-						AbstractSyntaxTree.Node innerRightNode;
-						
-						//Add node directly if node has NON operator
-						if(node.getOperator() == nonOperator)
-							innerRightNode = node.getLeftSideOperand();
-						else
-							innerRightNode = node;
-						
-						AbstractSyntaxTree.Node leftNode;
-						if(leftNodes.size() == 1)
-							leftNode = leftNodes.get(0);
-						else
-							leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
-						
-						leftNodes.clear();
-						leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerRightNode, operator, type));
-						operator = null;
-						continue;
-					}
-				}else if(operator != null && operator.isUnary() && !somethingBeforeOperator) {
-					//Unary
-					
-					if(whitespaces.length() > 0)
-						whitespaces.delete(0, whitespaces.length());
-					
-					StringBuilder innerTokensLeft = new StringBuilder();
-					AbstractSyntaxTree.OperationNode node = parseOperationExpr(token.substring(operatorLength), innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
-					if(node == null) //End was reached inside middle part of a ternary operator
-						return null;
-					
-					token = innerTokensLeft.toString();
-					
-					AbstractSyntaxTree.Node innerRightNode;
-					
-					//Add node directly if node has NON operator
-					if(node.getOperator() == nonOperator)
-						innerRightNode = node.getLeftSideOperand();
-					else
-						innerRightNode = node;
-					
-					leftNodes.add(new AbstractSyntaxTree.OperationNode(innerRightNode, operator, type));
-					operator = null;
-					
-					if(token.isEmpty())
-						break;
-					else
-						continue;
-				}else {
-					operator = oldOperator;
-					
-					//Ignore operator: something was before for unary operator or nothing was before for binary operator or operator type is not compatible with type
-					if(whitespaces.length() > 0) {
-						builder.append(whitespaces.toString());
-						whitespaces.delete(0, whitespaces.length());
-					}
-				}
-			}else if(token.startsWith("?")) {
-				AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
-				
-				operator = AbstractSyntaxTree.OperationNode.Operator.INLINE_IF;
-				
-				//Inline if -> Only parse if something is before and ":" was found -> else "?" will be parsed as text
-				
-				if(operator.getOperatorType().isCompatibleWith(type) && (builder.length() > 0 || leftNodes.size() > 0)) {
-					if(tokensLeft != null && currentOperatorPrecedence < operator.getPrecedence()) { //No "<=" because it should be parsed right-to-left
-						tokensLeft.append(token.trim());
-						
-						if(whitespaces.length() > 0)
-							whitespaces.delete(0, whitespaces.length());
-						
-						operator = oldOperator;
-						
-						break;
-					}
-					
-					//Parse middle part
-					StringBuilder innerTokensLeftBehindMiddlePartEnd = new StringBuilder();
-					AbstractSyntaxTree.OperationNode innerMiddleNodeRet = parseOperationExpr(token.substring(1), null, innerTokensLeftBehindMiddlePartEnd, 0, type);
-					if(innerMiddleNodeRet != null) {
-						//Only parse as operator if matching ":" was found
-						
-						String tokensAfterMiddlePartEnd = innerTokensLeftBehindMiddlePartEnd.toString();
-						
-						//Add as value if nothing is behind "operator"
-						if(tokensAfterMiddlePartEnd.isEmpty()) {
-							if(whitespaces.length() > 0) {
-								builder.append(whitespaces.toString());
-								whitespaces.delete(0, whitespaces.length());
+
+					tokens.remove(0);
+
+					switch(t.getTokenType()) {
+						case LITERAL_NULL:
+							leftNodes.add(new AbstractSyntaxTree.NullValueNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo));
+							break;
+
+						case LITERAL_TEXT:
+						case ASSIGNMENT:
+						case CLOSING_BRACKET:
+							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, t.getValue()));
+
+							break;
+
+						case LITERAL_NUMBER:
+							parseNumberToken(t, leftNodes);
+
+							break;
+
+						case ESCAPE_SEQUENCE:
+							if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
+								leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+										t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+										"Invalid escape sequence: " + t.getValue()));
+
+								break;
 							}
-							
-							operator = null;
-							builder.append(token);
-							
+
+							leftNodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, t.getValue().charAt(1)));
+
 							break;
-						}
-						
-						token = tokensAfterMiddlePartEnd;
-						
-						if(whitespaces.length() > 0)
-							whitespaces.delete(0, whitespaces.length());
-						
-						if(builder.length() > 0) {
-							leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-							builder.delete(0, builder.length());
-						}
-						
-						StringBuilder innerTokensLeft = new StringBuilder();
-						AbstractSyntaxTree.OperationNode innerRightNodeRet = parseOperationExpr(token, innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
-						token = innerTokensLeft.toString();
-						
-						if(token.isEmpty()) {
-							//Add middle node directly if node has NON operator
-							if(innerMiddleNodeRet.getOperator() == nonOperator)
-								middleNode = innerMiddleNodeRet.getLeftSideOperand();
-							else
-								middleNode = innerMiddleNodeRet;
-							
-							//Add right node directly if node has NON operator
-							if(innerRightNodeRet.getOperator() == nonOperator)
-								rightNode = innerRightNodeRet.getLeftSideOperand();
-							else
-								rightNode = innerRightNodeRet;
-							
+
+						case LEXER_ERROR:
+							parseLexerErrorToken(t, leftNodes);
+
 							break;
+
+						default:
+							break;
+					}
+
+					break;
+
+				case START_MULTILINE_TEXT:
+					if(!whitespaces.isEmpty()) {
+						otherTokens.addAll(whitespaces);
+						whitespaces.clear();
+					}
+
+					if(!otherTokens.isEmpty()) {
+						parseTextAndCharValue(otherTokens, leftNodes);
+						otherTokens.clear();
+					}
+
+					tokens.remove(0);
+					do {
+						t = tokens.remove(0);
+
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
+
+					break;
+				case WHITESPACE:
+					tokens.remove(0);
+					whitespaces.add(t);
+
+					break;
+
+				case IDENTIFIER:
+				case PARSER_FUNCTION_IDENTIFIER:
+					//TODO: Improve
+					//Parse "&<name>" if something is before "&<name>" as "&" operator with new other value lexical analysis of "<name>"
+					if((!otherTokens.isEmpty() || !leftNodes.isEmpty()) && t.getValue().startsWith("&")) {
+						tokens.remove(0);
+
+						tokens.add(0, new Token(t.pos, "&", Token.TokenType.OPERATOR));
+						tokens.add(lexer.parseOtherValue(t.getValue().substring(1), t.pos));
+
+						break;
+					}
+
+					if(!whitespaces.isEmpty()) {
+						otherTokens.addAll(whitespaces);
+						whitespaces.clear();
+					}
+
+					if(!otherTokens.isEmpty()) {
+						parseTextAndCharValue(otherTokens, leftNodes);
+						otherTokens.clear();
+					}
+
+					AbstractSyntaxTree.Node ret = t.getTokenType() == Token.TokenType.IDENTIFIER?
+							parseVariableNameAndFunctionCall(tokens, type):parseParserFunctionCall(tokens);
+					if(ret != null)
+						leftNodes.add(ret);
+
+					break;
+
+				case OPENING_BRACKET:
+				case OPERATOR:
+				case ARGUMENT_SEPARATOR:
+					String value = t.getValue();
+
+					//Convert argument separator token to operator token with additional whitespace
+					if(t.getTokenType() == Token.TokenType.ARGUMENT_SEPARATOR) {
+						int index = value.indexOf(',');
+
+						if(index > 0)
+							whitespaces.add(new Token(t.pos, value.substring(0, index), Token.TokenType.WHITESPACE));
+
+						t = new Token(t.getPos(), ",", Token.TokenType.OPERATOR);
+						value = t.getValue();
+						tokens.set(0, t);
+
+						if(index < value.length() - 1)
+							tokens.add(1, new Token(t.pos, value.substring(index + 1), Token.TokenType.WHITESPACE));
+					}
+
+					//Grouping
+					if(t.getTokenType() == Token.TokenType.OPENING_BRACKET && value.equals("(")) {
+						int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+						if(endIndex == -1) {
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+									"Bracket in operator expression is missing"));
+
+							break tokenProcessing;
+						}
+
+						//Parse "()" as function call previous value if something was before
+						if(otherTokens.isEmpty() && leftNodes.isEmpty()) {
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							List<Token> parameterTokens = new ArrayList<>(tokens.subList(1, endIndex));
+							tokens.subList(0, endIndex + 1).clear();
+
+							leftNodes.add(parseOperationExpr(parameterTokens, type));
+
+							continue tokenProcessing;
 						}else {
-							AbstractSyntaxTree.Node innerMiddleNode;
-							AbstractSyntaxTree.Node innerRightNode;
-							
-							//Add middle node directly if node has NON operator
-							if(innerMiddleNodeRet.getOperator() == nonOperator)
-								innerMiddleNode = innerMiddleNodeRet.getLeftSideOperand();
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							if(!otherTokens.isEmpty()) {
+								parseTextAndCharValue(otherTokens, leftNodes);
+								otherTokens.clear();
+							}
+
+							Token openingBracketToken = tokens.get(0);
+							Token closingBracketToken = tokens.get(endIndex);
+							CodePosition pos = openingBracketToken.pos.combine(closingBracketToken.pos);
+
+							List<Token> functionCall = new ArrayList<>(tokens.subList(1, endIndex));
+							tokens.subList(0, endIndex + 1).clear();
+
+							leftNodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "",
+									convertCommaOperatorsToArgumentSeparators(parseOperationExpr(functionCall, type)),
+									pos.lineNumberFrom, pos.lineNumberTo));
+
+							continue tokenProcessing;
+						}
+					}
+
+					//(Optional) Get Item / Array Creation
+					if((t.getTokenType() == Token.TokenType.OPENING_BRACKET && value.equals("[")) ||
+							(t.getTokenType() == Token.TokenType.OPERATOR && value.equals("?.") &&
+									tokens.size() >= 2 && tokens.get(1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+									tokens.get(1).getValue().equals("["))) {
+						boolean startsWithOptionalMarker = t.getTokenType() == Token.TokenType.OPERATOR;
+
+						int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, startsWithOptionalMarker?1:0, Integer.MAX_VALUE, "[", "]", true);
+						if(endIndex == -1) {
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
+									ParsingError.BRACKET_MISMATCH, "Bracket in operator expression is missing"));
+
+							break tokenProcessing;
+						}
+
+						//Binary operator if something was before else unary operator
+						if(AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type) && (!otherTokens.isEmpty() || !leftNodes.isEmpty())) {
+							AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
+
+							if(startsWithOptionalMarker)
+								operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_GET_ITEM;
 							else
-								innerMiddleNode = innerMiddleNodeRet;
-							
-							//Add node directly if node has NON operator
-							if(innerRightNodeRet.getOperator() == nonOperator)
-								innerRightNode = innerRightNodeRet.getLeftSideOperand();
+								operator = AbstractSyntaxTree.OperationNode.Operator.GET_ITEM;
+
+							if(tokensLeft != null && currentOperatorPrecedence <= operator.getPrecedence()) {
+								tokensLeft.addAll(tokens);
+								tokens.clear();
+
+								if(!whitespaces.isEmpty())
+									whitespaces.clear();
+
+								operator = oldOperator;
+
+								break tokenProcessing;
+							}
+
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							if(!otherTokens.isEmpty()) {
+								parseTextAndCharValue(otherTokens, leftNodes);
+								otherTokens.clear();
+							}
+
+							List<Token> tokensList = new ArrayList<>(tokens.subList(startsWithOptionalMarker?2:1, endIndex));
+							tokens.subList(0, endIndex + 1).clear();
+
+							AbstractSyntaxTree.OperationNode node = parseOperationExpr(tokensList, type);
+							if(tokens.isEmpty()) {
+								//Add node directly if node has NON operator
+								if(node.getOperator() == nonOperator)
+									rightNode = node.getLeftSideOperand();
+								else
+									rightNode = node;
+
+								break tokenProcessing;
+							}else {
+								AbstractSyntaxTree.Node innerRightNode;
+
+								//Add node directly if node has NON operator
+								if(node.getOperator() == nonOperator)
+									innerRightNode = node.getLeftSideOperand();
+								else
+									innerRightNode = node;
+
+								AbstractSyntaxTree.Node leftNode;
+								if(leftNodes.size() == 1)
+									leftNode = leftNodes.get(0);
+								else
+									leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
+
+								leftNodes.clear();
+								leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerRightNode, operator, type));
+								operator = null;
+								continue tokenProcessing;
+							}
+						}else if(AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type) && !startsWithOptionalMarker) {
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							if(!otherTokens.isEmpty()) {
+								parseTextAndCharValue(otherTokens, leftNodes);
+								otherTokens.clear();
+							}
+
+							//Array creation
+							List<Token> tokensList = new ArrayList<>(tokens.subList(1, endIndex));
+							tokens.subList(0, endIndex + 1).clear();
+
+							leftNodes.add(new AbstractSyntaxTree.ArrayNode(convertCommaOperatorsToArgumentSeparators(
+									parseOperationExpr(tokensList, type))));
+
+							if(tokens.isEmpty()) {
+								operator = null;
+
+								break tokenProcessing;
+							}
+
+							continue tokenProcessing;
+						}else {
+							//Incompatible type
+							if(!whitespaces.isEmpty()) {
+								otherTokens.addAll(whitespaces);
+								whitespaces.clear();
+							}
+						}
+					}
+
+					if(value.equals("**")) {
+						AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
+
+						operator = AbstractSyntaxTree.OperationNode.Operator.POW;
+
+						//If something is before operator and operator type is compatible with type
+						if(operator.getOperatorType().isCompatibleWith(type) && (!otherTokens.isEmpty() || leftNodes.size() >= 0)) {
+							if(tokensLeft != null && currentOperatorPrecedence < operator.getPrecedence()) { //No "<=" because it should be parsed right-to-left
+								tokensLeft.addAll(tokens);
+								tokens.clear();
+
+								if(!whitespaces.isEmpty())
+									whitespaces.clear();
+
+								operator = oldOperator;
+
+								break tokenProcessing;
+							}
+
+							//Add as value if nothing is behind operator
+							if(tokens.size() == 1) {
+								if(!whitespaces.isEmpty()) {
+									otherTokens.addAll(whitespaces);
+									whitespaces.clear();
+								}
+
+								operator = null;
+								otherTokens.add(t);
+								tokens.remove(0);
+
+								break tokenProcessing;
+							}
+
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							if(!otherTokens.isEmpty()) {
+								parseTextAndCharValue(otherTokens, leftNodes);
+								otherTokens.clear();
+							}
+
+							List<Token> innerTokensLeft = new LinkedList<>();
+							List<Token> tokensList = new ArrayList<>(tokens.subList(1, tokens.size()));
+							AbstractSyntaxTree.OperationNode node = parseOperationExpr(tokensList, innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
+							if(node == null) //End was reached inside middle part of a ternary operator
+								return null;
+
+							tokens.clear();
+							tokens.addAll(innerTokensLeft);
+
+							if(tokens.isEmpty()) {
+								//Add node directly if node has NON operator
+								if(node.getOperator() == nonOperator)
+									rightNode = node.getLeftSideOperand();
+								else
+									rightNode = node;
+
+								break tokenProcessing;
+							}else {
+								AbstractSyntaxTree.Node innerRightNode;
+
+								//Add node directly if node has NON operator
+								if(node.getOperator() == nonOperator)
+									innerRightNode = node.getLeftSideOperand();
+								else
+									innerRightNode = node;
+
+								AbstractSyntaxTree.Node leftNode;
+								if(leftNodes.size() == 1)
+									leftNode = leftNodes.get(0);
+								else
+									leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
+
+								leftNodes.clear();
+								leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerRightNode, operator, type));
+								operator = null;
+								continue tokenProcessing;
+							}
+						}else {
+							operator = oldOperator;
+
+							//Ignore operator: nothing was before for binary operator or operator type is not compatible with type
+							if(!whitespaces.isEmpty()) {
+								otherTokens.addAll(whitespaces);
+								whitespaces.clear();
+							}
+						}
+					}
+
+					if(value.equals("!==") || value.equals("!=~") || value.equals("!=") || value.equals("===") || value.equals("=~") || value.equals("==") ||
+							value.equals("<=>") || value.equals("<=") || value.equals(">=") || value.equals("<") || value.equals(">") || value.equals("|||") || value.equals("&&") ||
+							value.equals("||") || value.equals("!") || value.equals("&") || value.equals("~~") || value.equals("~/") || value.equals("~") || value.equals("\u25b2") ||
+							value.equals("\u25bc") || value.equals("*") || value.equals("//") || value.equals("^/") || value.equals("/") || value.equals("%") || value.equals("^") ||
+							value.equals("|") || value.equals("<<") || value.equals(">>>") || value.equals(">>") || value.equals("+|") || value.equals("-|") || value.equals("+") ||
+							value.equals("-") || value.equals("@") || value.equals("?:") || value.equals("??") || value.equals(",") || value.equals("?::") || value.equals("::")) {
+						boolean somethingBeforeOperator = !otherTokens.isEmpty() || !leftNodes.isEmpty();
+
+						AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
+						if(value.equals("!==") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_NOT_EQUALS;
+						}else if(value.equals("!=~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.NOT_MATCHES;
+						}else if(value.equals("!=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.NOT_EQUALS;
+						}else if(value.equals("===") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_EQUALS;
+						}else if(value.equals("=~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.MATCHES;
+						}else if(value.equals("==") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.EQUALS;
+						}else if(value.equals("?::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_MEMBER_ACCESS;
+						}else if(value.equals("::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
+							if(somethingBeforeOperator)
+								operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS;
 							else
-								innerRightNode = innerRightNodeRet;
-							
-							AbstractSyntaxTree.Node leftNode;
-							if(leftNodes.size() == 1)
-								leftNode = leftNodes.get(0);
-							else
-								leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
-							
-							leftNodes.clear();
-							leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerMiddleNode, innerRightNode, operator, type));
+								operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_THIS;
+						}else if(value.equals("->") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_POINTER;
+						}else if(value.equals("<<") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.LSHIFT;
+						}else if(value.equals(">>>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.RZSHIFT;
+						}else if(value.equals(">>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.RSHIFT;
+						}else if(value.equals("<=>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.SPACESHIP;
+						}else if(value.equals("<=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN_OR_EQUALS;
+						}else if(value.equals(">=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN_OR_EQUALS;
+						}else if(value.equals("<") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN;
+						}else if(value.equals(">") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN;
+						}else if(value.equals("|||") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.CONCAT;
+						}else if(value.equals("&&") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.AND;
+						}else if(value.equals("||") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.OR;
+						}else if(value.equals("!") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.NOT;
+						}else if(value.equals("&") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_AND;
+						}else if(value.equals("~~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.INSTANCE_OF;
+						}else if(value.equals("~/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.TRUNC_DIV;
+						}else if(value.equals("~") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_NOT;
+						}else if(value.equals("\u25b2") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.INC;
+						}else if(value.equals("\u25bc") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
+						}else if(value.equals("+|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.INC;
+						}else if(value.equals("-|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
+						}else if(value.equals("*") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.MUL;
+						}else if(value.equals("^/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.CEIL_DIV;
+						}else if(value.equals("//") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.FLOOR_DIV;
+						}else if(value.equals("/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.DIV;
+						}else if(value.equals("%") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.MOD;
+						}else if(value.equals("^")) {
+							if(somethingBeforeOperator && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type))
+								operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_XOR;
+							else if(!somethingBeforeOperator && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type))
+								operator = AbstractSyntaxTree.OperationNode.Operator.DEEP_COPY;
+						}else if(value.equals("|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_OR;
+						}else if(value.equals("+") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.ADD:AbstractSyntaxTree.OperationNode.Operator.POS;
+						}else if(value.equals("-") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+							operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.SUB:AbstractSyntaxTree.OperationNode.Operator.INV;
+						}else if(value.equals("@") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.LEN;
+						}else if(value.equals("?:") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.ELVIS;
+						}else if(value.equals("??") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.NULL_COALESCING;
+						}else if(value.equals(",") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
+							operator = AbstractSyntaxTree.OperationNode.Operator.COMMA;
+						}else {
 							operator = null;
-							continue;
 						}
+
+						if(operator != null && operator.isBinary() && somethingBeforeOperator) {
+							//Binary
+
+							if(tokensLeft != null && currentOperatorPrecedence <= operator.getPrecedence()) {
+								tokensLeft.addAll(tokens);
+								tokens.clear();
+
+								if(!whitespaces.isEmpty())
+									whitespaces.clear();
+
+								operator = oldOperator;
+
+								break tokenProcessing;
+							}
+
+							//Add as value if nothing is behind "operator"
+							if(tokens.size() == 1) {
+								if(!whitespaces.isEmpty()) {
+									otherTokens.addAll(whitespaces);
+									whitespaces.clear();
+								}
+
+								operator = null;
+								otherTokens.add(t);
+								tokens.remove(0);
+
+								break tokenProcessing;
+							}
+
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							if(!otherTokens.isEmpty()) {
+								parseTextAndCharValue(otherTokens, leftNodes);
+								otherTokens.clear();
+							}
+
+							List<Token> innerTokensLeft = new LinkedList<>();
+							List<Token> tokensList = new ArrayList<>(tokens.subList(1, tokens.size()));
+							AbstractSyntaxTree.OperationNode node = parseOperationExpr(tokensList, innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
+							if(node == null) //End was reached inside middle part of a ternary operator
+								return null;
+
+							tokens.clear();
+							tokens.addAll(innerTokensLeft);
+
+							if(tokens.isEmpty()) {
+								//Add node directly if node has NON operator
+								if(node.getOperator() == nonOperator)
+									rightNode = node.getLeftSideOperand();
+								else
+									rightNode = node;
+
+								break tokenProcessing;
+							}else {
+								AbstractSyntaxTree.Node innerRightNode;
+
+								//Add node directly if node has NON operator
+								if(node.getOperator() == nonOperator)
+									innerRightNode = node.getLeftSideOperand();
+								else
+									innerRightNode = node;
+
+								AbstractSyntaxTree.Node leftNode;
+								if(leftNodes.size() == 1)
+									leftNode = leftNodes.get(0);
+								else
+									leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
+
+								leftNodes.clear();
+								leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerRightNode, operator, type));
+								operator = null;
+								continue tokenProcessing;
+							}
+						}else if(operator != null && operator.isUnary() && !somethingBeforeOperator) {
+							//Unary
+
+							if(!whitespaces.isEmpty())
+								whitespaces.clear();
+
+							List<Token> innerTokensLeft = new LinkedList<>();
+							List<Token> tokensList = new ArrayList<>(tokens.subList(1, tokens.size()));
+							AbstractSyntaxTree.OperationNode node = parseOperationExpr(tokensList, innerTokensLeft, tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
+							if(node == null) //End was reached inside middle part of a ternary operator
+								return null;
+
+							tokens.clear();
+							tokens.addAll(innerTokensLeft);
+
+							AbstractSyntaxTree.Node innerRightNode;
+
+							//Add node directly if node has NON operator
+							if(node.getOperator() == nonOperator)
+								innerRightNode = node.getLeftSideOperand();
+							else
+								innerRightNode = node;
+
+							leftNodes.add(new AbstractSyntaxTree.OperationNode(innerRightNode, operator, type));
+							operator = null;
+
+							if(tokens.isEmpty())
+								break tokenProcessing;
+							else
+								continue tokenProcessing;
+						}else {
+							operator = oldOperator;
+
+							//Ignore operator: something was before for unary operator or nothing was before for binary operator or operator type is not compatible with type
+							if(!whitespaces.isEmpty()) {
+								otherTokens.addAll(whitespaces);
+								whitespaces.clear();
+							}
+						}
+					}
+
+
+					if(value.equals("?")) {
+						AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
+
+						operator = AbstractSyntaxTree.OperationNode.Operator.INLINE_IF;
+
+						//Inline if -> Only parse if something is before and ":" was found -> else "?" will be parsed as text
+
+						if(operator.getOperatorType().isCompatibleWith(type) && (!otherTokens.isEmpty() || !leftNodes.isEmpty())) {
+							if(tokensLeft != null && currentOperatorPrecedence < operator.getPrecedence()) { //No "<=" because it should be parsed right-to-left
+								tokensLeft.addAll(tokens);
+								tokens.clear();
+
+								if(!whitespaces.isEmpty())
+									whitespaces.clear();
+
+								operator = oldOperator;
+
+								break tokenProcessing;
+							}
+
+							//Parse middle part
+							List<Token> innerTokensLeftBehindMiddlePartEnd = new LinkedList<>();
+							List<Token> tokensList = new ArrayList<>(tokens.subList(1, tokens.size()));
+							AbstractSyntaxTree.OperationNode innerMiddleNodeRet = parseOperationExpr(tokensList, null, innerTokensLeftBehindMiddlePartEnd, 0, type);
+							if(innerMiddleNodeRet != null) {
+								//Only parse as operator if matching ":" was found
+
+								//Add as value if nothing is behind "operator"
+								if(innerTokensLeftBehindMiddlePartEnd.isEmpty()) {
+									if(!whitespaces.isEmpty()) {
+										otherTokens.addAll(whitespaces);
+										whitespaces.clear();
+									}
+
+									operator = null;
+									otherTokens.add(t);
+
+									break tokenProcessing;
+								}
+
+								tokens.clear();
+								tokens.addAll(innerTokensLeftBehindMiddlePartEnd);
+
+								if(!whitespaces.isEmpty())
+									whitespaces.clear();
+
+								if(!otherTokens.isEmpty()) {
+									parseTextAndCharValue(otherTokens, leftNodes);
+									otherTokens.clear();
+								}
+
+								List<Token> innerTokensLeft = new LinkedList<>();
+								tokensList = new ArrayList<>(tokens);
+								AbstractSyntaxTree.OperationNode innerRightNodeRet = parseOperationExpr(tokensList, innerTokensLeft,
+										tokensLeftBehindMiddlePartEnd, operator.getPrecedence(), type);
+
+								tokens.clear();
+								tokens.addAll(innerTokensLeft);
+
+								if(tokens.isEmpty()) {
+									//Add middle node directly if node has NON operator
+									if(innerMiddleNodeRet.getOperator() == nonOperator)
+										middleNode = innerMiddleNodeRet.getLeftSideOperand();
+									else
+										middleNode = innerMiddleNodeRet;
+
+									//Add right node directly if node has NON operator
+									if(innerRightNodeRet.getOperator() == nonOperator)
+										rightNode = innerRightNodeRet.getLeftSideOperand();
+									else
+										rightNode = innerRightNodeRet;
+
+									break;
+								}else {
+									AbstractSyntaxTree.Node innerMiddleNode;
+									AbstractSyntaxTree.Node innerRightNode;
+
+									//Add middle node directly if node has NON operator
+									if(innerMiddleNodeRet.getOperator() == nonOperator)
+										innerMiddleNode = innerMiddleNodeRet.getLeftSideOperand();
+									else
+										innerMiddleNode = innerMiddleNodeRet;
+
+									//Add node directly if node has NON operator
+									if(innerRightNodeRet.getOperator() == nonOperator)
+										innerRightNode = innerRightNodeRet.getLeftSideOperand();
+									else
+										innerRightNode = innerRightNodeRet;
+
+									AbstractSyntaxTree.Node leftNode;
+									if(leftNodes.size() == 1)
+										leftNode = leftNodes.get(0);
+									else
+										leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
+
+									leftNodes.clear();
+									leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerMiddleNode, innerRightNode, operator, type));
+									operator = null;
+									continue tokenProcessing;
+								}
+							}else {
+								operator = oldOperator;
+
+								//Ignore operator: nothing was before for ternary operator or operator type is not compatible with type
+								if(!whitespaces.isEmpty()) {
+									otherTokens.addAll(whitespaces);
+									whitespaces.clear();
+								}
+							}
+						}else {
+							operator = oldOperator;
+
+							//Ignore operator: nothing was before for ternary operator or operator type is not compatible with type
+							if(!whitespaces.isEmpty()) {
+								otherTokens.addAll(whitespaces);
+								whitespaces.clear();
+							}
+						}
+					}
+
+					if(tokensLeftBehindMiddlePartEnd != null && value.equals(":")) {
+						//End of inline if
+
+						if(!whitespaces.isEmpty())
+							whitespaces.clear();
+
+						tokens.remove(0);
+						tokensLeftBehindMiddlePartEnd.addAll(tokens);
+						tokens.clear();
+
+						//Reset (Simulated end)
+						if(tokensLeft != null && !tokensLeft.isEmpty())
+							tokensLeft.clear();
+
+						break tokenProcessing;
+					}
+
+					tokens.remove(0);
+
+					if(!whitespaces.isEmpty()) {
+						otherTokens.addAll(whitespaces);
+						whitespaces.clear();
+					}
+
+					if(!otherTokens.isEmpty()) {
+						parseTextAndCharValue(otherTokens, leftNodes);
+						otherTokens.clear();
+					}
+
+					//Allow "+<LITERAL_NUMBER>" and "-<LITERAL_NUMBER>" in conditional parsing (if nothing is before)
+					if((otherTokens.isEmpty() && leftNodes.isEmpty()) && (t.getValue().equals("-") ||
+							t.getValue().equals("+")) && !tokens.isEmpty() &&
+							tokens.get(0).getTokenType() == Token.TokenType.LITERAL_NUMBER) {
+						Token numberToken = tokens.remove(0);
+
+						Token combinedNumberToken = new Token(t.pos.combine(numberToken.pos),
+								t.getValue() + numberToken.getValue(), Token.TokenType.LITERAL_NUMBER);
+
+						parseNumberToken(combinedNumberToken, leftNodes);
 					}else {
-						operator = oldOperator;
-						
-						//Ignore operator: nothing was before for ternary operator or operator type is not compatible with type
-						if(whitespaces.length() > 0) {
-							builder.append(whitespaces.toString());
-							whitespaces.delete(0, whitespaces.length());
-						}
+						leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, value));
 					}
-				}else {
-					operator = oldOperator;
-					
-					//Ignore operator: nothing was before for ternary operator or operator type is not compatible with type
-					if(whitespaces.length() > 0) {
-						builder.append(whitespaces.toString());
-						whitespaces.delete(0, whitespaces.length());
+
+					break;
+
+				case OTHER:
+					if(!whitespaces.isEmpty()) {
+						otherTokens.addAll(whitespaces);
+						whitespaces.clear();
 					}
-				}
-			}else if(tokensLeftBehindMiddlePartEnd != null && token.startsWith(":")) {
-				//End of inline if
-				
-				if(whitespaces.length() > 0)
-					whitespaces.delete(0, whitespaces.length());
-				
-				tokensLeftBehindMiddlePartEnd.append(token.substring(1).trim());
-				
-				//Reset (Simulated end)
-				if(tokensLeft != null && tokensLeft.length() > 0)
-					tokensLeft.delete(0, tokensLeft.length());
-				
-				break;
-			}
-			
-			//Function calls
-			if(!LangPatterns.matches(builder.toString(), LangPatterns.VAR_NAME_PREFIX_ARRAY_AND_NORMAL_WITH_PTR_AND_DEREFERENCE_WITH_OPTIONAL_NAME) &&
-					(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_FUNCTION_CALL) ||
-							LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_FUNCTION_CALL_WITHOUT_PREFIX))) {
-				if(whitespaces.length() > 0) {
-					builder.append(whitespaces.toString());
-					whitespaces.delete(0, whitespaces.length());
-				}
-				
-				int lineNumberFrom = lineNumber;
-				
-				String modulePrefix = "";
-				if(LangPatterns.matches(builder.toString(), LangPatterns.PARSING_ENDS_WITH_MODULE_VAR_IDENTIFIER)) {
-					String builderStr = builder.toString();
-					int lastIndex = builderStr.lastIndexOf("[[");
-					modulePrefix = builderStr.substring(lastIndex);
-					
-					builder.delete(builder.length() - modulePrefix.length(), builder.length());
-				}
-				
-				if(builder.length() > 0) {
-					leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-					builder.delete(0, builder.length());
-				}
-				
-				int parameterStartIndex = token.indexOf('(');
-				int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(token, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-				if(parameterEndIndex == -1) {
-					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket in condition is missing"));
-					
+
+					if(!otherTokens.isEmpty()) {
+						parseTextAndCharValue(otherTokens, leftNodes);
+						otherTokens.clear();
+					}
+
+					ret = parseFunctionCallWithoutPrefix(tokens, type);
+					if(ret == null) {
+						tokens.remove(0);
+						otherTokens.add(t);
+					}else {
+						leftNodes.add(ret);
+					}
+
 					break;
-				}
-				
-				String functionCall = token.substring(0, parameterEndIndex + 1);
-				token = token.substring(parameterEndIndex + 1);
-				
-				String functionName = modulePrefix + functionCall.substring(0, parameterStartIndex);
-				String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-				
-				leftNodes.add(new AbstractSyntaxTree.FunctionCallNode(convertCommaOperatorsToArgumentSeparators(
-						parseOperationExpr(functionParameterList, type)), lineNumberFrom, lineNumber, functionName));
-				continue;
+
+				case LINE_CONTINUATION:
+				case END_COMMENT:
+				case END_MULTILINE_TEXT:
+					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for operation expression: \"" + t.getTokenType().name() + "\""));
+
+					break tokenProcessing;
 			}
-			
-			//Parser function calls
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_PARSER_FUNCTION_CALL)) {
-				if(whitespaces.length() > 0) {
-					builder.append(whitespaces.toString());
-					whitespaces.delete(0, whitespaces.length());
-				}
-				
-				if(builder.length() > 0) {
-					leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
-					builder.delete(0, builder.length());
-				}
-				
-				int parameterStartIndex = token.indexOf('(');
-				int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(token, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-				if(parameterEndIndex == -1) {
-					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in parser function call"));
-					break;
-				}
-				
-				String functionCall = token.substring(0, parameterEndIndex + 1);
-				
-				String functionName = functionCall.substring(token.indexOf('.') + 1, parameterStartIndex);
-				String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-				
-				AbstractSyntaxTree.Node ret = parseParserFunction(functionName, functionParameterList);
-				if(ret != null) {
-					token = token.substring(parameterEndIndex + 1);
-					
-					leftNodes.add(ret);
-					
-					continue;
-				}
-				
-				//Invalid parser function
-			}
-			
-			if(whitespaces.length() > 0) {
-				builder.append(whitespaces.toString());
-				whitespaces.delete(0, whitespaces.length());
-			}
-			
-			char c = token.charAt(0);
-			builder.append(c);
-			if(token.length() == 1)
-				break;
-			
-			token = token.substring(1);
 		}
-		
-		if(tokensLeftBehindMiddlePartEnd != null && tokensLeftBehindMiddlePartEnd.length() == 0) //end of middle part was not found for ternary operator -> ignore ternary operator
+
+		//End of middle part was not found for ternary operator -> ignore ternary operator
+		if(tokensLeftBehindMiddlePartEnd != null && tokensLeftBehindMiddlePartEnd.isEmpty())
 			return null;
-		
-		if(whitespaces.length() > 0) {
-			builder.append(whitespaces.toString());
-			whitespaces.delete(0, whitespaces.length());
+
+		if(!whitespaces.isEmpty()) {
+			otherTokens.addAll(whitespaces);
+			whitespaces.clear();
 		}
-		
-		//Parse value
-		if(builder.length() > 0) {
-			leftNodes.add(parseLRvalue(builder.toString(), null, true).convertToNode());
+
+		if(!otherTokens.isEmpty()) {
+			parseTextAndCharValue(otherTokens, leftNodes);
+			otherTokens.clear();
 		}
-		
+
 		if(operator == null)
 			operator = nonOperator;
-		
+
 		AbstractSyntaxTree.Node leftNode;
 		if(leftNodes.size() == 1)
 			leftNode = leftNodes.get(0);
 		else
 			leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
-		
+
+		if(tokensLeft != null && !tokens.isEmpty()) {
+			tokensLeft.addAll(tokens);
+			tokens.clear();
+		}
+
 		if(operator.isUnary())
 			return new AbstractSyntaxTree.OperationNode(leftNode, operator, type);
 		if(operator.isBinary())
 			return new AbstractSyntaxTree.OperationNode(leftNode, rightNode, operator, type);
 		if(operator.isTernary())
 			return new AbstractSyntaxTree.OperationNode(leftNode, middleNode, rightNode, operator, type);
-		
+
 		return null;
 	}
 
 	private List<AbstractSyntaxTree.Node> convertCommaOperatorsToArgumentSeparators(AbstractSyntaxTree.OperationNode operatorNode) {
 		List<AbstractSyntaxTree.Node> nodes = new LinkedList<>();
-		
+
 		//Only parse COMMA operators and COMMA operators inside COMMA operators but only if they are the left node
 		if(operatorNode.getOperator() == AbstractSyntaxTree.OperationNode.Operator.COMMA) {
 			AbstractSyntaxTree.Node leftSideOperand = operatorNode.getLeftSideOperand();
-			
+
 			//Add left side operand
 			if(leftSideOperand instanceof AbstractSyntaxTree.OperationNode)
 				nodes.addAll(convertCommaOperatorsToArgumentSeparators((AbstractSyntaxTree.OperationNode)leftSideOperand));
 			else
 				nodes.add(leftSideOperand);
-			
+
 			//Add argument separator
-			nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(lineNumber, ", "));
-			
+			nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(operatorNode.getLineNumberFrom(), operatorNode.getLineNumberTo(),
+					", "));
+
 			//Add right side operand
 			nodes.add(operatorNode.getRightSideOperand());
 		}else {
 			nodes.add(operatorNode);
 		}
-		
+
 		return nodes;
 	}
-	
-	private AbstractSyntaxTree.AssignmentNode parseAssignment(String line, BufferedReader lines, boolean isInnerAssignment) throws IOException {
-		if(LangPatterns.matches(line, LangPatterns.PARSING_PARSER_FLAG)) {
-			String[] tokens = line.split("=", 2);
-			
-			parseParserFlags(tokens[0].trim(), tokens[1].trim());
-		}
-		
-		if(LangPatterns.matches(line, LangPatterns.PARSING_SIMPLE_TRANSLATION)) {
-			String[] tokens = line.split("=", 2);
-			
-			//The translation value for empty simple translation will be set to empty text ""
-			return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.TextValueNode(lineNumber, tokens[0]), parseSimpleAssignmentValue(tokens[1]).convertToNode());
-		}else if(LangPatterns.matches(line, LangPatterns.PARSING_SIMPLE_ASSIGNMENT)) {
-			String[] tokens = line.split("=", 2);
-			
-			//The assignment value for empty simple assignments will be set to empty text ""
-			return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, tokens[0]),
-					parseSimpleAssignmentValue(tokens[1]).convertToNode());
-		}
-		
-		boolean isVariableAssignment = LangPatterns.matches(line, LangPatterns.PARSING_ASSIGNMENT_VAR_NAME);
-		boolean isNonLvalueOperationAssignment = LangPatterns.matches(line, LangPatterns.PARSING_ASSIGNMENT_VAR_NAME_OR_TRANSLATION);
-		if(isInnerAssignment?isVariableAssignment:(isNonLvalueOperationAssignment ||
-				LangPatterns.matches(line, LangPatterns.PARSING_ASSIGNMENT_OPERATION_WITH_OPERATOR))) {
-			String[] tokens = LangPatterns.PARSING_ASSIGNMENT_OPERATOR.split(line, 2);
-			
-			//If lvalue contains "(", "[", or "{" which are not closed -> do not parse as assignment
-			String[] bracketPairs = new String[] {
-					"()", "[]", "{}"
-			};
-			for(String bracketPair:bracketPairs) {
-				int startIndex = 0;
 
-				while((startIndex = tokens[0].indexOf(bracketPair.charAt(0), startIndex)) != -1) {
-					int matchingIndex = LangUtils.getIndexOfMatchingBracket(tokens[0], startIndex, tokens[0].length(),
-							bracketPair.charAt(0), bracketPair.charAt(1));
+	private AbstractSyntaxTree.AssignmentNode parseAssignment(List<Token> tokens, boolean isInnerAssignment) {
+		if(tokens.isEmpty())
+			return null;
 
-					if(matchingIndex == -1)
-						return null;
+		trimFirstLine(tokens);
 
-					startIndex = matchingIndex + 1; //Skip "("
-					if(startIndex >= tokens[0].length())
-						break;
-				}
+		int assignmentIndex = -1;
+		int tokenCountFirstLine = -1;
+		for(int i = 0;i < tokens.size();i++) {
+			if(tokens.get(i).getTokenType() == Token.TokenType.EOL ||
+					tokens.get(i).getTokenType() == Token.TokenType.EOF) {
+				tokenCountFirstLine = i;
+				break;
 			}
-			
-			String assignmentOperator = line.substring(tokens[0].length() + 1, line.indexOf('=', tokens[0].length()));
-			
+
+			if(tokens.get(i).getTokenType() == Token.TokenType.ASSIGNMENT)
+				assignmentIndex = i;
+		}
+
+		if(tokenCountFirstLine == -1)
+			tokenCountFirstLine = tokens.size();
+
+		if(assignmentIndex == -1) {
+			if(isInnerAssignment)
+				return null;
+
+			List<Token> variableNameTokens = new ArrayList<>(tokens.subList(0, tokenCountFirstLine));
+			if(variableNameTokens.size() != 1 || variableNameTokens.get(0).getTokenType() != Token.TokenType.IDENTIFIER)
+				return null;
+
+			Token variableNameToken = variableNameTokens.get(0);
+			String variableName = variableNameToken.getValue();
+
+			if(LangPatterns.matches(variableName, LangPatterns.VAR_NAME_FULL)) {
+				tokens.remove(0);
+
+				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(
+						variableNameToken.pos.lineNumberFrom, variableNameToken.pos.lineNumberTo,
+						variableNameToken.getValue()),
+						new AbstractSyntaxTree.NullValueNode(variableNameToken.pos.lineNumberFrom,
+								variableNameToken.pos.lineNumberTo));
+			}
+
+			return null;
+		}
+
+		Token assignmentToken = tokens.get(assignmentIndex);
+		List<Token> lvalueTokens = new ArrayList<>(tokens.subList(0, assignmentIndex));
+		trimFirstLine(lvalueTokens);
+
+		if(lvalueTokens.isEmpty())
+			return null;
+
+		boolean isSimpleAssignment = assignmentToken.getValue().equals("=");
+		if(isSimpleAssignment || assignmentToken.getValue().equals(" = ")) {
+			CodePosition pos = lvalueTokens.get(0).pos.combine(lvalueTokens.get(lvalueTokens.size() - 1).pos);
+
+			if(lvalueTokens.size() == 1 && lvalueTokens.get(0).getTokenType() == Token.TokenType.IDENTIFIER &&
+					LangPatterns.matches(lvalueTokens.get(0).getValue(), isSimpleAssignment?
+							LangPatterns.PARSING_SIMPLE_ASSIGNMENT_VARIABLE_NAME_LVALUE:
+							LangPatterns.VAR_NAME_FULL)) {
+				tokens.subList(0, assignmentIndex + 1).clear();
+				trimFirstLine(tokens);
+
+				//The assignment value for empty simple assignments will be set to empty text ""
+				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(pos.lineNumberFrom,
+						pos.lineNumberTo, lvalueTokens.get(0).getValue()), (isSimpleAssignment?
+						parseSimpleAssignmentValue(tokens):parseLRvalue(tokens, true)).
+						convertToNode());
+			}
+
+			String lvalue = lvalueTokens.stream().map(Token::toRawString).collect(Collectors.joining());
+			if(LangPatterns.matches(lvalue, LangPatterns.PARSING_PARSER_FLAG)) {
+				List<Token> rvalueTokens = new ArrayList<>(tokens.subList(assignmentIndex + 1, tokenCountFirstLine));
+				trimFirstLine(rvalueTokens);
+
+				parseParserFlags(lvalue, (isSimpleAssignment?parseSimpleAssignmentValue(rvalueTokens):
+						parseLRvalue(rvalueTokens, true)).convertToNode());
+
+				tokens.subList(0, tokenCountFirstLine).clear();
+
+				return null;
+			}
+
+			if(LangPatterns.matches(lvalue, LangPatterns.PARSING_SIMPLE_TRANSLATION_KEY)) {
+				tokens.subList(0, assignmentIndex + 1).clear();
+
+				//The translation value for empty simple translation will be set to empty text ""
+				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.TextValueNode(pos.lineNumberFrom,
+						pos.lineNumberTo, lvalue), (isSimpleAssignment?parseSimpleAssignmentValue(tokens):
+						parseLRvalue(tokens, true)).convertToNode());
+			}
+
+		}
+
+		boolean isVariableAssignment = lvalueTokens.size() == 1 && lvalueTokens.get(0).getTokenType() == Token.TokenType.IDENTIFIER &&
+				LangPatterns.matches(lvalueTokens.get(0).getValue(), LangPatterns.VAR_NAME_FULL);
+
+		if(assignmentToken.getValue().equals(" =")) {
+			tokens.subList(0, tokenCountFirstLine).clear();
+
+			return new AbstractSyntaxTree.AssignmentNode((isVariableAssignment?parseLRvalue(lvalueTokens, false):parseTranslationKey(lvalueTokens)).convertToNode(),
+					new AbstractSyntaxTree.NullValueNode(assignmentToken.pos.lineNumberFrom,
+							assignmentToken.pos.lineNumberTo));
+		}
+
+		if(!isInnerAssignment && LangPatterns.matches(assignmentToken.getValue(), LangPatterns.PARSING_ASSIGNMENT_OPERATOR)) {
+			tokens.subList(0, assignmentIndex + 1).clear();
+
+			String assignmentOperator = assignmentToken.getValue().substring(1, assignmentToken.getValue().length() - 2);
+
 			AbstractSyntaxTree.OperationNode.Operator operator = null;
 			if(!assignmentOperator.isEmpty()) {
 				switch(assignmentOperator) {
@@ -1103,821 +1231,1272 @@ public final class LangParser {
 						break;
 				}
 			}
-			
+
 			AbstractSyntaxTree.Node lvalueNode;
-			if(isNonLvalueOperationAssignment) {
-				lvalueNode = ((isVariableAssignment || !assignmentOperator.isEmpty())?
-						parseLRvalue(tokens[0], null, false):parseTranslationKey(tokens[0])).convertToNode();
+			if(isVariableAssignment) {
+				lvalueNode = parseLRvalue(lvalueTokens, false).convertToNode();
 			}else {
-				if(operator == AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON)
-					lvalueNode = parseCondition(tokens[0]);
-				else if(operator == AbstractSyntaxTree.OperationNode.Operator.MATH_NON)
-					lvalueNode = parseMathExpr(tokens[0]);
+				if (operator == AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON)
+					lvalueNode = parseCondition(lvalueTokens);
+				else if (operator == AbstractSyntaxTree.OperationNode.Operator.MATH_NON)
+					lvalueNode = parseMathExpr(lvalueTokens);
 				else
-					lvalueNode = parseOperationExpr(tokens[0]);
+					lvalueNode = parseOperationExpr(lvalueTokens);
 			}
-			
+
 			AbstractSyntaxTree.Node rvalueNode;
-			
-			if(assignmentOperator.isEmpty() || assignmentOperator.equals("::")) {
-				AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens[1], lines, true);
-				rvalueNode = returnedNode != null?returnedNode:parseLRvalue(tokens[1], lines, true).convertToNode();
+
+			if(assignmentOperator.equals("::")) {
+				AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens, true);
+				rvalueNode = returnedNode != null?returnedNode:parseLRvalue(tokens, true).convertToNode();
 			}else {
 				if(operator == null)
-					rvalueNode = new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT);
+					rvalueNode = new AbstractSyntaxTree.ParsingErrorNode(assignmentToken.pos.lineNumberFrom,
+							assignmentToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT);
 				else if(operator == AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON)
-					rvalueNode = parseCondition(tokens[1]);
+					rvalueNode = parseCondition(tokens);
 				else if(operator == AbstractSyntaxTree.OperationNode.Operator.MATH_NON)
-					rvalueNode = parseMathExpr(tokens[1]);
+					rvalueNode = parseMathExpr(tokens);
 				else if(operator == AbstractSyntaxTree.OperationNode.Operator.NON)
-					rvalueNode = parseOperationExpr(tokens[1]);
+					rvalueNode = parseOperationExpr(tokens);
 				else
-					rvalueNode = new AbstractSyntaxTree.OperationNode(lvalueNode, parseOperationExpr(tokens[1]), operator, operator.getOperatorType());
+					rvalueNode = new AbstractSyntaxTree.OperationNode(lvalueNode, parseOperationExpr(tokens), operator, operator.getOperatorType());
 			}
-			
+
 			return new AbstractSyntaxTree.AssignmentNode(lvalueNode, rvalueNode);
 		}
-		if(isInnerAssignment)
-			return null;
-		
-		//Only for non-multi assignments
-		isVariableAssignment = LangPatterns.matches(line, LangPatterns.VAR_NAME_FULL) || LangPatterns.matches(line, LangPatterns.VAR_NAME_PTR_AND_DEREFERENCE);
-		if(line.endsWith(" =") || isVariableAssignment) {
-			//Empty translation/assignment ("<var/translation key> =" or "$varName")
-			if(line.endsWith(" ="))
-				line = line.substring(0, line.length() - 2);
-			return new AbstractSyntaxTree.AssignmentNode((isVariableAssignment?parseLRvalue(line, null, false):parseTranslationKey(line)).convertToNode(),
-					new AbstractSyntaxTree.NullValueNode(lineNumber));
+
+		//Translation with " = "
+		if(assignmentToken.getValue().equals(" = ")) {
+			tokens.subList(0, assignmentIndex + 1).clear();
+
+			//The translation value for empty simple translation will be set to empty text ""
+			return new AbstractSyntaxTree.AssignmentNode(parseTranslationKey(lvalueTokens).convertToNode(),
+					parseLRvalue(tokens, true).convertToNode());
 		}
-		
+
 		return null;
 	}
-	
-	private AbstractSyntaxTree parseLine(String token, BufferedReader lines) throws IOException {
+
+	private AbstractSyntaxTree parseLine(List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
-		
+
+		trimFirstLine(tokens);
+
+		int tokenCountFirstLine = getTokenCountFirstLine(tokens);
+		if(tokenCountFirstLine == -1)
+			tokenCountFirstLine = tokens.size();
+
 		//Control flow statements
-		final String originalToken = token;
-		if(token.startsWith("con.") || token.endsWith("{")) {
-			if(token.endsWith("{") && !token.startsWith("con.")) //"con." is optional if the curly brackets syntax is used
-				token = "con." + token;
-			
-			if(!token.endsWith("{") && (token.startsWith("con.continue") || token.startsWith("con.break"))) {
+		boolean startsWithConExpression = tokenCountFirstLine > 0 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+				tokens.get(0).getValue().startsWith("con.");
+		boolean endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
+				Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+		if(startsWithConExpression || endsWithOpeningBracket) {
+			String conExpression = tokens.get(0).getValue();
+			String originalConExpression = conExpression;
+
+			//"con." is optional if the curly brackets syntax is used
+			if(endsWithOpeningBracket && !startsWithConExpression)
+				conExpression = "con." + conExpression;
+
+			if(!endsWithOpeningBracket && (conExpression.equals("con.continue") || conExpression.equals("con.break"))) {
+				Token conExpressionToken = tokens.remove(0);
+				Token lastToken = conExpressionToken;
+
 				List<AbstractSyntaxTree.Node> argumentNodes;
-				if(!token.contains("(") && !token.contains(")")) {
-					argumentNodes = null;
-				}else {
-					int argumentsStartIndex = token.indexOf('(');
-					int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(token, argumentsStartIndex, Integer.MAX_VALUE, '(', ')');
+				if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+						tokens.get(0).getValue().equals("(")) {
+					int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 					if(argumentsEndIndex == -1) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket for con.break or con.continue is missing"));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+								tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+								"Bracket for con.break or con.continue is missing"));
 						return ast;
 					}
-					argumentNodes = parseFunctionParameterList(token.substring(argumentsStartIndex + 1, argumentsEndIndex), false).getChildren();
+
+					lastToken = tokens.get(argumentsEndIndex + 1);
+					argumentNodes = parseFunctionParameterList(new ArrayList<>(tokens.subList(1, argumentsEndIndex)), false).getChildren();
+					tokens.subList(0, argumentsEndIndex + 1).clear();
+				}else {
+					argumentNodes = null;
 				}
-				
+
+				CodePosition pos = conExpressionToken.pos.combine(lastToken.pos);
+
 				AbstractSyntaxTree.Node numberNode = argumentNodes == null?null:(argumentNodes.size() == 1?argumentNodes.get(0):new AbstractSyntaxTree.ListNode(argumentNodes));
-				ast.addChild(new AbstractSyntaxTree.LoopStatementContinueBreakStatement(numberNode, lineNumber, token.startsWith("con.continue")));
+				ast.addChild(new AbstractSyntaxTree.LoopStatementContinueBreakStatement(numberNode, pos.lineNumberFrom, pos.lineNumberTo,
+						conExpression.equals("con.continue")));
 				return ast;
-			}else if(token.startsWith("con.try") || token.startsWith("con.softtry") || token.startsWith("con.nontry")) {
-				int tryStatementLineNumberFrom = lineNumber;
+			}else if(conExpression.equals("con.try") || conExpression.equals("con.softtry") || conExpression.equals("con.nontry")) {
 				List<AbstractSyntaxTree.TryStatementPartNode> tryStatmentParts = new ArrayList<>();
-				
-				boolean blockBracketFlag = token.endsWith("{");
+
+				boolean blockBracketFlag = endsWithOpeningBracket;
 				boolean firstStatement = true;
-				
-				String tryStatement = token;
-				do {
+				while(!tokens.isEmpty()) {
+					trimFirstLine(tokens);
+
+					tokenCountFirstLine = getTokenCountFirstLine(tokens);
+					if(tokenCountFirstLine == -1)
+						tokenCountFirstLine = tokens.size();
+					endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
+							Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+
+					if(tokenCountFirstLine == 0)
+						break;
+
+					conExpression = tokens.get(0).getValue();
+
+					//"con." is optional if the curly brackets syntax is used
+					if(endsWithOpeningBracket && !startsWithConExpression)
+						conExpression = "con." + conExpression;
+
 					if(blockBracketFlag) {
 						//Remove "{" and "}" for the curly brackets if statement syntax
-						if(firstStatement) {
-							if(!tryStatement.endsWith("{"))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
-							
-							tryStatement = tryStatement.substring(0, tryStatement.length() - 1).trim();
-						}else if(!tryStatement.equals("}")) {
-							if(!tryStatement.startsWith("}") || !tryStatement.endsWith("{"))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
-							
-							tryStatement = tryStatement.substring(1, tryStatement.length() - 1).trim();
-							
-							if(!tryStatement.startsWith("con.")) //"con." is optional if "{" syntax is used
-								tryStatement = "con." + tryStatement;
-						}
+						CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
+
+						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
+								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
+									ParsingError.INVALID_CON_PART));
+
+						tokens.remove(tokenCountFirstLine - 1);
+
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine == 0 || tokens.get(0).getTokenType() != Token.TokenType.OTHER)
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
+									ParsingError.INVALID_CON_PART));
+
+						conExpression = tokens.get(0).getValue();
+
+						//"con." is optional if "{" syntax is used
+						if(!conExpression.startsWith("con."))
+							conExpression = "con." + conExpression;
+
+						trimFirstLine(tokens);
+
+						tokenCountFirstLine = getTokenCountFirstLine(tokens);
+						if(tokenCountFirstLine == -1)
+							tokenCountFirstLine = tokens.size();
 					}
-					
-					int tryArgumentsLineNumberFrom = lineNumber;
-					String tryArguments;
-					if(tryStatement.startsWith("con.try") || tryStatement.startsWith("con.softtry") || tryStatement.startsWith("con.nontry") || tryStatement.startsWith("con.else") ||
-					tryStatement.startsWith("con.finally")) {
-						if(!tryStatement.equals("con.try") && !tryStatement.startsWith("con.softtry") && !tryStatement.startsWith("con.nontry") && !tryStatement.equals("con.else") &&
-						!tryStatement.equals("con.finally")) {
-							if(tryStatement.startsWith("con.try(") || tryStatement.startsWith("con.softtry(") || tryStatement.startsWith("con.nontry(") || tryStatement.startsWith("con.else(") ||
-							tryStatement.startsWith("con.finally("))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Try/Softtry/Nontry/Finally/Else part with arguments"));
-							else
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
+
+					Token tryStatementPartToken;
+					List<Token> tryArguments;
+					if(conExpression.equals("con.try") || conExpression.equals("con.softtry") || conExpression.equals("con.nontry") || conExpression.equals("con.else") ||
+							conExpression.equals("con.finally")) {
+						tryStatementPartToken = tokens.remove(0);
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(0).getValue().equals("(")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tryStatementPartToken.pos.lineNumberFrom,
+									tryStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART,
+									"Try/Softtry/Nontry/Finally/Else part with arguments"));
+
 							return ast;
 						}
-						
+
 						tryArguments = null;
-					}else if(tryStatement.startsWith("con.catch")) {
-						if(tryStatement.equals("con.catch")) {
+					}else if(conExpression.equals("con.catch")) {
+						if(tokenCountFirstLine == 1) {
+							tryStatementPartToken = tokens.remove(0);
+							tokenCountFirstLine--;
+
 							tryArguments = null;
 						}else {
-							int argumentsStartIndex = tryStatement.indexOf('(');
-							int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tryStatement, argumentsStartIndex, Integer.MAX_VALUE, '(', ')');
-							if(argumentsEndIndex == -1) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Missing catch statement arguments"));
+							tryStatementPartToken = tokens.remove(0);
+							tokenCountFirstLine--;
+
+							if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+									tokens.get(0).getValue().equals("(")) {
+								int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+								if(argumentsEndIndex == -1) {
+									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+											tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+											"Missing catch statement arguments"));
+									return ast;
+								}
+
+								tryArguments = new ArrayList<>(tokens.subList(1, argumentsEndIndex));
+								tokens.subList(0, argumentsEndIndex + 1).clear();
+								tokenCountFirstLine -= argumentsEndIndex + 1;
+							}else {
+								tryArguments = null;
+							}
+
+							if(tokenCountFirstLine != 0) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tryStatementPartToken.pos.lineNumberFrom,
+										tryStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART, "Trailing stuff behind arguments"));
 								return ast;
 							}
-							if(argumentsEndIndex != tryStatement.length() - 1) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Trailing stuff behind arguments"));
-								return ast;
-							}
-							tryArguments = tryStatement.substring(argumentsStartIndex + 1, argumentsEndIndex);
 						}
+					}else if(!blockBracketFlag && conExpression.equals("con.endtry")) {
+						tokens.remove(0);
+
+						break;
 					}else {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Try statement part is invalid"));
+						//TODO lineNumber
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "Try statement part is invalid"));
 						return ast;
 					}
-					
-					AbstractSyntaxTree tryBody = parseLines(lines);
+
+					AbstractSyntaxTree tryBody = parseTokens(tokens);
 					if(tryBody == null) {
-						nodes.add(new AbstractSyntaxTree.TryStatementNode(tryStatmentParts, tryStatementLineNumberFrom, lineNumber));
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "In try body"));
-						
+						//TODO line numbers
+						nodes.add(new AbstractSyntaxTree.TryStatementNode(tryStatmentParts, -1, -1));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "In try body"));
+
 						return ast;
 					}
-					
-					if(tryStatement.startsWith("con.try")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartTryNode(tryBody, tryArgumentsLineNumberFrom, lineNumber));
-					}else if(tryStatement.startsWith("con.softtry")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartSoftTryNode(tryBody, tryArgumentsLineNumberFrom, lineNumber));
-					}else if(tryStatement.startsWith("con.nontry")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartNonTryNode(tryBody, tryArgumentsLineNumberFrom, lineNumber));
-					}else if(tryStatement.startsWith("con.catch")) {
-						int originalLineNumber = lineNumber;
-						lineNumber = tryArgumentsLineNumberFrom;
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartCatchNode(tryBody, tryArgumentsLineNumberFrom, originalLineNumber,
+
+					//TODO line numbers
+					if(conExpression.equals("con.try")) {
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartTryNode(tryBody, -1, -1));
+					}else if(conExpression.equals("con.softtry")) {
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartSoftTryNode(tryBody, -1, -1));
+					}else if(conExpression.equals("con.nontry")) {
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartNonTryNode(tryBody, -1, -1));
+					}else if(conExpression.equals("con.catch")) {
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartCatchNode(tryBody, -1, -1,
 								tryArguments == null?null:parseFunctionParameterList(tryArguments, false).getChildren()));
-						lineNumber = originalLineNumber;
-					}else if(tryStatement.startsWith("con.else")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartElseNode(tryBody, tryArgumentsLineNumberFrom, lineNumber));
-					}else if(tryStatement.startsWith("con.finally")) {
-						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartFinallyNode(tryBody, tryArgumentsLineNumberFrom, lineNumber));
+					}else if(conExpression.equals("con.else")) {
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartElseNode(tryBody, -1, -1));
+					}else if(conExpression.equals("con.finally")) {
+						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartFinallyNode(tryBody, -1, -1));
 					}
-					
+
 					firstStatement = false;
-					tryStatement = currentLine;
-				}while(tryStatement != null && !(blockBracketFlag?tryStatement.equals("}"):tryStatement.equals("con.endtry")));
-				
-				nodes.add(new AbstractSyntaxTree.TryStatementNode(tryStatmentParts, tryStatementLineNumberFrom, lineNumber));
+				}
+
+				//TODO line numbers
+				nodes.add(new AbstractSyntaxTree.TryStatementNode(tryStatmentParts, -1, -1));
 				return ast;
-			}else if(token.startsWith("con.loop") || token.startsWith("con.while") || token.startsWith("con.until") ||
-					token.startsWith("con.repeat") || token.startsWith("con.foreach")) {
-				int loopStatementLineNumberFrom = lineNumber;
+			}else if(conExpression.equals("con.loop") || conExpression.equals("con.while") || conExpression.equals("con.until") ||
+					conExpression.equals("con.repeat") || conExpression.equals("con.foreach")) {
 				List<AbstractSyntaxTree.LoopStatementPartNode> loopStatmentParts = new ArrayList<>();
-				
-				boolean blockBracketFlag = token.endsWith("{");
+
+				boolean blockBracketFlag = endsWithOpeningBracket;
 				boolean firstStatement = true;
-				
-				String loopStatement = token;
-				do {
+
+				while(!tokens.isEmpty()) {
+					trimFirstLine(tokens);
+
+					tokenCountFirstLine = getTokenCountFirstLine(tokens);
+					if(tokenCountFirstLine == -1)
+						tokenCountFirstLine = tokens.size();
+					endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
+							Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+
+					if(tokenCountFirstLine == 0)
+						break;
+
+					conExpression = tokens.get(0).getValue();
+
+					//"con." is optional if the curly brackets syntax is used
+					if(endsWithOpeningBracket && !startsWithConExpression)
+						conExpression = "con." + conExpression;
+
 					if(blockBracketFlag) {
-						//Remove "{" and "}" for the curly brackets loop statement syntax
-						if(firstStatement) {
-							if(!loopStatement.endsWith("{"))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
-							
-							loopStatement = loopStatement.substring(0, loopStatement.length() - 1).trim();
-						}else if(!loopStatement.equals("}")) {
-							if(!loopStatement.startsWith("}") || !loopStatement.endsWith("{"))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
-							
-							loopStatement = loopStatement.substring(1, loopStatement.length() - 1).trim();
-							
-							if(!loopStatement.startsWith("con.")) //"con." is optional if "{" syntax is used
-								loopStatement = "con." + loopStatement;
-						}
+						//Remove "{" and "}" for the curly brackets if statement syntax
+						CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
+
+						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
+								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
+									ParsingError.INVALID_CON_PART));
+
+						tokens.remove(tokenCountFirstLine - 1);
+
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine == 0 || tokens.get(0).getTokenType() != Token.TokenType.OTHER)
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
+									ParsingError.INVALID_CON_PART));
+
+						conExpression = tokens.get(0).getValue();
+
+						//"con." is optional if "{" syntax is used
+						if(!conExpression.startsWith("con."))
+							conExpression = "con." + conExpression;
+
+						trimFirstLine(tokens);
+
+						tokenCountFirstLine = getTokenCountFirstLine(tokens);
+						if(tokenCountFirstLine == -1)
+							tokenCountFirstLine = tokens.size();
 					}
-					
-					int loopConditionLineNumberFrom = lineNumber;
-					String loopCondition = null;
-					if(loopStatement.startsWith("con.else") || loopStatement.startsWith("con.loop")) {
-						if(!loopStatement.equals("con.else") && !loopStatement.equals("con.loop")) {
-							if(loopStatement.startsWith("con.else(") || loopStatement.startsWith("con.loop("))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Else/Loop part with condition"));
-							else
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
+
+					Token loopStatementPartToken;
+					List<Token> loopCondition;
+					if(conExpression.equals("con.else") || conExpression.equals("con.loop")) {
+						loopStatementPartToken = tokens.remove(0);
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(0).getValue().equals("(")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
+									loopStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART,
+									"Loop/Else part with arguments"));
+
 							return ast;
 						}
-						
+
 						loopCondition = null;
-					}else if(!loopStatement.contains("(") || !loopStatement.contains(")")) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.CONT_FLOW_ARG_MISSING, "Missing loop statement arguments"));
-						return ast;
-					}else if(loopStatement.startsWith("con.while(") || loopStatement.startsWith("con.until(") ||
-							loopStatement.startsWith("con.repeat(") || loopStatement.startsWith("con.foreach(")) {
-						int conditionStartIndex = loopStatement.indexOf('(');
-						int conditionEndIndex = LangUtils.getIndexOfMatchingBracket(loopStatement, conditionStartIndex, Integer.MAX_VALUE, '(', ')');
-						if(conditionEndIndex == -1) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket for loop statement is missing"));
+					}else if(conExpression.equals("con.while") || conExpression.equals("con.until") ||
+							conExpression.equals("con.repeat") || conExpression.equals("con.foreach")) {
+						loopStatementPartToken = tokens.remove(0);
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine == 0) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
+									loopStatementPartToken.pos.lineNumberTo, ParsingError.CONT_FLOW_ARG_MISSING, "Missing loop statement arguments"));
+
 							return ast;
 						}
-						if(conditionEndIndex != loopStatement.length() - 1) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Trailing stuff behind condition"));
+
+						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+								tokens.get(0).getValue().equals("(")) {
+							int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+							if(argumentsEndIndex == -1) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+										tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+										"Missing loop statement arguments"));
+								return ast;
+							}
+
+							loopCondition = new ArrayList<>(tokens.subList(1, argumentsEndIndex));
+							tokens.subList(0, argumentsEndIndex + 1).clear();
+							tokenCountFirstLine -= argumentsEndIndex + 1;
+						}else {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
+									loopStatementPartToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH, "Bracket for loop statement is missing"));
 							return ast;
 						}
-						loopCondition = loopStatement.substring(conditionStartIndex + 1, conditionEndIndex);
+
+						if(tokenCountFirstLine != 0) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos.lineNumberFrom,
+									loopStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART, "Trailing stuff behind loop arguments"));
+							return ast;
+						}
+					}else if(!blockBracketFlag && conExpression.equals("con.endloop")) {
+						tokens.remove(0);
+
+						break;
 					}else {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Loop statement part is invalid"));
+						//TODO lineNumber
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "Loop statement part is invalid"));
 						return ast;
 					}
-					
-					AbstractSyntaxTree loopBody = parseLines(lines);
+
+					AbstractSyntaxTree loopBody = parseTokens(tokens);
 					if(loopBody == null) {
-						nodes.add(new AbstractSyntaxTree.LoopStatementNode(loopStatmentParts, loopStatementLineNumberFrom, lineNumber));
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "In loop body"));
-						
+						//TODO line numbers
+						nodes.add(new AbstractSyntaxTree.LoopStatementNode(loopStatmentParts, -1, -1));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "In loop body"));
+
 						return ast;
 					}
-					
-					if(loopStatement.startsWith("con.else")) {
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartElseNode(loopBody, loopConditionLineNumberFrom, lineNumber));
-					}else if(loopStatement.startsWith("con.loop")) {
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartLoopNode(loopBody, loopConditionLineNumberFrom, lineNumber));
-					}else if(loopStatement.startsWith("con.while")) {
-						int originalLineNumber = lineNumber;
-						lineNumber = loopConditionLineNumberFrom;
+
+					//TODO line numbers
+					if(conExpression.equals("con.else")) {
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartElseNode(loopBody, -1, -1));
+					}else if(conExpression.equals("con.loop")) {
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartLoopNode(loopBody, -1, -1));
+					}else if(conExpression.equals("con.while")) {
 						AbstractSyntaxTree.OperationNode conNonNode = new AbstractSyntaxTree.OperationNode(parseOperationExpr(loopCondition),
-						AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
-						lineNumber = originalLineNumber;
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartWhileNode(loopBody, loopConditionLineNumberFrom, lineNumber, conNonNode));
-					}else if(loopStatement.startsWith("con.until")) {
-						int originalLineNumber = lineNumber;
-						lineNumber = loopConditionLineNumberFrom;
+								AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartWhileNode(loopBody, -1, -1, conNonNode));
+					}else if(conExpression.equals("con.until")) {
 						AbstractSyntaxTree.OperationNode conNonNode = new AbstractSyntaxTree.OperationNode(parseOperationExpr(loopCondition),
-						AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
-						lineNumber = originalLineNumber;
-						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartUntilNode(loopBody, loopConditionLineNumberFrom, lineNumber, conNonNode));
-					}else if(loopStatement.startsWith("con.repeat") || loopStatement.startsWith("con.foreach")) {
-						int originalLineNumber = lineNumber;
-						lineNumber = loopConditionLineNumberFrom;
+								AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
+						loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartUntilNode(loopBody, -1, -1, conNonNode));
+					}else if(conExpression.startsWith("con.repeat") || conExpression.startsWith("con.foreach")) {
 						List<AbstractSyntaxTree.Node> arguments = convertCommaOperatorsToArgumentSeparators(parseOperationExpr(loopCondition));
 						Iterator<AbstractSyntaxTree.Node> argumentIter = arguments.iterator();
-						lineNumber = originalLineNumber;
-						
+
 						AbstractSyntaxTree.Node varPointerNode = null;
 						boolean flag = false;
 						while(argumentIter.hasNext()) {
 							AbstractSyntaxTree.Node node = argumentIter.next();
-							
+
 							if(node.getNodeType() == AbstractSyntaxTree.NodeType.ARGUMENT_SEPARATOR || varPointerNode != null) {
 								flag = true;
 								break;
 							}
-							
+
 							varPointerNode = node;
 						}
 						if(!flag) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopConditionLineNumberFrom, ParsingError.INVALID_CON_PART, "con.repeat or con.foreach arguments are invalid"));
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "con.repeat or con.foreach arguments are invalid"));
 							return ast;
 						}
-						
+
 						List<AbstractSyntaxTree.Node> repeatCountArgument = new LinkedList<>();
 						while(argumentIter.hasNext()) {
 							AbstractSyntaxTree.Node node = argumentIter.next();
-							
+
 							if(node.getNodeType() == AbstractSyntaxTree.NodeType.ARGUMENT_SEPARATOR) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopConditionLineNumberFrom, ParsingError.INVALID_CON_PART, "con.repeat or con.foreach arguments are invalid"));
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "con.repeat or con.foreach arguments are invalid"));
 								return ast;
 							}
-							
+
 							repeatCountArgument.add(node);
 						}
-						
+
 						AbstractSyntaxTree.Node repeatCountOrArrayOrTextNode = repeatCountArgument.size() == 1?repeatCountArgument.get(0):new AbstractSyntaxTree.ListNode(repeatCountArgument);
-						
-						if(loopStatement.startsWith("con.repeat"))
-							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartRepeatNode(loopBody, loopConditionLineNumberFrom, lineNumber,
+
+						if(conExpression.equals("con.repeat"))
+							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartRepeatNode(loopBody, -1, -1,
 									varPointerNode, repeatCountOrArrayOrTextNode));
 						else
-							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartForEachNode(loopBody, loopConditionLineNumberFrom, lineNumber,
+							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartForEachNode(loopBody, -1, -1,
 									varPointerNode, repeatCountOrArrayOrTextNode));
 					}
-					
+
 					firstStatement = false;
-					loopStatement = currentLine;
-				}while(loopStatement != null && !(blockBracketFlag?loopStatement.equals("}"):loopStatement.equals("con.endloop")));
-				
-				nodes.add(new AbstractSyntaxTree.LoopStatementNode(loopStatmentParts, loopStatementLineNumberFrom, lineNumber));
-				
+				}
+
+				//TODO line numbers
+				nodes.add(new AbstractSyntaxTree.LoopStatementNode(loopStatmentParts, -1, -1));
+
 				return ast;
-			}else if(token.startsWith("con.if")) {
-				int ifStatementLineNumberFrom = lineNumber;
+			}else if(conExpression.equals("con.if")) {
 				List<AbstractSyntaxTree.IfStatementPartNode> ifStatmentParts = new ArrayList<>();
-				
-				boolean blockBracketFlag = token.endsWith("{");
+
+				boolean blockBracketFlag = endsWithOpeningBracket;
 				boolean firstStatement = true;
-				
-				String ifStatement = token;
-				do {
+
+				while(!tokens.isEmpty()) {
+					trimFirstLine(tokens);
+
+					tokenCountFirstLine = getTokenCountFirstLine(tokens);
+					if(tokenCountFirstLine == -1)
+						tokenCountFirstLine = tokens.size();
+					endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
+							Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+
+					if(tokenCountFirstLine == 0)
+						break;
+
+					conExpression = tokens.get(0).getValue();
+
+					//"con." is optional if the curly brackets syntax is used
+					if(endsWithOpeningBracket && !startsWithConExpression)
+						conExpression = "con." + conExpression;
+
 					if(blockBracketFlag) {
 						//Remove "{" and "}" for the curly brackets if statement syntax
-						if(firstStatement) {
-							if(!ifStatement.endsWith("{"))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
-							
-							ifStatement = ifStatement.substring(0, ifStatement.length() - 1).trim();
-						}else if(!ifStatement.equals("}")) {
-							if(!ifStatement.startsWith("}") || !ifStatement.endsWith("{"))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
-							
-							ifStatement = ifStatement.substring(1, ifStatement.length() - 1).trim();
-							
-							if(!ifStatement.startsWith("con.")) //"con." is optional if "{" syntax is used
-								ifStatement = "con." + ifStatement;
-						}
+						CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
+
+						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
+								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
+									ParsingError.INVALID_CON_PART));
+
+						tokens.remove(tokenCountFirstLine - 1);
+
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine == 0 || tokens.get(0).getTokenType() != Token.TokenType.OTHER)
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom, pos.lineNumberTo,
+									ParsingError.INVALID_CON_PART));
+
+						conExpression = tokens.get(0).getValue();
+
+						//"con." is optional if "{" syntax is used
+						if(!conExpression.startsWith("con."))
+							conExpression = "con." + conExpression;
+
+						trimFirstLine(tokens);
+
+						tokenCountFirstLine = getTokenCountFirstLine(tokens);
+						if(tokenCountFirstLine == -1)
+							tokenCountFirstLine = tokens.size();
 					}
-					
-					int ifConditionLineNumberFrom = lineNumber;
-					String ifCondition;
-					if(ifStatement.startsWith("con.else")) {
-						if(!ifStatement.equals("con.else")) {
-							if(ifStatement.startsWith("con.else("))
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Else part with condition"));
-							else
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART));
+
+					Token ifStatementPartToken;
+					List<Token> ifCondition;
+					if(conExpression.equals("con.else")) {
+						ifStatementPartToken = tokens.remove(0);
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(0).getValue().equals("(")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
+									ifStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART,
+									"Else part with arguments"));
+
 							return ast;
 						}
-						
+
 						ifCondition = null;
-					}else if(!ifStatement.contains("(") || !ifStatement.contains(")")) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.CONT_FLOW_ARG_MISSING, "Missing if statement condition"));
-						
-						ifCondition = null;
-					}else if(ifStatement.startsWith("con.if(") || ifStatement.startsWith("con.elif(")) {
-						int conditionStartIndex = ifStatement.indexOf('(');
-						int conditionEndIndex = LangUtils.getIndexOfMatchingBracket(ifStatement, conditionStartIndex, Integer.MAX_VALUE, '(', ')');
-						if(conditionEndIndex == -1) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Missing if statement condition"));
+					}else if(conExpression.equals("con.if") || conExpression.equals("con.elif")) {
+						ifStatementPartToken = tokens.remove(0);
+						tokenCountFirstLine--;
+
+						if(tokenCountFirstLine == 0) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
+									ifStatementPartToken.pos.lineNumberTo, ParsingError.CONT_FLOW_ARG_MISSING, "Missing if statement arguments"));
+
 							return ast;
 						}
-						if(conditionEndIndex != ifStatement.length() - 1) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "Trailing stuff behind condition"));
+
+						if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+								tokens.get(0).getValue().equals("(")) {
+							int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+							if(argumentsEndIndex == -1) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+										tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+										"Missing if/elif statement arguments"));
+								return ast;
+							}
+
+							ifCondition = new ArrayList<>(tokens.subList(1, argumentsEndIndex));
+							tokens.subList(0, argumentsEndIndex + 1).clear();
+							tokenCountFirstLine -= argumentsEndIndex + 1;
+						}else {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
+									ifStatementPartToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH, "Bracket for if statement is missing"));
 							return ast;
 						}
-						ifCondition = ifStatement.substring(conditionStartIndex + 1, conditionEndIndex);
+
+						if(tokenCountFirstLine != 0) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos.lineNumberFrom,
+									ifStatementPartToken.pos.lineNumberTo, ParsingError.INVALID_CON_PART, "Trailing stuff behind if arguments"));
+							return ast;
+						}
+					}else if(!blockBracketFlag && conExpression.equals("con.endif")) {
+						tokens.remove(0);
+
+						break;
 					}else {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_CON_PART, "If statement part is invalid"));
+						//TODO lineNumber
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.INVALID_CON_PART, "If statement part is invalid"));
 						return ast;
 					}
-					
-					AbstractSyntaxTree ifBody = parseLines(lines);
+
+					AbstractSyntaxTree ifBody = parseTokens(tokens);
 					if(ifBody == null) {
-						nodes.add(new AbstractSyntaxTree.IfStatementNode(ifStatmentParts, ifStatementLineNumberFrom, lineNumber));
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "In if body"));
-						
+						//TODO line numbers
+						nodes.add(new AbstractSyntaxTree.IfStatementNode(ifStatmentParts, -1, -1));
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "In if body"));
+
 						return ast;
 					}
+
+					//TODO line numbers
 					if(ifCondition == null) {
-						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartElseNode(ifBody, ifConditionLineNumberFrom, lineNumber));
+						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartElseNode(ifBody, -1, -1));
 					}else {
-						int originalLineNumber = lineNumber;
-						lineNumber = ifConditionLineNumberFrom;
 						AbstractSyntaxTree.OperationNode conNonNode = new AbstractSyntaxTree.OperationNode(parseOperationExpr(ifCondition),
-						AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
-						lineNumber = originalLineNumber;
-						
-						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartIfNode(ifBody, ifConditionLineNumberFrom, lineNumber, conNonNode));
+								AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON, AbstractSyntaxTree.OperationNode.OperatorType.CONDITION);
+
+						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartIfNode(ifBody, -1, -1, conNonNode));
 					}
-					
+
 					firstStatement = false;
-					ifStatement = currentLine;
-				}while(ifStatement != null && !(blockBracketFlag?ifStatement.equals("}"):ifStatement.equals("con.endif")));
-				
-				nodes.add(new AbstractSyntaxTree.IfStatementNode(ifStatmentParts, ifStatementLineNumberFrom, lineNumber));
-				
+				}
+
+				//TODO line numbers
+				nodes.add(new AbstractSyntaxTree.IfStatementNode(ifStatmentParts, -1, -1));
+
 				return ast;
-			}else if(!originalToken.startsWith("con.")) {
-				token = originalToken; //Ignore, because ".*{" was no control flow statement
-			}else{
+			}else if(originalConExpression.startsWith("con.")) {
 				return null;
 			}
 		}
-		
+
 		//Return values
-		if(token.startsWith("return")) {
+		if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+				tokens.get(0).getValue().equals("return")) {
 			//Return without value
-			if(token.equals("return")) {
-				nodes.add(new AbstractSyntaxTree.ReturnNode(lineNumber));
-				
+			if(tokenCountFirstLine == 1) {
+				Token returnStatementToken = tokens.remove(0);
+				nodes.add(new AbstractSyntaxTree.ReturnNode(returnStatementToken.pos.lineNumberFrom,
+						returnStatementToken.pos.lineNumberTo));
+
 				return ast;
 			}
-			
+
 			//Return with value
-			String returnStatement = token.substring(7).trim();
-			AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(returnStatement, lines, true);
-			nodes.add(new AbstractSyntaxTree.ReturnNode(returnedNode == null?parseLRvalue(returnStatement, lines, true).convertToNode():returnedNode));
-			
-			return ast;
+			tokens.remove(0);
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE) {
+				AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens, true);
+				nodes.add(new AbstractSyntaxTree.ReturnNode(returnedNode == null?parseLRvalue(tokens, true).convertToNode():returnedNode));
+
+				return ast;
+			}
 		}
-		
+
 		//Throw values
-		if(token.startsWith("throw ")) {
-			String throwStatement = token.substring(6).trim();
-			AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(throwStatement, lines, true);
-			nodes.add(new AbstractSyntaxTree.ThrowNode(returnedNode == null?parseLRvalue(throwStatement, lines, true).convertToNode():returnedNode));
-			
+		if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+				tokens.get(0).getValue().equals("throw") && tokens.get(1).getTokenType() == Token.TokenType.WHITESPACE) {
+			tokens.remove(0);
+
+			AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens, true);
+			nodes.add(new AbstractSyntaxTree.ThrowNode(returnedNode == null?parseLRvalue(tokens, true).convertToNode():returnedNode));
+
 			return ast;
 		}
 
 		//Function definition
-		if(LangPatterns.matches(token, LangPatterns.PARSING_FUNCTION_DEFINITION)) {
-			//Skip "function "
-			token = token.substring(9);
+		if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+				tokens.get(0).getValue().equals("function") && endsWithOpeningBracket) {
+			Token functionDefinitionStartToken = tokens.remove(0);
+			tokenCountFirstLine--;
 
-			boolean overloaded = token.startsWith("overload ");
-			if(overloaded)
-				token = token.substring(9);
-
-			int bracketIndex = token.indexOf('(');
-			String functionName = token.substring(0, bracketIndex).trim();
-			if(!functionName.startsWith("fp.") || !functionName.startsWith("$"))
-				functionName = "fp." + functionName;
-
-			int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(token, bracketIndex, Integer.MAX_VALUE, '(', ')');
-			if(bracketEndIndex == -1) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in parameter list in function definition"));
+			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos.lineNumberFrom,
+						functionDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, "Invalid function definition: Whitespace is missing after \"function\""));
 
 				return ast;
 			}
 
-			String parameterList = token.substring(bracketIndex + 1, bracketEndIndex);
+			tokens.remove(0);
+			tokenCountFirstLine--;
 
-			token = token.substring(bracketEndIndex + 1, token.length() - 1).trim();
+			boolean overloaded = tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+					tokens.get(0).getValue().equals("overload") && tokens.get(1).getTokenType() == Token.TokenType.WHITESPACE;
+			if(overloaded) {
+				tokens.remove(0);
+				tokens.remove(0);
 
-			String typeConstraint = null;
-			if(token.startsWith(":")) {
-				bracketIndex = token.indexOf('{');
-
-				bracketEndIndex = LangUtils.getIndexOfMatchingBracket(token, bracketIndex, Integer.MAX_VALUE, '{', '}');
-				if(bracketEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in return type constraint in function definition"));
-
-					return ast;
-				}
-
-				typeConstraint = token.substring(bracketIndex, bracketEndIndex + 1);
-				if(!LangPatterns.matches(typeConstraint, LangPatterns.PARSING_STARTS_TYPE_CONSTRAINT)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Invalid return type constraint syntax in function definition"));
-
-					return ast;
-				}
-
-				typeConstraint = typeConstraint.substring(1, typeConstraint.length() - 1);
+				tokenCountFirstLine -= 2;
 			}
 
-			nodes.addAll(parseFunctionDefinition(functionName, overloaded, parameterList, typeConstraint, lines).getChildren());
+			if(!(tokens.get(0).getTokenType() == Token.TokenType.IDENTIFIER &&
+					LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_FUNCTION_WITHOUT_PREFIX)) &&
+					!(tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+							LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.WORD))) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos.lineNumberFrom,
+						functionDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						"Invalid function definition: Invalid function identifier: " + tokens.get(0).getValue()));
+
+				return ast;
+			}
+
+			Token functionNameToken = tokens.remove(0);
+			tokenCountFirstLine--;
+
+			String functionName = functionNameToken.getValue();
+			if(!functionName.startsWith("fp.") && !functionName.startsWith("$"))
+				functionName = "fp." + functionName;
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE) {
+				tokens.remove(0);
+				tokenCountFirstLine--;
+			}
+
+			if(tokens.get(0).getTokenType() != Token.TokenType.OPENING_BRACKET ||
+					!tokens.get(0).getValue().equals("(")) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionDefinitionStartToken.pos.lineNumberFrom,
+						functionDefinitionStartToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+						"Bracket is missing in parameter list in function definition"));
+
+				return ast;
+			}
+
+			int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+			if(bracketEndIndex == -1) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos.lineNumberFrom,
+						functionNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+						"Bracket is missing in parameter list in function definition"));
+				return ast;
+			}
+
+			List<Token> parameterList = new ArrayList<>(tokens.subList(1, bracketEndIndex));
+			tokens.subList(0, bracketEndIndex + 1).clear();
+			tokenCountFirstLine -= bracketEndIndex + 1;
+
+			String typeConstraint = null;
+			if(tokenCountFirstLine > 2 && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR && tokens.get(0).getValue().equals(":") &&
+					tokens.get(1).getTokenType() == Token.TokenType.OPENING_BRACKET && tokens.get(1).getValue().equals("{")) {
+				tokens.remove(0);
+				tokenCountFirstLine--;
+
+				bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
+				if(bracketEndIndex == -1) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos.lineNumberFrom,
+							functionNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+							"Bracket is missing in return type constraint in function definition"));
+					return ast;
+				}
+
+				List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
+				tokens.subList(0, bracketEndIndex + 1).clear();
+				tokenCountFirstLine -= bracketEndIndex + 1;
+
+				typeConstraint = parseTypeConstraint(typeConstraintTokens, false, nodes);
+			}
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE) {
+				tokens.remove(0);
+				tokenCountFirstLine--;
+			}
+
+			if(tokenCountFirstLine != 1) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(functionNameToken.pos.lineNumberFrom,
+						functionNameToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						"Invalid tokens after function return type constraint"));
+				return ast;
+			}
+
+			tokens.remove(0);
+
+			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.EOL)
+				tokens.remove(0);
+
+			nodes.addAll(parseFunctionDefinition(functionName, overloaded, parameterList, typeConstraint, tokens).getChildren());
 
 			return ast;
 		}
 
 		//Struct definition
-		if(LangPatterns.matches(token, LangPatterns.PARSING_STRUCT_DEFINITION)) {
-			//Skip "struct "
-			token = token.substring(7);
+		if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+				tokens.get(0).getValue().equals("struct") && endsWithOpeningBracket) {
+			Token structDefinitionStartToken = tokens.remove(0);
+			tokenCountFirstLine--;
 
-			String structName = token.substring(0, token.length() - 1).trim();
+			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
+						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, "Invalid struct definition: Whitespace is missing after \"struct\""));
 
-			nodes.addAll(parseStructDefinition(structName, lines).getChildren());
+				return ast;
+			}
+
+			tokens.remove(0);
+			tokenCountFirstLine--;
+
+			if(tokens.get(0).getTokenType() != Token.TokenType.IDENTIFIER ||
+					!LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_ARRAY_WITHOUT_PREFIX)) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
+						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						"Invalid struct definition: Invalid struct identifier: " + tokens.get(0).getValue()));
+
+				return ast;
+			}
+
+			Token structNameToken = tokens.remove(0);
+			tokenCountFirstLine--;
+
+			String structName = structNameToken.getValue();
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE) {
+				tokens.remove(0);
+				tokenCountFirstLine--;
+			}
+
+			if(tokenCountFirstLine != 1) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
+						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						"Invalid tokens after struct constraint"));
+				return ast;
+			}
+
+			tokens.remove(0);
+
+			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.EOL)
+				tokens.remove(0);
+
+			nodes.addAll(parseStructDefinition(structName, tokens).getChildren());
 
 			return ast;
 		}
 
 		//Class definition
-		if(LangPatterns.matches(token, LangPatterns.PARSING_CLASS_DEFINITION)) {
-			//Skip "class "
-			token = token.substring(6);
+		if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+				tokens.get(0).getValue().equals("class") && endsWithOpeningBracket) {
+			Token structDefinitionStartToken = tokens.remove(0);
+			tokenCountFirstLine--;
 
-			int bracketIndex = token.indexOf('<');
-			String className = token.substring(0, bracketIndex == -1?(token.length() - 1):bracketIndex).trim();
+			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
+						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, "Invalid class definition: Whitespace is missing after \"class\""));
 
-			if(bracketIndex != -1) {
-				token = token.substring(bracketIndex, token.length() - 1).trim();
+				return ast;
+			}
 
-				int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '<', '>');
-				if(parentClassesEndIndex != token.length() - 1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
+			tokens.remove(0);
+			tokenCountFirstLine--;
+
+			if(tokens.get(0).getTokenType() != Token.TokenType.IDENTIFIER ||
+					!LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_ARRAY_WITHOUT_PREFIX)) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
+						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						"Invalid class definition: Invalid class identifier: " + tokens.get(0).getValue()));
+
+				return ast;
+			}
+
+			Token classNameToken = tokens.remove(0);
+			tokenCountFirstLine--;
+
+			String className = classNameToken.getValue();
+
+			if(tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE) {
+				tokens.remove(0);
+				tokenCountFirstLine--;
+			}
+
+			List<Token> parentClassesToken = new ArrayList<>();
+			if(tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+					tokens.get(0).getValue().equals("<")) {
+				//TODO check for matching brackets ("<" and ">")
+				int parentClassesEndIndex = -1;
+				for(int i = tokenCountFirstLine;i >= 0;i--) {
+					if(tokens.get(i).getTokenType() == Token.TokenType.OPERATOR && tokens.get(i).getValue().equals(">")) {
+						parentClassesEndIndex = i;
+
+						break;
+					}
+				}
+				if(parentClassesEndIndex == -1) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+							tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+							"Bracket is missing in class definition"));
 
 					return ast;
 				}
+
+				parentClassesToken = new ArrayList<>(tokens.subList(1, parentClassesEndIndex));
+				tokens.subList(0, parentClassesEndIndex + 1).clear();
+				tokenCountFirstLine -= parentClassesEndIndex + 1;
+
+				if(tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE) {
+					tokens.remove(0);
+					tokenCountFirstLine--;
+				}
 			}
 
-			nodes.addAll(parseClassDefinition(className, bracketIndex == -1?"":token.substring(1, token.length() - 1), lines).getChildren());
+			if(tokenCountFirstLine != 1) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos.lineNumberFrom,
+						structDefinitionStartToken.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+						"Invalid tokens after class definition"));
+				return ast;
+			}
+
+			tokens.remove(0);
+
+			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.EOL)
+				tokens.remove(0);
+
+			nodes.addAll(parseClassDefinition(className, parentClassesToken, tokens).getChildren());
 
 			return ast;
 		}
-		
-		nodes.addAll(parseToken(token, lines).getChildren());
-		
+
+		nodes.addAll(parseToken(tokens).getChildren());
+
 		return ast;
 	}
-	
+
 	/**
 	 * @return true if the parser flag was valid else false
 	 */
-	private boolean parseParserFlags(String parserFlag, String value) {
+	private boolean parseParserFlags(String parserFlag, AbstractSyntaxTree.Node value) {
 		//String[] tokens = LangPatterns.GENERAL_DOT.split(parserFlag);
-		
+
 		return false;
 	}
-	private AbstractSyntaxTree parseTranslationKey(String translationKey) throws IOException {
+
+	private AbstractSyntaxTree parseTranslationKey(List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
-		
-		if(translationKey.startsWith("%$")) {
+
+		trimFirstLine(tokens);
+
+		//TODO line numbers
+		nodes.add(new AbstractSyntaxTree.TextValueNode(-1, -1, ""));
+
+		if(tokens.size() >= 2 && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+				tokens.get(0).getValue().equals("%") &&
+				tokens.get(1).getTokenType() == Token.TokenType.IDENTIFIER &&
+				tokens.get(1).getValue().startsWith("$")) {
 			//Prepare "%$" for translation key
-			translationKey = translationKey.substring(1) + "\\e";
+			tokens.remove(0);
 		}
-		
-		StringBuilder builder = new StringBuilder();
-		while(translationKey.length() > 0) {
-			//Unescaping
-			if(translationKey.startsWith("\\")) {
-				clearAndParseStringBuilderTranslationKey(builder, nodes);
-				
-				if(translationKey.length() == 1)
+
+		tokenProcessing:
+		while(!tokens.isEmpty()) {
+			Token t = tokens.get(0);
+
+			switch(t.getTokenType()) {
+				case EOL:
+				case EOF:
+					break tokenProcessing;
+
+				case START_COMMENT:
+				case START_DOC_COMMENT:
+					parseCommentTokens(tokens, nodes);
+
 					break;
-				
-				nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(lineNumber, translationKey.charAt(1)));
-				
-				if(translationKey.length() < 3)
+
+				case LITERAL_NULL:
+				case LITERAL_TEXT:
+				case LITERAL_NUMBER:
+				case ARGUMENT_SEPARATOR:
+				case ASSIGNMENT:
+				case OPERATOR:
+				case OPENING_BRACKET:
+				case CLOSING_BRACKET:
+				case WHITESPACE:
+				case OTHER:
+					tokens.remove(0);
+
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue()));
+
 					break;
-				
-				translationKey = translationKey.substring(2);
-				continue;
-			}
-			
-			//Parser function calls
-			if(LangPatterns.matches(translationKey, LangPatterns.PARSING_STARTS_WITH_PARSER_FUNCTION_CALL)) {
-				clearAndParseStringBuilderTranslationKey(builder, nodes);
-				
-				int parameterStartIndex = translationKey.indexOf('(');
-				int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(translationKey, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-				if(parameterEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in parser function call"));
-					return ast;
-				}
-				
-				String functionCall = translationKey.substring(0, parameterEndIndex + 1);
-				
-				String functionName = functionCall.substring(translationKey.indexOf('.') + 1, parameterStartIndex);
-				String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-				
-				AbstractSyntaxTree.Node ret = parseParserFunction(functionName, functionParameterList);
-				if(ret != null) {
-					translationKey = translationKey.substring(parameterEndIndex + 1);
-					
-					nodes.add(ret);
-					
-					continue;
-				}
-				
-				//Invalid parser function
-			}
-			
-			//Vars
-			Pattern varNamePattern = LangPatterns.VAR_NAME_NORMAL;
-			Matcher matcher = varNamePattern.matcher(translationKey);
-			if(matcher.find() && matcher.start() == 0) {
-				clearAndParseStringBuilderTranslationKey(builder, nodes);
-				
-				int len = matcher.end();
-				
-				builder.append(translationKey.substring(0, len));
-				translationKey = translationKey.substring(len);
-				
-				clearAndParseStringBuilderTranslationKey(builder, nodes);
-				
-				continue;
-			}
-			
-			builder.append(translationKey.charAt(0));
-			if(translationKey.length() > 1) {
-				translationKey = translationKey.substring(1);
-			}else {
-				translationKey = "";
-				clearAndParseStringBuilderTranslationKey(builder, nodes);
+
+				case ESCAPE_SEQUENCE:
+					tokens.remove(0);
+
+					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+								"Invalid escape sequence: " + t.getValue()));
+
+						continue tokenProcessing;
+					}
+
+					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue().charAt(1)));
+
+					break;
+
+				case LEXER_ERROR:
+					tokens.remove(0);
+
+					parseLexerErrorToken(t, nodes);
+
+					break;
+
+				case START_MULTILINE_TEXT:
+					tokens.remove(0);
+					do {
+						t = tokens.remove(0);
+
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
+
+					break;
+
+				case IDENTIFIER:
+				case PARSER_FUNCTION_IDENTIFIER:
+					if(t.getTokenType() == Token.TokenType.IDENTIFIER &&
+							!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_FULL)) {
+						tokens.remove(0);
+
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, t.getValue()));
+
+						break;
+					}
+
+					AbstractSyntaxTree.Node ret = t.getTokenType() == Token.TokenType.IDENTIFIER?
+							parseVariableNameAndFunctionCall(tokens):parseParserFunctionCall(tokens);
+					if(ret != null)
+						nodes.add(ret);
+
+					break;
+
+				case LINE_CONTINUATION:
+				case END_COMMENT:
+				case END_MULTILINE_TEXT:
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""));
+
+					break tokenProcessing;
 			}
 		}
-		
+
 		return ast;
 	}
-	private void clearAndParseStringBuilderTranslationKey(StringBuilder builder, List<AbstractSyntaxTree.Node> nodes) {
-		if(builder.length() == 0)
-			return;
-		
-		String token = builder.toString();
-		builder.delete(0, builder.length());
-		
-		//Vars
-		if(LangPatterns.matches(token, LangPatterns.VAR_NAME_NORMAL)) {
-			nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, token));
-			
-			return;
-		}
-		
-		//TEXT
-		nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, token));
-	}
-	private AbstractSyntaxTree parseLRvalue(String lrvalue, BufferedReader lines, boolean isRvalue) throws IOException {
+
+	private AbstractSyntaxTree parseLRvalue(List<Token> tokens, boolean isRvalue) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
-		
+
+		trimFirstLine(tokens);
+
+		int tokenCountFirstLine = getTokenCountFirstLine(tokens);
+		if(tokenCountFirstLine == -1)
+			tokenCountFirstLine = tokens.size();
+
 		if(isRvalue) {
-			if(lines != null) {
-				if(lrvalue.startsWith("(") && LangPatterns.matches(lrvalue, LangPatterns.PARSING_CONTAINS_WITH_FUNC_DEFINITION_END_WITH_OR_WITHOUT_TYPE_CONSTRAINT)) {
-					//Function definition
-					
-					int parameterListEndIndex = LangUtils.getIndexOfMatchingBracket(lrvalue, 0, Integer.MAX_VALUE, '(', ')');
-					if(parameterListEndIndex < 1) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in function definition"));
-						
-						return ast;
-					}
-					
-					int lineNumberFrom = lineNumber;
-					
-					String functionHead = lrvalue.substring(1, parameterListEndIndex);
-					List<AbstractSyntaxTree.Node> parameterList = parseFunctionParameterList(functionHead, true).getChildren();
-					
-					String functionReturnValueTypeConstraint;
-					String functionBody;
-					if(lrvalue.charAt(parameterListEndIndex + 1) == ':') {
-						int endIndex = lrvalue.lastIndexOf('}');
-						String rawTypeConstraint = lrvalue.substring(parameterListEndIndex + 2, endIndex + 1);
-						
-						if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
-							
-							return ast;
-						}
-						
-						functionReturnValueTypeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
-						functionBody = lrvalue.substring(endIndex + 5);
-					}else {
-						functionReturnValueTypeConstraint = null;
-						functionBody = lrvalue.substring(parameterListEndIndex + 5);
-					}
-					
-					if(functionBody.trim().equals("{")) {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
-								functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
-						langDocComment = null;
-					}else if(lrvalue.endsWith("{") && (lrvalue.charAt(lrvalue.length() - 2) != '\\' ||
-							LangUtils.isBackslashAtIndexEscaped(lrvalue, lrvalue.length() - 2))) {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
-								functionReturnValueTypeConstraint, parseLines(functionBody, true, lines),
-								lineNumberFrom, lineNumber));
-						langDocComment = null;
-					}else {
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
-								functionReturnValueTypeConstraint, parseLines(functionBody, true, null),
-								lineNumberFrom, lineNumber));
-						langDocComment = null;
-					}
-					
-					return ast;
-				}else if(LangPatterns.matches(lrvalue, LangPatterns.VAR_NAME_FUNC_PTR_WITH_FUNCS)) {
-					//Function pointer copying
-					
-					nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, lrvalue));
-					return ast;
-				}else if(lrvalue.equals("{")) {
-					//Struct definition
+			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+					tokens.get(0).getValue().equals("(")) {
+				//Possible function definition
 
-					nodes.addAll(parseStructDefinition(null, lines).getChildren());
+				int parameterListEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+				if(parameterListEndIndex == -1) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+							tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+							"Bracket is missing in function definition"));
 
 					return ast;
-				}else if(lrvalue.startsWith("<") && lrvalue.endsWith(">{")) {
-					//Class definition
+				}
 
-					int parentClassesEndIndex = LangUtils.getIndexOfMatchingBracket(lrvalue, 0, Integer.MAX_VALUE, '<', '>');
-					if(parentClassesEndIndex != lrvalue.length() - 2) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in class definition"));
+				List<Token> parameterListTokens = new ArrayList<>(tokens.subList(1, parameterListEndIndex));
+				List<AbstractSyntaxTree.Node> parameterList = parseFunctionParameterList(parameterListTokens, true).getChildren();
+
+				int tokenIndex = parameterListEndIndex + 1;
+				String returnTypeConstraint = null;
+				if(tokenCountFirstLine > tokenIndex + 1 &&
+						tokens.get(tokenIndex).getTokenType() == Token.TokenType.OPERATOR &&
+						tokens.get(tokenIndex).getValue().equals(":") &&
+						tokens.get(tokenIndex + 1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+						tokens.get(tokenIndex + 1).getValue().equals("{")) {
+					int returnTypeConstraintEndIndex = LangUtils.getIndexOfMatchingBracket(tokens,
+							tokenIndex + 1, Integer.MAX_VALUE, "{", "}", true);
+					if(returnTypeConstraintEndIndex == -1) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos.lineNumberFrom,
+								tokens.get(0).pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+								"Bracket is missing in return type constraint of function definition"));
 
 						return ast;
 					}
 
-					nodes.addAll(parseClassDefinition(null, lrvalue.substring(1, lrvalue.length() - 2), lines).getChildren());
+					List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(tokenIndex + 1, returnTypeConstraintEndIndex + 1));
+					returnTypeConstraint = parseTypeConstraint(typeConstraintTokens, false, nodes);
+
+					tokenIndex = returnTypeConstraintEndIndex + 1;
+				}
+
+				if(tokenCountFirstLine > tokenIndex + 2 && tokens.get(tokenIndex).getTokenType() == Token.TokenType.WHITESPACE &&
+						tokens.get(tokenIndex + 1).getTokenType() == Token.TokenType.OPERATOR &&
+						tokens.get(tokenIndex + 1).getValue().equals("->") &&
+						tokens.get(tokenIndex + 2).getTokenType() == Token.TokenType.WHITESPACE) {
+					tokens.subList(0, tokenIndex + 3).clear();
+					tokenCountFirstLine -= tokenIndex + 3;
+
+					//TODO line numbers
+					if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+							tokens.get(0).getValue().equals("{")) {
+						tokens.remove(0);
+
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
+								returnTypeConstraint, parseTokens(tokens), -1, -1));
+						langDocComment = null;
+					}else {
+						List<Token> functionBody = new ArrayList<>(tokens.subList(0, tokenCountFirstLine));
+						tokens.subList(0, tokenCountFirstLine).clear();
+
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(null, false, langDocComment, parameterList,
+								returnTypeConstraint, parseTokens(functionBody), -1, -1));
+						langDocComment = null;
+					}
 
 					return ast;
 				}
 			}
+
+			if(tokenCountFirstLine == 1 && tokens.get(0).getTokenType() == Token.TokenType.IDENTIFIER &&
+					LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_FUNC_PTR_WITH_FUNCS)) {
+				//Function pointer copying
+
+				Token t = tokens.remove(0);
+				nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(t.pos.lineNumberFrom,
+						t.pos.lineNumberTo, t.getValue()));
+				return ast;
+			}else if(tokenCountFirstLine == 1 && tokenCountFirstLine != tokens.size() &&
+					tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+					tokens.get(0).getValue().equals("{")) {
+				//Struct definition
+
+				tokens.remove(0);
+				tokens.remove(0);
+				nodes.addAll(parseStructDefinition(null, tokens).getChildren());
+
+				return ast;
+			}else if(tokenCountFirstLine >= 3 && tokenCountFirstLine != tokens.size() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+					tokens.get(0).getValue().equals("<") && tokens.get(tokenCountFirstLine - 2).getTokenType() == Token.TokenType.OPERATOR &&
+					tokens.get(tokenCountFirstLine - 2).getValue().equals(">") && tokens.get(tokenCountFirstLine - 1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+					tokens.get(tokenCountFirstLine - 1).getValue().equals("{")) {
+				//Class definition
+
+				//TODO check for matching brackets ("<" and ">")
+				List<Token> parentClassesToken = new ArrayList<>(tokens.subList(1, tokenCountFirstLine - 2));
+				tokens.subList(0, tokenCountFirstLine + 1).clear();
+
+				nodes.addAll(parseClassDefinition(null, parentClassesToken, tokens).getChildren());
+
+				return ast;
+			}
 		}
-		
-		nodes.addAll(parseToken(lrvalue, lines).getChildren());
-		
+
+		nodes.addAll(parseToken(tokens).getChildren());
+
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseFunctionDefinition(String functionName, boolean overloaded, String parameterList,
-													   String functionReturnValueTypeConstraint, BufferedReader lines) throws IOException {
+	private AbstractSyntaxTree parseFunctionDefinition(String functionName, boolean overloaded, List<Token> parameterListTokens,
+													   String functionReturnValueTypeConstraint, List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
-		int lineNumberFrom = lineNumber;
+		trimFirstLine(tokens);
 
-		List<AbstractSyntaxTree.Node> parameterListNodes = parseFunctionParameterList(parameterList, true).getChildren();
+		List<AbstractSyntaxTree.Node> parameterListNodes = parseFunctionParameterList(parameterListTokens, true).getChildren();
 
+		//TODO line numbers
 		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(functionName, overloaded, langDocComment,
-				parameterListNodes,	functionReturnValueTypeConstraint, parseLines(lines), lineNumberFrom, lineNumber));
+				parameterListNodes,    functionReturnValueTypeConstraint, parseTokens(tokens), -1, -1));
 		langDocComment = null;
 
-		 return ast;
+		return ast;
 	}
 
-	private AbstractSyntaxTree parseStructDefinition(String structName, BufferedReader lines) throws IOException {
+	private AbstractSyntaxTree parseStructDefinition(String structName, List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
-		int lineNumberFrom = lineNumber;
+		trimFirstLine(tokens);
+
 		boolean hasEndBrace = false;
 
 		List<String> memberNames = new LinkedList<>();
 		List<String> typeConstraints = new LinkedList<>();
 
-		while(lines != null && lines.ready()) {
-			String line = nextLine(lines).trim();
+		tokenProcessing:
+		while(!tokens.isEmpty()) {
+			Token t = tokens.get(0);
 
-			List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
-			line = prepareNextLine(line, lines, errorNodes);
-			if(!errorNodes.isEmpty()) {
-				errorNodes.forEach(ast::addChild);
-				return ast;
-			}
+			switch(t.getTokenType()) {
+				case EOF:
+					break tokenProcessing;
 
-			if(line == null || line.isEmpty())
-				continue;
+				case EOL:
+					tokens.remove(0);
 
-			if(line.equals("}")) {
-				hasEndBrace = true;
+					trimFirstLine(tokens);
 
-				break;
-			}
+					break;
 
-			String typeConstraint = null;
-			int braceIndex = line.indexOf('{');
-			if(braceIndex != -1) {
-				String rawTypeConstraint = line.substring(braceIndex);
-				line = line.substring(0, braceIndex);
+				case WHITESPACE:
+					tokens.remove(0);
 
-				if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
+					break;
+
+				case START_COMMENT:
+				case START_DOC_COMMENT:
+					parseCommentTokens(tokens, nodes);
+
+					break;
+
+				case CLOSING_BRACKET:
+					if(t.getValue().equals("}")) {
+						tokens.remove(0);
+
+						hasEndBrace = true;
+
+						break tokenProcessing;
+					}
+
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""));
 
 					return ast;
-				}
 
-				typeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
+				case IDENTIFIER:
+					if(!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT, "Invalid struct member name: \"" + t.getValue() + "\""));
+
+						return ast;
+					}
+
+					Token identifierToken = tokens.remove(0);
+
+					String typeConstraint = null;
+					if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+							tokens.get(0).getValue().equals("{")) {
+						int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
+						if(bracketEndIndex == -1) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos.lineNumberFrom,
+									identifierToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+									"Bracket is missing in type constraint in struct definition for member: \"" + identifierToken.getValue() + "\""));
+
+							return ast;
+						}
+
+						List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
+						tokens.subList(0, bracketEndIndex + 1).clear();
+
+						typeConstraint = parseTypeConstraint(typeConstraintTokens, false, nodes);
+					}
+
+					if(memberNames.contains(identifierToken.getValue())) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos.lineNumberFrom,
+								identifierToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+								"Duplicated struct member name: \"" + identifierToken.getValue() + "\""));
+
+						return ast;
+					}
+
+					memberNames.add(identifierToken.getValue());
+					typeConstraints.add(typeConstraint);
+
+					break;
+
+				case LEXER_ERROR:
+					tokens.remove(0);
+
+					parseLexerErrorToken(t, nodes);
+
+					break tokenProcessing;
+
+				case PARSER_FUNCTION_IDENTIFIER:
+				case LITERAL_NULL:
+				case LITERAL_NUMBER:
+				case LITERAL_TEXT:
+				case ARGUMENT_SEPARATOR:
+				case ASSIGNMENT:
+				case OTHER:
+				case OPERATOR:
+				case OPENING_BRACKET:
+				case ESCAPE_SEQUENCE:
+				case START_MULTILINE_TEXT:
+				case LINE_CONTINUATION:
+				case END_COMMENT:
+				case END_MULTILINE_TEXT:
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""));
+
+					return ast;
 			}
-
-			if(!LangPatterns.matches(line, LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid struct member name: \"" + line + "\""));
-
-				return ast;
-			}
-
-			if(memberNames.contains(line)) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Duplicated struct member name: \"" + line + "\""));
-
-				return ast;
-			}
-
-			memberNames.add(line);
-			typeConstraints.add(typeConstraint);
 		}
 
 		if(!hasEndBrace) {
-			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "\"}\" is missing in struct definition"));
+			//TODO line numbers
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, -1, ParsingError.EOF, "\"}\" is missing in struct definition"));
 
 			return ast;
 		}
 
-		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(lineNumberFrom, lineNumber, structName, memberNames, typeConstraints));
+		//TODO line numbers
+		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(-1, -1, structName, memberNames, typeConstraints));
 
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseClassDefinition(String className, String parentClassesToken, BufferedReader lines) throws IOException {
+	private AbstractSyntaxTree parseClassDefinition(String className, List<Token> parentClassesToken, List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
+		trimFirstLine(tokens);
+
 		List<AbstractSyntaxTree.Node> parentClasses = parseFunctionParameterList(parentClassesToken, false).getChildren();
 
-		int lineNumberFrom = lineNumber;
 		boolean hasEndBrace = false;
 
 		List<String> staticMemberNames = new LinkedList<>();
@@ -1935,1030 +2514,1380 @@ public final class LangParser {
 
 		List<AbstractSyntaxTree.Node> constructorDefinitions = new LinkedList<>();
 
-		while(lines != null && lines.ready()) {
-			String line = nextLine(lines).trim();
+		tokenProcessing:
+		while(!tokens.isEmpty()) {
+			Token t = tokens.get(0);
 
-			List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
-			line = prepareNextLine(line, lines, errorNodes);
-			if(!errorNodes.isEmpty()) {
-				errorNodes.forEach(ast::addChild);
-				return ast;
-			}
+			switch(t.getTokenType()) {
+				case EOF:
+					break tokenProcessing;
 
-			if(line == null || line.isEmpty())
-				continue;
+				case EOL:
+					tokens.remove(0);
 
-			if(line.equals("}")) {
-				hasEndBrace = true;
+					trimFirstLine(tokens);
 
-				break;
-			}
+					break;
 
-			char visibility = line.charAt(0);
-			if(visibility != '-' && visibility != '~' && visibility != '+') {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid visibility specifier (One of [\"-\", \"~\", \"+\"] must be used)"));
+				case WHITESPACE:
+					tokens.remove(0);
 
-				return ast;
-			}
+					break;
 
-			line = line.substring(1);
+				case START_COMMENT:
+				case START_DOC_COMMENT:
+					parseCommentTokens(tokens, nodes);
 
-			if(line.startsWith("construct")) {
-				line = line.substring(9);
+					break;
 
-				if(!line.startsWith(" = ")) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for constructor (only \" = \" is allowed): \"constructor" + line + "\""));
+				case CLOSING_BRACKET:
+					if(t.getValue().equals("}")) {
+						tokens.remove(0);
 
-					return ast;
-				}
+						hasEndBrace = true;
 
-				line = line.substring(3);
-
-				constructorDefinitions.add(parseLRvalue(line, lines, true).convertToNode());
-
-				continue;
-			}
-
-			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_METHOD_NAME)) {
-				boolean override = line.startsWith("override:");
-				if(override)
-					line = line.substring(9);
-
-				String[] tokens = line.split(" = ", 2);
-				if(tokens.length < 2) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for method (only \" = \" is allowed): \"" + line + "\""));
-
-					return ast;
-				}
-
-				String methodName = tokens[0];
-				String rvalue = tokens[1];
-
-				if(!LangPatterns.matches(methodName, LangPatterns.METHOD_NAME)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid method name: \"" + line + "\""));
-
-					return ast;
-				}
-
-				AbstractSyntaxTree.Node rvalueNode = parseLRvalue(rvalue, lines, true).convertToNode();
-
-				methodNames.add(methodName);
-				methodDefinitions.add(rvalueNode);
-				methodOverrideFlag.add(override);
-
-				continue;
-			}
-
-			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_OPERATOR_METHOD_PREFIX)) {
-				if(visibility != '+') {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid visibility for operator method (only \"+\" is allowed): \"" + line + "\""));
-
-					return ast;
-				}
-
-				boolean override = line.startsWith("override:");
-				if(override)
-					line = line.substring(9);
-
-				String[] tokens = line.split(" = ", 2);
-				if(tokens.length < 2) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for operator method (only \" = \" is allowed): \"" + line + "\""));
-
-					return ast;
-				}
-
-				String methodName = tokens[0];
-				String rvalue = tokens[1];
-
-				if(!LangPatterns.matches(methodName, LangPatterns.OPERATOR_METHOD_NAME)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid operator method name: \"" + line + "\""));
-
-					return ast;
-				}
-
-				AbstractSyntaxTree.Node rvalueNode = parseLRvalue(rvalue, lines, true).convertToNode();
-
-				methodNames.add(methodName);
-				methodDefinitions.add(rvalueNode);
-				methodOverrideFlag.add(override);
-
-				continue;
-			}
-
-			if(LangPatterns.matches(line, LangPatterns.PARSING_STARTS_WITH_CONVERSION_METHOD_PREFIX)) {
-				if(visibility != '+') {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid visibility for conversion method (only \"+\" is allowed): \"" + line + "\""));
-
-					return ast;
-				}
-
-				boolean override = line.startsWith("override:");
-				if(override)
-					line = line.substring(9);
-
-				String[] tokens = line.split(" = ", 2);
-				if(tokens.length < 2) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid assignment for conversion method (only \" = \" is allowed): \"" + line + "\""));
-
-					return ast;
-				}
-
-				String methodName = tokens[0];
-				String rvalue = tokens[1];
-
-				if(!LangPatterns.matches(methodName, LangPatterns.CONVERSION_METHOD_NAME)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Invalid conversion method name: \"" + line + "\""));
-
-					return ast;
-				}
-
-				AbstractSyntaxTree.Node rvalueNode = parseLRvalue(rvalue, lines, true).convertToNode();
-
-				methodNames.add(methodName);
-				methodDefinitions.add(rvalueNode);
-				methodOverrideFlag.add(override);
-
-				continue;
-			}
-
-			boolean isStaticMember = line.startsWith("static:");
-			if(isStaticMember)
-				line = line.substring(7);
-
-			boolean isFinalMember = line.startsWith("final:") && !line.startsWith("final:static:");
-			if(isFinalMember)
-				line = line.substring(6);
-
-			//Also check if "final:" is before "static:"
-			if(!isFinalMember && !isStaticMember && line.startsWith("final:static:")) {
-				line = line.substring(13);
-
-				isStaticMember = true;
-				isFinalMember = true;
-			}
-
-			String lvalue = line;
-			String assignmentOperator = null;
-			String rvalue = null;
-			if(isStaticMember && line.contains("=")) {
-				int index = line.indexOf('=');
-				if(index == line.length() - 1) {
-					assignmentOperator = (index > 0 && line.charAt(index - 1) == ' ')?" = ":"=";
-
-					lvalue = line.substring(0, index - ((index > 0 && line.charAt(index - 1) == ' ')?1:0));
-				}else {
-					String[] tokens = LangPatterns.PARSING_LIMITED_ASSIGNMENT_OPERATOR.split(line, 2);
-					if(tokens.length == 1) {
-						assignmentOperator = "=";
-
-						lvalue = line.substring(0, index);
-						if(index < line.length() - 1)
-							rvalue = line.substring(index + 1);
-					}else {
-						assignmentOperator = line.substring(tokens[0].length(), line.indexOf('=') + 2);
-
-						lvalue = tokens[0];
-						rvalue = tokens[1];
+						break tokenProcessing;
 					}
-				}
-			}
 
-			String typeConstraint = null;
-			int braceIndex = lvalue.indexOf('{');
-			if(braceIndex != -1) {
-				String rawTypeConstraint = lvalue.substring(braceIndex);
-				lvalue = lvalue.substring(0, braceIndex);
-
-				if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT)) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""));
 
 					return ast;
-				}
 
-				typeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
-			}
+				case OTHER:
+				case OPERATOR:
+					char visibility = t.getValue().charAt(0);
+					if(visibility != '-' && visibility != '~' && visibility != '+') {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+								"Invalid visibility specifier (One of [\"-\", \"~\", \"+\"] must be used)"));
 
-			if(!LangPatterns.matches(lvalue, LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid " + (isStaticMember?"static ":"") + "member name: \"" + lvalue + "\""));
+						return ast;
+					}
+					tokens.remove(0);
 
-				return ast;
-			}
+					if(tokens.isEmpty()) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.EOF,
+								"Missing value after visibility specifier"));
 
-			if((isStaticMember?staticMemberNames:memberNames).contains(lvalue)) {
-				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Duplicated " + (isStaticMember?"static ":"") + " member name: \"" + lvalue + "\""));
+						return ast;
+					}
 
-				return ast;
-			}
+					//Constructor methods
+					t = tokens.get(0);
+					if(t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("construct")) {
+						tokens.remove(0);
 
-			if(isStaticMember) {
-				if(assignmentOperator == null) {
-					staticMemberNames.add(lvalue);
-					staticMemberTypeConstraints.add(typeConstraint);
-					staticMemberValues.add(null);
-					staticMemberFinalFlag.add(isFinalMember);
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing value after construct method"));
 
-					continue;
-				}
+							return ast;
+						}
 
-				if(rvalue == null) {
-					boolean isSimpleAssignmentOperator = assignmentOperator.equals("=");
-					if(isSimpleAssignmentOperator || assignmentOperator.equals(" = ")) {
-						staticMemberNames.add(lvalue);
+						t = tokens.get(0);
+						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Invalid assignment for constructor (only \" = \" is allowed)"));
+
+							return ast;
+						}
+
+						tokens.remove(0);
+
+						constructorDefinitions.add(parseLRvalue(tokens, true).convertToNode());
+
+						continue tokenProcessing;
+					}
+
+					//Methods
+					boolean isOverrideMethod = tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER &&
+							t.getValue().equals("override") && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+							tokens.get(1).getValue().equals(":");
+					if(isOverrideMethod) {
+						tokens.remove(0);
+						tokens.remove(0);
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing identifier after override keyword"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+					}
+
+					if(t.getTokenType() == Token.TokenType.IDENTIFIER &&
+							LangPatterns.matches(t.getValue(), LangPatterns.METHOD_NAME)) {
+						Token methodNameToken = tokens.remove(0);
+						String methodName = methodNameToken.getValue();
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing value after normal method"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+									"Invalid assignment for method (only \" = \" is allowed)"));
+
+							return ast;
+						}
+
+						tokens.remove(0);
+
+						AbstractSyntaxTree.Node rvalueNode = parseLRvalue(tokens, true).convertToNode();
+
+						methodNames.add(methodName);
+						methodDefinitions.add(rvalueNode);
+						methodOverrideFlag.add(isOverrideMethod);
+
+						continue tokenProcessing;
+					}
+
+					if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("op") &&
+							tokens.get(1).getTokenType() == Token.TokenType.OPERATOR && tokens.get(1).getValue().equals(":")) {
+						if(visibility != '+') {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+									"Invalid visibility for operator method (only \"+\" is allowed)"));
+
+							return ast;
+						}
+
+						String methodName = "op:";
+
+						tokens.remove(0);
+						tokens.remove(0);
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing identifier after operator method keyword"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+						if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER &&
+								t.getValue().equals("r") && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+								tokens.get(1).getValue().equals("-")) {
+							methodName += "r-";
+
+							tokens.remove(0);
+							tokens.remove(0);
+
+							if(tokens.isEmpty()) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+										t.pos.lineNumberTo, ParsingError.EOF,
+										"Missing identifier after to operator method keyword"));
+
+								return ast;
+							}
+						}
+
+						t = tokens.get(0);
+						if(t.getTokenType() == Token.TokenType.OTHER) {
+							methodName += t.getValue();
+
+							tokens.remove(0);
+
+							if(tokens.isEmpty()) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+										t.pos.lineNumberTo, ParsingError.EOF,
+										"Missing identifier after to operator method keyword"));
+
+								return ast;
+							}
+						}
+
+						if(!LangPatterns.matches(methodName, LangPatterns.OPERATOR_METHOD_NAME)) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF, "Invalid operator method name: \"" + methodName + "\""));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+									"Invalid assignment for operator method (only \" = \" is allowed)"));
+
+							return ast;
+						}
+
+						tokens.remove(0);
+
+						AbstractSyntaxTree.Node rvalueNode = parseLRvalue(tokens, true).convertToNode();
+
+						methodNames.add(methodName);
+						methodDefinitions.add(rvalueNode);
+						methodOverrideFlag.add(isOverrideMethod);
+
+						continue tokenProcessing;
+					}
+
+					if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("to") &&
+							tokens.get(1).getTokenType() == Token.TokenType.OPERATOR && tokens.get(1).getValue().equals(":")) {
+						if(visibility != '+') {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+									"Invalid visibility for conversion method (only \"+\" is allowed)"));
+
+							return ast;
+						}
+
+						String methodName = "to:";
+
+						tokens.remove(0);
+						tokens.remove(0);
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing identifier after conversion method keyword"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+						if(t.getTokenType() == Token.TokenType.OTHER) {
+							methodName += t.getValue();
+
+							tokens.remove(0);
+
+							if(tokens.isEmpty()) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+										t.pos.lineNumberTo, ParsingError.EOF,
+										"Missing identifier after to conversion method keyword"));
+
+								return ast;
+							}
+						}
+
+						if(!LangPatterns.matches(methodName, LangPatterns.CONVERSION_METHOD_NAME)) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF, "Invalid conversion method name: \"" + methodName + "\""));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+									"Invalid assignment for conversion method (only \" = \" is allowed)"));
+
+							return ast;
+						}
+
+						tokens.remove(0);
+
+						AbstractSyntaxTree.Node rvalueNode = parseLRvalue(tokens, true).convertToNode();
+
+						methodNames.add(methodName);
+						methodDefinitions.add(rvalueNode);
+						methodOverrideFlag.add(isOverrideMethod);
+
+						continue tokenProcessing;
+					}
+
+					if(isOverrideMethod) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+								"The override keyword can only be used for methods"));
+
+						return ast;
+					}
+
+					//Members
+					boolean isStaticMember = tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER &&
+							t.getValue().equals("static") && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+							tokens.get(1).getValue().equals(":");
+					if(isStaticMember) {
+						tokens.remove(0);
+						tokens.remove(0);
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing identifier after static keyword"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+					}
+
+					boolean isFinalMember = tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER &&
+							t.getValue().equals("final") && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+							tokens.get(1).getValue().equals(":");
+					if(isFinalMember) {
+						tokens.remove(0);
+						tokens.remove(0);
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing identifier after final keyword"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+					}
+
+					//Also check if "static:" is after "final:"
+					if(!isStaticMember && isFinalMember && tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER &&
+							t.getValue().equals("static") && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+							tokens.get(1).getValue().equals(":")) {
+						isStaticMember = true;
+
+						tokens.remove(0);
+						tokens.remove(0);
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.EOF,
+									"Missing identifier after static keyword"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+					}
+
+					if(t.getTokenType() != Token.TokenType.IDENTIFIER) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+								"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""));
+
+						return ast;
+					}
+
+					if(!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberFrom, ParsingError.INVALID_ASSIGNMENT,
+								"Invalid " + (isStaticMember?"static ":"") + "member name: \"" + t.getValue() + "\""));
+
+						return ast;
+					}
+
+					Token memberNameToken = tokens.remove(0);
+					String memberName = memberNameToken.getValue();
+
+					String typeConstraint = null;
+					if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+							tokens.get(0).getValue().equals("{")) {
+						int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
+						if(bracketEndIndex == -1) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos.lineNumberFrom,
+									memberNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+									"Bracket is missing in type constraint in class definition for " +
+											(isStaticMember?"static ":"") + "member: \"" + memberNameToken.getValue() + "\""));
+
+							return ast;
+						}
+
+						List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
+						tokens.subList(0, bracketEndIndex + 1).clear();
+
+						typeConstraint = parseTypeConstraint(typeConstraintTokens, false, nodes);
+					}
+
+					if((isStaticMember?staticMemberNames:memberNames).contains(memberName)) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos.lineNumberFrom,
+								memberNameToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+								"Duplicated " + (isStaticMember?"static ":"") + " member name: \"" + memberName + "\""));
+
+						return ast;
+					}
+
+					if(isStaticMember) {
+						AbstractSyntaxTree.Node staticMemberValue = null;
+						if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.ASSIGNMENT) {
+							Token assignmentToken = tokens.remove(0);
+							String assignmentOperator = assignmentToken.getValue();
+
+							if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
+									tokens.get(0).getTokenType() == Token.TokenType.EOF) {
+								if(!assignmentOperator.equals("=") && !assignmentOperator.equals(" =")) {
+									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(assignmentToken.pos.lineNumberFrom,
+											assignmentToken.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+											"Rvalue is missing in member assignment"));
+
+									return ast;
+								}
+
+								staticMemberValue = assignmentOperator.equals("=")?
+										new AbstractSyntaxTree.TextValueNode(assignmentToken.pos.lineNumberFrom,
+												assignmentToken.pos.lineNumberTo, ""):
+										new AbstractSyntaxTree.NullValueNode(assignmentToken.pos.lineNumberFrom,
+												assignmentToken.pos.lineNumberTo);
+							}else {
+								switch(assignmentOperator) {
+									case "=":
+										staticMemberValue = parseSimpleAssignmentValue(tokens).convertToNode();
+										break;
+									case " = ":
+										staticMemberValue = parseLRvalue(tokens, true).convertToNode();
+										break;
+									case " ?= ":
+										staticMemberValue = parseCondition(tokens);
+										break;
+									case " := ":
+										staticMemberValue = parseMathExpr(tokens);
+										break;
+									case " $= ":
+										staticMemberValue = parseOperationExpr(tokens);
+										break;
+
+									default:
+										nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+												t.pos.lineNumberTo, ParsingError.INVALID_ASSIGNMENT,
+												"Invalid assignment for static member (only the following operators are allowed: \"=\", \" = \", " +
+														"\" ?= \", \" := \", and \" $= \")"));
+
+										return ast;
+								}
+							}
+						}
+
+						staticMemberNames.add(memberName);
 						staticMemberTypeConstraints.add(typeConstraint);
-						staticMemberValues.add(isSimpleAssignmentOperator?new AbstractSyntaxTree.TextValueNode(lineNumber, ""):
-								new AbstractSyntaxTree.NullValueNode(lineNumber));
+						staticMemberValues.add(staticMemberValue);
 						staticMemberFinalFlag.add(isFinalMember);
 
-						continue;
+						continue tokenProcessing;
 					}
 
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Rvalue is missing in member assignment: \"" + line + "\""));
+					memberNames.add(memberName);
+					memberTypeConstraints.add(typeConstraint);
+					memberFinalFlag.add(isFinalMember);
+
+					break;
+
+				case LEXER_ERROR:
+					tokens.remove(0);
+
+					parseLexerErrorToken(t, nodes);
+
+					break tokenProcessing;
+
+				case IDENTIFIER:
+				case PARSER_FUNCTION_IDENTIFIER:
+				case LITERAL_NULL:
+				case LITERAL_NUMBER:
+				case LITERAL_TEXT:
+				case ARGUMENT_SEPARATOR:
+				case ASSIGNMENT:
+				case OPENING_BRACKET:
+				case ESCAPE_SEQUENCE:
+				case START_MULTILINE_TEXT:
+				case LINE_CONTINUATION:
+				case END_COMMENT:
+				case END_MULTILINE_TEXT:
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""));
 
 					return ast;
-				}
-
-				staticMemberNames.add(lvalue);
-				staticMemberTypeConstraints.add(typeConstraint);
-				switch(assignmentOperator) {
-					case "=":
-						staticMemberValues.add(parseSimpleAssignmentValue(rvalue).convertToNode());
-						break;
-					case " = ":
-						staticMemberValues.add(parseLRvalue(rvalue, lines, true).convertToNode());
-						break;
-					case " ?= ":
-						staticMemberValues.add(parseCondition(rvalue));
-						break;
-					case " := ":
-						staticMemberValues.add(parseMathExpr(rvalue));
-						break;
-					case " $= ":
-						staticMemberValues.add(parseOperationExpr(rvalue));
-						break;
-				}
-				staticMemberFinalFlag.add(isFinalMember);
-
-				continue;
 			}
-
-			memberNames.add(lvalue);
-			memberTypeConstraints.add(typeConstraint);
-			memberFinalFlag.add(isFinalMember);
 		}
 
 		if(!hasEndBrace) {
-			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "\"}\" is missing in class definition"));
+			//TODO line numbers
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(-1, ParsingError.EOF, "\"}\" is missing in class definition"));
 
 			return ast;
 		}
 
-		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(lineNumberFrom, lineNumber, className, staticMemberNames,
+		//TODO line numbers
+		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(-1, -1, className, staticMemberNames,
 				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, memberNames, memberTypeConstraints,
 				memberFinalFlag, methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses));
 
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseToken(String token, BufferedReader lines) throws IOException {
+	private AbstractSyntaxTree parseToken(List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
-		
-		StringBuilder builder = new StringBuilder();
-		while(token.length() > 0) {
-			//Unescaping
-			if(token.startsWith("\\")) {
-				clearAndParseStringBuilder(builder, nodes);
-				
-				if(token.length() == 1)
+
+		trimFirstLine(tokens);
+
+		tokenProcessing:
+		while(!tokens.isEmpty()) {
+			Token t = tokens.get(0);
+
+			switch(t.getTokenType()) {
+				case EOL:
+				case EOF:
+					break tokenProcessing;
+
+				case START_COMMENT:
+				case START_DOC_COMMENT:
+					parseCommentTokens(tokens, nodes);
+
 					break;
-				
-				nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(lineNumber, token.charAt(1)));
-				
-				if(token.length() < 3)
+
+				case LITERAL_NULL:
+					tokens.remove(0);
+
+					nodes.add(new AbstractSyntaxTree.NullValueNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo));
 					break;
-				
-				token = token.substring(2);
-				continue;
-			}
-			
-			//Function calls
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_FUNCTION_CALL)) {
-				clearAndParseStringBuilder(builder, nodes);
-				
-				int lineNumberFrom = lineNumber;
-				
-				int parameterStartIndex = token.indexOf('(');
-				int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(token, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-				if(parameterEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in function call"));
-					return ast;
-				}
-				
-				String functionCall = token.substring(0, parameterEndIndex + 1);
-				token = token.substring(parameterEndIndex + 1);
-				
-				String functionName = functionCall.substring(0, parameterStartIndex);
-				String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-				
-				nodes.add(new AbstractSyntaxTree.FunctionCallNode(parseFunctionParameterList(functionParameterList, false).getChildren(), lineNumberFrom, lineNumber, functionName));
-				continue;
-			}
-			
-			//Function call of previous value
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_FUNCTION_CALL_PREVIOUS_VALUE)) {
-				clearAndParseStringBuilder(builder, nodes);
-				
-				int lineNumberFrom = lineNumber;
-				
-				int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(token, 0, Integer.MAX_VALUE, '(', ')');
-				if(parameterEndIndex != -1) {
-					String functionCall = token.substring(0, parameterEndIndex + 1);
-					token = token.substring(parameterEndIndex + 1);
-					
-					String functionParameterList = functionCall.substring(1, functionCall.length() - 1);
-					String tmp = LangPatterns.replaceAll(functionParameterList, "", LangPatterns.PARSING_FRONT_WHITESPACE);
-					int leadingWhitespaceCount = functionParameterList.length() - tmp.length();
-					String leadingWhitespace = functionParameterList.substring(0, leadingWhitespaceCount);
-					tmp = tmp.trim();
-					String trailingWhitespace = functionParameterList.substring(tmp.length() + leadingWhitespaceCount, functionParameterList.length());
-					
-					nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode(leadingWhitespace, trailingWhitespace, parseFunctionParameterList(functionParameterList, false).
-							getChildren(), lineNumberFrom, lineNumber));
-					continue;
-				}
-			}
-			
-			//Parser function calls
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_PARSER_FUNCTION_CALL)) {
-				clearAndParseStringBuilder(builder, nodes);
-				
-				int parameterStartIndex = token.indexOf('(');
-				int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(token, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-				if(parameterEndIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in parser function call"));
-					return ast;
-				}
-				
-				String functionCall = token.substring(0, parameterEndIndex + 1);
-				
-				String functionName = functionCall.substring(token.indexOf('.') + 1, parameterStartIndex);
-				String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-				
-				AbstractSyntaxTree.Node ret = parseParserFunction(functionName, functionParameterList);
-				if(ret != null) {
-					token = token.substring(parameterEndIndex + 1);
-					
-					nodes.add(ret);
-					
-					continue;
-				}
-				
-				//Invalid parser function
-			}
-			
-			//VarPtr
-			if(LangPatterns.matches(token, LangPatterns.PARSING_STARTS_WITH_VAR_NAME_PTR_AND_DEREFERENCE)) {
-				clearAndParseStringBuilder(builder, nodes);
-				
-				int endIndex = LangUtils.getIndexOfMatchingBracket(token, token.indexOf('$') + 1, Integer.MAX_VALUE, '[', ']');
-				if(endIndex == -1) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in variable pointer"));
-					return ast;
-				}
-				String varPtr = token.substring(0, endIndex + 1);
-				token = token.substring(endIndex + 1);
-				
-				nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, varPtr));
-				continue;
-			}
-			
-			//Vars
-			Pattern varNamePattern = LangPatterns.VAR_NAME_FULL_WITH_FUNCS;
-			Matcher matcher = varNamePattern.matcher(token);
-			if(matcher.find() && matcher.start() == 0) {
-				clearAndParseStringBuilder(builder, nodes);
-				
-				int len = matcher.end();
-				
-				builder.append(token.substring(0, len));
-				token = token.substring(len);
-				
-				clearAndParseStringBuilder(builder, nodes);
-				
-				continue;
-			}
-			
-			builder.append(token.charAt(0));
-			if(token.length() > 1) {
-				token = token.substring(1);
-			}else {
-				token = "";
-				clearAndParseStringBuilder(builder, nodes);
+
+				case LITERAL_TEXT:
+				case ARGUMENT_SEPARATOR:
+				case ASSIGNMENT:
+				case CLOSING_BRACKET:
+				case WHITESPACE:
+					tokens.remove(0);
+
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue()));
+
+					break;
+
+				case OTHER:
+					tokens.remove(0);
+
+					parseTextAndCharValue(new ArrayList<>(Arrays.asList(t)), nodes);
+
+					break;
+
+				case OPERATOR:
+					tokens.remove(0);
+
+					if(nodes.isEmpty() && (t.getValue().equals("-") || t.getValue().equals("+")) && !tokens.isEmpty() &&
+							tokens.get(0).getTokenType() == Token.TokenType.LITERAL_NUMBER) {
+						Token numberToken = tokens.remove(0);
+
+						Token combinedNumberToken = new Token(t.pos.combine(numberToken.pos),
+								t.getValue() + numberToken.getValue(), Token.TokenType.LITERAL_NUMBER);
+
+						parseNumberToken(combinedNumberToken, nodes);
+
+						break;
+					}
+
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue()));
+
+					break;
+
+				case LITERAL_NUMBER:
+					tokens.remove(0);
+
+					parseNumberToken(t, nodes);
+
+					break;
+
+				case OPENING_BRACKET:
+					if(t.getTokenType() == Token.TokenType.OPENING_BRACKET && t.getValue().equals("(")) {
+						int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+						if(endIndex != -1) {
+							Token openingBracketToken = tokens.get(0);
+							Token closingBracketToken = tokens.get(endIndex);
+							CodePosition pos = openingBracketToken.pos.combine(closingBracketToken.pos);
+
+							List<Token> functionCall = new ArrayList<>(tokens.subList(1, endIndex));
+							tokens.subList(0, endIndex + 1).clear();
+
+							nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "",
+									parseFunctionParameterList(functionCall, false).getChildren(),
+									pos.lineNumberFrom, pos.lineNumberTo));
+
+							continue tokenProcessing;
+						}
+					}
+
+					tokens.remove(0);
+
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue()));
+
+					break;
+
+				case ESCAPE_SEQUENCE:
+					tokens.remove(0);
+
+					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+								"Invalid escape sequence: " + t.getValue()));
+
+						continue tokenProcessing;
+					}
+
+					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue().charAt(1)));
+
+					break;
+
+				case LEXER_ERROR:
+					tokens.remove(0);
+
+					parseLexerErrorToken(t, nodes);
+
+					break;
+
+				case START_MULTILINE_TEXT:
+					tokens.remove(0);
+					do {
+						t = tokens.remove(0);
+
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
+
+					break;
+
+				case IDENTIFIER:
+				case PARSER_FUNCTION_IDENTIFIER:
+					AbstractSyntaxTree.Node ret = t.getTokenType() == Token.TokenType.IDENTIFIER?
+							parseVariableNameAndFunctionCall(tokens):parseParserFunctionCall(tokens);
+					if(ret != null)
+						nodes.add(ret);
+
+					break;
+
+				case LINE_CONTINUATION:
+				case END_COMMENT:
+				case END_MULTILINE_TEXT:
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""));
+
+					break tokenProcessing;
 			}
 		}
-		
+
 		return ast;
 	}
-	
-	private AbstractSyntaxTree parseSimpleAssignmentValue(String translationValue) {
+
+	private AbstractSyntaxTree parseSimpleAssignmentValue(List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
-		
-		StringBuilder builder = new StringBuilder();
-		while(translationValue.length() > 0) {
-			//Unescaping
-			if(translationValue.startsWith("\\")) {
-				if(builder.length() > 0) {
-					nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, builder.toString()));
-					builder.delete(0, builder.length());
-				}
-				
-				if(translationValue.length() == 1)
+
+		trimFirstLine(tokens);
+
+		int tokenCountFirstLine = getTokenCountFirstLine(tokens);
+		if(tokenCountFirstLine == -1)
+			tokenCountFirstLine = tokens.size();
+
+		if(tokenCountFirstLine == 0 && tokenCountFirstLine != tokens.size()) {
+			nodes.add(new AbstractSyntaxTree.TextValueNode(tokens.get(0).pos.lineNumberFrom,
+					tokens.get(0).pos.lineNumberFrom, ""));
+		}
+
+		tokenProcessing:
+		while(!tokens.isEmpty()) {
+			Token t = tokens.get(0);
+
+			switch(t.getTokenType()) {
+				case EOL:
+				case EOF:
+					break tokenProcessing;
+
+				case START_COMMENT:
+				case START_DOC_COMMENT:
+					parseCommentTokens(tokens, nodes);
+
 					break;
-				
-				nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(lineNumber, translationValue.charAt(1)));
-				
-				if(translationValue.length() < 3)
+
+				case LITERAL_NULL:
+				case LITERAL_TEXT:
+				case LITERAL_NUMBER:
+				case ARGUMENT_SEPARATOR:
+				case IDENTIFIER:
+				case PARSER_FUNCTION_IDENTIFIER:
+				case ASSIGNMENT:
+				case OPERATOR:
+				case OPENING_BRACKET:
+				case CLOSING_BRACKET:
+				case WHITESPACE:
+				case OTHER:
+					tokens.remove(0);
+
+					nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue()));
+
 					break;
-				
-				translationValue = translationValue.substring(2);
-				continue;
-			}
-			
-			builder.append(translationValue.charAt(0));
-			if(translationValue.length() > 1) {
-				translationValue = translationValue.substring(1);
-			}else {
-				translationValue = "";
+
+				case ESCAPE_SEQUENCE:
+					tokens.remove(0);
+
+					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+								"Invalid escape sequence: " + t.getValue()));
+
+						continue tokenProcessing;
+					}
+
+					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberTo, t.getValue().charAt(1)));
+
+					break;
+
+				case LEXER_ERROR:
+					tokens.remove(0);
+
+					parseLexerErrorToken(t, nodes);
+
+					break;
+
+				case START_MULTILINE_TEXT:
+					tokens.remove(0);
+					do {
+						t = tokens.remove(0);
+
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
+
+					break;
+
+				case LINE_CONTINUATION:
+				case END_COMMENT:
+				case END_MULTILINE_TEXT:
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+							t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+							"Invalid token type for simple assignment value expression: \"" + t.getTokenType().name() + "\""));
+
+					break tokenProcessing;
 			}
 		}
-		
-		nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, builder.toString()));
-		
+
 		return ast;
 	}
-	
-	private void clearAndParseStringBuilder(StringBuilder builder, List<AbstractSyntaxTree.Node> nodes) {
-		if(builder.length() == 0)
+
+	private void parseTextAndCharValue(List<Token> valueTokens, List<AbstractSyntaxTree.Node> nodes) {
+		if(valueTokens.isEmpty())
 			return;
-		
-		String token = builder.toString();
-		builder.delete(0, builder.length());
-		
-		//Vars & FuncPtrs
-		if(LangPatterns.matches(token, LangPatterns.VAR_NAME_FULL_WITH_FUNCS)) {
-			nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, token));
-			
-			return;
-		}
-		
-		if(!LangPatterns.matches(token, LangPatterns.PARSING_LEADING_OR_TRAILING_WHITSPACE) && !LangPatterns.matches(token, LangPatterns.PARSING_INVALID_FLOATING_POINT_NUMBER)) {
-			//INT
-			try {
-				nodes.add(new AbstractSyntaxTree.IntValueNode(lineNumber, Integer.parseInt(token)));
-				
-				return;
-			}catch(NumberFormatException ignore) {}
-			
-			//LONG
-			try {
-				if(token.endsWith("l") || token.endsWith("L"))
-					nodes.add(new AbstractSyntaxTree.LongValueNode(lineNumber, Long.parseLong(token.substring(0, token.length() - 1))));
-				else
-					nodes.add(new AbstractSyntaxTree.LongValueNode(lineNumber, Long.parseLong(token)));
-				
-				
-				return;
-			}catch(NumberFormatException ignore) {}
-			
-			//FLOAT
-			if(token.endsWith("f") || token.endsWith("F")) {
-				try {
-					nodes.add(new AbstractSyntaxTree.FloatValueNode(lineNumber, Float.parseFloat(token.substring(0, token.length() - 1))));
-					
-					return;
-				}catch(NumberFormatException ignore) {}
-			}
-			
-			//DOUBLE
-			try {
-				nodes.add(new AbstractSyntaxTree.DoubleValueNode(lineNumber, Double.parseDouble(token)));
-				
-				return;
-			}catch(NumberFormatException ignore) {}
-		}
-		
+
+		CodePosition pos = valueTokens.get(0).pos.combine(valueTokens.get(valueTokens.size() - 1).pos);
+
+		String value = valueTokens.stream().map(Token::toRawString).collect(Collectors.joining());
+
 		//CHAR
-		if(token.length() == 1) {
-			nodes.add(new AbstractSyntaxTree.CharValueNode(lineNumber, token.charAt(0)));
-			
+		if(value.length() == 1) {
+			nodes.add(new AbstractSyntaxTree.CharValueNode(pos.lineNumberFrom, pos.lineNumberTo, value.charAt(0)));
+
 			return;
 		}
-		
-		//NULL
-		if(token.equals("null")) {
-			nodes.add(new AbstractSyntaxTree.NullValueNode(lineNumber));
-			
-			return;
-		}
-		
+
 		//TEXT
-		nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, token));
+		nodes.add(new AbstractSyntaxTree.TextValueNode(pos.lineNumberFrom, pos.lineNumberTo, value));
 	}
-	
-	private AbstractSyntaxTree parseFunctionParameterList(String parameterList, boolean functionDefinition) throws IOException {
+
+	private void parseNumberToken(Token numberToken, List<AbstractSyntaxTree.Node> nodes) {
+		String token = numberToken.getValue();
+
+		//INT
+		try {
+			nodes.add(new AbstractSyntaxTree.IntValueNode(numberToken.pos.lineNumberFrom,
+					numberToken.pos.lineNumberTo, Integer.parseInt(token)));
+
+			return;
+		}catch(NumberFormatException ignore) {}
+
+		//LONG
+		try {
+			if(token.endsWith("l") || token.endsWith("L"))
+				nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos.lineNumberFrom,
+						numberToken.pos.lineNumberTo, Long.parseLong(token.substring(0, token.length() - 1))));
+			else
+				nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos.lineNumberFrom,
+						numberToken.pos.lineNumberTo, Long.parseLong(token)));
+
+
+			return;
+		}catch(NumberFormatException ignore) {}
+
+		//FLOAT
+		if(token.endsWith("f") || token.endsWith("F")) {
+			try {
+				nodes.add(new AbstractSyntaxTree.FloatValueNode(numberToken.pos.lineNumberFrom,
+						numberToken.pos.lineNumberTo, Float.parseFloat(token.substring(0, token.length() - 1))));
+
+				return;
+			}catch(NumberFormatException ignore) {}
+		}
+
+		//DOUBLE
+		try {
+			nodes.add(new AbstractSyntaxTree.DoubleValueNode(numberToken.pos.lineNumberFrom,
+					numberToken.pos.lineNumberTo, Double.parseDouble(token)));
+
+			return;
+		}catch(NumberFormatException ignore) {}
+	}
+
+	private void parseLexerErrorToken(Token lexerErrorToken, List<AbstractSyntaxTree.Node> nodes) {
+		if(lexerErrorToken.getTokenType() != Token.TokenType.LEXER_ERROR)
+			return;
+
+		nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lexerErrorToken.pos.lineNumberFrom,
+				lexerErrorToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, lexerErrorToken.getValue()));
+	}
+
+	private AbstractSyntaxTree parseFunctionParameterList(List<Token> tokens, boolean functionDefinition) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
-		
-		parameterList = parameterList.trim();
-		
+
+		trimFirstLine(tokens);
+
 		if(functionDefinition) {
-			if(!parameterList.isEmpty()) {
-				String[] tokens = parameterList.split(",");
-				
-				if(tokens.length == 0 || parameterList.startsWith(",") || parameterList.endsWith(",")) {
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_PARAMETER,
-							"Empty function parameter"));
-				}
-				
-				for(String token:tokens) {
-					token = token.trim();
-					
-					if(token.isEmpty()) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_PARAMETER,
-								"Empty function parameter"));
-						
-						continue;
+			if(!tokens.isEmpty()) {
+				tokenProcessing:
+				while(!tokens.isEmpty()) {
+					Token t = tokens.get(0);
+
+					switch(t.getTokenType()) {
+						case EOL:
+						case EOF:
+							break tokenProcessing;
+
+						case START_COMMENT:
+						case START_DOC_COMMENT:
+							parseCommentTokens(tokens, nodes);
+
+							break;
+
+						case ARGUMENT_SEPARATOR:
+							tokens.remove(0);
+
+							if(nodes.isEmpty()) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
+										ParsingError.INVALID_PARAMETER, "Empty function parameter"));
+							}
+
+							if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
+									tokens.get(0).getTokenType() == Token.TokenType.EOF) {
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
+										ParsingError.INVALID_PARAMETER, "Empty function parameter"));
+							}
+
+							break;
+
+						case IDENTIFIER:
+							Token variableNameToken = t;
+							String variableName = t.getValue();
+							tokens.remove(0);
+
+							String typeConstraint = null;
+
+							if(tokens.size() > 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+									tokens.get(0).getValue().equals("{")) {
+								int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
+								if(bracketEndIndex == -1) {
+									nodes.add(new AbstractSyntaxTree.ParsingErrorNode(variableNameToken.pos.lineNumberFrom,
+											variableNameToken.pos.lineNumberTo, ParsingError.BRACKET_MISMATCH,
+											"Bracket is missing in return type constraint in function parameter list definition for parameter \"" + variableName + "\""));
+									return ast;
+								}
+
+								List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
+								tokens.subList(0, bracketEndIndex + 1).clear();
+
+								typeConstraint = parseTypeConstraint(typeConstraintTokens, true, nodes);
+							}
+
+							if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+									tokens.get(0).getValue().equals("...")) {
+								//Varargs parameter
+								tokens.remove(0);
+
+								variableName += "...";
+							}
+
+							nodes.add(new AbstractSyntaxTree.VariableNameNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, variableName, typeConstraint));
+
+							break;
+
+						case LEXER_ERROR:
+							tokens.remove(0);
+
+							parseLexerErrorToken(t, nodes);
+
+							break;
+
+						case LITERAL_NULL:
+						case LITERAL_TEXT:
+						case ASSIGNMENT:
+						case CLOSING_BRACKET:
+						case WHITESPACE:
+						case OTHER:
+						case OPERATOR:
+						case LITERAL_NUMBER:
+						case OPENING_BRACKET:
+						case ESCAPE_SEQUENCE:
+						case PARSER_FUNCTION_IDENTIFIER:
+						case START_MULTILINE_TEXT:
+						case LINE_CONTINUATION:
+						case END_COMMENT:
+						case END_MULTILINE_TEXT:
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+									"Invalid token type for function parameter list expression: \"" + t.getTokenType().name() + "\""));
+
+							break tokenProcessing;
 					}
-
-					if(token.contains("...{")) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT,
-								"Invalid syntax for type constraint on var args parameter (\"<varName>{<types>}...\" expected): \"" + token + "\""));
-
-						continue;
-					}
-					
-					String typeConstraint = null;
-					int braceIndex = token.indexOf('{');
-					if(braceIndex != -1) {
-						String rawTypeConstraint = token.substring(braceIndex);
-
-						token = token.substring(0, braceIndex);
-						if(rawTypeConstraint.endsWith("...")) {
-							rawTypeConstraint = rawTypeConstraint.substring(0, rawTypeConstraint.length() - 3);
-
-							token += "...";
-						}
-
-						if(!LangPatterns.matches(rawTypeConstraint, LangPatterns.TYPE_CONSTRAINT_WITH_SPECIAL_TYPES)) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.INVALID_ASSIGNMENT, "Invalid type constraint: \"" + rawTypeConstraint + "\""));
-							
-							continue;
-						}
-						
-						typeConstraint = rawTypeConstraint.substring(1, rawTypeConstraint.length() - 1);
-					}
-					
-					nodes.add(new AbstractSyntaxTree.VariableNameNode(lineNumber, token, typeConstraint));
 				}
 			}
 		}else {
-			StringBuilder builder = new StringBuilder();
-			boolean hasNodesFlag = false;
-			
-			loop:
-			while(parameterList.length() > 0) {
-				//Unescaping
-				if(parameterList.startsWith("\\")) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					if(parameterList.length() == 1)
+			tokenProcessing:
+			while(!tokens.isEmpty()) {
+				Token t = tokens.get(0);
+
+				switch(t.getTokenType()) {
+					case EOL:
+					case EOF:
+						break tokenProcessing;
+
+					case START_COMMENT:
+					case START_DOC_COMMENT:
+						parseCommentTokens(tokens, nodes);
+
 						break;
-					
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(lineNumber, parameterList.charAt(1)));
-					hasNodesFlag = true;
-					
-					if(parameterList.length() < 3)
+
+					case ARGUMENT_SEPARATOR:
+						tokens.remove(0);
+
+						if(nodes.isEmpty() || nodes.get(nodes.size() - 1) instanceof AbstractSyntaxTree.ArgumentSeparatorNode) {
+							//Add empty TextObject in between two and before first argument separator
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom, t.pos.lineNumberTo, ""));
+						}
+
+						nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(t.pos.lineNumberFrom, t.pos.lineNumberTo,
+								t.getValue()));
+
+						if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
+								tokens.get(0).getTokenType() == Token.TokenType.EOF) {
+							//Add empty TextObject after last argument separator
+							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom, t.pos.lineNumberTo, ""));
+						}
+
 						break;
-					
-					parameterList = parameterList.substring(2);
-					continue;
-				}
-				
-				//Function calls
-				if(LangPatterns.matches(parameterList, LangPatterns.PARSING_STARTS_WITH_FUNCTION_CALL)) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					int lineNumberFrom = lineNumber;
-					
-					int parameterStartIndex = parameterList.indexOf('(');
-					int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(parameterList, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-					if(parameterEndIndex == -1) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in function call"));
-						return ast;
-					}
-					
-					String functionCall = parameterList.substring(0, parameterEndIndex + 1);
-					parameterList = parameterList.substring(parameterEndIndex + 1);
-					
-					String functionName = functionCall.substring(0, parameterStartIndex);
-					String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-					
-					nodes.add(new AbstractSyntaxTree.FunctionCallNode(parseFunctionParameterList(functionParameterList, false).getChildren(), lineNumberFrom, lineNumber, functionName));
-					
-					hasNodesFlag = true;
-					continue;
-				}
-				//Function call of previous value
-				if(LangPatterns.matches(parameterList, LangPatterns.PARSING_STARTS_WITH_FUNCTION_CALL_PREVIOUS_VALUE)) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					int lineNumberFrom = lineNumber;
-					
-					int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(parameterList, 0, Integer.MAX_VALUE, '(', ')');
-					if(parameterEndIndex != -1) {
-						String functionCall = parameterList.substring(0, parameterEndIndex + 1);
-						parameterList = parameterList.substring(parameterEndIndex + 1);
-						
-						String functionParameterList = functionCall.substring(1, functionCall.length() - 1);
-						String tmp = LangPatterns.replaceAll(functionParameterList, "", LangPatterns.PARSING_FRONT_WHITESPACE);
-						int leadingWhitespaceCount = functionParameterList.length() - tmp.length();
-						String leadingWhitespace = functionParameterList.substring(0, leadingWhitespaceCount);
-						tmp = tmp.trim();
-						String trailingWhitespace = functionParameterList.substring(tmp.length() + leadingWhitespaceCount, functionParameterList.length());
-						
-						nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode(leadingWhitespace, trailingWhitespace, parseFunctionParameterList(functionParameterList, false).
-								getChildren(), lineNumberFrom, lineNumber));
-						
-						hasNodesFlag = true;
-						continue;
-					}
-				}
-				
-				//Parser function calls
-				if(LangPatterns.matches(parameterList, LangPatterns.PARSING_STARTS_WITH_PARSER_FUNCTION_CALL)) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					int parameterStartIndex = parameterList.indexOf('(');
-					int parameterEndIndex = LangUtils.getIndexOfMatchingBracket(parameterList, parameterStartIndex, Integer.MAX_VALUE, '(', ')');
-					if(parameterEndIndex == -1) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.BRACKET_MISMATCH, "Bracket is missing in parser function call"));
-						return ast;
-					}
-					
-					String functionCall = parameterList.substring(0, parameterEndIndex + 1);
-					
-					String functionName = functionCall.substring(parameterList.indexOf('.') + 1, parameterStartIndex);
-					String functionParameterList = functionCall.substring(parameterStartIndex + 1, functionCall.length() - 1);
-					
-					AbstractSyntaxTree.Node ret = parseParserFunction(functionName, functionParameterList);
-					if(ret != null) {
-						parameterList = parameterList.substring(parameterEndIndex + 1);
-						
-						nodes.add(ret);
-						
-						hasNodesFlag = true;
-						continue;
-					}
-					
-					//Invalid parser function
-				}
-				
-				if(LangPatterns.matches(parameterList, LangPatterns.PARSING_ARGUMENT_SEPARATOR_LEADING_WHITESPACE)) {
-					//Create new ArgumentSeparatorNode with "," surrounded by whitespaces
-					
-					if(builder.length() == 0) {
-						if(nodes.size() == 0 || nodes.get(nodes.size() - 1) instanceof AbstractSyntaxTree.ArgumentSeparatorNode) {
-							//Add empty TextObject in between two ","
-							if(!hasNodesFlag)
-								nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, ""));
-						}
-					}else {
-						nodes.add(parseToken(builder.toString(), null).convertToNode());
-						builder.delete(0, builder.length());
-					}
-					
-					int commaIndex = parameterList.indexOf(',');
-					builder.append(parameterList.substring(0, commaIndex + 1));
-					parameterList = parameterList.substring(commaIndex + 1);
-					while(parameterList.length() > 0 && LangPatterns.matches(parameterList, LangPatterns.PARSING_LEADING_WHITSPACE)) {
-						builder.append(parameterList.charAt(0));
-						if(parameterList.length() > 1) {
-							parameterList = parameterList.substring(1);
-						}else {
-							nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(lineNumber, builder.toString()));
-							
-							//Add empty TextObject after last ","
-							nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, ""));
-							
-							break loop;
-						}
-					}
-					
-					nodes.add(new AbstractSyntaxTree.ArgumentSeparatorNode(lineNumber, builder.toString()));
-					builder.delete(0, builder.length());
-					if(parameterList.length() == 0) {
-						//Add empty TextObject after last ","
-						nodes.add(new AbstractSyntaxTree.TextValueNode(lineNumber, ""));
-						
+
+					case LITERAL_NULL:
+						tokens.remove(0);
+
+						nodes.add(new AbstractSyntaxTree.NullValueNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo));
 						break;
-					}
-					
-					hasNodesFlag = false;
-					continue;
-				}
-				
-				//VarPtr
-				if(LangPatterns.matches(parameterList, LangPatterns.PARSING_STARTS_WITH_VAR_NAME_PTR_AND_DEREFERENCE)) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					int endIndex = LangUtils.getIndexOfMatchingBracket(parameterList, parameterList.indexOf('$') + 1, Integer.MAX_VALUE, '[', ']');
-					if(endIndex != -1) {
-						String varPtr = parameterList.substring(0, endIndex + 1);
-						parameterList = parameterList.substring(endIndex + 1);
-						
-						nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, varPtr));
-						hasNodesFlag = true;
-						continue;
-					}
-				}
-				
-				//Array unpacking
-				if(LangPatterns.matches(parameterList, LangPatterns.PARSING_STARTS_WITH_ARRAY_UNPACKING)) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					int index = parameterList.indexOf('.') + 3;
-					String varName = parameterList.substring(0, index);
-					parameterList = parameterList.substring(index);
-					
-					nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(lineNumber, varName));
-					hasNodesFlag = true;
-					continue;
-				}
-				
-				//Vars
-				Pattern varNamePattern = LangPatterns.VAR_NAME_FULL_WITH_FUNCS;
-				Matcher matcher = varNamePattern.matcher(parameterList);
-				if(matcher.find() && matcher.start() == 0) {
-					clearAndParseStringBuilder(builder, nodes);
-					
-					int len = matcher.end();
-					
-					builder.append(parameterList.substring(0, len));
-					parameterList = parameterList.substring(len);
-					
-					clearAndParseStringBuilder(builder, nodes);
-					
-					continue;
-				}
-				
-				builder.append(parameterList.charAt(0));
-				if(parameterList.length() > 1) {
-					parameterList = parameterList.substring(1);
-				}else {
-					parameterList = "";
-					nodes.add(parseToken(builder.toString(), null).convertToNode());
-				}
-			}
-		}
-		
-		return ast;
-	}
-	private AbstractSyntaxTree.Node parseParserFunction(String name, String parameterList) throws IOException {
-		switch(name) {
-			case "con":
-				return parseCondition(parameterList);
-			case "math":
-				return parseMathExpr(parameterList);
-			case "norm":
-				return parseToken(parameterList, null).convertToNode();
-			case "op":
-				return parseOperationExpr(parameterList);
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Fix for "\{{{" would be parsed as mutliline text start sequence
-	 */
-	private String maskEscapedMultilineStringStartSequences(String line) {
-		int i = 0;
-		while(i < line.length()) {
-			i = line.indexOf("\\{", i);
-			if(i == -1)
-				break;
-			
-			if(!LangUtils.isBackslashAtIndexEscaped(line, i)) {
-				i += 2;
-				line = line.substring(0, i) + "\\e" + line.substring(i); //Add "\e" after "\{"
-				continue;
-			}
-			
-			i++;
-		}
-		
-		return line;
-	}
-	/**
-	 * Fix for "\{{{" would be parsed as mutliline text start sequence ({"\{" -&gt; "{" [CHAR]} should be parsed as CHAR and not as TEXT {"\{\e" -&gt; "{" [TEXT]})
-	 */
-	private String unmaskEscapedMultilineStringStartSequences(String line) {
-		int i = 0;
-		while(i < line.length()) {
-			i = line.indexOf("\\{\\e", i);
-			if(i == -1)
-				break;
-			
-			if(!LangUtils.isBackslashAtIndexEscaped(line, i)) {
-				i += 2;
-				line = line.substring(0, i) + line.substring(i + 2); //Remove "\e" after "\{"
-				continue;
-			}
-			
-			i++;
-		}
-		
-		return line;
-	}
-	
-	private String removeCommentsAndTrim(String line) {
-		if(line == null)
-			return null;
-		
-		line = line.trim();
-		
-		//Remove comments
-		if(line.startsWith("#"))
-			return null;
-		
-		//Find start index of comment if any
-		int index = -1;
-		int i = 0;
-		while(i < line.length()) {
-			char c = line.charAt(i);
-			if(c == '\\') { //Ignore next char
-				i += 2;
-				
-				continue;
-			}
-			
-			if(c == '#') {
-				index = i;
-				
-				break;
-			}
-			
-			i++;
-		}
-		if(index > -1)
-			line = line.substring(0, index);
-		
-		line = line.trim();
-		
-		if(line.isEmpty())
-			return null;
-		
-		return line;
-	}
-	
-	/**
-	 * @param line (The line read by lines)
-	 * @param errorNodes Will be used to add error nodes
-	 * @return The next line to be executed or null if error
-	 */
-	private String parseMultilineTextAndLineContinuation(String line, BufferedReader lines, List<AbstractSyntaxTree.Node> errorNodes) throws IOException {
-		StringBuilder lineTmp = new StringBuilder();
-		
-		line = maskEscapedMultilineStringStartSequences(line);
-		
-		while(line.contains("{{{") || line.endsWith("\\")) {
-			if(line.contains("{{{")) { //Multiline text
-				boolean multipleLinesFlag = true;
-				int startIndex = line.indexOf("{{{");
-				if(line.contains("}}}")) {
-					//Start search for "}}}" after "{{{"
-					int endIndex = line.indexOf("}}}", startIndex);
-					
-					//Multiple lines if "}}}" was found before "{{{"
-					if(endIndex != -1) {
-						multipleLinesFlag = false;
-						line = line.substring(0, startIndex) + LangUtils.escapeString(line.substring(startIndex + 3, endIndex).replace("\\{\\e", "\\{")) + line.substring(endIndex + 3);
-					}
-				}
-				
-				if(multipleLinesFlag) {
-					lineTmp.delete(0, lineTmp.length());
-					lineTmp.append(line.substring(startIndex + 3));
-					line = line.substring(0, startIndex);
-					String lineTmpString;
-					while(true) {
-						if(lines == null || !lines.ready()) {
-							errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Multiline Text end is missing"));
-							return null;
-						}
-						
-						lineTmpString = nextLine(lines);
-						if(lineTmpString == null) {
-							errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Multiline Text end is missing"));
-							return null;
-						}
-						lineTmpString = maskEscapedMultilineStringStartSequences(lineTmpString);
-						lineTmp.append('\n');
-						if(lineTmpString.contains("}}}")) {
-							int endIndex = lineTmpString.indexOf("}}}");
-							lineTmp.append(lineTmpString.substring(0, endIndex));
-							line = line + LangUtils.escapeString(lineTmp.toString().replace("\\{\\e", "\\{")) + lineTmpString.substring(endIndex + 3);
-							
+
+					case LITERAL_TEXT:
+					case ASSIGNMENT:
+					case CLOSING_BRACKET:
+					case WHITESPACE:
+						tokens.remove(0);
+
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, t.getValue()));
+
+						break;
+
+					case OTHER:
+						tokens.remove(0);
+
+						parseTextAndCharValue(new ArrayList<>(Arrays.asList(t)), nodes);
+
+						break;
+
+					case OPERATOR:
+						tokens.remove(0);
+
+						if((nodes.isEmpty() || nodes.get(nodes.size() - 1) instanceof AbstractSyntaxTree.ArgumentSeparatorNode) &&
+								(t.getValue().equals("-") || t.getValue().equals("+")) && !tokens.isEmpty() &&
+								tokens.get(0).getTokenType() == Token.TokenType.LITERAL_NUMBER) {
+							Token numberToken = tokens.remove(0);
+
+							Token combinedNumberToken = new Token(t.pos.combine(numberToken.pos),
+									t.getValue() + numberToken.getValue(), Token.TokenType.LITERAL_NUMBER);
+
+							parseNumberToken(combinedNumberToken, nodes);
+
 							break;
 						}
-						
-						lineTmp.append(lineTmpString);
-					}
+
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, t.getValue()));
+
+						break;
+
+					case LITERAL_NUMBER:
+						tokens.remove(0);
+
+						parseNumberToken(t, nodes);
+
+						break;
+
+					case OPENING_BRACKET:
+						if(t.getTokenType() == Token.TokenType.OPENING_BRACKET && t.getValue().equals("(")) {
+							int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+							if(endIndex != -1) {
+								Token openingBracketToken = tokens.get(0);
+								Token closingBracketToken = tokens.get(endIndex);
+								CodePosition pos = openingBracketToken.pos.combine(closingBracketToken.pos);
+
+								List<Token> functionCall = new ArrayList<>(tokens.subList(1, endIndex));
+								tokens.subList(0, endIndex + 1).clear();
+
+								nodes.add(new AbstractSyntaxTree.FunctionCallPreviousNodeValueNode("", "",
+										parseFunctionParameterList(functionCall, false).getChildren(),
+										pos.lineNumberFrom, pos.lineNumberTo));
+
+								continue tokenProcessing;
+							}
+						}
+
+						tokens.remove(0);
+
+						nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, t.getValue()));
+
+						break;
+
+					case ESCAPE_SEQUENCE:
+						tokens.remove(0);
+
+						if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+									t.pos.lineNumberTo, ParsingError.LEXER_ERROR,
+									"Invalid escape sequence: " + t.getValue()));
+
+							continue tokenProcessing;
+						}
+
+						nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberTo, t.getValue().charAt(1)));
+
+						break;
+
+					case LEXER_ERROR:
+						tokens.remove(0);
+
+						parseLexerErrorToken(t, nodes);
+
+						break;
+
+					case START_MULTILINE_TEXT:
+						tokens.remove(0);
+						do {
+							t = tokens.remove(0);
+
+							if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+								nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos.lineNumberFrom,
+										t.pos.lineNumberTo, t.getValue()));
+
+							if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
+								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+										t.pos.lineNumberTo, ParsingError.LEXER_ERROR, t.getValue()));
+						}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
+
+						break;
+
+					case IDENTIFIER:
+					case PARSER_FUNCTION_IDENTIFIER:
+						boolean isIdentifier = t.getTokenType() == Token.TokenType.IDENTIFIER;
+
+						if(isIdentifier && tokens.size() >= 2 && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+								tokens.get(1).getValue().equals("...")) {
+							//Array unpacking
+
+							Token identifierToken = tokens.remove(0);
+							Token operatorToken = tokens.remove(0);
+
+							CodePosition pos = identifierToken.pos.combine(operatorToken.pos);
+
+							nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(pos.lineNumberFrom,
+									pos.lineNumberTo, identifierToken.getValue() + "..."));
+						}else {
+							AbstractSyntaxTree.Node ret = isIdentifier?parseVariableNameAndFunctionCall(tokens):parseParserFunctionCall(tokens);
+							if(ret != null)
+								nodes.add(ret);
+						}
+
+						break;
+
+					case LINE_CONTINUATION:
+					case END_COMMENT:
+					case END_MULTILINE_TEXT:
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos.lineNumberFrom,
+								t.pos.lineNumberFrom, ParsingError.LEXER_ERROR,
+								"Invalid token type for function argument expression: \"" + t.getTokenType().name() + "\""));
+
+						break tokenProcessing;
 				}
-			}else { //Line continuation
-				line = line.substring(0, line.length() - 1);
-				
-				if(lines == null || !lines.ready()) {
-					errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Line continuation has no second line"));
-					return null;
-				}
-				String lineTmpString = nextLine(lines);
-				if(lineTmpString == null) {
-					errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(lineNumber, ParsingError.EOF, "Line continuation has no second line"));
-					return null;
-				}
-				lineTmpString = maskEscapedMultilineStringStartSequences(lineTmpString);
-				line += lineTmpString;
 			}
 		}
-		
-		return unmaskEscapedMultilineStringStartSequences(line);
+
+		return ast;
 	}
-	
-	private String prepareNextLine(String line, BufferedReader lines, List<AbstractSyntaxTree.Node> errorNodes) throws IOException {
-		line = parseMultilineTextAndLineContinuation(line, lines, errorNodes);
 
-		//Lang doc comment
-		if(line != null && line.trim().startsWith("##")) {
-			String rawDocComment = parseMultilineTextAndLineContinuation(line.substring(line.indexOf('#') + 2), lines, errorNodes);
-			if(rawDocComment == null)
-				return null;
+	private AbstractSyntaxTree.Node parseFunctionCallWithoutPrefix(List<Token> tokens) {
+		return parseFunctionCallWithoutPrefix(tokens, null);
+	}
+	private AbstractSyntaxTree.Node parseFunctionCallWithoutPrefix(List<Token> tokens, AbstractSyntaxTree.OperationNode.OperatorType type) {
+		if(tokens.size() < 2)
+			return null;
 
-			rawDocComment = LangUtils.unescapeString(rawDocComment);
+		Token identifierToken = tokens.get(0);
+		if(identifierToken.getTokenType() != Token.TokenType.OTHER ||
+				!LangPatterns.matches(identifierToken.getValue(), LangPatterns.WORD) ||
+				tokens.get(1).getTokenType() != Token.TokenType.OPENING_BRACKET || !tokens.get(1).getValue().equals("("))
+			return null;
 
-			StringBuilder stringBuilder = new StringBuilder();
-			for(String token:rawDocComment.split("\\n"))
-				stringBuilder.append(token.trim()).append('\n');
+		tokens.remove(0);
 
-			//Remove trailing "\n"
-			if(stringBuilder.length() > 0)
-				stringBuilder.deleteCharAt(stringBuilder.length() - 1);
+		return parseFunctionCall(identifierToken, tokens, type);
+	}
 
-			String docComment = stringBuilder.toString();
-			if(langDocComment == null)
-				langDocComment = docComment;
-			else
-				langDocComment += "\n" + docComment;
+	private AbstractSyntaxTree.Node parseVariableNameAndFunctionCall(List<Token> tokens) {
+		return parseVariableNameAndFunctionCall(tokens, null);
+	}
+	private AbstractSyntaxTree.Node parseVariableNameAndFunctionCall(List<Token> tokens, AbstractSyntaxTree.OperationNode.OperatorType type) {
+		if(tokens.isEmpty())
+			return null;
+
+		Token identifierToken = tokens.get(0);
+		if(identifierToken.getTokenType() != Token.TokenType.IDENTIFIER)
+			return null;
+
+		tokens.remove(0);
+
+		if(tokens.isEmpty() || tokens.get(0).getTokenType() != Token.TokenType.OPENING_BRACKET ||
+				!tokens.get(0).getValue().equals("(") || !LangPatterns.matches(identifierToken.getValue(), LangPatterns.VAR_NAME_FUNCS)) {
+			return new AbstractSyntaxTree.UnprocessedVariableNameNode(identifierToken.pos.lineNumberFrom,
+					identifierToken.pos.lineNumberTo, identifierToken.getValue());
 		}
 
-		line = removeCommentsAndTrim(line);
-		
-		return line;
+		return parseFunctionCall(identifierToken, tokens, type);
 	}
-	
-	private String nextLine(BufferedReader lines) throws IOException {
-		if(lines == null)
+
+	private AbstractSyntaxTree.Node parseFunctionCall(Token identifierToken, List<Token> tokens) {
+		return parseFunctionCall(identifierToken, tokens, null);
+	}
+	private AbstractSyntaxTree.Node parseFunctionCall(Token identifierToken, List<Token> tokens, AbstractSyntaxTree.OperationNode.OperatorType type) {
+		int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+		if(endIndex == -1) {
+			return new AbstractSyntaxTree.ParsingErrorNode(identifierToken.pos.lineNumberFrom,
+					identifierToken.pos.lineNumberTo,
+					ParsingError.BRACKET_MISMATCH, "Bracket is missing in function call");
+		}
+
+		CodePosition pos = identifierToken.getPos().combine(tokens.get(endIndex).pos);
+
+		List<Token> functionParameterTokens = new ArrayList<>(tokens.subList(1, endIndex));
+		tokens.subList(0, endIndex + 1).clear();
+
+		if(type == null)
+			return new AbstractSyntaxTree.FunctionCallNode(parseFunctionParameterList(functionParameterTokens, false).getChildren(),
+					pos.lineNumberFrom, pos.lineNumberTo, identifierToken.getValue());
+
+		return new AbstractSyntaxTree.FunctionCallNode(convertCommaOperatorsToArgumentSeparators(
+				parseOperationExpr(functionParameterTokens, type)), pos.lineNumberFrom, pos.lineNumberTo,
+				identifierToken.getValue());
+	}
+
+	private AbstractSyntaxTree.Node parseParserFunctionCall(List<Token> tokens) {
+		if(tokens.isEmpty())
 			return null;
-		
-		String line = lines.readLine();
-		
-		if(line != null)
-			lineNumber++;
-		
-		return line;
+
+		Token parserFunctionIdentifierToken = tokens.get(0);
+		if(parserFunctionIdentifierToken.getTokenType() != Token.TokenType.PARSER_FUNCTION_IDENTIFIER)
+			return null;
+
+		tokens.remove(0);
+
+		int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
+		if(endIndex == -1) {
+			return new AbstractSyntaxTree.ParsingErrorNode(parserFunctionIdentifierToken.pos.lineNumberFrom,
+					parserFunctionIdentifierToken.pos.lineNumberTo,
+					ParsingError.BRACKET_MISMATCH, "Bracket is missing in parser function call");
+		}
+
+		List<Token> parameterTokens = new ArrayList<>(tokens.subList(1, endIndex));
+		tokens.subList(0, endIndex + 1).clear();
+
+		switch(parserFunctionIdentifierToken.getValue()) {
+			case "parser.con":
+				return parseCondition(parameterTokens);
+			case "parser.math":
+				return parseMathExpr(parameterTokens);
+			case "parser.norm":
+				return parseToken(parameterTokens).convertToNode();
+			case "parser.op":
+				return parseOperationExpr(parameterTokens);
+		}
+
+		return new AbstractSyntaxTree.ParsingErrorNode(parserFunctionIdentifierToken.pos.lineNumberFrom,
+				parserFunctionIdentifierToken.pos.lineNumberTo,
+				ParsingError.INVALID_PARAMETER, "Invalid parser function: \"" +
+				parserFunctionIdentifierToken.getValue() + "\"");
 	}
-	
+
+	private String parseTypeConstraint(List<Token> tokens, boolean allowSpecialTypeConstraints, List<AbstractSyntaxTree.Node> errorNodes) {
+		if(tokens.isEmpty())
+			return null;
+
+		String typeConstraint = tokens.stream().map(Token::toRawString).collect(Collectors.joining());
+		if(!LangPatterns.matches(typeConstraint, allowSpecialTypeConstraints?LangPatterns.TYPE_CONSTRAINT_WITH_SPECIAL_TYPES:
+				LangPatterns.PARSING_TYPE_CONSTRAINT)) {
+			CodePosition pos = tokens.get(0).pos.combine(tokens.get(tokens.size() - 1).pos);
+
+			errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos.lineNumberFrom,
+					pos.lineNumberTo, ParsingError.BRACKET_MISMATCH, "Invalid type constraint syntax"));
+
+			return null;
+		}
+
+		//Remove "{" and "}"
+		return typeConstraint.substring(1, typeConstraint.length() - 1);
+	}
+
+	private void parseCommentTokens(List<Token> tokens, List<AbstractSyntaxTree.Node> errorNodes) {
+		if(tokens.isEmpty())
+			return;
+
+		Token currentToken = tokens.get(0);
+		while(currentToken.getTokenType() == Token.TokenType.START_COMMENT ||
+				currentToken.getTokenType() == Token.TokenType.START_DOC_COMMENT) {
+			tokens.remove(0);
+
+			boolean isDocComment = currentToken.getTokenType() == Token.TokenType.START_DOC_COMMENT;
+			if(currentToken.getTokenType() == Token.TokenType.START_COMMENT || isDocComment) {
+				StringBuilder stringBuilder = new StringBuilder();
+
+				while(currentToken.getTokenType() != Token.TokenType.END_COMMENT) {
+					currentToken = tokens.remove(0);
+					if(currentToken.getTokenType() == Token.TokenType.LEXER_ERROR)
+						errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(currentToken.pos.lineNumberFrom,
+								currentToken.pos.lineNumberTo, ParsingError.LEXER_ERROR, currentToken.getValue()));
+
+					if(isDocComment) {
+						if(currentToken.getTokenType() == Token.TokenType.LITERAL_TEXT)
+							stringBuilder.append(currentToken.getValue().trim());
+						else if(currentToken.getTokenType() == Token.TokenType.EOL)
+							stringBuilder.append("\n");
+					}
+				}
+
+				if(isDocComment) {
+					String docComment = stringBuilder.toString();
+					if(langDocComment == null)
+						langDocComment = docComment;
+					else
+						langDocComment += "\n" + docComment;
+				}
+			}
+
+			currentToken = tokens.get(0);
+		}
+	}
+
+	private void trimFirstLine(List<Token> tokens) {
+		while(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE)
+			tokens.remove(0);
+
+		int tokenCountFirstLine = getTokenCountFirstLine(tokens);
+
+		int i = (tokenCountFirstLine == -1?tokens.size():tokenCountFirstLine) - 1;
+		while(i >= 0 && (tokens.get(i).getTokenType() == Token.TokenType.WHITESPACE ||
+				tokens.get(i).getTokenType() == Token.TokenType.END_COMMENT)) {
+			//Trim before comment
+			if(tokens.get(i).getTokenType() == Token.TokenType.END_COMMENT) {
+				while(i >= 0 && tokens.get(i).getTokenType() != Token.TokenType.START_COMMENT &&
+					tokens.get(i).getTokenType() != Token.TokenType.START_DOC_COMMENT) {
+
+					i--;
+				}
+
+				i--;
+
+				continue;
+			}
+
+			tokens.remove(i);
+
+			i--;
+		}
+	}
+
+	private void removeLineContinuationTokens(List<Token> tokens) {
+		int i = 0;
+		while(i < tokens.size()) {
+			if(tokens.get(i).getTokenType() == Token.TokenType.LINE_CONTINUATION) {
+				if(i < tokens.size() - 1 && tokens.get(i + 1).getTokenType() == Token.TokenType.EOL)
+					tokens.remove(i + 1);
+
+				tokens.remove(i);
+
+				//Do not increment i, because original value at index i was removed and next value is now at this index
+				continue;
+			}
+
+			i++;
+		}
+	}
+
+	private int getTokenCountFirstLine(List<Token> tokens) {
+		for(int i = 0;i < tokens.size();i++)
+			if(tokens.get(i).getTokenType() == Token.TokenType.EOL ||
+					tokens.get(i).getTokenType() == Token.TokenType.EOF)
+				return i;
+
+		return -1;
+	}
+
 	public static enum ParsingError {
 		BRACKET_MISMATCH     (-1, "Bracket mismatch"),
 		CONT_FLOW_ARG_MISSING(-2, "Control flow statement condition(s) or argument(s) is/are missing"),
 		EOF                  (-3, "End of file was reached early"),
 		INVALID_CON_PART     (-4, "Invalid statement part in control flow statement"),
 		INVALID_ASSIGNMENT   (-5, "Invalid assignment operation"),
-		INVALID_PARAMETER    (-6, "Invalid function parameter");
-		
+		INVALID_PARAMETER    (-6, "Invalid function parameter"),
+		LEXER_ERROR          (-7, "Error during lexical parsing");
+
 		private final int errorCode;
 		private final String errorText;
-		
+
 		private ParsingError(int errorCode, String errorText) {
 			this.errorCode = errorCode;
 			this.errorText = errorText;
 		}
-		
+
 		public int getErrorCode() {
 			return errorCode;
 		}
-		
+
 		public String getErrorText() {
 			return errorText;
 		}

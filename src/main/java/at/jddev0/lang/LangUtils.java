@@ -437,6 +437,58 @@ public final class LangUtils {
 		
 		return -1;
 	}
+
+	/**
+	 * @return Returns the index of the matching bracket or -1 if no matching bracket was found
+	 */
+	public static int getIndexOfMatchingBracket(List<Token> tokens, int startIndex, int endIndex, String openingBracket,
+												String closingBracket, boolean abortOnEOL) {
+		if(startIndex < 0)
+			return -1;
+
+		if(tokens.size() <= startIndex || tokens.get(startIndex).getTokenType() != Token.TokenType.OPENING_BRACKET ||
+				!tokens.get(startIndex).getValue().equals(openingBracket))
+			return -1;
+
+		int bracketCount = 0;
+		int i = startIndex;
+		while(i < endIndex && i < tokens.size()) {
+			Token token = tokens.get(i);
+			if(token.getTokenType() == Token.TokenType.OPENING_BRACKET && token.getValue().equals(openingBracket)) {
+				bracketCount++;
+			}else if(tokens.get(i).getTokenType() == Token.TokenType.CLOSING_BRACKET && token.getValue().equals(closingBracket)) {
+				bracketCount--;
+
+				if(bracketCount == 0)
+					return i;
+			}
+
+			//Skip Multiline Text and Comments
+			if(token.getTokenType() == Token.TokenType.START_MULTILINE_TEXT) {
+				do {
+					i++;
+				}while(i < endIndex && i < tokens.size() &&
+						tokens.get(i).getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
+
+				continue;
+			}else if(token.getTokenType() == Token.TokenType.START_COMMENT ||
+					token.getTokenType() == Token.TokenType.START_DOC_COMMENT) {
+				do {
+					i++;
+				}while(i < endIndex && i < tokens.size() &&
+						tokens.get(i).getTokenType() != Token.TokenType.END_COMMENT);
+
+				continue;
+			}
+
+			if(abortOnEOL && token.getTokenType() == Token.TokenType.EOL)
+				return -1;
+
+			i++;
+		}
+
+		return -1;
+	}
 	
 	/**
 	 * @return Returns an escaped string which would be parsed as value

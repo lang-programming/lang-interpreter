@@ -34,7 +34,7 @@ import at.jddev0.lang.regex.LangRegEx;
 public final class LangInterpreter {
 	static final String VERSION = "v1.0.0";
 	
-	final LangParser parser = new LangParser();
+	private final LangParser parser = new LangParser();
 	
 	final LangModuleManager moduleManager = new LangModuleManager(this);
 	final Map<String, LangModule> modules = new HashMap<>();
@@ -663,6 +663,7 @@ public final class LangInterpreter {
 				break;
 			
 			case INVALID_PARAMETER:
+			case LEXER_ERROR:
 				error = InterpretingError.INVALID_AST_NODE;
 				break;
 		}
