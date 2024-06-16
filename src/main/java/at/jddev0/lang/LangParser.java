@@ -3700,6 +3700,9 @@ public final class LangParser {
 				StringBuilder stringBuilder = new StringBuilder();
 
 				while(currentToken.getTokenType() != Token.TokenType.END_COMMENT) {
+					if(tokens.isEmpty())
+						break;
+
 					currentToken = tokens.remove(0);
 					if(currentToken.getTokenType() == Token.TokenType.LEXER_ERROR)
 						errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(currentToken.pos, ParsingError.LEXER_ERROR,
@@ -3721,6 +3724,9 @@ public final class LangParser {
 						langDocComment += "\n" + docComment;
 				}
 			}
+
+			if(tokens.isEmpty())
+				break;
 
 			currentToken = tokens.get(0);
 		}
