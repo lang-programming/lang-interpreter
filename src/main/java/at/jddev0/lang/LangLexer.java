@@ -169,15 +169,15 @@ public class LangLexer {
         if(ret != null)
             return ret;
 
-        ret = tryParseBracket(currentLine, lines, tokens);
-        if(ret != null)
-            return ret;
-
         ret = tryParseParserFunctionIdentifier(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 
         ret = tryParseIdentifier(currentLine, lines, tokens);
+        if(ret != null)
+            return ret;
+
+        ret = tryParseBracket(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 

@@ -125,7 +125,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ListNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -239,7 +239,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ParsingErrorNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Error: \"");
 			builder.append(error);
 			builder.append("\", Message: \"");
@@ -312,7 +312,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("AssignmentNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", lvalue: {\n");
 			String[] tokens = getLvalue().toString().split("\\n");
 			for(String token:tokens) {
@@ -375,7 +375,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("EscapeSequenceNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Char: \"");
 			builder.append(c);
 			builder.append("\"\n");
@@ -431,7 +431,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("UnprocessedVariableNameNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", VariableName: \"");
 			builder.append(variableName);
 			builder.append("\"\n");
@@ -491,7 +491,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("VariableNameNode: LineFrom: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", VariableName: \"");
 			builder.append(variableName);
 			builder.append(", TypeConstraint: \"");
@@ -548,7 +548,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ArgumentSeparatorNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", OriginalText: \"");
 			builder.append(originalText);
 			builder.append("\"\n");
@@ -613,7 +613,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("FunctionCallNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", FunctionName: \"");
 			builder.append(functionName);
 			builder.append("\", ParameterList: {\n");
@@ -692,7 +692,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("FunctionCallPreviousNodeValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", ArgumentList: {\n");
 			argumentList.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -793,7 +793,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("FunctionDefinitionNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", FunctionName: \"");
 			builder.append(functionName);
 			builder.append("\", Overloaded: ");
@@ -912,7 +912,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("IfStatementPartIfNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Condition: {\n");
 			String[] tokens = condition.toString().split("\\n");
 			for(String token:tokens) {
@@ -967,7 +967,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("IfStatementPartElseNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", IfBody: {\n");
 			String[] tokens = getIfBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1034,7 +1034,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("IfStatementNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -1124,7 +1124,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementPartLoopNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", LoopBody: {\n");
 			String[] tokens = getLoopBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1183,7 +1183,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementPartWhileNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Condition: {\n");
 			String[] tokens = condition.toString().split("\\n");
 			for(String token:tokens) {
@@ -1249,7 +1249,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementPartUntilNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Condition: {\n");
 			String[] tokens = condition.toString().split("\\n");
 			for(String token:tokens) {
@@ -1319,7 +1319,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementPartRepeatNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", varPointer: {\n");
 			String[] tokens = varPointerNode.toString().split("\\n");
 			for(String token:tokens) {
@@ -1397,7 +1397,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementPartForEachNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", varPointer: {\n");
 			String[] tokens = varPointerNode.toString().split("\\n");
 			for(String token:tokens) {
@@ -1460,7 +1460,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementPartElseNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", LoopBody: {\n");
 			String[] tokens = getLoopBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1526,7 +1526,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -1590,7 +1590,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LoopStatementContinueBreakStatementNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", numberNode: {\n");
 			if(numberNode == null) {
 				builder.append("null");
@@ -1684,7 +1684,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementPartTryNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1732,7 +1732,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementPartSoftTryNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1780,7 +1780,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementPartNonTryNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1846,7 +1846,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementPartCatchNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Errors: {\n");
 			if(errors == null)
 				builder.append("\tnull\n");
@@ -1906,7 +1906,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementPartElseNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -1954,7 +1954,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementPartFinallyNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", TryBody: {\n");
 			String[] tokens = getTryBody().toString().split("\\n");
 			for(String token:tokens) {
@@ -2020,7 +2020,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TryStatementNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -2201,7 +2201,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("OperationNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", NodeType: \"");
 			builder.append(nodeType);
 			builder.append("\", Operator: \"");
@@ -2416,7 +2416,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ReturnNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Children: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -2488,7 +2488,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ThrowNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", ThrowValue: {\n");
 			String[] tokens = nodes.get(0).toString().split("\\n");
 			for(String token:tokens) {
@@ -2576,7 +2576,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("IntValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Value: \"");
 			builder.append(i);
 			builder.append("\"\n");
@@ -2627,7 +2627,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("LongValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Value: \"");
 			builder.append(l);
 			builder.append("\"\n");
@@ -2678,7 +2678,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("FloatValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Value: \"");
 			builder.append(f);
 			builder.append("\"\n");
@@ -2729,7 +2729,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("DoubleValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Value: \"");
 			builder.append(d);
 			builder.append("\"\n");
@@ -2780,7 +2780,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("CharValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Value: \"");
 			builder.append(c);
 			builder.append("\"\n");
@@ -2831,7 +2831,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("TextValueNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Value: \"");
 			builder.append(text);
 			builder.append("\"\n");
@@ -2873,8 +2873,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
-			builder.append("NullValueNode: Position:");
-			builder.append(pos);
+			builder.append("NullValueNode: Position: ");
+			builder.append(pos.toCompactString());
 			builder.append("\n");
 			
 			return builder.toString();
@@ -2915,7 +2915,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("VoidValueNode: Position");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append("\n");
 			
 			return builder.toString();
@@ -2975,7 +2975,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ArrayNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", Elements: {\n");
 			nodes.forEach(node -> {
 				String[] tokens = node.toString().split("\\n");
@@ -3051,7 +3051,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			
 			StringBuilder builder = new StringBuilder();
 			builder.append("StructDefinitionNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", StructName: \"");
 			builder.append(structName);
 			builder.append("\", Members{TypeConstraints}: {\n");
@@ -3214,7 +3214,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
 			StringBuilder builder = new StringBuilder();
 			builder.append("ClassDefinitionNode: Position: ");
-			builder.append(pos);
+			builder.append(pos.toCompactString());
 			builder.append(", ClassName: \"");
 			builder.append(className);
 			builder.append("\", StaticMembers{TypeConstraints} = <value>: {\n");
