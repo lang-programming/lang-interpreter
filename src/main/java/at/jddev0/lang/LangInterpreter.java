@@ -2270,28 +2270,28 @@ public final class LangInterpreter {
 		LangObject thisObject = fp.getThisObject();
 		int originalSuperLevel = -1;
 
+		List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
+				this, -1);
+
+		FunctionPointerObject.InternalFunction internalFunction;
+		if(fp.getOverloadedFunctionCount() == 1) {
+			internalFunction = fp.getFunction(0);
+		}else {
+			internalFunction = LangUtils.getMostRestrictiveFunction(fp, combinedArgumentList);
+		}
+
+		if(internalFunction == null)
+			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
+					" Available function signatures:\n    " + functionName + fp.getFunctions().stream().
+					map(FunctionPointerObject.InternalFunction::toFunctionSignatureSyntax).
+					collect(Collectors.joining("\n    " + functionName)));
+
+		if(thisObject != null && !thisObject.isClass()) {
+			originalSuperLevel = thisObject.getSuperLevel();
+			thisObject.setSuperLevel(internalFunction.getSuperLevel());
+		}
+
 		try {
-			List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
-					this, -1);
-
-			FunctionPointerObject.InternalFunction internalFunction;
-			if(fp.getOverloadedFunctionCount() == 1) {
-				internalFunction = fp.getFunction(0);
-			}else {
-				internalFunction = LangUtils.getMostRestrictiveFunction(fp, combinedArgumentList);
-			}
-
-			if(internalFunction == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "No matching function signature was found for the given arguments." +
-						" Available function signatures:\n    " + functionName + fp.getFunctions().stream().
-						map(FunctionPointerObject.InternalFunction::toFunctionSignatureSyntax).
-						collect(Collectors.joining("\n    " + functionName)));
-
-			if(thisObject != null && !thisObject.isClass()) {
-				originalSuperLevel = thisObject.getSuperLevel();
-				thisObject.setSuperLevel(internalFunction.getSuperLevel());
-			}
-
 			String functionLangPath = internalFunction.getLangPath();
 			String functionLangFile = internalFunction.getLangFile();
 
