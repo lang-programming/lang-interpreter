@@ -32,6 +32,8 @@ public class LangLexer {
     private int openingBracketCount;
     private int openingBlockCount;
 
+    private boolean linesIsEmpty;
+
     public LangLexer() {
         resetPositionVars();
     }
@@ -42,6 +44,8 @@ public class LangLexer {
 
         openingBracketCount = 0;
         openingBlockCount = 0;
+
+        linesIsEmpty = false;
     }
 
     public int getLineNumber() {
@@ -72,6 +76,8 @@ public class LangLexer {
         if(reader == null)
             return null;
 
+        linesIsEmpty = false;
+
         List<String> lines = new ArrayList<>(reader.lines().collect(Collectors.toList()));
 
         List<Token> tokens = new LinkedList<>();
@@ -92,8 +98,8 @@ public class LangLexer {
 
         boolean wasLinesEmpty = lines.isEmpty();
         ret = tryParseNewLine(currentLine, lines, tokens);
-        if(ret != null) {
-            if(ret.isEmpty() && wasLinesEmpty)
+        if(ret != null || linesIsEmpty) {
+            if(linesIsEmpty || (ret.isEmpty() && wasLinesEmpty))
                 return null;
 
             return ret;
@@ -183,7 +189,7 @@ public class LangLexer {
     }
 
     private String tryParseNewLine(String currentLine, List<String> lines, List<Token> tokens) {
-        if(currentLine.isEmpty()) {
+        if(currentLine.isEmpty() && !linesIsEmpty) {
             int fromColumn = column;
             column++;
             tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\n", Token.TokenType.EOL));
@@ -193,7 +199,9 @@ public class LangLexer {
 
             openingBracketCount = 0;
 
-            if(!lines.isEmpty())
+            if(lines.isEmpty())
+                linesIsEmpty = true;
+            else
                 currentLine = lines.remove(0);
 
             return currentLine;
