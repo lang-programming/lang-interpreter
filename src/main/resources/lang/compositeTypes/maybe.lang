@@ -35,7 +35,7 @@ class &Maybe {
     ## Returns the value if a just &Maybe value is provided for nothing an INVALID_ARGUMENTS exception will be thrown
     +mp.get = () -> {
         if(!::$present) {
-            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, Value is not present)
+            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Value is not present")
         }
 
         return parser.op(::$value)
@@ -46,7 +46,7 @@ class &Maybe {
         if(::$present) {
             $ret $= fp.mapper(::$value)
             if(!($ret ~~ &Maybe)) {
-                throw fn.withErrorMessage($LANG_ERROR_INVALID_FUNC_PTR, {{{The value returned by fp.mapperFunc() must be of type "&Maybe"}}})
+                throw fn.withErrorMessage($LANG_ERROR_INVALID_FUNC_PTR, "The value returned by fp.mapperFunc() must be of type \"&Maybe\"")
             }
 
             return $ret
@@ -81,9 +81,9 @@ class &Maybe {
 
     +to:text = ():{TEXT} -> {
         if(::$present) {
-            return parser.op({{{just(}}} ||| ::$value ||| {{{)}}})
+            return parser.op("just(" ||| ::$value ||| ")")
         }
 
-        return {{{nothing}}}
+        return "nothing"
     }
 }
