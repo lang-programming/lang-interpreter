@@ -240,6 +240,80 @@ public class LangLexer {
     }
 
     private String tryParseMultilineText(String currentLine, List<String> lines, List<Token> tokens) {
+        if(currentLine.startsWith("\"\"\""))
+            return tryParseMultilineTextWithEscapeSequenceSupport(currentLine, lines, tokens);
+
+        return tryParseMultilineTextWithoutEscapeSequenceSupport(currentLine, lines, tokens);
+    }
+
+    private String tryParseMultilineTextWithEscapeSequenceSupport(String currentLine, List<String> lines, List<Token> tokens) {
+        if(!currentLine.startsWith("\"\"\""))
+            return null;
+
+        int fromColumn = column;
+        column += 3;
+
+        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"\"\"", Token.TokenType.START_MULTILINE_TEXT));
+
+        currentLine = currentLine.substring(3);
+
+        while(true) {
+            int endIndex = currentLine.indexOf("\"\"\"");
+            if(endIndex == 0)
+                break;
+
+            int index = currentLine.indexOf("\\");
+            if(index != -1 && (endIndex == -1?index < currentLine.length() - 1:index < endIndex)) {
+                fromColumn = column;
+                column += index;
+
+                String token = currentLine.substring(0, index);
+                tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.LITERAL_TEXT));
+
+                currentLine = currentLine.substring(index);
+
+                String ret = tryParseEscapeSequence(currentLine, lines, tokens);
+                if(ret != null)
+                    currentLine = ret;
+
+                continue;
+            }
+
+            boolean wasLinesEmpty = lines.isEmpty();
+            String ret = tryParseNewLine(currentLine, lines, tokens);
+            if(ret == null) {
+                int len = endIndex == -1?currentLine.length():endIndex;
+
+                fromColumn = column;
+                column += len;
+
+                String token = currentLine.substring(0, len);
+
+                tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.LITERAL_TEXT));
+
+                currentLine = currentLine.substring(len);
+            }else {
+                if(wasLinesEmpty) {
+                    tokens.add(new Token(lineNumber, lineNumber, column, column, "", Token.TokenType.END_MULTILINE_TEXT));
+                    tokens.add(new Token(lineNumber, lineNumber, column, column,
+                            "Multiline text closing bracket '\"\"\"' is missing!", Token.TokenType.LEXER_ERROR));
+
+                    return "";
+                }
+
+                currentLine = ret;
+            }
+        }
+
+        fromColumn = column;
+        column += 3;
+
+        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"\"\"", Token.TokenType.END_MULTILINE_TEXT));
+
+        return currentLine.substring(3);
+    }
+
+    private String tryParseMultilineTextWithoutEscapeSequenceSupport(String currentLine, List<String> lines, List<Token> tokens) {
         if(!currentLine.startsWith("{{{"))
             return null;
 
@@ -297,6 +371,9 @@ public class LangLexer {
             return null;
 
         int endIndex = 1;
+        if(endIndex == currentLine.length())
+            return null;
+
         while(endIndex < currentLine.length()) {
             endIndex = currentLine.indexOf("\"", endIndex);
 
@@ -402,6 +479,9 @@ public class LangLexer {
 
         while(!currentLine.isEmpty()) {
             int multilineTextStartIndex = currentLine.indexOf("{{{");
+            if(multilineTextStartIndex == -1)
+                multilineTextStartIndex = currentLine.indexOf("\"\"\"");
+
             if(multilineTextStartIndex != -1) {
                 if(multilineTextStartIndex > 0) {
                     int fromColumn = column;

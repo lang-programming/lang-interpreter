@@ -220,14 +220,7 @@ public final class LangParser {
 							break;
 
 						case ESCAPE_SEQUENCE:
-							if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-								leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-										"Invalid escape sequence: " + t.getValue()));
-
-								break;
-							}
-
-							leftNodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
+							parseEscapeSequenceToken(t, leftNodes);
 
 							break;
 
@@ -257,12 +250,15 @@ public final class LangParser {
 					do {
 						t = tokens.remove(0);
 
-						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+								t.getTokenType() == Token.TokenType.EOL)
 							leftNodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
 
+						if(t.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+							parseEscapeSequenceToken(t, leftNodes);
+
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
-							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()
-							));
+							leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
 					}while(t.getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
 
 					break;
@@ -2128,14 +2124,7 @@ public final class LangParser {
 				case ESCAPE_SEQUENCE:
 					tokens.remove(0);
 
-					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-								"Invalid escape sequence: " + t.getValue()));
-
-						continue tokenProcessing;
-					}
-
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
+					parseEscapeSequenceToken(t, nodes);
 
 					break;
 
@@ -2151,8 +2140,12 @@ public final class LangParser {
 					do {
 						t = tokens.remove(0);
 
-						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+								t.getTokenType() == Token.TokenType.EOL)
 							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+							parseEscapeSequenceToken(t, nodes);
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
@@ -3073,14 +3066,7 @@ public final class LangParser {
 				case ESCAPE_SEQUENCE:
 					tokens.remove(0);
 
-					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-								"Invalid escape sequence: " + t.getValue()));
-
-						continue tokenProcessing;
-					}
-
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
+					parseEscapeSequenceToken(t, nodes);
 
 					break;
 
@@ -3096,8 +3082,12 @@ public final class LangParser {
 					do {
 						t = tokens.remove(0);
 
-						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+								t.getTokenType() == Token.TokenType.EOL)
 							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+							parseEscapeSequenceToken(t, nodes);
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
@@ -3179,14 +3169,7 @@ public final class LangParser {
 				case ESCAPE_SEQUENCE:
 					tokens.remove(0);
 
-					if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-								"Invalid escape sequence: " + t.getValue()));
-
-						continue tokenProcessing;
-					}
-
-					nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
+					parseEscapeSequenceToken(t, nodes);
 
 					break;
 
@@ -3202,8 +3185,12 @@ public final class LangParser {
 					do {
 						t = tokens.remove(0);
 
-						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+						if(t.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+								t.getTokenType() == Token.TokenType.EOL)
 							nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
+
+						if(t.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+							parseEscapeSequenceToken(t, nodes);
 
 						if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
@@ -3243,6 +3230,17 @@ public final class LangParser {
 
 		//TEXT
 		nodes.add(new AbstractSyntaxTree.TextValueNode(pos, value));
+	}
+
+	private void parseEscapeSequenceToken(Token escapeSequenceToken, List<AbstractSyntaxTree.Node> nodes) {
+		if(escapeSequenceToken.getValue().length() != 2 || escapeSequenceToken.getValue().charAt(0) != '\\') {
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(escapeSequenceToken.pos, ParsingError.LEXER_ERROR,
+					"Invalid escape sequence: " + escapeSequenceToken.getValue()));
+
+			return;
+		}
+
+		nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(escapeSequenceToken.pos, escapeSequenceToken.getValue().charAt(1)));
 	}
 
 	private void parseNumberToken(Token numberToken, List<AbstractSyntaxTree.Node> nodes) {
@@ -3510,14 +3508,7 @@ public final class LangParser {
 					case ESCAPE_SEQUENCE:
 						tokens.remove(0);
 
-						if(t.getValue().length() != 2 || t.getValue().charAt(0) != '\\') {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-									"Invalid escape sequence: " + t.getValue()));
-
-							continue tokenProcessing;
-						}
-
-						nodes.add(new AbstractSyntaxTree.EscapeSequenceNode(t.pos, t.getValue().charAt(1)));
+						parseEscapeSequenceToken(t, nodes);
 
 						break;
 
@@ -3533,8 +3524,12 @@ public final class LangParser {
 						do {
 							t = tokens.remove(0);
 
-							if(t.getTokenType() == Token.TokenType.LITERAL_TEXT || t.getTokenType() == Token.TokenType.EOL)
+							if(t.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+									t.getTokenType() == Token.TokenType.EOL)
 								nodes.add(new AbstractSyntaxTree.TextValueNode(t.pos, t.getValue()));
+
+							if(t.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+								parseEscapeSequenceToken(t, nodes);
 
 							if(t.getTokenType() == Token.TokenType.LEXER_ERROR)
 								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR, t.getValue()));
@@ -3717,8 +3712,9 @@ public final class LangParser {
 								currentToken.getValue()));
 
 					if(isDocComment) {
-						if(currentToken.getTokenType() == Token.TokenType.LITERAL_TEXT)
-							stringBuilder.append(currentToken.getValue().trim());
+						if(currentToken.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+								currentToken.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+							stringBuilder.append(currentToken.getValue());
 						else if(currentToken.getTokenType() == Token.TokenType.EOL)
 							stringBuilder.append("\n");
 					}
