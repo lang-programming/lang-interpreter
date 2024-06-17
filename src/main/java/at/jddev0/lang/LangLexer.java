@@ -440,6 +440,8 @@ public class LangLexer {
 
     private String tryParseLineContinuation(String currentLine, List<String> lines, List<Token> tokens) {
         if(currentLine.length() == 1 && currentLine.charAt(0) == '\\') {
+            int originalOpenBracketCount = openingBracketCount;
+
             int fromColumn = column;
             column++;
 
@@ -450,6 +452,7 @@ public class LangLexer {
             if(ret != null)
                 currentLine = ret;
 
+            openingBracketCount = originalOpenBracketCount;
             return currentLine;
         }
 
