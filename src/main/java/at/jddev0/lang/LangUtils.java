@@ -512,7 +512,7 @@ public final class LangUtils {
 		replace("=", "\\=").replace("<", "\\<").replace(">", "\\>").replace("+", "\\+").replace("-", "\\-").
 		replace("/", "\\/").replace("*", "\\*").replace("%", "\\%").replace("|", "\\|").replace("~", "\\~").
 		replace("^", "\\^").replace("?", "\\?").replace(":", "\\:").replace("@", "\\@").replace("\u25b2", "\\\u25b2").
-		replace("\u25bc", "\\\u25bc").
+		replace("\u25bc", "\\\u25bc").replace("\"", "\\\"").
 		
 		replace("!", "\\!!").replace("null", "nul\\!l").replace("return", "retur\\!n").
 		replace("throw", "thro\\!w") + "\\e";

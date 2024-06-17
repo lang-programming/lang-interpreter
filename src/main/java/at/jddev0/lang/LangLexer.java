@@ -153,6 +153,10 @@ public class LangLexer {
         if(ret != null)
             return ret;
 
+        ret = tryParseSingleLineText(currentLine, lines, tokens);
+        if(ret != null)
+            return ret;
+
         ret = tryParseAssignment(currentLine, lines, tokens);
         if(ret != null)
             return ret;
@@ -284,6 +288,75 @@ public class LangLexer {
         column += 3;
 
         tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "}}}", Token.TokenType.END_MULTILINE_TEXT));
+
+        return currentLine.substring(3);
+    }
+
+    private String tryParseSingleLineText(String currentLine, List<String> lines, List<Token> tokens) {
+        if(!currentLine.startsWith("\"\"\""))
+            return null;
+
+        int endIndex = 3;
+        while(endIndex < currentLine.length()) {
+            endIndex = currentLine.indexOf("\"\"\"", endIndex);
+
+            if(endIndex == -1)
+                return null;
+
+            if(currentLine.charAt(endIndex - 1) != '\\' || LangUtils.isBackslashAtIndexEscaped(currentLine, endIndex - 1))
+                break;
+
+            endIndex++;
+        }
+
+        int fromColumn = column;
+        column += 3;
+        endIndex -= 3;
+
+        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"\"\"", Token.TokenType.SINGLE_LINE_TEXT_QUOTES));
+
+        currentLine = currentLine.substring(3);
+
+        if(endIndex == 0)
+            tokens.add(new Token(lineNumber, lineNumber, column, column, "", Token.TokenType.LITERAL_TEXT));
+
+        while(endIndex > 0) {
+            int index = currentLine.indexOf("\\");
+
+            if(index != -1 && index < endIndex) {
+                fromColumn = column;
+                column += index;
+                endIndex -= index;
+
+                String token = currentLine.substring(0, index);
+                tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.LITERAL_TEXT));
+
+                currentLine = currentLine.substring(index);
+
+                String ret = tryParseEscapeSequence(currentLine, lines, tokens);
+                if(ret != null) {
+                    endIndex -= currentLine.length() - ret.length();
+                    currentLine = ret;
+                }
+
+                continue;
+            }
+
+            fromColumn = column;
+            column += endIndex;
+
+            String token = currentLine.substring(0, endIndex);
+            tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.LITERAL_TEXT));
+
+            currentLine = currentLine.substring(endIndex);
+
+            break;
+        }
+
+        fromColumn = column;
+        column += 3;
+
+        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"\"\"", Token.TokenType.SINGLE_LINE_TEXT_QUOTES));
 
         return currentLine.substring(3);
     }

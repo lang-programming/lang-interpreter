@@ -40,7 +40,7 @@ public final class LangParser {
 	}
 
 	public AbstractSyntaxTree parseTokens(List<Token> tokens) {
-		removeLineContinuationTokens(tokens);
+		removeLineContinuationAndSingleLineTextQuotesTokens(tokens);
 		if(tokens.isEmpty())
 			return null;
 
@@ -971,6 +971,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
+				case SINGLE_LINE_TEXT_QUOTES:
 					leftNodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for operation expression: \"" + t.getTokenType().name() + "\""));
 
@@ -2180,6 +2181,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
+				case SINGLE_LINE_TEXT_QUOTES:
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""
 					));
@@ -2437,6 +2439,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
+				case SINGLE_LINE_TEXT_QUOTES:
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""));
 
@@ -2945,6 +2948,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
+				case SINGLE_LINE_TEXT_QUOTES:
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""
 					));
@@ -3113,6 +3117,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
+				case SINGLE_LINE_TEXT_QUOTES:
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""
 					));
@@ -3209,6 +3214,7 @@ public final class LangParser {
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
+				case SINGLE_LINE_TEXT_QUOTES:
 					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 							"Invalid token type for simple assignment value expression: \"" +
 									t.getTokenType().name() + "\""));
@@ -3383,6 +3389,7 @@ public final class LangParser {
 						case LINE_CONTINUATION:
 						case END_COMMENT:
 						case END_MULTILINE_TEXT:
+						case SINGLE_LINE_TEXT_QUOTES:
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 									"Invalid token type for function parameter list expression: \"" +
 											t.getTokenType().name() + "\""));
@@ -3560,6 +3567,7 @@ public final class LangParser {
 					case LINE_CONTINUATION:
 					case END_COMMENT:
 					case END_MULTILINE_TEXT:
+					case SINGLE_LINE_TEXT_QUOTES:
 						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
 								"Invalid token type for function argument expression: \"" + t.getTokenType().name() + "\""));
 
@@ -3760,13 +3768,18 @@ public final class LangParser {
 		}
 	}
 
-	private void removeLineContinuationTokens(List<Token> tokens) {
+	private void removeLineContinuationAndSingleLineTextQuotesTokens(List<Token> tokens) {
 		int i = 0;
 		while(i < tokens.size()) {
 			if(tokens.get(i).getTokenType() == Token.TokenType.LINE_CONTINUATION) {
 				if(i < tokens.size() - 1 && tokens.get(i + 1).getTokenType() == Token.TokenType.EOL)
 					tokens.remove(i + 1);
 
+				tokens.remove(i);
+
+				//Do not increment i, because original value at index i was removed and next value is now at this index
+				continue;
+			}else if(tokens.get(i).getTokenType() == Token.TokenType.SINGLE_LINE_TEXT_QUOTES) {
 				tokens.remove(i);
 
 				//Do not increment i, because original value at index i was removed and next value is now at this index
