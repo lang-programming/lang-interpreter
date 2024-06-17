@@ -2946,6 +2946,56 @@ public final class LangOperators {
 
 		return null;
 	}
+	/**
+	 * For "func.iter()"
+	 */
+	public DataObject opIter(DataObject operand, CodePosition pos) {
+		DataObject ret = callOperatorMethod("iter", operand, pos);
+		if(ret != null)
+			return ret;
+		switch(operand.getType()) {
+			case BYTE_BUFFER:
+			case ARRAY:
+			case LIST:
+			case STRUCT:
+			case TEXT:
+				return interpreter.callConstructor(interpreter.standardTypes.get("&BasicIterator").getObject(),
+						Arrays.asList(operand), pos);
+
+			case CHAR:
+			case INT:
+			case LONG:
+			case FLOAT:
+			case DOUBLE:
+			case ERROR:
+			case VAR_POINTER:
+			case FUNCTION_POINTER:
+			case OBJECT:
+			case NULL:
+			case VOID:
+			case ARGUMENT_SEPARATOR:
+			case TYPE:
+				return null;
+		}
+
+		return null;
+	}
+	/**
+	 * For "func.hasNext()"
+	 */
+	public DataObject opHasNext(DataObject operand, CodePosition pos) {
+		DataObject ret = callOperatorMethod("hasNext", operand, pos);
+		if(ret != null)
+			return new DataObject().setBoolean(interpreter.conversions.toBool(ret, pos));
+
+		return null;
+	}
+	/**
+	 * For "func.next()"
+	 */
+	public DataObject opNext(DataObject operand, CodePosition pos) {
+		return callOperatorMethod("next", operand, pos);
+	}
 
 	/**
 	 * For "...(...)"

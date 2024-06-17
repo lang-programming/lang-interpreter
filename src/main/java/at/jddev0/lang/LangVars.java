@@ -118,5 +118,6 @@ public final class LangVars {
 		addStaticLangVar("&Object", new DataObject().setObject(DataObject.LangObject.OBJECT_CLASS).setFinalData(true));
 		addStaticLangVar("&Maybe", interpreter.standardTypes.get("&Maybe").setFinalData(true));
 		addStaticLangVar("&Complex", interpreter.standardTypes.get("&Complex").setFinalData(true));
+		addStaticLangVar("&BasicIterator", interpreter.standardTypes.get("&BasicIterator").setFinalData(true));
 	}
 }

@@ -4091,7 +4091,7 @@ public final class LangInterpreter {
 	}
 
 	/**
-	 * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs)|
+	 * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|
 	 * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
 	 * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))</code>
 	 */
@@ -4104,6 +4104,9 @@ public final class LangInterpreter {
 			"op:inv",
 			"op:not",
 			"op:abs",
+			"op:iter",
+			"op:hasNext",
+			"op:next",
 
 			"op:concat", "op:r-concat",
 			"op:add", "op:r-add",

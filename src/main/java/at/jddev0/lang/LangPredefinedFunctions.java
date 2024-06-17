@@ -2228,6 +2228,42 @@ final class LangPredefinedFunctions {
 
 			return ret;
 		}
+
+		@LangFunction("iter")
+		public static DataObject iterFunction(
+				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+		) {
+			DataObject ret = interpreter.operators.opIter(operand, CodePosition.EMPTY);
+			if(ret == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"The iter operator is not defined for " + operand.getType());
+
+			return ret;
+		}
+
+		@LangFunction("hasNext")
+		public static DataObject hasNextFunction(
+				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+		) {
+			DataObject ret = interpreter.operators.opHasNext(operand, CodePosition.EMPTY);
+			if(ret == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"The hasNext operator is not defined for " + operand.getType());
+
+			return ret;
+		}
+
+		@LangFunction("next")
+		public static DataObject nextFunction(
+				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+		) {
+			DataObject ret = interpreter.operators.opNext(operand, CodePosition.EMPTY);
+			if(ret == null)
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+						"The next operator is not defined for " + operand.getType());
+
+			return ret;
+		}
 	}
 
 	@SuppressWarnings("unused")
