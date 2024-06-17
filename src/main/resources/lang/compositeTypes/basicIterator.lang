@@ -2,10 +2,10 @@ lang.version = v1.0.0
 lang.name = Lang Standard Implementation (&BasicIterator)
 
 class &BasicIterator {
-    -final:$value{BYTE_BUFFER|ARRAY|LIST|STRUCT|TEXT}
+    -final:$value{OBJECT|BYTE_BUFFER|ARRAY|LIST|STRUCT|TEXT}
     -$index{INT}
 
-    +construct = ($value{BYTE_BUFFER|ARRAY|LIST|STRUCT|TEXT}):{VOID} -> {
+    +construct = ($value{OBJECT|BYTE_BUFFER|ARRAY|LIST|STRUCT|TEXT}):{VOID} -> {
         ::$value $= $value
         ::$index $= 0
     }

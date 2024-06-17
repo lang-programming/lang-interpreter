@@ -864,130 +864,55 @@ public final class LangInterpreter {
 					}
 					
 					var = varPointer.getVarPointer().getVar();
-					
+
+					CodePosition pos = forEachNode.getCompositeOrTextNode().getPos();
+
 					DataObject compositeOrText = interpretNode(null, forEachNode.getCompositeOrTextNode());
-					if(compositeOrText.getType() == DataType.ARRAY) {
-						DataObject[] arr = compositeOrText.getArray();
-						for(int i = 0;i < arr.length;i++) {
-							flag = true;
-							
-							if(var != null) {
-								if(var.isFinalData() || var.isLangVar()) {
-									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
-									return false;
-								}else {
-									var.setData(arr[i]);
-								}
-							}
-							
-							interpretAST(node.getLoopBody());
-							Boolean ret = interpretLoopContinueAndBreak();
-							if(ret != null) {
-								if(ret)
-									return true;
-								else
-									continue;
-							}
-						}
-					}else if(compositeOrText.getType() == DataType.LIST) {
-						List<DataObject> list = compositeOrText.getList();
-						for(int i = 0;i < list.size();i++) {
-							flag = true;
-							
-							if(var != null) {
-								if(var.isFinalData() || var.isLangVar()) {
-									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
-									return false;
-								}else {
-									var.setData(list.get(i));
-								}
-							}
-							
-							interpretAST(node.getLoopBody());
-							Boolean ret = interpretLoopContinueAndBreak();
-							if(ret != null) {
-								if(ret)
-									return true;
-								else
-									continue;
-							}
-						}
-					}else if(compositeOrText.getType() == DataType.STRUCT) {
-						StructObject struct = compositeOrText.getStruct();
-						if(struct.isDefinition()) {
-							for(int i = 0;i < struct.getMemberNames().length;i++) {
-								flag = true;
-								
-								if(var != null) {
-									if(var.isFinalData() || var.isLangVar())
-										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
-									else
-										var.setText(struct.getMemberNames()[i]);
-								}
-								
-								interpretAST(node.getLoopBody());
-								Boolean ret = interpretLoopContinueAndBreak();
-								if(ret != null) {
-									if(ret)
-										return true;
-									else
-										continue;
-								}
-							}
-						}else {
-							for(int i = 0;i < struct.getMemberNames().length;i++) {
-								flag = true;
-								
-								String memberName = struct.getMemberNames()[i];
-								
-								if(var != null) {
-									if(var.isFinalData() || var.isLangVar())
-										setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
-									else
-										var.setStruct(new StructObject(standardTypes.get("&Pair").getStruct(), new DataObject[] {
-												new DataObject(memberName),
-												struct.getMember(memberName)
-										}));
-								}
-								
-								interpretAST(node.getLoopBody());
-								Boolean ret = interpretLoopContinueAndBreak();
-								if(ret != null) {
-									if(ret)
-										return true;
-									else
-										continue;
-								}
-							}
-						}
-					}else if(compositeOrText.getType() == DataType.TEXT) {
-						String text = compositeOrText.getText();
-						for(int i = 0;i < text.length();i++) {
-							flag = true;
-							
-							if(var != null) {
-								if(var.isFinalData() || var.isLangVar()) {
-									setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
-									return false;
-								}else {
-									var.setChar(text.charAt(i));
-								}
-							}
-							
-							interpretAST(node.getLoopBody());
-							Boolean ret = interpretLoopContinueAndBreak();
-							if(ret != null) {
-								if(ret)
-									return true;
-								else
-									continue;
-							}
-						}
-					}else {
-						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "con.foreach needs a composite or a text value to iterate over", node.getPos());
+					DataObject iterator = operators.opIter(compositeOrText, pos);
+					if(iterator == null) {
+						setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "The provided value to con.foreach does not support iteration", node.getPos());
+
 						return false;
 					}
-					
+
+					while(true) {
+						DataObject hasNext = operators.opHasNext(iterator, pos);
+						if(hasNext == null) {
+							setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Invalid iterator implementation for value provided to con.foreach", node.getPos());
+
+							return false;
+						}
+
+						if(!conversions.toBool(hasNext, pos))
+							break;
+
+						DataObject next = operators.opNext(iterator, pos);
+						if(next == null) {
+							setErrno(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Invalid iterator implementation for value provided to con.foreach", node.getPos());
+
+							return false;
+						}
+
+						flag = true;
+						if(var != null) {
+							if(var.isFinalData() || var.isLangVar()) {
+								setErrno(InterpretingError.FINAL_VAR_CHANGE, "con.foreach current element value can not be set", node.getPos());
+								return false;
+							}else {
+								var.setData(next);
+							}
+						}
+
+						interpretAST(node.getLoopBody());
+						Boolean ret = interpretLoopContinueAndBreak();
+						if(ret != null) {
+							if(ret)
+								return true;
+							else
+								continue;
+						}
+					}
+
 					break;
 				case LOOP_STATEMENT_PART_ELSE:
 					flag = true;
