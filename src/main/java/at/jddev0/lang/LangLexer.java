@@ -293,12 +293,12 @@ public class LangLexer {
     }
 
     private String tryParseSingleLineText(String currentLine, List<String> lines, List<Token> tokens) {
-        if(!currentLine.startsWith("\"\"\""))
+        if(!currentLine.startsWith("\""))
             return null;
 
-        int endIndex = 3;
+        int endIndex = 1;
         while(endIndex < currentLine.length()) {
-            endIndex = currentLine.indexOf("\"\"\"", endIndex);
+            endIndex = currentLine.indexOf("\"", endIndex);
 
             if(endIndex == -1)
                 return null;
@@ -310,12 +310,12 @@ public class LangLexer {
         }
 
         int fromColumn = column;
-        column += 3;
-        endIndex -= 3;
+        column += 1;
+        endIndex -= 1;
 
-        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"\"\"", Token.TokenType.SINGLE_LINE_TEXT_QUOTES));
+        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"", Token.TokenType.SINGLE_LINE_TEXT_QUOTES));
 
-        currentLine = currentLine.substring(3);
+        currentLine = currentLine.substring(1);
 
         if(endIndex == 0)
             tokens.add(new Token(lineNumber, lineNumber, column, column, "", Token.TokenType.LITERAL_TEXT));
@@ -354,11 +354,11 @@ public class LangLexer {
         }
 
         fromColumn = column;
-        column += 3;
+        column += 1;
 
-        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"\"\"", Token.TokenType.SINGLE_LINE_TEXT_QUOTES));
+        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\"", Token.TokenType.SINGLE_LINE_TEXT_QUOTES));
 
-        return currentLine.substring(3);
+        return currentLine.substring(1);
     }
 
     private String tryParseLineContinuation(String currentLine, List<String> lines, List<Token> tokens) {
