@@ -14,7 +14,7 @@ function pair($first, $second):{STRUCT} {
 ## Returns the first value of &pair
 function pfirst(&pair{STRUCT}) {
     if(!(&pair ~~ &Pair)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&pair\") must be of type \"&Pair\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&pair\") must be of type \"&Pair\""
     }
 
     return parser.op(&pair::$first)
@@ -23,7 +23,7 @@ function pfirst(&pair{STRUCT}) {
 ## Returns the second value of &pair
 function psecond(&pair{STRUCT}) {
     if(!(&pair ~~ &Pair)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&pair\") must be of type \"&Pair\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&pair\") must be of type \"&Pair\""
     }
 
     return parser.op(&pair::$second)

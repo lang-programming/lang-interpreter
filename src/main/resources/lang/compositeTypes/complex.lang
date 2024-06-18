@@ -28,7 +28,7 @@ class &Complex {
 
     +op:add = (&z{OBJECT}):{OBJECT} -> {
         if(!(&z ~~ &Complex)) {
-            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+            throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
         return parser.op(&Complex(::$real + &z::$real, ::$imag + &z::$imag))
@@ -44,7 +44,7 @@ class &Complex {
 
     +op:sub = (&z{OBJECT}):{OBJECT} -> {
         if(!(&z ~~ &Complex)) {
-            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+            throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
         return parser.op(&Complex(::$real - &z::$real, ::$imag - &z::$imag))
@@ -60,7 +60,7 @@ class &Complex {
 
     +op:mul = (&z{OBJECT}):{OBJECT} -> {
         if(!(&z ~~ &Complex)) {
-            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+            throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
         return parser.op(&Complex(::$real * &z::$real - ::$imag * &z::$imag, ::$real * &z::$imag + ::$imag * &z::$real))
@@ -76,7 +76,7 @@ class &Complex {
 
     +op:div = (&z{OBJECT}):{OBJECT} -> {
         if(!(&z ~~ &Complex)) {
-            throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+            throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
         $realNumerator $= ::$real * &z::$real + ::$imag * &z::$imag
@@ -134,7 +134,7 @@ function complex($real{number}, $imag{number}):{OBJECT} {
 ## Returns the real value of &z
 function creal(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
     }
 
     return parser.op(&z::$real)
@@ -143,7 +143,7 @@ function creal(&z{OBJECT}):{DOUBLE} {
 ## Returns the imaginary value of &z
 function cimag(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
     }
 
     return parser.op(&z::$imag)
@@ -152,7 +152,7 @@ function cimag(&z{OBJECT}):{DOUBLE} {
 ## Returns the absolute value of &z
 function cabs(&z{OBJECT}):{DOUBLE} {
     if(!(&z ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
     }
 
     return parser.op(abs(&z))
@@ -161,7 +161,7 @@ function cabs(&z{OBJECT}):{DOUBLE} {
 ## Returns a conjugated copy of &z
 function conj(&z{OBJECT}):{OBJECT} {
     if(!(&z ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
     }
 
     return parser.op(&z::conjugate())
@@ -170,7 +170,7 @@ function conj(&z{OBJECT}):{OBJECT} {
 ## Returns a negated copy of &z
 function cinv(&z{OBJECT}):{OBJECT} {
     if(!(&z ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
     }
 
     return parser.op(-&z)
@@ -179,11 +179,11 @@ function cinv(&z{OBJECT}):{OBJECT} {
 ## Returns &a + &b
 function cadd(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\""
     }
 
     if(!(&b ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\""
     }
 
     return parser.op(&a + &b)
@@ -192,11 +192,11 @@ function cadd(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
 ## Returns &a - &b
 function csub(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\""
     }
 
     if(!(&b ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\""
     }
 
     return parser.op(&a - &b)
@@ -205,11 +205,11 @@ function csub(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
 ## Returns &a * &b
 function cmul(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\""
     }
 
     if(!(&b ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\""
     }
 
     return parser.op(&a * &b)
@@ -218,11 +218,11 @@ function cmul(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
 ## Returns &a / &b
 function cdiv(&a{OBJECT}, &b{OBJECT}):{OBJECT} {
     if(!(&a ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&a\") must be of type \"&Complex\""
     }
 
     if(!(&b ~~ &Complex)) {
-        throw fn.withErrorMessage($LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\"")
+        throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"&b\") must be of type \"&Complex\""
     }
 
     return parser.op(&a / &b)
