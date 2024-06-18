@@ -176,6 +176,10 @@ final class LangPatterns {
 	 */
 	public static final Pattern PARSING_INVALID_FLOATING_POINT_NUMBER = Pattern.compile("(-?(NaN|Infinity))|(.*[dD])|(0[xX].*)");
 	/**
+	 * RegEx: "<code>((([1-9]\d*|0)(\.\d*)?)|(\.\d+))[eE]</code>"
+	 */
+	public static final Pattern PARSING_FLOATING_POINT_E_SYNTAX_START = Pattern.compile("((([1-9]\\d*|0)(\\.\\d*)?)|(\\.\\d+))[eE]");
+	/**
 	 * RegEx: "<code>(.*[fFdD])|(0[xX].*)</code>"
 	 */
 	public static final Pattern PARSING_INVALID_FLOATING_POINT_NUMBER_ALLOW_NaN_INFINITY = Pattern.compile("(.*[fFdD])|(0[xX].*)");

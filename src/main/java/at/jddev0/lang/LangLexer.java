@@ -117,13 +117,17 @@ public class LangLexer {
 
         int i = 0;
         while(i < currentLine.length()) {
-            ret = tryParseTokens(currentLine.substring(i), lines, tokens);
-            if(ret != null) {
-                String token = currentLine.substring(0, i);
-                tokens.add(tokenIndex, parseOtherValue(token, new CodePosition(fromLineNumber, fromLineNumber,
-                        fromColumn, fromColumn + i)));
+            //Skip parsing of "+" and "-" if floating point number contains an "e" or an "E"
+            if(!LangPatterns.matches(currentLine.substring(0, i), LangPatterns.PARSING_FLOATING_POINT_E_SYNTAX_START) ||
+                    (currentLine.charAt(i) != '+' && currentLine.charAt(i) != '-')) {
+                ret = tryParseTokens(currentLine.substring(i), lines, tokens);
+                if(ret != null) {
+                    String token = currentLine.substring(0, i);
+                    tokens.add(tokenIndex, parseOtherValue(token, new CodePosition(fromLineNumber, fromLineNumber,
+                            fromColumn, fromColumn + i)));
 
-                return ret;
+                    return ret;
+                }
             }
 
             column++;
