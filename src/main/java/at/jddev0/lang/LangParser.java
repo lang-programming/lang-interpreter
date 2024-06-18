@@ -1812,8 +1812,46 @@ public final class LangParser {
 				tokens.get(0).getValue().equals("throw") && tokens.get(1).getTokenType() == Token.TokenType.WHITESPACE) {
 			tokens.remove(0);
 
-			AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens, true);
-			nodes.add(new AbstractSyntaxTree.ThrowNode(returnedNode == null?parseLRvalue(tokens, true).convertToNode():returnedNode));
+			List<AbstractSyntaxTree.Node> arguments = convertCommaOperatorsToArgumentSeparators(parseOperationExpr(tokens));
+			Iterator<AbstractSyntaxTree.Node> argumentIter = arguments.iterator();
+
+			List<AbstractSyntaxTree.Node> errorNodes = new LinkedList<>();
+			boolean flag = false;
+			while(argumentIter.hasNext()) {
+				AbstractSyntaxTree.Node node = argumentIter.next();
+
+				if(node.getNodeType() == AbstractSyntaxTree.NodeType.ARGUMENT_SEPARATOR) {
+					flag = true;
+					break;
+				}
+
+				errorNodes.add(node);
+			}
+			if(!flag && errorNodes.isEmpty()) {
+				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.LEXER_ERROR,
+						"throw arguments are invalid"));
+				return ast;
+			}
+
+			List<AbstractSyntaxTree.Node> messageNodes = new LinkedList<>();
+			while(argumentIter.hasNext()) {
+				AbstractSyntaxTree.Node node = argumentIter.next();
+
+				if(node.getNodeType() == AbstractSyntaxTree.NodeType.ARGUMENT_SEPARATOR) {
+					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.LEXER_ERROR,
+							"throw arguments are invalid"));
+					return ast;
+				}
+
+				messageNodes.add(node);
+			}
+
+			AbstractSyntaxTree.Node errorNode = errorNodes.size() == 1?errorNodes.get(0):
+					new AbstractSyntaxTree.ListNode(errorNodes);
+			AbstractSyntaxTree.Node messageNode = messageNodes.isEmpty()?null:(messageNodes.size() == 1?messageNodes.get(0):
+					new AbstractSyntaxTree.ListNode(messageNodes));
+
+			nodes.add(new AbstractSyntaxTree.ThrowNode(errorNode, messageNode));
 
 			return ast;
 		}

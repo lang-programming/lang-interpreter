@@ -1576,10 +1576,16 @@ public final class LangInterpreter {
 		Node throwValueNode = node.getThrowValue();
 		
 		DataObject errorObject = interpretNode(null, throwValueNode);
-		if(errorObject == null || errorObject.getType() != DataType.ERROR)
+		if(errorObject == null || errorObject.getType() != DataType.ERROR) {
 			executionState.returnedOrThrownValue = new DataObject().setError(new ErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE));
-		else
+		}else {
+			Node messageNode = node.getMessage();
+			DataObject messageObject = messageNode == null?null:interpretNode(null, messageNode);
+			if(messageObject != null)
+				errorObject = new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(),
+						conversions.toText(messageObject, node.getMessage().getPos())));
 			executionState.returnedOrThrownValue = errorObject;
+		}
 		executionState.isThrownValue = true;
 		executionState.returnOrThrowStatementPos = node.getPos();
 		executionState.stopExecutionFlag = true;

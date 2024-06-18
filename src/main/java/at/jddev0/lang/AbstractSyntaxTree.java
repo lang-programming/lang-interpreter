@@ -1,9 +1,6 @@
 package at.jddev0.lang;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import at.jddev0.lang.LangParser.ParsingError;
 
@@ -2453,12 +2450,22 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 	}
 	
 	public static final class ThrowNode implements Node {
-		private final List<Node> nodes;
+		private final Node throwValue;
+		private final Node message;
 		private final CodePosition pos;
 
+		public ThrowNode(CodePosition pos, Node throwValue, Node messageValue) {
+			this.throwValue = throwValue;
+			this.message = messageValue;
+			this.pos = pos;
+		}
+		public ThrowNode(Node throwValue, Node messageValue) {
+			this(messageValue == null?throwValue.getPos():throwValue.getPos().combine(messageValue.getPos()), throwValue, messageValue);
+		}
+
 		public ThrowNode(CodePosition pos, Node throwValue) {
-			nodes = new ArrayList<>(1);
-			nodes.add(throwValue);
+			this.throwValue = throwValue;
+			this.message = null;
 			this.pos = pos;
 		}
 		public ThrowNode(Node throwValue) {
@@ -2467,7 +2474,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		
 		@Override
 		public List<Node> getChildren() {
-			return nodes;
+			if(message == null)
+				return Arrays.asList(throwValue);
+
+			return Arrays.asList(throwValue, message);
 		}
 		
 		@Override
@@ -2481,22 +2491,38 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		}
 		
 		public Node getThrowValue() {
-			return nodes.get(0);
+			return throwValue;
 		}
-		
+
+		public Node getMessage() {
+			return message;
+		}
+
 		@Override
 		public String toString() {
 			StringBuilder builder = new StringBuilder();
 			builder.append("ThrowNode: Position: ");
 			builder.append(pos.toCompactString());
 			builder.append(", ThrowValue: {\n");
-			String[] tokens = nodes.get(0).toString().split("\\n");
+			String[] tokens = throwValue.toString().split("\\n");
 			for(String token:tokens) {
 				builder.append("\t");
 				builder.append(token);
 				builder.append("\n");
 			}
-			builder.append("}\n");
+			builder.append("}, Message: ");
+			if(message == null) {
+				builder.append("null");
+			}else {
+				builder.append("{\n");
+				tokens = throwValue.toString().split("\\n");
+				for(String token:tokens) {
+					builder.append("\t");
+					builder.append(token);
+					builder.append("\n");
+				}
+				builder.append("}\n");
+			}
 			
 			return builder.toString();
 		}
@@ -2513,12 +2539,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				return false;
 			
 			ReturnNode that = (ReturnNode)obj;
-			return this.getNodeType().equals(that.getNodeType()) && this.nodes.equals(that.nodes);
+			return this.getNodeType().equals(that.getNodeType()) && this.getChildren().equals(that.getChildren());
 		}
 		
 		@Override
 		public int hashCode() {
-			return Objects.hash(this.getNodeType(), this.nodes);
+			return Objects.hash(this.getNodeType(), this.getChildren());
 		}
 	}
 	
