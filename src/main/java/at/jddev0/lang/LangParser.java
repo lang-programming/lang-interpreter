@@ -1016,8 +1016,19 @@ public final class LangParser {
 	private List<AbstractSyntaxTree.Node> convertCommaOperatorsToArgumentSeparators(AbstractSyntaxTree.OperationNode operatorNode) {
 		List<AbstractSyntaxTree.Node> nodes = new LinkedList<>();
 
-		//Only parse COMMA operators and COMMA operators inside COMMA operators but only if they are the left node
-		if(operatorNode.getOperator() == AbstractSyntaxTree.OperationNode.Operator.COMMA) {
+		if(operatorNode.getOperator() == AbstractSyntaxTree.OperationNode.Operator.NON ||
+				operatorNode.getOperator() == AbstractSyntaxTree.OperationNode.Operator.MATH_NON ||
+				operatorNode.getOperator() == AbstractSyntaxTree.OperationNode.Operator.CONDITIONAL_NON) {
+			//Ignore NON operators
+			AbstractSyntaxTree.Node operand = operatorNode.getLeftSideOperand();
+
+			if(operand instanceof AbstractSyntaxTree.OperationNode)
+				nodes.addAll(convertCommaOperatorsToArgumentSeparators((AbstractSyntaxTree.OperationNode)operand));
+			else
+				nodes.add(operand);
+
+		}else if(operatorNode.getOperator() == AbstractSyntaxTree.OperationNode.Operator.COMMA) {
+			//Only parse COMMA operators and COMMA operators inside COMMA operators but only if they are the left node
 			AbstractSyntaxTree.Node leftSideOperand = operatorNode.getLeftSideOperand();
 
 			//Add left side operand
