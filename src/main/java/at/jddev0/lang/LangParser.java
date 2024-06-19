@@ -291,10 +291,22 @@ public final class LangParser {
 						otherTokens.clear();
 					}
 
-					AbstractSyntaxTree.Node ret = t.getTokenType() == Token.TokenType.IDENTIFIER?
-							parseVariableNameAndFunctionCall(tokens, type):parseParserFunctionCall(tokens);
-					if(ret != null)
-						leftNodes.add(ret);
+					boolean isIdentifier = t.getTokenType() == Token.TokenType.IDENTIFIER;
+					AbstractSyntaxTree.Node ret = isIdentifier?parseVariableNameAndFunctionCall(tokens, type):
+							parseParserFunctionCall(tokens);
+					if(ret != null) {
+						if(isIdentifier && ret instanceof AbstractSyntaxTree.UnprocessedVariableNameNode &&
+								!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+								tokens.get(0).getValue().equals("...")) {
+							Token arrayUnpackingOperatorToken = tokens.remove(0);
+							leftNodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(ret.getPos().
+									combine(arrayUnpackingOperatorToken.getPos()),
+									((AbstractSyntaxTree.UnprocessedVariableNameNode)ret).getVariableName() +
+											arrayUnpackingOperatorToken.getValue()));
+						}else {
+							leftNodes.add(ret);
+						}
+					}
 
 					break;
 
