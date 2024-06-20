@@ -66,31 +66,6 @@ public final class LangUtils {
 	}
 	
 	/**
-	 * @return Returns the next DataObject (One DataObject or a combined text value DataObject) before the next ARGUMENT_SEPARATOR or the end and removes all used data objects
-	 */
-	public static DataObject getNextArgumentAndRemoveUsedDataObjects(List<DataObject> argumentList, boolean removeArgumentSeparator,
-																	 LangInterpreter interpreter, CodePosition pos) {
-		List<DataObject> argumentTmpList = new LinkedList<>();
-		while(!argumentList.isEmpty() && argumentList.get(0).getType() != DataType.ARGUMENT_SEPARATOR)
-			argumentTmpList.add(argumentList.remove(0));
-		
-		if(argumentTmpList.isEmpty())
-			argumentTmpList.add(new DataObject().setVoid());
-		
-		if(removeArgumentSeparator && argumentList.size() > 0)
-			argumentList.remove(0); //Remove ARGUMENT_SEPARATOR
-		
-		return combineDataObjects(argumentTmpList, interpreter, pos);
-	}
-	
-	/**
-	 * @return Returns the count of DataObjects in the with argument separated argumentList (Will return 1 for an empty list)
-	 */
-	public static int countDataObjects(List<DataObject> argumentList) {
-		return (int)argumentList.stream().filter(dataObject -> dataObject.getType() == DataType.ARGUMENT_SEPARATOR).count() + 1;
-	}
-	
-	/**
 	 * @return Returns a list of DataObjects where every ARGUMENT_SEPARATOR is removed and arguments are combined into single values (A VOID value is used for empty arguments)
 	 */
 	public static List<DataObject> combineArgumentsWithoutArgumentSeparators(List<DataObject> argumentList,
