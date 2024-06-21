@@ -515,3 +515,64 @@ function combinator combO3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
 function combinator combO4($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
     return $b($a($b, $c, $d, $e))
 }
+
+## Combinator execution: a(b(d))(c(d))
+function combinator combP($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c{FUNCTION_POINTER}, $d) {
+    $ret = $a($b($d))
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(d)) must be of type FUNCTION_POINTER"
+    }
+
+    return $ret($c($d))
+}
+
+## Combinator execution: a(b(d), c(d))
+function combinator combP2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c{FUNCTION_POINTER}, $d) {
+    return $a($b($d), $c($d))
+}
+
+## Combinator execution: a(b(e), c(e), d(e))
+function combinator combP3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c{FUNCTION_POINTER}, $d{FUNCTION_POINTER}, $e) {
+    return $a($b($e), $c($e), $d($e))
+}
+
+## Combinator execution: a(b(), c())
+function combinator combPE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c{FUNCTION_POINTER}, $d) {
+    return $a($b(), $c())
+}
+
+# TODO combPN
+# TODO combPV
+
+## Combinator execution: a(c(d), b(d))
+function combinator combPX($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c{FUNCTION_POINTER}, $d) {
+    return $a($c($d), $b($d))
+}
+
+# TODO combPZ
+
+## Combinator execution: b(a(c))
+function combinator combQ($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $b($a($c))
+}
+
+## Combinator execution: b(a())
+function combinator combQ0($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}) {
+    return $b($a())
+}
+
+## Combinator execution: b(a())
+function combinator combQE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $b($a())
+}
+
+# TODO combQN
+# TODO combQV
+
+## Combinator execution: c(b(a))
+function combinator combQX($a, $b{FUNCTION_POINTER}, $c{FUNCTION_POINTER}) {
+    return $c($b($a))
+}
+
+# TODO combQZ
