@@ -274,7 +274,124 @@ function combinator combHX($a{FUNCTION_POINTER}, $b, $c) {
     return $a($c, $b, $c)
 }
 
-## Combinator execution: a)
+## Combinator execution: a
 function combinator combI($a) {
     return $a
+}
+
+## Combinator execution: a(b)(a(d)(c))
+function combinator combJ($a{FUNCTION_POINTER}, $b, $c, $d) {
+    $retA = $a($b)
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b) must be of type FUNCTION_POINTER"
+    }
+
+    $retAA = $a($d)
+
+    if(!($retAA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retAA($c))
+}
+
+## Combinator execution: a(b, a(d, c))
+function combinator combJ3($a{FUNCTION_POINTER}, $b, $c, $d) {
+    return $a($b, $a($d, $c))
+}
+
+## Combinator execution: a(b, a(c, d))
+function combinator combJX($a{FUNCTION_POINTER}, $b, $c, $d) {
+    return $a($b, $a($c, $d))
+}
+
+## Combinator execution: a(b, a())
+function combinator combJE($a{FUNCTION_POINTER}, $b, $c, $d) {
+    return $a($b, $a())
+}
+
+## Combinator execution: a
+function combinator combK($a, $b) {
+    return $a
+}
+
+## Combinator execution: a
+function combinator combK3($a, $b, $c) {
+    return $a
+}
+
+## Combinator execution: a
+function combinator combK4($a, $b, $c, $d) {
+    return $a
+}
+
+## Combinator execution: a
+function combinator combK5($a, $b, $c, $d, $e) {
+    return $a
+}
+
+## Combinator execution: d
+function combinator combKD($a, $b, $c, $d, $e) {
+    return $d
+}
+
+## Combinator execution: e
+function combinator combKE($a, $b, $c, $d, $e) {
+    return $e
+}
+
+## Combinator execution: b
+function combinator combKI($a, $b) {
+    return $b
+}
+
+## Combinator execution: c
+function combinator combKX($a, $b, $c) {
+    return $c
+}
+
+## Combinator execution: a(b(b))
+function combinator combL($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}) {
+    return $a($b($b))
+}
+
+## Combinator execution: a(b(b, c))
+function combinator combL2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $a($b($b, $c))
+}
+
+## Combinator execution: a(b(b, c, d))
+function combinator combL3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($b, $c, $d))
+}
+
+## Combinator execution: a(b(b, c, d, e))
+function combinator combL4($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $a($b($b, $c, $d, $e))
+}
+
+## Combinator execution: a(a)
+function combinator combM($a{FUNCTION_POINTER}) {
+    return $a($a)
+}
+
+## Combinator execution: a(a, b)
+function combinator combM2($a{FUNCTION_POINTER}, $b) {
+    return $a($a, $b)
+}
+
+## Combinator execution: a(a, b, c)
+function combinator combM3($a{FUNCTION_POINTER}, $b, $c) {
+    return $a($a, $b, $c)
+}
+
+## Combinator execution: a(a, b, c, d)
+function combinator combM4($a{FUNCTION_POINTER}, $b, $c, $d) {
+    return $a($a, $b, $c, $d)
+}
+
+## Combinator execution: a(a, b, c, d, e)
+function combinator combM5($a{FUNCTION_POINTER}, $b, $c, $d, $e) {
+    return $a($a, $b, $c, $d, $e)
 }
