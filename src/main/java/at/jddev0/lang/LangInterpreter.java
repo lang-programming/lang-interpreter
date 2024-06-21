@@ -2796,11 +2796,18 @@ public final class LangInterpreter {
 	
 	private DataObject interpretFunctionDefinitionNode(FunctionDefinitionNode node) {
 		String functionName = node.getFunctionName();
+		String functionNameWithoutPrefix = null;
 		boolean overloaded = node.isOverloaded();
 		boolean combinator = node.isCombinator();
 		DataObject functionPointerDataObject = null;
 		boolean[] flags = new boolean[] {false, false};
 		if(functionName != null) {
+			if(functionName.startsWith("$") || functionName.startsWith("&"))
+				functionNameWithoutPrefix = functionName.substring(1);
+
+			if(functionName.startsWith("fp."))
+				functionNameWithoutPrefix = functionName.substring(3);
+
 			functionPointerDataObject = getOrCreateDataObjectFromVariableName(null, null, functionName,
 					false, false, !overloaded, flags,
 					node.getPos());
@@ -2971,7 +2978,7 @@ public final class LangInterpreter {
 				currentStackElement.getLangFile(), parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter,
 				false, returnValueTypeConstraint, argumentPosList, node.getFunctionBody(),
-				combinator, 0, new ArrayList<>(), functionName);
+				combinator, 0, new ArrayList<>(), functionNameWithoutPrefix);
 
 		if(functionPointerDataObject == null)
 			return new DataObject().setFunctionPointer(new FunctionPointerObject(normalFunction).
