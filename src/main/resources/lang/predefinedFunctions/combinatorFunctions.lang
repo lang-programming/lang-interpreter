@@ -210,3 +210,71 @@ function combinator combF4($a, $b, $c, $d, $e{FUNCTION_POINTER}) {
 function combinator combFE($a, $b, $c{FUNCTION_POINTER}) {
     return $c()
 }
+
+## Combinator execution: a(d)(b(c))
+function combinator combG($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retA = $a($d)
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($b($c))
+}
+
+## Combinator execution: a(d, b(c))
+function combinator combG2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($d, $b($c))
+}
+
+## Combinator execution: a(d, b())
+function combinator combGE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($d, $b())
+}
+
+## Combinator execution: a(b(d), c)
+function combinator combGX($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($d), $c)
+}
+
+## Combinator execution: a(b)(c)(b)
+function combinator combH($a{FUNCTION_POINTER}, $b, $c) {
+    $retA = $a($b)
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b) must be of type FUNCTION_POINTER"
+    }
+
+    $retA2 = $retA($c)
+
+    if(!($retA2 ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b)(c) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA2($b)
+}
+
+## Combinator execution: a(b, c, b)
+function combinator combH3($a{FUNCTION_POINTER}, $b, $c) {
+    return $a($b, $c, $b)
+}
+
+## Combinator execution: a(b(c), b(d), b(c))
+function combinator combHB($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c), $b($d), $b($c))
+}
+
+## Combinator execution: a(b(), c(), b())
+function combinator combHE($a{FUNCTION_POINTER}, $b, $c) {
+    return $a($b(), $c(), $b())
+}
+
+## Combinator execution: a(c, b, c)
+function combinator combHX($a{FUNCTION_POINTER}, $b, $c) {
+    return $a($c, $b, $c)
+}
+
+## Combinator execution: a)
+function combinator combI($a) {
+    return $a
+}
