@@ -23,15 +23,9 @@ public class LangNativeFunction extends LangBaseFunction {
 	private final Object instance;
 	private final Method functionBody;
 
-	private final String functionName;
-
 	private final boolean hasInterpreterParameter;
 
 	private final boolean method;
-
-	private final boolean combinatorFunction;
-	private final int combinatorFunctionCallCount;
-	private final List<DataObject> combinatorProvidedArgumentList;
 
 	private final Object[] valueDependencies;
 
@@ -348,18 +342,15 @@ public class LangNativeFunction extends LangBaseFunction {
 							 boolean hasInterpreterParameter, boolean method, boolean combinatorFunction, int combinatorFunctionCallCount,
 							 List<DataObject> combinatorProvidedArgumentList, Object[] valueDependencies) {
 		super(null, null, parameterList, parameterDataTypeConstraintList, parameterAnnotationList,
-				parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint);
+				parameterInfoList, varArgsParameterIndex, textVarArgsParameter, rawVarArgsParameter, returnValueTypeConstraint,
+				combinatorFunction, combinatorFunctionCallCount, combinatorProvidedArgumentList, functionName);
 
 		this.methodParameterTypeList = methodParameterTypeList;
 		this.instance = instance;
 		this.functionBody = functionBody;
 		functionBody.setAccessible(true);
-		this.functionName = functionName;
 		this.hasInterpreterParameter = hasInterpreterParameter;
 		this.method = method;
-		this.combinatorFunction = combinatorFunction;
-		this.combinatorFunctionCallCount = combinatorFunctionCallCount;
-		this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
 		this.valueDependencies = valueDependencies;
 	}
 
@@ -552,24 +543,8 @@ public class LangNativeFunction extends LangBaseFunction {
 		return new DataObject().setFunctionPointer(fp);
 	}
 
-	public String getFunctionName() {
-		return functionName;
-	}
-
 	public boolean isMethod() {
 		return method;
-	}
-
-	public boolean isCombinatorFunction() {
-		return combinatorFunction;
-	}
-
-	public int getCombinatorFunctionCallCount() {
-		return combinatorFunctionCallCount;
-	}
-
-	public List<DataObject> getCombinatorProvidedArgumentList() {
-		return new ArrayList<>(combinatorProvidedArgumentList);
 	}
 
 	@Override
@@ -581,17 +556,10 @@ public class LangNativeFunction extends LangBaseFunction {
 
 		if(!super.isEquals(that, interpreter, pos) ||
 				this.hasInterpreterParameter != that.hasInterpreterParameter ||
-				this.combinatorFunction != that.combinatorFunction ||
 				!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
 				!Objects.equals(this.functionBody, that.functionBody) ||
-				this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
 				this.valueDependencies.length != that.valueDependencies.length)
 			return false;
-
-		for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
-			if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
-					that.combinatorProvidedArgumentList.get(i), pos))
-				return false;
 
 		for(int i = 0;i < this.valueDependencies.length;i++)
 			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?
@@ -615,14 +583,8 @@ public class LangNativeFunction extends LangBaseFunction {
 				this.combinatorFunction != that.combinatorFunction ||
 				!Objects.equals(this.methodParameterTypeList, that.methodParameterTypeList) ||
 				!Objects.equals(this.functionBody, that.functionBody) ||
-				this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size() ||
 				this.valueDependencies.length != that.valueDependencies.length)
 			return false;
-
-		for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
-			if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
-					that.combinatorProvidedArgumentList.get(i), pos))
-				return false;
 
 		for(int i = 0;i < this.valueDependencies.length;i++)
 			if((this.valueDependencies[i] instanceof DataObject && that.valueDependencies[i] instanceof DataObject)?

@@ -1905,6 +1905,15 @@ public final class LangParser {
 				tokenCountFirstLine -= 2;
 			}
 
+			boolean combinator = tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+					tokens.get(0).getValue().equals("combinator") && tokens.get(1).getTokenType() == Token.TokenType.WHITESPACE;
+			if(combinator) {
+				tokens.remove(0);
+				tokens.remove(0);
+
+				tokenCountFirstLine -= 2;
+			}
+
 			if(!(tokens.get(0).getTokenType() == Token.TokenType.IDENTIFIER &&
 					LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_FUNCTION_WITHOUT_PREFIX)) &&
 					!(tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
@@ -1984,7 +1993,8 @@ public final class LangParser {
 			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.EOL)
 				tokens.remove(0);
 
-			nodes.addAll(parseFunctionDefinition(functionName, overloaded, parameterList, typeConstraint, tokens).getChildren());
+			nodes.addAll(parseFunctionDefinition(functionName, overloaded, combinator, parameterList, typeConstraint,
+					tokens).getChildren());
 
 			return ast;
 		}
@@ -2308,14 +2318,14 @@ public final class LangParser {
 							tokens.get(0).getValue().equals("{")) {
 						tokens.remove(0);
 
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, langDocComment, parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, false, langDocComment, parameterList,
 								returnTypeConstraint, parseTokens(tokens)));
 						langDocComment = null;
 					}else {
 						List<Token> functionBody = new ArrayList<>(tokens.subList(0, tokenCountFirstLine));
 						tokens.subList(0, tokenCountFirstLine).clear();
 
-						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, langDocComment, parameterList,
+						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, false, langDocComment, parameterList,
 								returnTypeConstraint, parseTokens(functionBody)));
 						langDocComment = null;
 					}
@@ -2362,8 +2372,9 @@ public final class LangParser {
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseFunctionDefinition(String functionName, boolean overloaded, List<Token> parameterListTokens,
-													   String functionReturnValueTypeConstraint, List<Token> tokens) {
+	private AbstractSyntaxTree parseFunctionDefinition(String functionName, boolean overloaded, boolean combinator,
+													   List<Token> parameterListTokens, String functionReturnValueTypeConstraint,
+													   List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
@@ -2372,8 +2383,8 @@ public final class LangParser {
 		List<AbstractSyntaxTree.Node> parameterListNodes = parseFunctionParameterList(parameterListTokens, true).getChildren();
 
 		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, functionName, overloaded, langDocComment,
-				parameterListNodes,    functionReturnValueTypeConstraint, parseTokens(tokens)));
+		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, functionName, overloaded, combinator,
+				langDocComment, parameterListNodes, functionReturnValueTypeConstraint, parseTokens(tokens)));
 		langDocComment = null;
 
 		return ast;

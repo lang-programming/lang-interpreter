@@ -26,11 +26,19 @@ public class LangBaseFunction {
     protected final boolean rawVarArgsParameter;
     protected final DataObject.DataTypeConstraint returnValueTypeConstraint;
 
+    protected final boolean combinatorFunction;
+    protected final int combinatorFunctionCallCount;
+    protected final List<DataObject> combinatorProvidedArgumentList;
+
+    protected final String functionName;
+
     public LangBaseFunction(String langPath, String langFile, List<DataObject> parameterList,
                             List<DataObject.DataTypeConstraint> parameterDataTypeConstraintList,
                             List<ParameterAnnotation> parameterAnnotationList, List<String> parameterInfoList,
                             int varArgsParameterIndex, boolean textVarArgsParameter, boolean rawVarArgsParameter,
-                            DataObject.DataTypeConstraint returnValueTypeConstraint) {
+                            DataObject.DataTypeConstraint returnValueTypeConstraint, boolean combinatorFunction,
+                            int combinatorFunctionCallCount, List<DataObject> combinatorProvidedArgumentList,
+                            String functionName) {
         this.langPath = langPath;
         this.langFile = langFile;
         this.parameterList = parameterList;
@@ -41,6 +49,12 @@ public class LangBaseFunction {
         this.textVarArgsParameter = textVarArgsParameter;
         this.rawVarArgsParameter = rawVarArgsParameter;
         this.returnValueTypeConstraint = returnValueTypeConstraint;
+
+        this.combinatorFunction = combinatorFunction;
+        this.combinatorFunctionCallCount = combinatorFunctionCallCount;
+        this.combinatorProvidedArgumentList = combinatorProvidedArgumentList;
+
+        this.functionName = functionName;
     }
 
     public String getLangPath() {
@@ -81,6 +95,22 @@ public class LangBaseFunction {
 
     public DataObject.DataTypeConstraint getReturnValueTypeConstraint() {
         return returnValueTypeConstraint;
+    }
+
+    public boolean isCombinatorFunction() {
+        return combinatorFunction;
+    }
+
+    public int getCombinatorFunctionCallCount() {
+        return combinatorFunctionCallCount;
+    }
+
+    public List<DataObject> getCombinatorProvidedArgumentList() {
+        return combinatorProvidedArgumentList;
+    }
+
+    public String getFunctionName() {
+        return functionName;
     }
 
     public String toFunctionSignatureSyntax() {
@@ -129,7 +159,9 @@ public class LangBaseFunction {
                 this.textVarArgsParameter != that.textVarArgsParameter ||
                 this.parameterList.size() != that.parameterList.size() ||
                 this.parameterDataTypeConstraintList.size() != that.parameterDataTypeConstraintList.size() ||
-                this.parameterAnnotationList.size() != that.parameterAnnotationList.size())
+                this.parameterAnnotationList.size() != that.parameterAnnotationList.size() ||
+                this.combinatorFunction != that.combinatorFunction ||
+                this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size())
             return false;
 
         for(int i = 0;i < this.parameterList.size();i++)
@@ -144,6 +176,11 @@ public class LangBaseFunction {
             if(this.parameterAnnotationList.get(i) != that.parameterAnnotationList.get(i))
                 return false;
 
+        for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
+            if(!interpreter.operators.isEquals(this.combinatorProvidedArgumentList.get(i),
+                    that.combinatorProvidedArgumentList.get(i), pos))
+                return false;
+
         return true;
     }
 
@@ -152,7 +189,9 @@ public class LangBaseFunction {
                 this.textVarArgsParameter != that.textVarArgsParameter ||
                 this.parameterList.size() != that.parameterList.size() ||
                 this.parameterDataTypeConstraintList.size() != that.parameterDataTypeConstraintList.size() ||
-                this.parameterAnnotationList.size() != that.parameterAnnotationList.size())
+                this.parameterAnnotationList.size() != that.parameterAnnotationList.size() ||
+                this.combinatorFunction != that.combinatorFunction ||
+                this.combinatorProvidedArgumentList.size() != that.combinatorProvidedArgumentList.size())
             return false;
 
         for(int i = 0;i < this.parameterList.size();i++)
@@ -165,6 +204,11 @@ public class LangBaseFunction {
 
         for(int i = 0;i < this.parameterAnnotationList.size();i++)
             if(this.parameterAnnotationList.get(i) != that.parameterAnnotationList.get(i))
+                return false;
+
+        for(int i = 0;i < this.combinatorProvidedArgumentList.size();i++)
+            if(!interpreter.operators.isStrictEquals(this.combinatorProvidedArgumentList.get(i),
+                    that.combinatorProvidedArgumentList.get(i), pos))
                 return false;
 
         return true;

@@ -2246,18 +2246,25 @@ public final class LangInterpreter {
 					List<CodePosition> argumentPosList = normalFunction.getArgumentPosList();
 					int argCount = parameterList.size();
 
+					if(normalFunction.isCombinatorFunction()) {
+						combinedArgumentList = new ArrayList<>(combinedArgumentList.stream().map(DataObject::new).collect(Collectors.toList()));
+						combinedArgumentList.addAll(0, normalFunction.getCombinatorProvidedArgumentList());
+					}
+
 					AbstractSyntaxTree functionBody = normalFunction.getFunctionBody();
 
 					if(normalFunction.getVarArgsParameterIndex() == -1) {
-						if(combinedArgumentList.size() < argCount)
+						if(!normalFunction.isCombinatorFunction() && combinedArgumentList.size() < argCount)
 							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (%s needed)", argCount), parentPos);
 						if(combinedArgumentList.size() > argCount)
 							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Too many arguments (%s needed)", argCount), parentPos);
 					}else {
-						if(combinedArgumentList.size() < argCount - 1)
+						//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
+						if((!normalFunction.isCombinatorFunction() || normalFunction.getCombinatorFunctionCallCount() > 0) && combinedArgumentList.size() < argCount - 1)
 							return setErrnoErrorObject(InterpretingError.INVALID_ARG_COUNT, String.format("Not enough arguments (at least %s needed)", argCount - 1), parentPos);
 					}
 
+					DataObject combinatorFunctionCallRet = null;
 					try {
 						Data callerData = getData();
 
@@ -2284,6 +2291,15 @@ public final class LangInterpreter {
 						//Set arguments
 						int argumentIndex = 0;
 						for(int i = 0;i < argCount;i++) {
+							if(normalFunction.isCombinatorFunction() && argumentIndex >= combinedArgumentList.size() &&
+									(normalFunction.getVarArgsParameterIndex() == -1 ||
+											normalFunction.getCombinatorFunctionCallCount() == 0)) {
+								combinatorFunctionCallRet = normalFunction.combinatorCall(thisObject,
+										internalFunction.getSuperLevel(), combinedArgumentList);
+
+								break;
+							}
+
 							final DataObject parameter = parameterList.get(i);
 							final DataObject.DataTypeConstraint typeConstraint = parameterDataTypeConstraintList.get(i);
 							final LangBaseFunction.ParameterAnnotation parameterAnnotation = parameterAnnotationList.get(i);
@@ -2292,6 +2308,14 @@ public final class LangInterpreter {
 							final String variableName = parameter.getVariableName();
 
 							if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.VAR_ARGS) {
+								//Infinite combinator functions (= Combinator functions with var args argument) must be called exactly two times
+								if(normalFunction.isCombinatorFunction() && normalFunction.getCombinatorFunctionCallCount() == 0) {
+									combinatorFunctionCallRet = normalFunction.combinatorCall(thisObject,
+											internalFunction.getSuperLevel(), combinedArgumentList);
+
+									break;
+								}
+
 								if(variableName.startsWith("$")) {
 									//Text varargs
 									if(!typeConstraint.equals(DataObject.CONSTRAINT_NORMAL)) {
@@ -2414,8 +2438,10 @@ public final class LangInterpreter {
 							argumentIndex++;
 						}
 
-						//Call function
-						interpretAST(functionBody);
+						if(combinatorFunctionCallRet == null) {
+							//Call function
+							interpretAST(functionBody);
+						}
 					}finally {
 						Data scopeData = getData();
 
@@ -2432,11 +2458,14 @@ public final class LangInterpreter {
 						setErrno(InterpretingError.DEPRECATED_FUNC_CALL, message, parentPos);
 					}
 					
-					DataTypeConstraint returnValueTypeConstraint = normalFunction.getReturnValueTypeConstraint();
+					DataTypeConstraint returnValueTypeConstraint = combinatorFunctionCallRet == null?
+							normalFunction.getReturnValueTypeConstraint():null;
 
-					CodePosition returnOrThrowStatementPos = executionState.returnOrThrowStatementPos;
+					CodePosition returnOrThrowStatementPos = combinatorFunctionCallRet == null?
+							executionState.returnOrThrowStatementPos:CodePosition.EMPTY;
 					
-					DataObject retTmp = LangUtils.nullToLangVoid(getAndResetReturnValue());
+					DataObject retTmp = combinatorFunctionCallRet == null?LangUtils.nullToLangVoid(getAndResetReturnValue()):
+							combinatorFunctionCallRet;
 
 					if(returnValueTypeConstraint != null && !isThrownValue()) {
 						//Thrown values are always allowed
@@ -2768,6 +2797,7 @@ public final class LangInterpreter {
 	private DataObject interpretFunctionDefinitionNode(FunctionDefinitionNode node) {
 		String functionName = node.getFunctionName();
 		boolean overloaded = node.isOverloaded();
+		boolean combinator = node.isCombinator();
 		DataObject functionPointerDataObject = null;
 		boolean[] flags = new boolean[] {false, false};
 		if(functionName != null) {
@@ -2940,7 +2970,8 @@ public final class LangInterpreter {
 		LangNormalFunction normalFunction = new LangNormalFunction(currentStackElement.getLangPath(),
 				currentStackElement.getLangFile(), parameterList, parameterDataTypeConstraintList,
 				parameterAnnotationList, parameterInfoList, varArgsParameterIndex, textVarArgsParameter,
-				false, returnValueTypeConstraint, argumentPosList, node.getFunctionBody());
+				false, returnValueTypeConstraint, argumentPosList, node.getFunctionBody(),
+				combinator, 0, new ArrayList<>(), functionName);
 
 		if(functionPointerDataObject == null)
 			return new DataObject().setFunctionPointer(new FunctionPointerObject(normalFunction).
