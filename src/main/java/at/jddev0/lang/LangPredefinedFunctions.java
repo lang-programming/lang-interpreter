@@ -6421,10 +6421,8 @@ final class LangPredefinedFunctions {
 						@LangParameter("$c") DataObject c,
 						@LangParameter("$d") DataObject d
 				) {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-							Arrays.asList(
-									a, b, c, d
-							)
+					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+							a, b, c, d
 					));
 				}
 			}, funcObject).withFunctionName("<argCnt4(" + func + ")>"));
