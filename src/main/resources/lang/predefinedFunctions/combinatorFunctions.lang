@@ -40,3 +40,38 @@ function combinator combAX($a{FUNCTION_POINTER}, $b, $c, $d) {
 }
 
 # TODO combAZ
+
+## Combinator execution: a(b(c))
+function combinator combB($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $a($b($c))
+}
+
+## Combinator execution: a(b())
+function combinator combB0($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}) {
+    return $a($b())
+}
+
+## Combinator execution: a(b(c), b(d))
+function combinator combB2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c), $b($d))
+}
+
+## Combinator execution: a(b(c), b(d), b(e))
+function combinator combB3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $a($b($c), $b($d), $b($e))
+}
+
+## Combinator execution: a(b())
+function combinator combBE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $a($b())
+}
+
+# TODO combBN
+# TODO combBV
+
+## Combinator execution: a(b(c, d))
+function combinator combBX($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c, $d))
+}
+
+# TODO combBZ
