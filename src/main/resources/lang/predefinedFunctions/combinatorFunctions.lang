@@ -171,6 +171,42 @@ function combinator combEE($a{FUNCTION_POINTER}, $b, $c{FUNCTION_POINTER}, $d, $
 }
 
 ## Combinator execution: a(c, b(d, e))
-function combinator combE3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+function combinator combEX($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
     return $a($c, $b($d, $e))
+}
+
+## Combinator execution: c(b)
+function combinator combF1($a, $b, $c{FUNCTION_POINTER}) {
+    return $c($b)
+}
+
+## Combinator execution: c(b)(a)
+function combinator combF($a, $b, $c{FUNCTION_POINTER}) {
+    $retC = $c($b)
+
+    if(!($retC ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by c(b) must be of type FUNCTION_POINTER"
+    }
+
+    return $retC($a)
+}
+
+## Combinator execution: c(b, a)
+function combinator combF2($a, $b, $c{FUNCTION_POINTER}) {
+    return $c($b, $a)
+}
+
+## Combinator execution: d(c, b, a)
+function combinator combF3($a, $b, $c, $d{FUNCTION_POINTER}) {
+    return $d($c, $b, $a)
+}
+
+## Combinator execution: e(d, c, b, a)
+function combinator combF4($a, $b, $c, $d, $e{FUNCTION_POINTER}) {
+    return $e($d, $c, $b, $a)
+}
+
+## Combinator execution: c()
+function combinator combFE($a, $b, $c{FUNCTION_POINTER}) {
+    return $c()
 }
