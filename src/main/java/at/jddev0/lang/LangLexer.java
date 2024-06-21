@@ -737,7 +737,8 @@ public class LangLexer {
     }
 
     private boolean isNumericValue(String token) {
-        if(LangPatterns.matches(token, LangPatterns.PARSING_INVALID_FLOATING_POINT_NUMBER))
+        char c = token.isEmpty()?0:token.charAt(0);
+        if(!(c >= '0' && c <= '9') && c != '.')
             return false;
 
         //INT
@@ -759,6 +760,10 @@ public class LangLexer {
 
         //FLOAT
         if(token.endsWith("f") || token.endsWith("F")) {
+            //Do not allow: NaN, Infinity, xX
+            if(token.contains("N") || token.contains("I") || token.contains("x") || token.contains("X"))
+                return false;
+
             try {
                 Float.parseFloat(token.substring(0, token.length() - 1));
 
@@ -768,6 +773,11 @@ public class LangLexer {
 
         //DOUBLE
         try {
+            //Do not allow: NaN, Infinity, xX, dD
+            if(token.endsWith("d") || token.endsWith("D") || token.contains("N") || token.contains("I") ||
+                    token.contains("x") || token.contains("X"))
+                return false;
+
             Double.parseDouble(token);
 
             return true;

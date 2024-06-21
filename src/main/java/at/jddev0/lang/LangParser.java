@@ -3837,32 +3837,32 @@ public final class LangParser {
 	}
 
 	private void removeLineContinuationAndSingleLineTextQuotesTokens(List<Token> tokens) {
-		int i = 0;
-		while(i < tokens.size()) {
-			if(tokens.get(i).getTokenType() == Token.TokenType.LINE_CONTINUATION) {
-				if(i < tokens.size() - 1 && tokens.get(i + 1).getTokenType() == Token.TokenType.EOL)
-					tokens.remove(i + 1);
+		ListIterator<Token> iter = tokens.listIterator();
+		while(iter.hasNext()) {
+			Token token = iter.next();
+			if(token.getTokenType() == Token.TokenType.LINE_CONTINUATION) {
+				iter.remove();
 
-				tokens.remove(i);
-
-				//Do not increment i, because original value at index i was removed and next value is now at this index
-				continue;
-			}else if(tokens.get(i).getTokenType() == Token.TokenType.SINGLE_LINE_TEXT_QUOTES) {
-				tokens.remove(i);
-
-				//Do not increment i, because original value at index i was removed and next value is now at this index
-				continue;
+				if(iter.hasNext()) {
+					if(iter.next().getTokenType() == Token.TokenType.EOL)
+						iter.remove();
+					else
+						iter.previous();
+				}
+			}else if(token.getTokenType() == Token.TokenType.SINGLE_LINE_TEXT_QUOTES) {
+				iter.remove();
 			}
-
-			i++;
 		}
 	}
 
 	private int getTokenCountFirstLine(List<Token> tokens) {
-		for(int i = 0;i < tokens.size();i++)
-			if(tokens.get(i).getTokenType() == Token.TokenType.EOL ||
-					tokens.get(i).getTokenType() == Token.TokenType.EOF)
-				return i;
+		ListIterator<Token> iter = tokens.listIterator();
+		while(iter.hasNext()) {
+			Token token = iter.next();
+			if(token.getTokenType() == Token.TokenType.EOL ||
+					token.getTokenType() == Token.TokenType.EOF)
+				return iter.previousIndex();
+		}
 
 		return -1;
 	}
