@@ -1,0 +1,42 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Combinator Functions)
+
+## Combinator execution: a(b)
+function combinator combA($a{FUNCTION_POINTER}, $b) {
+    return $a($b)
+}
+
+## Combinator execution: a()
+function combinator combA0($a{FUNCTION_POINTER}) {
+    return $a()
+}
+
+## Combinator execution: a(b, c)
+function combinator combA2($a{FUNCTION_POINTER}, $b, $c) {
+    return $a($b, $c)
+}
+
+## Combinator execution: a(b, c, d)
+function combinator combA3($a{FUNCTION_POINTER}, $b, $c, $d) {
+    return $a($b, $c, $d)
+}
+
+## Combinator execution: a(b, c, d, e)
+function combinator combA4($a{FUNCTION_POINTER}, $b, $c, $d, $e) {
+    return $a($b, $c, $d, $e)
+}
+
+## Combinator execution: a()
+function combinator combAE($a{FUNCTION_POINTER}, $b) {
+    return $a()
+}
+
+# TODO combAN
+# TODO combAV
+
+## Combinator execution: a(b, d, c)
+function combinator combAX($a{FUNCTION_POINTER}, $b, $c, $d) {
+    return $a($b, $d, $c)
+}
+
+# TODO combAZ
