@@ -2219,7 +2219,8 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("abs")
 		public static DataObject absFunction(
-				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+				LangInterpreter interpreter,
+				@LangParameter("$operand") DataObject operand
 		) {
 			DataObject ret = interpreter.operators.opAbs(operand, CodePosition.EMPTY);
 			if(ret == null)
@@ -2231,7 +2232,8 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("iter")
 		public static DataObject iterFunction(
-				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+				LangInterpreter interpreter,
+				@LangParameter("$operand") DataObject operand
 		) {
 			DataObject ret = interpreter.operators.opIter(operand, CodePosition.EMPTY);
 			if(ret == null)
@@ -2243,7 +2245,8 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("hasNext")
 		public static DataObject hasNextFunction(
-				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+				LangInterpreter interpreter,
+				@LangParameter("$operand") DataObject operand
 		) {
 			DataObject ret = interpreter.operators.opHasNext(operand, CodePosition.EMPTY);
 			if(ret == null)
@@ -2255,7 +2258,8 @@ final class LangPredefinedFunctions {
 
 		@LangFunction("next")
 		public static DataObject nextFunction(
-				LangInterpreter interpreter,@LangParameter("$operand") DataObject operand
+				LangInterpreter interpreter,
+				@LangParameter("$operand") DataObject operand
 		) {
 			DataObject ret = interpreter.operators.opNext(operand, CodePosition.EMPTY);
 			if(ret == null)
