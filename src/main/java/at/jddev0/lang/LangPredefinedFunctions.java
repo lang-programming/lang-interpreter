@@ -2270,52 +2270,6 @@ final class LangPredefinedFunctions {
 	public static final class LangPredefinedCombinatorFunctions {
 		private LangPredefinedCombinatorFunctions() {}
 
-		@LangFunction("combAN")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(args[0], args[1], ...)")
-		public static DataObject combANFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @VarArgs List<DataObject> args
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			List<DataObject> argsA = LangUtils.separateArgumentsWithArgumentSeparators(args);
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
-		}
-
-		@LangFunction("combAV")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(args[0], args[1], ...)")
-		public static DataObject combAVFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			List<DataObject> argsA = LangUtils.asListWithArgumentSeparators(args.getArray());
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
-		}
-
-		@LangFunction("combAZ")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: a(..., args[1], args[0])")
-		public static DataObject combAZFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("&args") @VarArgs List<DataObject> args
-		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
-			List<DataObject> argsA = new LinkedList<>();
-			for(int i = args.size() - 1;i >= 0;i--)
-				argsA.add(args.get(i));
-			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
-
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
-		}
-
 		@LangFunction("combBN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: a(b(args[0]), b(args[1]), ...)")

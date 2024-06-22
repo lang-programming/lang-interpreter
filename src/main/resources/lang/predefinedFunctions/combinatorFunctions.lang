@@ -31,15 +31,27 @@ function combinator combAE($a{FUNCTION_POINTER}, $b) {
     return $a()
 }
 
-# TODO combAN
-# TODO combAV
+## Combinator execution: a(args[0], args[1], ...)
+function combinator combAN($a{FUNCTION_POINTER}, &args...) {
+    return $a(&args...)
+}
+
+## Combinator execution: a(args[0], args[1], ...)
+function combinator combAV($a{FUNCTION_POINTER}, &args{ARRAY}) {
+    return $a(&args...)
+}
 
 ## Combinator execution: a(b, d, c)
 function combinator combAX($a{FUNCTION_POINTER}, $b, $c, $d) {
     return $a($b, $d, $c)
 }
 
-# TODO combAZ
+## Combinator execution: a(..., args[1], args[0])
+function combinator combAZ($a{FUNCTION_POINTER}, &args...) {
+    &args $= -&args
+
+    return $a(&args...)
+}
 
 ## Combinator execution: a(b(c))
 function combinator combB($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
