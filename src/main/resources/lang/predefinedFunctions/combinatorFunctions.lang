@@ -776,3 +776,387 @@ function combinator combWB($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
 function combinator combWX($a, $b{FUNCTION_POINTER}) {
     return $b($a, $a)
 }
+
+## Combinator execution: a(b(c), d)
+function combinator combX1($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c), $d)
+}
+
+## Combinator execution: a(c, b(d))
+function combinator combX2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($c, $b($d))
+}
+
+## Combinator execution: a(b(c, d), c)
+function combinator combX3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c, $d), $c)
+}
+
+## Combinator execution: a(b(d, c), d)
+function combinator combX4($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($d, $c), $d)
+}
+
+## Combinator execution: a(c, b(d, c))
+function combinator combX5($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($c, $b($d, $c))
+}
+
+## Combinator execution: a(d, b(c, d))
+function combinator combX6($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($d, $b($c, $d))
+}
+
+## Combinator execution: a(b(c, d), b(d, c))
+function combinator combX7($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c, $d), $b($d, $c))
+}
+
+## Combinator execution: a(b(c, c), b(d, d))
+function combinator combX8($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c, $c), $b($d, $d))
+}
+
+## Combinator execution: a(b(d, d), b(c, c))
+function combinator combX9($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($d, $d), $b($c, $c))
+}
+
+## Combinator execution: a(b(c, d, c), b(d, c, d))
+function combinator combXA($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($c, $d, $c), $b($d, $c, $d))
+}
+
+## Combinator execution: a(b(d, c, d), b(c, d, c))
+function combinator combXB($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    return $a($b($d, $c, $d), $b($c, $d, $c))
+}
+
+## Combinator execution: a(b(c, e), b(d, e))
+function combinator combXC($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $a($b($c, $e), $b($d, $e))
+}
+
+## Combinator execution: a(b(e, c), b(e, d))
+function combinator combXD($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $a($b($e, $c), $b($e, $d))
+}
+
+## Combinator execution: a(b(e, d), c)
+function combinator combXE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $a($b($e, $d), $c)
+}
+
+## Combinator execution: a(b(d, e), c)
+function combinator combXF($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $a($b($d, $e), $c)
+}
+
+## Combinator execution: a(b(c))(d)
+function combinator combXN1($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $ret = $a($b($c))
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(c)) must be of type FUNCTION_POINTER"
+    }
+
+    return $ret($d)
+}
+
+## Combinator execution: a(c)(b(d))
+function combinator combXN2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $ret = $a($c)
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(c) must be of type FUNCTION_POINTER"
+    }
+
+    return $ret($b($d))
+}
+
+## Combinator execution: a(b(c)(d))(c)
+function combinator combXN3($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $ret = $b($c)
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    $ret = $a($ret($d))
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(c)(d)) must be of type FUNCTION_POINTER"
+    }
+
+    return $ret($c)
+}
+
+## Combinator execution: a(b(d)(c))(d)
+function combinator combXN4($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $ret = $b($d)
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    $ret = $a($ret($c))
+
+    if(!($ret ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(d)(c)) must be of type FUNCTION_POINTER"
+    }
+
+    return $ret($d)
+}
+
+## Combinator execution: a(c)(b(d)(c))
+function combinator combXN5($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retA = $a($c)
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($c))
+}
+
+## Combinator execution: a(d)(b(c)(d))
+function combinator combXN6($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retA = $a($d)
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(d) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($d))
+}
+
+## Combinator execution: a(b(c)(d))(b(d)(c))
+function combinator combXN7($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($d))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(c)(d)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($c))
+}
+
+## Combinator execution: a(b(c)(c))(b(d)(d))
+function combinator combXN8($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($c))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(c)(c)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($d))
+}
+
+## Combinator execution: a(b(d)(d))(b(c)(c))
+function combinator combXN9($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($d))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(d)(d)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($c))
+}
+
+## Combinator execution: a(b(c)(d)(c))(b(d)(c)(d))
+function combinator combXNA($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c)(d) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($c))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(c)(d)(c)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d)(c) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($d))
+}
+
+## Combinator execution: a(b(d)(c)(d))(b(c)(d)(c))
+function combinator combXNB($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d)(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($d))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(d)(c)(d)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c)(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($c))
+}
+
+## Combinator execution: a(b(c)(e))(b(d)(e))
+function combinator combXNC($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($c)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(c) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($e))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(c)(e)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($e))
+}
+
+## Combinator execution: a(b(e)(c))(b(e)(d))
+function combinator combXND($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($e)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(e) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($c))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(e)(c)) must be of type FUNCTION_POINTER"
+    }
+
+    $retB = $b($e)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(e) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($retB($d))
+}
+
+## Combinator execution: a(b(e)(d))(c)
+function combinator combXNE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($e)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(e) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($d))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(e)(d)) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($c)
+}
+
+## Combinator execution: a(b(d)(e))(c)
+function combinator combXNF($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c, $d) {
+    $retB = $b($d)
+
+    if(!($retB ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by b(d) must be of type FUNCTION_POINTER"
+    }
+
+    $retA = $a($retB($e))
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(b(d)(e)) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($c)
+}
