@@ -2621,69 +2621,6 @@ final class LangPredefinedFunctions {
 			return ret;
 		}
 
-		@LangFunction("combT")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: b(a)")
-		public static DataObject combTFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
-		) {
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
-			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
-					a
-			));
-		}
-
-		@LangFunction("combT3")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: b(a, c, d)")
-		public static DataObject combT3Function(
-				LangInterpreter interpreter,
-				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d
-		) {
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
-			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.asListWithArgumentSeparators(
-					a, c, d
-			));
-		}
-
-		@LangFunction("combT4")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: b(a, c, d, e)")
-		public static DataObject combT4Function(
-				LangInterpreter interpreter,
-				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d,
-				@LangParameter("$e") DataObject e
-		) {
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
-			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.asListWithArgumentSeparators(
-					a, c, d, e
-			));
-		}
-
-		@LangFunction("combTE")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: b()")
-		public static DataObject combTEFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b
-		) {
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
-			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), new LinkedList<>());
-		}
-
 		@LangFunction("combTN")
 		@CombinatorFunction
 		@LangInfo("Combinator execution: ...(args[1](args[0](z)))")
@@ -2732,23 +2669,6 @@ final class LangPredefinedFunctions {
 			}
 
 			return ret;
-		}
-
-		@LangFunction("combTX")
-		@CombinatorFunction
-		@LangInfo("Combinator execution: b(d, c, a)")
-		public static DataObject combTXFunction(
-				LangInterpreter interpreter,
-				@LangParameter("$a") DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
-				@LangParameter("$c") DataObject c,
-				@LangParameter("$d") DataObject d
-		) {
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
-			return interpreter.callFunctionPointer(bFunc, b.getVariableName(), LangUtils.asListWithArgumentSeparators(
-					d, c, a
-			));
 		}
 
 		@LangFunction("combTZ")

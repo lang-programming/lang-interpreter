@@ -648,3 +648,33 @@ function combinator combSE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
 function combinator combSX($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
     return $a($b($c), $c)
 }
+
+## Combinator execution: b(a)
+function combinator combT($a, $b{FUNCTION_POINTER}) {
+    return $b($a)
+}
+
+## Combinator execution: b(a, c, d)
+function combinator combT3($a, $b{FUNCTION_POINTER}, $c, $d) {
+    return $b($a, $c, $d)
+}
+
+## Combinator execution: b(a, c, d, e)
+function combinator combT4($a, $b{FUNCTION_POINTER}, $c, $d, $e) {
+    return $b($a, $c, $d, $e)
+}
+
+## Combinator execution: b()
+function combinator combTE($a, $b{FUNCTION_POINTER}) {
+    return $b()
+}
+
+# TODO combTN
+# TODO combTV
+
+## Combinator execution: b(d, c, a)
+function combinator combTX($a, $b{FUNCTION_POINTER}, $c, $d) {
+    return $b($d, $c, $a)
+}
+
+# TODO combTZ
