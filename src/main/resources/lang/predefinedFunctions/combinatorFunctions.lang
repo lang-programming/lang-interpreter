@@ -622,3 +622,29 @@ function combinator combRE($a, $b{FUNCTION_POINTER}, $c) {
 function combinator combRX($a, $b{FUNCTION_POINTER}, $c) {
     return $b($a, $c)
 }
+
+## Combinator execution: a(c)(b(c))
+function combinator combS($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    $retA = $a($c)
+
+    if(!($retA ~~ $LANG_TYPE_FUNCTION_POINTER)) {
+        throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by a(c) must be of type FUNCTION_POINTER"
+    }
+
+    return $retA($b($c))
+}
+
+## Combinator execution: a(c, b(c))
+function combinator combS2($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $a($c, $b($c))
+}
+
+## Combinator execution: a(c, b())
+function combinator combSE($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $a($c, $b())
+}
+
+## Combinator execution: a(b(c), c)
+function combinator combSX($a{FUNCTION_POINTER}, $b{FUNCTION_POINTER}, $c) {
+    return $a($b($c), $c)
+}
