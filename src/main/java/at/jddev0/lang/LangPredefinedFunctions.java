@@ -3391,10 +3391,8 @@ final class LangPredefinedFunctions {
 
 			List<DataObject> elements = Arrays.stream(arr).map(DataObject::new).sorted((a, b) -> {
 				DataObject retObject = interpreter.callFunctionPointer(comparatorObject.getFunctionPointer(), comparatorObject.getVariableName(),
-				LangUtils.separateArgumentsWithArgumentSeparators(
-						Arrays.asList(
-								a, b
-						)
+				LangUtils.asListWithArgumentSeparators(
+						a, b
 				));
 				Number retNumber = interpreter.conversions.toNumber(retObject, CodePosition.EMPTY);
 				if(retNumber == null) {
