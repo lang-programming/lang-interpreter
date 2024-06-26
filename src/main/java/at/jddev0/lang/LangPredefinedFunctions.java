@@ -3641,11 +3641,9 @@ final class LangPredefinedFunctions {
 
 				for(DataObject ele:arr) {
 					interpreter.callFunctionPointer(functionObject.getFunctionPointer(), functionObject.getVariableName(),
-							LangUtils.separateArgumentsWithArgumentSeparators(
-									Arrays.asList(
-											ele,
-											breakFunc
-									)
+							LangUtils.asListWithArgumentSeparators(
+									ele,
+									breakFunc
 							));
 
 					if(shouldBreak[0])
