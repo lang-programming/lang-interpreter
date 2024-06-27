@@ -576,7 +576,8 @@ public final class LangParser {
 							value.equals("||") || value.equals("!") || value.equals("&") || value.equals("~~") || value.equals("~/") || value.equals("~") || value.equals("\u25b2") ||
 							value.equals("\u25bc") || value.equals("*") || value.equals("//") || value.equals("^/") || value.equals("/") || value.equals("%") || value.equals("^") ||
 							value.equals("|") || value.equals("<<") || value.equals(">>>") || value.equals(">>") || value.equals("+|") || value.equals("-|") || value.equals("+") ||
-							value.equals("-") || value.equals("@") || value.equals("?:") || value.equals("??") || value.equals(",") || value.equals("?::") || value.equals("::")) {
+							value.equals("->") || value.equals("-") || value.equals("@") || value.equals("?:") || value.equals("??") || value.equals(",") || value.equals("?::") ||
+							value.equals("::")) {
 						boolean somethingBeforeOperator = !otherTokens.isEmpty() || !leftNodes.isEmpty();
 
 						AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
