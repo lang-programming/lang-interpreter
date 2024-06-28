@@ -92,6 +92,7 @@ public final class LangVars {
 		
 		addLangVar("$LANG_MATH_PI", new DataObject().setDouble(Math.PI).setFinalData(true));
 		addLangVar("$LANG_MATH_E", new DataObject().setDouble(Math.E).setFinalData(true));
+		addLangVar("$LANG_MATH_I", interpreter.standardTypes.get("$COMPLEX_I").setFinalData(true));
 	}
 	private void addErrorLangVars() {
 		for(InterpretingError error:InterpretingError.values()) {

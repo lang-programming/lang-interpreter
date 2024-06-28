@@ -14,6 +14,10 @@ class &Complex {
         return parser.op(&Complex(::$real, -::$imag))
     }
 
+    +mp.arg = ():{DOUBLE} -> {
+        return parser.op(atan2(::$imag, ::$real))
+    }
+
     +op:deepCopy = ():{OBJECT} -> {
         return parser.op(&Complex(::$real, ::$imag))
     }
@@ -74,6 +78,29 @@ class &Complex {
         return parser.op(&Complex($x * ::$real, $x * ::$imag))
     }
 
+    +op:pow = (&z{OBJECT}):{OBJECT} -> {
+        if(!(&z ~~ &Complex)) {
+            throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
+        }
+
+        $r $= abs(&this)
+        $theta $= ::arg()
+
+        return parser.op(($r ** &z::$real) * ($LANG_MATH_E ** (-&z::$imag * $theta)) *\
+            &Complex(cos(&z::$imag * loge($r) + &z::$real * $theta), sin(&z::$imag * loge($r) + &z::$real * $theta)))
+    }
+
+    +op:pow = ($x{number}):{OBJECT} -> {
+        $r $= abs(&this)
+        $theta $= ::arg()
+
+        return parser.op(($r ** $x) * &Complex(cos($x * $theta), sin($x * $theta)))
+    }
+
+    +op:r-pow = ($x{number}):{OBJECT} -> {
+        return parser.op(($x ** ::$real) * &Complex(cos(::$imag * loge($x)), sin(::$imag * loge($x))))
+    }
+
     +op:div = (&z{OBJECT}):{OBJECT} -> {
         if(!(&z ~~ &Complex)) {
             throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
@@ -125,6 +152,9 @@ class &Complex {
         return parser.op(::$real ||| " + " ||| ::$imag ||| "i")
     }
 }
+
+
+$COMPLEX_I $= &Complex(0, 1)
 
 
 function complex($real{number}, $imag{number}):{OBJECT} {
