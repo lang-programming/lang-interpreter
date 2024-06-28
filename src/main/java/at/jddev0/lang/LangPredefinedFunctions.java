@@ -3906,11 +3906,9 @@ final class LangPredefinedFunctions {
 					permutationArr[i] = new DataObject(arr[indices[i]]);
 
 				if(interpreter.conversions.toBool(interpreter.callFunctionPointer(functionObject.getFunctionPointer(),
-						functionObject.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-								Arrays.asList(
-										new DataObject().setArray(permutationArr),
-										new DataObject().setInt(permutationNumber++)
-								)
+						functionObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+								new DataObject().setArray(permutationArr),
+								new DataObject().setInt(permutationNumber++)
 						)), CodePosition.EMPTY))
 							return null;
 
