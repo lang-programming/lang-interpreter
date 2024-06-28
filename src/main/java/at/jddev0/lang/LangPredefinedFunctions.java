@@ -4724,12 +4724,10 @@ final class LangPredefinedFunctions {
 
 				for(int i = 0;i < list.size();i++) {
 					interpreter.callFunctionPointer(functionObject.getFunctionPointer(), functionObject.getVariableName(),
-							LangUtils.separateArgumentsWithArgumentSeparators(
-									Arrays.asList(
-											new DataObject().setInt(i),
-											list.get(i),
-											breakFunc
-									)
+							LangUtils.asListWithArgumentSeparators(
+									new DataObject().setInt(i),
+									list.get(i),
+									breakFunc
 							));
 
 					if(shouldBreak[0])
@@ -4738,11 +4736,9 @@ final class LangPredefinedFunctions {
 			}else {
 				for(int i = 0;i < list.size();i++) {
 					interpreter.callFunctionPointer(functionObject.getFunctionPointer(), functionObject.getVariableName(),
-					LangUtils.separateArgumentsWithArgumentSeparators(
-							Arrays.asList(
-									new DataObject().setInt(i),
-									list.get(i)
-							)
+					LangUtils.asListWithArgumentSeparators(
+							new DataObject().setInt(i),
+							list.get(i)
 					));
 				}
 			}
