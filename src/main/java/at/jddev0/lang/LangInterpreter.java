@@ -2569,7 +2569,7 @@ public final class LangInterpreter {
 							}
 							
 							if(dataObject.getType() == DataType.ARRAY) {
-								argumentValueList.addAll(LangUtils.separateArgumentsWithArgumentSeparators(Arrays.asList(dataObject.getArray())));
+								argumentValueList.addAll(LangUtils.asListWithArgumentSeparators(dataObject.getArray()));
 								
 								continue;
 							}
