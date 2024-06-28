@@ -2546,8 +2546,8 @@ public final class LangOperators {
 		if(rightSideOperand.getType() == DataType.FUNCTION_POINTER && leftSideOperand.getType() == DataType.ARRAY) {
 			FunctionPointerObject func = rightSideOperand.getFunctionPointer();
 			
-			return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
-					Arrays.asList(leftSideOperand.getArray())
+			return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					leftSideOperand.getArray()
 			));
 		}
 		
