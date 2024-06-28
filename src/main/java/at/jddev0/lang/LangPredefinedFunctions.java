@@ -4625,11 +4625,9 @@ final class LangPredefinedFunctions {
 					}
 
 					currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
-					LangUtils.separateArgumentsWithArgumentSeparators(
-							Arrays.asList(
-									currentValueObject,
-									ele
-							)
+					LangUtils.asListWithArgumentSeparators(
+							currentValueObject,
+							ele
 					));
 				}
 
