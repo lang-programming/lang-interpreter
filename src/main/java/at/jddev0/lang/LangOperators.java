@@ -46,9 +46,7 @@ public final class LangOperators {
 	private DataObject callOperatorMethod(String operatorName, DataObject leftSideOperand, DataObject middleOperand,
 										  DataObject rightSideOperand, CodePosition pos) {
 		return callOperatorMethod(leftSideOperand, "op:" + operatorName,
-				LangUtils.separateArgumentsWithArgumentSeparators(Arrays.asList(
-						middleOperand, rightSideOperand
-				)), pos);
+				LangUtils.asListWithArgumentSeparators(middleOperand, rightSideOperand), pos);
 	}
 
 	private DataObject callOperatorMethod(DataObject langObject, String methodName, List<DataObject> argumentList,
