@@ -2288,23 +2288,20 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(b(args[0]), b(args[1]), ...)")
 		public static DataObject combBNFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$a") @CallableValue DataObject a,
+				@LangParameter("$b") @CallableValue DataObject b,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
 			List<DataObject> argsA = new LinkedList<>();
 			for(int i = 0;i < args.size();i++) {
-				DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+				DataObject retB = interpreter.operators.opCall(b, Arrays.asList(
 						args.get(i)
-				));
+				), CodePosition.EMPTY);
 				argsA.add(LangUtils.nullToLangVoid(retB));
 			}
 			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
+			return interpreter.operators.opCall(a, argsA, CodePosition.EMPTY);
 		}
 
 		@LangFunction("combBV")
@@ -2312,23 +2309,20 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(b(args[0]), b(args[1]), ...)")
 		public static DataObject combBVFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$a") @CallableValue DataObject a,
+				@LangParameter("$b") @CallableValue DataObject b,
 				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
 		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
 			List<DataObject> argsA = new LinkedList<>();
 			for(DataObject ele:args.getArray()) {
-				DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+				DataObject retB = interpreter.operators.opCall(b, Arrays.asList(
 						ele
-				));
+				), CodePosition.EMPTY);
 				argsA.add(LangUtils.nullToLangVoid(retB));
 			}
 			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
+			return interpreter.operators.opCall(a, argsA, CodePosition.EMPTY);
 		}
 
 		@LangFunction("combBZ")
@@ -2336,23 +2330,20 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(..., b(args[1]), b(args[0]))")
 		public static DataObject combBZFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
-				@LangParameter("$b") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject b,
+				@LangParameter("$a") @CallableValue DataObject a,
+				@LangParameter("$b") @CallableValue DataObject b,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-			FunctionPointerObject bFunc = b.getFunctionPointer();
-
 			List<DataObject> argsA = new LinkedList<>();
 			for(int i = args.size() - 1;i >= 0;i--) {
-				DataObject retB = interpreter.callFunctionPointer(bFunc, b.getVariableName(), Arrays.asList(
+				DataObject retB = interpreter.operators.opCall(b, Arrays.asList(
 						args.get(i)
-				));
+				), CodePosition.EMPTY);
 				argsA.add(LangUtils.nullToLangVoid(retB));
 			}
 			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
+			return interpreter.operators.opCall(a, argsA, CodePosition.EMPTY);
 		}
 
 		@LangFunction("combNN")
@@ -2360,20 +2351,19 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(args[0])(args[1])(...)")
 		public static DataObject combNNFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$a") @CallableValue DataObject a,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
 			DataObject ret = a;
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
 
-				if(ret.getType() != DataType.FUNCTION_POINTER)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The return value after iteration " + (i + 1) + " must be of type " +
-							DataType.FUNCTION_POINTER);
+				if(!LangUtils.isCallable(ret))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The return value after iteration " + (i + 1) + " must be callable");
 
-				ret = interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
+				ret = interpreter.operators.opCall(ret, Arrays.asList(
 						n
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(ret);
 			}
 
@@ -2385,20 +2375,19 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(args[0])(args[1])(...)")
 		public static DataObject combNVFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$a") @CallableValue DataObject a,
 				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
 		) {
 			DataObject ret = a;
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
 
-				if(ret.getType() != DataType.FUNCTION_POINTER)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The return value after iteration " + (i + 1) + " must be of type " +
-							DataType.FUNCTION_POINTER);
+				if(!LangUtils.isCallable(ret))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The return value after iteration " + (i + 1) + " must be callable");
 
-				ret = interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
+				ret = interpreter.operators.opCall(ret, Arrays.asList(
 						n
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(ret);
 			}
 
@@ -2410,20 +2399,19 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(...)(args[1])(args[0])")
 		public static DataObject combNZFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$a") @CallableValue DataObject a,
 				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
 			DataObject ret = a;
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
 
-				if(ret.getType() != DataType.FUNCTION_POINTER)
-					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The return value after iteration " + (i + 1) + " must be of type " +
-							DataType.FUNCTION_POINTER);
+				if(!LangUtils.isCallable(ret))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The return value after iteration " + (i + 1) + " must be callable");
 
-				ret = interpreter.callFunctionPointer(ret.getFunctionPointer(), ret.getVariableName(), Arrays.asList(
+				ret = interpreter.operators.opCall(ret, Arrays.asList(
 						n
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(ret);
 			}
 
@@ -2435,26 +2423,25 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(args[0](b), args[1](b), ...)")
 		public static DataObject combPNFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$a") @CallableValue DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
 			List<DataObject> argsA = new LinkedList<>();
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
+				if(!LangUtils.isCallable(n))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The value at index " + (i + 3) + " must be callable");
 
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						b
-				));
+				), CodePosition.EMPTY);
 				argsA.add(LangUtils.nullToLangVoid(retN));
 			}
 			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
+			return interpreter.operators.opCall(a, argsA, CodePosition.EMPTY);
 		}
 
 		@LangFunction("combPV")
@@ -2462,30 +2449,26 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(args[0](b), args[1](b), ...)")
 		public static DataObject combPVFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$a") @CallableValue DataObject a,
 				@LangParameter("$b") DataObject b,
 				@LangParameter("&args") @AllowedTypes(DataObject.DataType.ARRAY) DataObject args
 		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
 			List<DataObject> argsA = new LinkedList<>();
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
 
-				if(n.getType() != DataType.FUNCTION_POINTER)
+				if(!LangUtils.isCallable(n))
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-							"Value at index " + i + " of Argument 3 (\"&args\") must be of type " + DataType.FUNCTION_POINTER);
+							"Value at index " + i + " of Argument 3 (\"&args\") must be callable");
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
-
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						b
-				));
+				), CodePosition.EMPTY);
 				argsA.add(LangUtils.nullToLangVoid(retN));
 			}
 			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
+			return interpreter.operators.opCall(a, argsA, CodePosition.EMPTY);
 		}
 
 		@LangFunction("combPZ")
@@ -2493,26 +2476,25 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: a(..., args[1](b), args[0](b))")
 		public static DataObject combPZFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$a") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject a,
+				@LangParameter("$a") @CallableValue DataObject a,
 				@LangParameter("$b") DataObject b,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
-			FunctionPointerObject aFunc = a.getFunctionPointer();
-
 			List<DataObject> argsA = new LinkedList<>();
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
+				if(!LangUtils.isCallable(n))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The value at index " + (i + 3) + " must be callable");
 
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						b
-				));
+				), CodePosition.EMPTY);
 				argsA.add(LangUtils.nullToLangVoid(retN));
 			}
 			argsA = LangUtils.separateArgumentsWithArgumentSeparators(argsA);
 
-			return interpreter.callFunctionPointer(aFunc, a.getVariableName(), argsA);
+			return interpreter.operators.opCall(a, argsA, CodePosition.EMPTY);
 		}
 
 		@LangFunction("combQN")
@@ -2521,17 +2503,18 @@ final class LangPredefinedFunctions {
 		public static DataObject combQNFunction(
 				LangInterpreter interpreter,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
 			DataObject ret = a;
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
+				if(!LangUtils.isCallable(n))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The value at index " + (i + 2) + " must be callable");
 
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						ret
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(retN);
 			}
 
@@ -2550,15 +2533,13 @@ final class LangPredefinedFunctions {
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
 
-				if(n.getType() != DataType.FUNCTION_POINTER)
+				if(!LangUtils.isCallable(n))
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-							"Value at index " + i + " of Argument 2 (\"&args\") must be of type " + DataType.FUNCTION_POINTER);
+							"Value at index " + i + " of Argument 2 (\"&args\") must be callable");
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
-
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						ret
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(retN);
 			}
 
@@ -2571,17 +2552,18 @@ final class LangPredefinedFunctions {
 		public static DataObject combQZFunction(
 				LangInterpreter interpreter,
 				@LangParameter("$a") DataObject a,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args
+				@LangParameter("&args") @VarArgs List<DataObject> args
 		) {
 			DataObject ret = a;
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
+				if(!LangUtils.isCallable(n))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The value at index " + (i + 2) + " must be callable");
 
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						ret
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(retN);
 			}
 
@@ -2593,18 +2575,19 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: ...(args[1](args[0](z)))")
 		public static DataObject combTNFunction(
 				LangInterpreter interpreter,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args,
+				@LangParameter("&args") @VarArgs List<DataObject> args,
 				@LangParameter("$z") DataObject z
 		) {
 			DataObject ret = z;
 			for(int i = 0;i < args.size();i++) {
 				DataObject n = args.get(i);
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
+				if(!LangUtils.isCallable(n))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The value at index " + (i + 1) + " must be callable");
 
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						ret
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(retN);
 			}
 
@@ -2623,15 +2606,13 @@ final class LangPredefinedFunctions {
 			for(int i = 0;i < args.getArray().length;i++) {
 				DataObject n = args.getArray()[i];
 
-				if(n.getType() != DataType.FUNCTION_POINTER)
+				if(!LangUtils.isCallable(n))
 					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-							"Value at index " + i + " of Argument 2 (\"&args\") must be of type " + DataType.FUNCTION_POINTER);
+							"Value at index " + i + " of Argument 2 (\"&args\") must be callable");
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
-
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						ret
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(retN);
 			}
 
@@ -2643,18 +2624,19 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: args[0](args[1](...(z)))")
 		public static DataObject combTZFunction(
 				LangInterpreter interpreter,
-				@LangParameter("&args") @AllowedTypes(DataType.FUNCTION_POINTER) @VarArgs List<DataObject> args,
+				@LangParameter("&args") @VarArgs List<DataObject> args,
 				@LangParameter("$z") DataObject z
 		) {
 			DataObject ret = z;
 			for(int i = args.size() - 1;i >= 0;i--) {
 				DataObject n = args.get(i);
 
-				FunctionPointerObject nFunc = n.getFunctionPointer();
+				if(!LangUtils.isCallable(n))
+					return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The value at index " + (i + 1) + " must be callable");
 
-				DataObject retN = interpreter.callFunctionPointer(nFunc, n.getVariableName(), Arrays.asList(
+				DataObject retN = interpreter.operators.opCall(n, Arrays.asList(
 						ret
-				));
+				), CodePosition.EMPTY);
 				ret = LangUtils.nullToLangVoid(retN);
 			}
 
@@ -2666,54 +2648,55 @@ final class LangPredefinedFunctions {
 		@LangInfo("Combinator execution: (x -> f(x(x)))(x -> f(x(x)))")
 		public static DataObject combYFunction(
 				LangInterpreter interpreter,
-				@LangParameter("$f") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject f
+				@LangParameter("$f") @CallableValue DataObject f
 		) {
-			FunctionPointerObject fFunc = f.getFunctionPointer();
-
 			LangNativeFunction anonFunc = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("combY:anon")
 				@CombinatorFunction
-				@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 				public DataObject combYAnonFunction(
-						@LangParameter("$x") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject x
+						@LangParameter("$x") @CallableValue DataObject x
 				) {
-					FunctionPointerObject xFunc = x.getFunctionPointer();
-
 					LangNativeFunction func = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 						@LangFunction("combY:anon:inner")
 						public DataObject combYAnonInnerFunction(
 								@LangParameter("&args") @VarArgs List<DataObject> args
 						) {
-							DataObject retX = interpreter.callFunctionPointer(xFunc, x.getVariableName(), Arrays.asList(
+							DataObject retX = interpreter.operators.opCall(x, Arrays.asList(
 									x
-							));
+							), CodePosition.EMPTY);
 
-							DataObject retF = interpreter.callFunctionPointer(fFunc, f.getVariableName(), Arrays.asList(
+							DataObject retF = interpreter.operators.opCall(f, Arrays.asList(
 									LangUtils.nullToLangVoid(retX)
-							));
-							if(retF == null || retF.getType() != DataType.FUNCTION_POINTER)
-								return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by $f() must be of type " +
-										DataType.FUNCTION_POINTER + "\nThe implementation of the function provided to \"func.combY\" is incorrect!");
-							FunctionPointerObject retFFunc = retF.getFunctionPointer();
+							), CodePosition.EMPTY);
+							if(retF == null || !LangUtils.isCallable(retF))
+								return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by $f() must be callable" +
+										"\nThe implementation of the function provided to \"func.combY\" is incorrect!");
 
-							return interpreter.callFunctionPointer(retFFunc, retF.getVariableName(), LangUtils.separateArgumentsWithArgumentSeparators(
+							return interpreter.operators.opCall(retF, LangUtils.separateArgumentsWithArgumentSeparators(
 									args.stream().map(DataObject::new).collect(Collectors.toList())
-							));
+							), CodePosition.EMPTY);
 						}
 					}, f, x).getFunction(0).getNativeFunction();
 
-					return new DataObject().setFunctionPointer(new FunctionPointerObject("<combY:anon:inner-func(" + xFunc + ")>", func));
+					String functionName;
+					if(x.getType() == DataObject.DataType.FUNCTION_POINTER) {
+						functionName = x.getFunctionPointer().getFunctionName();
+						functionName = functionName == null?x.getVariableName():functionName;
+					}else {
+						functionName = "<arg>";
+					}
+
+					return new DataObject().setFunctionPointer(new FunctionPointerObject("<combY:anon:inner-func(" + functionName + ")>", func));
 				}
 			}, f).getFunction(0).getNativeFunction();
 
 			DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
-			FunctionPointerObject retAnonFunc1Func = retAnonFunc1.getFunctionPointer();
 
 			DataObject retAnonFunc2 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
 
-			return interpreter.callFunctionPointer(retAnonFunc1Func, retAnonFunc1.getFunctionPointer().getFunctionName(), Arrays.asList(
+			return interpreter.operators.opCall(retAnonFunc1, Arrays.asList(
 					retAnonFunc2
-			));
+			), CodePosition.EMPTY);
 		}
 	}
 
@@ -2725,45 +2708,63 @@ final class LangPredefinedFunctions {
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 		public static DataObject argCnt0Function(
 				LangInterpreter interpreter,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+				@LangParameter("$func") @CallableValue DataObject funcObject
 		) {
-			FunctionPointerObject func = funcObject.getFunctionPointer();
+			String functionName;
+			if(funcObject.getType() == DataObject.DataType.FUNCTION_POINTER) {
+				functionName = funcObject.getFunctionPointer().getFunctionName();
+				functionName = functionName == null?funcObject.getVariableName():functionName;
+			}else {
+				functionName = "<arg>";
+			}
 
 			return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt0-func")
 				public DataObject argCnt0FuncFunction() {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), new LinkedList<>());
+					return interpreter.operators.opCall(funcObject, new LinkedList<>(), CodePosition.EMPTY);
 				}
-			}, funcObject).withFunctionName("<argCnt0(" + func + ")>"));
+			}, funcObject).withFunctionName("<argCnt0(" + functionName + ")>"));
 		}
 
 		@LangFunction("argCnt1")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 		public static DataObject argCnt1Function(
 				LangInterpreter interpreter,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+				@LangParameter("$func") @CallableValue DataObject funcObject
 		) {
-			FunctionPointerObject func = funcObject.getFunctionPointer();
+			String functionName;
+			if(funcObject.getType() == DataObject.DataType.FUNCTION_POINTER) {
+				functionName = funcObject.getFunctionPointer().getFunctionName();
+				functionName = functionName == null?funcObject.getVariableName():functionName;
+			}else {
+				functionName = "<arg>";
+			}
 
 			return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt1-func")
 				public DataObject argCnt1FuncFunction(
 						@LangParameter("$a") DataObject a
 				) {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), Arrays.asList(
+					return interpreter.operators.opCall(funcObject, Arrays.asList(
 							a
-					));
+					), CodePosition.EMPTY);
 				}
-			}, funcObject).withFunctionName("<argCnt1(" + func + ")>"));
+			}, funcObject).withFunctionName("<argCnt1(" + functionName + ")>"));
 		}
 
 		@LangFunction("argCnt2")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 		public static DataObject argCnt2Function(
 				LangInterpreter interpreter,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+				@LangParameter("$func") @CallableValue DataObject funcObject
 		) {
-			FunctionPointerObject func = funcObject.getFunctionPointer();
+			String functionName;
+			if(funcObject.getType() == DataObject.DataType.FUNCTION_POINTER) {
+				functionName = funcObject.getFunctionPointer().getFunctionName();
+				functionName = functionName == null?funcObject.getVariableName():functionName;
+			}else {
+				functionName = "<arg>";
+			}
 
 			return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt2-func")
@@ -2771,20 +2772,26 @@ final class LangPredefinedFunctions {
 						@LangParameter("$a") DataObject a,
 						@LangParameter("$b") DataObject b
 				) {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					return interpreter.operators.opCall(funcObject, LangUtils.asListWithArgumentSeparators(
 							a, b
-					));
+					), CodePosition.EMPTY);
 				}
-			}, funcObject).withFunctionName("<argCnt2(" + func + ")>"));
+			}, funcObject).withFunctionName("<argCnt2(" + functionName + ")>"));
 		}
 
 		@LangFunction("argCnt3")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 		public static DataObject argCnt3Function(
 				LangInterpreter interpreter,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+				@LangParameter("$func") @CallableValue DataObject funcObject
 		) {
-			FunctionPointerObject func = funcObject.getFunctionPointer();
+			String functionName;
+			if(funcObject.getType() == DataObject.DataType.FUNCTION_POINTER) {
+				functionName = funcObject.getFunctionPointer().getFunctionName();
+				functionName = functionName == null?funcObject.getVariableName():functionName;
+			}else {
+				functionName = "<arg>";
+			}
 
 			return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt3-func")
@@ -2793,20 +2800,26 @@ final class LangPredefinedFunctions {
 						@LangParameter("$b") DataObject b,
 						@LangParameter("$c") DataObject c
 				) {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					return interpreter.operators.opCall(funcObject, LangUtils.asListWithArgumentSeparators(
 							a, b, c
-					));
+					), CodePosition.EMPTY);
 				}
-			}, funcObject).withFunctionName("<argCnt3(" + func + ")>"));
+			}, funcObject).withFunctionName("<argCnt3(" + functionName + ")>"));
 		}
 
 		@LangFunction("argCnt4")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 		public static DataObject argCnt4Function(
 				LangInterpreter interpreter,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+				@LangParameter("$func") @CallableValue DataObject funcObject
 		) {
-			FunctionPointerObject func = funcObject.getFunctionPointer();
+			String functionName;
+			if(funcObject.getType() == DataObject.DataType.FUNCTION_POINTER) {
+				functionName = funcObject.getFunctionPointer().getFunctionName();
+				functionName = functionName == null?funcObject.getVariableName():functionName;
+			}else {
+				functionName = "<arg>";
+			}
 
 			return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt4-func")
@@ -2816,20 +2829,26 @@ final class LangPredefinedFunctions {
 						@LangParameter("$c") DataObject c,
 						@LangParameter("$d") DataObject d
 				) {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					return interpreter.operators.opCall(funcObject, LangUtils.asListWithArgumentSeparators(
 							a, b, c, d
-					));
+					), CodePosition.EMPTY);
 				}
-			}, funcObject).withFunctionName("<argCnt4(" + func + ")>"));
+			}, funcObject).withFunctionName("<argCnt4(" + functionName + ")>"));
 		}
 
 		@LangFunction("argCnt5")
 		@AllowedTypes(DataObject.DataType.FUNCTION_POINTER)
 		public static DataObject argCnt5Function(
 				LangInterpreter interpreter,
-				@LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcObject
+				@LangParameter("$func") @CallableValue DataObject funcObject
 		) {
-			FunctionPointerObject func = funcObject.getFunctionPointer();
+			String functionName;
+			if(funcObject.getType() == DataObject.DataType.FUNCTION_POINTER) {
+				functionName = funcObject.getFunctionPointer().getFunctionName();
+				functionName = functionName == null?funcObject.getVariableName():functionName;
+			}else {
+				functionName = "<arg>";
+			}
 
 			return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction("argCnt5-func")
@@ -2840,11 +2859,11 @@ final class LangPredefinedFunctions {
 						@LangParameter("$d") DataObject d,
 						@LangParameter("$e") DataObject e
 				) {
-					return interpreter.callFunctionPointer(func, funcObject.getVariableName(), LangUtils.asListWithArgumentSeparators(
+					return interpreter.operators.opCall(funcObject, LangUtils.asListWithArgumentSeparators(
 							a, b, c, d, e
-					));
+					), CodePosition.EMPTY);
 				}
-			}, funcObject).withFunctionName("<argCnt5(" + func + ")>"));
+			}, funcObject).withFunctionName("<argCnt5(" + functionName + ")>"));
 		}
 	}
 

@@ -2418,6 +2418,11 @@ public final class LangInterpreter {
 										return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
 												"Invalid argument value for function parameter \"" + variableName + "\" (Must be a number)",
 												argumentPos);
+								}else if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALLABLE) {
+									if(!LangUtils.isCallable(combinedArgumentList.get(argumentIndex)))
+										return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
+												"Invalid argument value for function parameter \"" + variableName + "\" (Must be callable)",
+												argumentPos);
 								}
 
 								DataObject newDataObject = new DataObject(value).
@@ -2899,6 +2904,9 @@ public final class LangInterpreter {
 				}else if(rawParameterTypeConstraint.equals("number")) {
 					parameterTypeConstraint = null;
 					parameterAnnotation = LangBaseFunction.ParameterAnnotation.NUMBER;
+				}else if(rawParameterTypeConstraint.equals("callable")) {
+					parameterTypeConstraint = null;
+					parameterAnnotation = LangBaseFunction.ParameterAnnotation.CALLABLE;
 				}else {
 					DataObject errorOut = new DataObject().setVoid();
 					parameterTypeConstraint = interpretTypeConstraint(rawParameterTypeConstraint, errorOut, parameter.getPos());

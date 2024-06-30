@@ -196,6 +196,7 @@ public class LangNativeFunction extends LangBaseFunction {
 			int specialTypeConstraintingParameterCount = 0;
 			
 			boolean isNumberValue = parameter.isAnnotationPresent(NumberValue.class) && typeConstraintingParameterCount++ >= 0 && specialTypeConstraintingParameterCount++ >= 0;
+			boolean isCallableValue = parameter.isAnnotationPresent(CallableValue.class) && typeConstraintingParameterCount++ >= 0 && specialTypeConstraintingParameterCount++ >= 0;
 			boolean isBooleanValue = parameter.isAnnotationPresent(BooleanValue.class) && typeConstraintingParameterCount++ >= 0 && specialTypeConstraintingParameterCount++ >= 0;
 			
 			//Call by pointer can be used with additional @AllowedTypes or @NotAllowedTypes type constraint
@@ -203,7 +204,7 @@ public class LangNativeFunction extends LangBaseFunction {
 			
 			boolean isContainsVarArgsParameter = parameter.isAnnotationPresent(VarArgs.class) && specialTypeConstraintingParameterCount++ >= 0;
 			if(specialTypeConstraintingParameterCount > 1)
-				throw new IllegalArgumentException("DataObject parameter must be annotated with at most one of @NumberValue, @BooleanValue, @CallByPointer, or @VarArgs");
+				throw new IllegalArgumentException("DataObject parameter must be annotated with at most one of @NumberValue, @CallableValue, @BooleanValue, @CallByPointer, or @VarArgs");
 			
 			boolean isContainsRawVarArgsParameter = parameter.isAnnotationPresent(RawVarArgs.class) && typeConstraintingParameterCount++ >= 0 && specialTypeConstraintingParameterCount++ >= 0;
 			if(isContainsRawVarArgsParameter && combinatorFunction)
@@ -222,9 +223,14 @@ public class LangNativeFunction extends LangBaseFunction {
 					throw new IllegalArgumentException("@LangParameter which are annotated with @BooleanValue must be of type DataObject or boolean");
 			}else if(isNumberValue) {
 				parameterAnnotation = ParameterAnnotation.NUMBER;
-				
+
 				if(!parameter.getType().isAssignableFrom(DataObject.class) && !parameter.getType().isAssignableFrom(Number.class))
 					throw new IllegalArgumentException("@LangParameter which are annotated with @NumberValue must be of type DataObject or Number");
+			}else if(isCallableValue) {
+				parameterAnnotation = ParameterAnnotation.CALLABLE;
+
+				if(!parameter.getType().isAssignableFrom(DataObject.class))
+					throw new IllegalArgumentException("@LangParameter which are annotated with @CallableValue must be of type DataObject");
 			}else if(isCallByPointer) {
 				parameterAnnotation = ParameterAnnotation.CALL_BY_POINTER;
 				
@@ -309,7 +315,7 @@ public class LangNativeFunction extends LangBaseFunction {
 				typeConstraint = DataTypeConstraint.fromNotAllowedTypes(Arrays.asList(notAllowedTypes.value()));
 			
 			if(typeConstraintingParameterCount > 1)
-				throw new IllegalArgumentException("DataObject parameter must be annotated with at most one of @RawVarArgs, @AllowedTypes, @NotAllowedTypes, @NumberValue, or @BooleanValue");
+				throw new IllegalArgumentException("DataObject parameter must be annotated with at most one of @RawVarArgs, @AllowedTypes, @NotAllowedTypes, @NumberValue, @CallableValue, or @BooleanValue");
 
 			LangInfo langInfo = parameter.getAnnotation(LangInfo.class);
 			String parameterInfo = langInfo == null?null:langInfo.value();
@@ -406,6 +412,9 @@ public class LangNativeFunction extends LangBaseFunction {
 					interpreter.conversions.toNumber(combinedArgumentList.get(argumentIndex), CodePosition.EMPTY):null;
 			if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER && argumentNumberValue == null)
 				return interpreter.setErrnoErrorObject(InterpretingError.NO_NUM, String.format("Argument %d (\"%s\") must be a number", argumentIndex + 1, variableName));
+
+			if(parameterAnnotationList.get(i) == ParameterAnnotation.CALLABLE && !LangUtils.isCallable(combinedArgumentList.get(argumentIndex)))
+				return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument %d (\"%s\") must be callable", argumentIndex + 1, variableName));
 
 			Class<?> methodParameterType = methodParameterTypeList.get(i);
 

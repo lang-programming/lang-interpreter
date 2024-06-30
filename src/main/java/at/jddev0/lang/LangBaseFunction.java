@@ -138,6 +138,8 @@ public class LangBaseFunction {
                 builder.append("...{raw}");
             }else if(parameterAnnotationList.get(i) == ParameterAnnotation.NUMBER) {
                 builder.append("{number}");
+            }else if(parameterAnnotationList.get(i) == ParameterAnnotation.CALLABLE) {
+                builder.append("{callable}");
             }else if(parameterAnnotationList.get(i) == ParameterAnnotation.BOOLEAN) {
                 builder.append("{boolean}");
             }else if(!parameterDataTypeConstraintList.get(i).equals(DataObject.getTypeConstraintFor(variableName))) {
@@ -215,6 +217,6 @@ public class LangBaseFunction {
     }
 
     public static enum ParameterAnnotation {
-        NORMAL, NUMBER, BOOLEAN, CALL_BY_POINTER, VAR_ARGS, RAW_VAR_ARGS;
+        NORMAL, NUMBER, CALLABLE, BOOLEAN, CALL_BY_POINTER, VAR_ARGS, RAW_VAR_ARGS;
     }
 }

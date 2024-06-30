@@ -40,6 +40,11 @@ public @interface LangFunction {
 		@Retention(RetentionPolicy.RUNTIME)
 		@Target(ElementType.PARAMETER)
 		public static @interface NumberValue {}
+
+		@Documented
+		@Retention(RetentionPolicy.RUNTIME)
+		@Target(ElementType.PARAMETER)
+		public static @interface CallableValue {}
 		
 		@Documented
 		@Retention(RetentionPolicy.RUNTIME)

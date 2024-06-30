@@ -120,9 +120,9 @@ final class LangPatterns {
 	 */
 	public static final Pattern TYPE_CONSTRAINT = Pattern.compile("\\{[?!]?([A-Z_]+\\|)*[A-Z_]+\\}");
 	/**
-	 * RegEx: "<code>\{(([?!]?([A-Z_]+\|)*[A-Z_]+)|(bool|number))\}</code>"
+	 * RegEx: "<code>\{(([?!]?([A-Z_]+\|)*[A-Z_]+)|(bool|number|callable))\}</code>"
 	 */
-	public static final Pattern TYPE_CONSTRAINT_WITH_SPECIAL_TYPES = Pattern.compile("\\{(([?!]?([A-Z_]+\\|)*[A-Z_]+)|(bool|number))\\}");
+	public static final Pattern TYPE_CONSTRAINT_WITH_SPECIAL_TYPES = Pattern.compile("\\{(([?!]?([A-Z_]+\\|)*[A-Z_]+)|(bool|number|callable))\\}");
 	
 	//Function call specific
 	/**
