@@ -443,6 +443,15 @@ final class LangPredefinedFunctions {
 			return new DataObject().setBoolean(interpreter.term != null);
 		}
 
+		@LangFunction("isCallable")
+		@AllowedTypes(DataType.INT)
+		public static DataObject isCallableFunction(
+				LangInterpreter interpreter,
+				@LangParameter("$value") DataObject valueObject
+		) {
+			return new DataObject().setBoolean(LangUtils.isCallable(valueObject));
+		}
+
 		@LangFunction(value="isInstanceOf", hasInfo=true)
 		@AllowedTypes(DataObject.DataType.INT)
 		public static DataObject isInstanceOfFunction(

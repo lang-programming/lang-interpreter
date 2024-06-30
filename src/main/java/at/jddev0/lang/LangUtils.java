@@ -578,7 +578,21 @@ public final class LangUtils {
 		
 		return index % 2 == 1;
 	}
-	
+
+	/**
+	 * @return Returns true if the call operator is defined for the provided DataObject else false
+	 */
+	public static boolean isCallable(DataObject valueObject) {
+		DataType type = valueObject.getType();
+
+		boolean hasOpMethod = type == DataType.OBJECT && !valueObject.getObject().isClass() &&
+				valueObject.getObject().getMethods().containsKey("op:call");
+
+		return hasOpMethod || type == DataType.FUNCTION_POINTER ||
+				type == DataType.TYPE || (type == DataType.STRUCT && valueObject.getStruct().isDefinition()) ||
+				(type == DataType.OBJECT && valueObject.getObject().isClass());
+	}
+
 	/**
 	 * @return Will return a formatted template translation ("{" can be escaped with "{{")
 	 */
