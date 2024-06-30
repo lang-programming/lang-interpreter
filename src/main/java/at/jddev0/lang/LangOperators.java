@@ -1991,9 +1991,11 @@ public final class LangOperators {
 							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
 						
 						return new DataObject().setLong(leftSideOperand.getInt() % rightSideOperand.getLong());
-					
 					case FLOAT:
+						return new DataObject().setFloat(leftSideOperand.getInt() % rightSideOperand.getFloat());
 					case DOUBLE:
+						return new DataObject().setDouble(leftSideOperand.getInt() % rightSideOperand.getDouble());
+					
 					case TEXT:
 					case CHAR:
 					case BYTE_BUFFER:
@@ -2023,9 +2025,69 @@ public final class LangOperators {
 							return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
 						
 						return new DataObject().setLong(leftSideOperand.getLong() % rightSideOperand.getLong());
-					
 					case FLOAT:
+						return new DataObject().setFloat(leftSideOperand.getLong() % rightSideOperand.getFloat());
 					case DOUBLE:
+						return new DataObject().setDouble(leftSideOperand.getLong() % rightSideOperand.getDouble());
+
+					case TEXT:
+					case CHAR:
+					case BYTE_BUFFER:
+					case ARRAY:
+					case LIST:
+					case ERROR:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return null;
+				}
+				return null;
+
+			case FLOAT:
+				switch(rightSideOperand.getType()) {
+					case INT:
+						return new DataObject().setFloat(leftSideOperand.getFloat() % rightSideOperand.getInt());
+					case LONG:
+						return new DataObject().setFloat(leftSideOperand.getFloat() % rightSideOperand.getLong());
+					case FLOAT:
+						return new DataObject().setFloat(leftSideOperand.getFloat() % rightSideOperand.getFloat());
+					case DOUBLE:
+						return new DataObject().setDouble(leftSideOperand.getFloat() % rightSideOperand.getDouble());
+
+					case TEXT:
+					case CHAR:
+					case BYTE_BUFFER:
+					case ARRAY:
+					case LIST:
+					case ERROR:
+					case VAR_POINTER:
+					case FUNCTION_POINTER:
+					case STRUCT:
+					case OBJECT:
+					case NULL:
+					case VOID:
+					case ARGUMENT_SEPARATOR:
+					case TYPE:
+						return null;
+				}
+				return null;
+
+			case DOUBLE:
+				switch(rightSideOperand.getType()) {
+					case INT:
+						return new DataObject().setDouble(leftSideOperand.getDouble() % rightSideOperand.getInt());
+					case LONG:
+						return new DataObject().setDouble(leftSideOperand.getDouble() % rightSideOperand.getLong());
+					case FLOAT:
+						return new DataObject().setDouble(leftSideOperand.getDouble() % rightSideOperand.getFloat());
+					case DOUBLE:
+						return new DataObject().setDouble(leftSideOperand.getDouble() % rightSideOperand.getDouble());
+
 					case TEXT:
 					case CHAR:
 					case BYTE_BUFFER:
@@ -2049,9 +2111,7 @@ public final class LangOperators {
 					return interpreter.formatText(leftSideOperand.getText(), new LinkedList<>(Arrays.asList(rightSideOperand.getArray())));
 				
 				return null;
-			
-			case FLOAT:
-			case DOUBLE:
+
 			case CHAR:
 			case BYTE_BUFFER:
 			case ARRAY:
