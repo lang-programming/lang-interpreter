@@ -41,6 +41,11 @@ public final class LangParser {
 
 	public AbstractSyntaxTree parseTokens(List<Token> tokens) {
 		removeLineContinuationAndSingleLineTextQuotesTokens(tokens);
+
+		return parseTokensInternal(tokens);
+	}
+
+	private AbstractSyntaxTree parseTokensInternal(List<Token> tokens) {
 		if(tokens.isEmpty())
 			return null;
 
@@ -1442,7 +1447,7 @@ public final class LangParser {
 						return ast;
 					}
 
-					AbstractSyntaxTree tryBody = parseTokens(tokens);
+					AbstractSyntaxTree tryBody = parseTokensInternal(tokens);
 					if(tryBody == null) {
 						//TODO line numbers
 						nodes.add(new AbstractSyntaxTree.TryStatementNode(CodePosition.EMPTY, tryStatmentParts));
@@ -1588,7 +1593,7 @@ public final class LangParser {
 						return ast;
 					}
 
-					AbstractSyntaxTree loopBody = parseTokens(tokens);
+					AbstractSyntaxTree loopBody = parseTokensInternal(tokens);
 					if(loopBody == null) {
 						//TODO line numbers
 						nodes.add(new AbstractSyntaxTree.LoopStatementNode(CodePosition.EMPTY, loopStatmentParts));
@@ -1777,7 +1782,7 @@ public final class LangParser {
 						return ast;
 					}
 
-					AbstractSyntaxTree ifBody = parseTokens(tokens);
+					AbstractSyntaxTree ifBody = parseTokensInternal(tokens);
 					if(ifBody == null) {
 						//TODO line numbers
 						nodes.add(new AbstractSyntaxTree.IfStatementNode(CodePosition.EMPTY, ifStatmentParts));
@@ -2320,14 +2325,14 @@ public final class LangParser {
 						tokens.remove(0);
 
 						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, false, langDocComment, parameterList,
-								returnTypeConstraint, parseTokens(tokens)));
+								returnTypeConstraint, parseTokensInternal(tokens)));
 						langDocComment = null;
 					}else {
 						List<Token> functionBody = new ArrayList<>(tokens.subList(0, tokenCountFirstLine));
 						tokens.subList(0, tokenCountFirstLine).clear();
 
 						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, false, langDocComment, parameterList,
-								returnTypeConstraint, parseTokens(functionBody)));
+								returnTypeConstraint, parseTokensInternal(functionBody)));
 						langDocComment = null;
 					}
 
@@ -2385,7 +2390,7 @@ public final class LangParser {
 
 		//TODO line numbers
 		nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, functionName, overloaded, combinator,
-				langDocComment, parameterListNodes, functionReturnValueTypeConstraint, parseTokens(tokens)));
+				langDocComment, parameterListNodes, functionReturnValueTypeConstraint, parseTokensInternal(tokens)));
 		langDocComment = null;
 
 		return ast;
