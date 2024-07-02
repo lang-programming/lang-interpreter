@@ -90,6 +90,9 @@ public class Token {
         OPENING_BRACKET,
         CLOSING_BRACKET,
 
+        OPENING_BLOCK_BRACKET,
+        CLOSING_BLOCK_BRACKET,
+
         SINGLE_LINE_TEXT_QUOTES,
 
         START_MULTILINE_TEXT,

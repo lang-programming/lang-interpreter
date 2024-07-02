@@ -33,6 +33,7 @@ public class LangLexer {
     private int openingBlockCount;
 
     private boolean linesIsEmpty;
+    private boolean isFirstCodeTokenInLine = true;
 
     public LangLexer() {
         resetPositionVars();
@@ -102,6 +103,7 @@ public class LangLexer {
             if(linesIsEmpty || (ret.isEmpty() && wasLinesEmpty))
                 return null;
 
+            isFirstCodeTokenInLine = true;
             return ret;
         }
 
@@ -146,28 +148,43 @@ public class LangLexer {
         String ret;
 
         ret = tryParseMultilineText(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseLineContinuation(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 
         ret = tryParseEscapeSequence(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseSingleLineText(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseAssignment(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseArgumentSeparator(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseWhitespace(currentLine, lines, tokens);
         if(ret != null)
@@ -178,21 +195,34 @@ public class LangLexer {
             return ret;
 
         ret = tryParseParserFunctionIdentifier(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseIdentifier(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseBracket(currentLine, lines, tokens);
-        if(ret != null)
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
+
             return ret;
+        }
 
         ret = tryParseOperator(currentLine, lines, tokens);
-        if(ret != null)
-            return ret;
+        if(ret != null) {
+            isFirstCodeTokenInLine = false;
 
+            return ret;
+        }
+
+        isFirstCodeTokenInLine = false;
         return null;
     }
 
@@ -542,7 +572,31 @@ public class LangLexer {
         char c = currentLine.charAt(0);
 
         if(c == '{' || c == '(' || c == '[') {
-            if(c == '{')
+            boolean isLastCodeTokenInLine = c == '{';
+
+            int lineIndex = 0;
+            int i = 1;
+            String line = isLastCodeTokenInLine?currentLine:"";
+            while(i < line.length()) {
+                c = line.charAt(i);
+
+                if(c == '\\' && i == line.length() - 1 && lineIndex < lines.size()) {
+                    line = lines.get(lineIndex);
+                    i = 0;
+
+                    continue;
+                }
+
+                if(c != ' ' && c != '\t') {
+                    isLastCodeTokenInLine = false;
+
+                    break;
+                }
+
+                i++;
+            }
+
+            if(c == '{' && isLastCodeTokenInLine)
                 openingBlockCount++;
             else
                 openingBracketCount++;
@@ -551,11 +605,14 @@ public class LangLexer {
             column++;
 
             String token = currentLine.substring(0, 1);
-            tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.OPENING_BRACKET));
+            tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, isLastCodeTokenInLine?
+                    Token.TokenType.OPENING_BLOCK_BRACKET:Token.TokenType.OPENING_BRACKET));
 
             return currentLine.substring(1);
         }else if(c == '}' || c == ')' || c == ']') {
-            if(c == '}') {
+            isFirstCodeTokenInLine &= c == '}';
+
+            if(isFirstCodeTokenInLine) {
                 openingBlockCount--;
                 if(openingBlockCount < 0)
                     openingBlockCount = 0;
@@ -569,7 +626,8 @@ public class LangLexer {
             column++;
 
             String token = currentLine.substring(0, 1);
-            tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.CLOSING_BRACKET));
+            tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, isFirstCodeTokenInLine?
+                    Token.TokenType.CLOSING_BLOCK_BRACKET:Token.TokenType.CLOSING_BRACKET));
 
             return currentLine.substring(1);
         }

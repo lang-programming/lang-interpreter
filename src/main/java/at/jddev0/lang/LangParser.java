@@ -87,15 +87,13 @@ public final class LangParser {
 			Token currentToken = tokens.get(0);
 
 			//Blocks
-			if(currentToken.getTokenType() == Token.TokenType.OPENING_BRACKET &&
-					currentToken.getValue().equals("{")) {
+			if(currentToken.getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
 				tokens.remove(0);
 
 				blockPos++;
 
 				continue;
-			}else if(currentToken.getTokenType() == Token.TokenType.CLOSING_BRACKET &&
-					currentToken.getValue().startsWith("}")) { //"startsWith" is needed for parsing of control flow statements
+			}else if(currentToken.getTokenType() == Token.TokenType.CLOSING_BLOCK_BRACKET) {
 				tokens.remove(0);
 
 				blockPos--;
@@ -982,6 +980,8 @@ public final class LangParser {
 
 					break;
 
+				case OPENING_BLOCK_BRACKET:
+				case CLOSING_BLOCK_BRACKET:
 				case LINE_CONTINUATION:
 				case END_COMMENT:
 				case END_MULTILINE_TEXT:
@@ -1303,7 +1303,7 @@ public final class LangParser {
 		boolean startsWithConExpression = tokenCountFirstLine > 0 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
 				tokens.get(0).getValue().startsWith("con.");
 		boolean endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
-				Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+				Token.TokenType.OPENING_BLOCK_BRACKET;
 		if(startsWithConExpression || endsWithOpeningBracket) {
 			String conExpression = tokens.get(0).getValue();
 			String originalConExpression = conExpression;
@@ -1350,7 +1350,7 @@ public final class LangParser {
 					if(tokenCountFirstLine == -1)
 						tokenCountFirstLine = tokens.size();
 					endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
-							Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+							Token.TokenType.OPENING_BLOCK_BRACKET;
 
 					if(tokenCountFirstLine == 0)
 						break;
@@ -1365,8 +1365,7 @@ public final class LangParser {
 						//Remove "{" and "}" for the curly brackets if statement syntax
 						CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
 
-						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
-								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
+						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BLOCK_BRACKET)
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						tokens.remove(tokenCountFirstLine - 1);
@@ -1494,7 +1493,7 @@ public final class LangParser {
 					if(tokenCountFirstLine == -1)
 						tokenCountFirstLine = tokens.size();
 					endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
-							Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+							Token.TokenType.OPENING_BLOCK_BRACKET;
 
 					if(tokenCountFirstLine == 0)
 						break;
@@ -1509,8 +1508,7 @@ public final class LangParser {
 						//Remove "{" and "}" for the curly brackets if statement syntax
 						CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
 
-						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
-								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
+						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BLOCK_BRACKET)
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						tokens.remove(tokenCountFirstLine - 1);
@@ -1684,7 +1682,7 @@ public final class LangParser {
 					if(tokenCountFirstLine == -1)
 						tokenCountFirstLine = tokens.size();
 					endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
-							Token.TokenType.OPENING_BRACKET && tokens.get(tokenCountFirstLine - 1).getValue().equals("{");
+							Token.TokenType.OPENING_BLOCK_BRACKET;
 
 					if(tokenCountFirstLine == 0)
 						break;
@@ -1699,8 +1697,7 @@ public final class LangParser {
 						//Remove "{" and "}" for the curly brackets if statement syntax
 						CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
 
-						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BRACKET ||
-								!tokens.get(tokenCountFirstLine - 1).getValue().equals("{"))
+						if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BLOCK_BRACKET)
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
 						tokens.remove(tokenCountFirstLine - 1);
@@ -2190,6 +2187,8 @@ public final class LangParser {
 				case OPERATOR:
 				case OPENING_BRACKET:
 				case CLOSING_BRACKET:
+				case OPENING_BLOCK_BRACKET:
+				case CLOSING_BLOCK_BRACKET:
 				case WHITESPACE:
 				case OTHER:
 					tokens.remove(0);
@@ -2320,8 +2319,7 @@ public final class LangParser {
 					tokenCountFirstLine -= tokenIndex + 3;
 
 					//TODO line numbers
-					if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
-							tokens.get(0).getValue().equals("{")) {
+					if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
 						tokens.remove(0);
 
 						nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, false, langDocComment, parameterList,
@@ -2348,8 +2346,7 @@ public final class LangParser {
 				nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(t.pos, t.getValue()));
 				return ast;
 			}else if(tokenCountFirstLine == 1 && tokenCountFirstLine != tokens.size() &&
-					tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
-					tokens.get(0).getValue().equals("{")) {
+					tokens.get(0).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
 				//Struct definition
 
 				tokens.remove(0);
@@ -2359,8 +2356,8 @@ public final class LangParser {
 				return ast;
 			}else if(tokenCountFirstLine >= 3 && tokenCountFirstLine != tokens.size() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
 					tokens.get(0).getValue().equals("<") && tokens.get(tokenCountFirstLine - 2).getTokenType() == Token.TokenType.OPERATOR &&
-					tokens.get(tokenCountFirstLine - 2).getValue().equals(">") && tokens.get(tokenCountFirstLine - 1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
-					tokens.get(tokenCountFirstLine - 1).getValue().equals("{")) {
+					tokens.get(tokenCountFirstLine - 2).getValue().equals(">") &&
+					tokens.get(tokenCountFirstLine - 1).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
 				//Class definition
 
 				//TODO check for matching brackets ("<" and ">")
@@ -2433,20 +2430,12 @@ public final class LangParser {
 
 					break;
 
-				case CLOSING_BRACKET:
-					if(t.getValue().equals("}")) {
-						tokens.remove(0);
+				case CLOSING_BLOCK_BRACKET:
+					tokens.remove(0);
 
-						hasEndBrace = true;
+					hasEndBrace = true;
 
-						break tokenProcessing;
-					}
-
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-							"Invalid token type for struct definition expression: \"" + t.getTokenType().name() + "\""
-					));
-
-					return ast;
+					break tokenProcessing;
 
 				case IDENTIFIER:
 					if(!LangPatterns.matches(t.getValue(), LangPatterns.VAR_NAME_WITHOUT_PREFIX)) {
@@ -2505,6 +2494,8 @@ public final class LangParser {
 				case OTHER:
 				case OPERATOR:
 				case OPENING_BRACKET:
+				case CLOSING_BRACKET:
+				case OPENING_BLOCK_BRACKET:
 				case ESCAPE_SEQUENCE:
 				case START_MULTILINE_TEXT:
 				case LINE_CONTINUATION:
@@ -2583,20 +2574,12 @@ public final class LangParser {
 
 					break;
 
-				case CLOSING_BRACKET:
-					if(t.getValue().equals("}")) {
-						tokens.remove(0);
+				case CLOSING_BLOCK_BRACKET:
+					tokens.remove(0);
 
-						hasEndBrace = true;
+					hasEndBrace = true;
 
-						break tokenProcessing;
-					}
-
-					nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-							"Invalid token type for class definition expression: \"" + t.getTokenType().name() + "\""
-					));
-
-					return ast;
+					break tokenProcessing;
 
 				case OTHER:
 				case OPERATOR:
@@ -3014,6 +2997,8 @@ public final class LangParser {
 				case ARGUMENT_SEPARATOR:
 				case ASSIGNMENT:
 				case OPENING_BRACKET:
+				case CLOSING_BRACKET:
+				case OPENING_BLOCK_BRACKET:
 				case ESCAPE_SEQUENCE:
 				case START_MULTILINE_TEXT:
 				case LINE_CONTINUATION:
@@ -3076,6 +3061,8 @@ public final class LangParser {
 				case ARGUMENT_SEPARATOR:
 				case ASSIGNMENT:
 				case CLOSING_BRACKET:
+				case OPENING_BLOCK_BRACKET:
+				case CLOSING_BLOCK_BRACKET:
 				case WHITESPACE:
 					tokens.remove(0);
 
@@ -3236,6 +3223,8 @@ public final class LangParser {
 				case OPERATOR:
 				case OPENING_BRACKET:
 				case CLOSING_BRACKET:
+				case OPENING_BLOCK_BRACKET:
+				case CLOSING_BLOCK_BRACKET:
 				case WHITESPACE:
 				case OTHER:
 					tokens.remove(0);
@@ -3459,6 +3448,8 @@ public final class LangParser {
 						case OPERATOR:
 						case LITERAL_NUMBER:
 						case OPENING_BRACKET:
+						case OPENING_BLOCK_BRACKET:
+						case CLOSING_BLOCK_BRACKET:
 						case ESCAPE_SEQUENCE:
 						case PARSER_FUNCTION_IDENTIFIER:
 						case START_MULTILINE_TEXT:
@@ -3637,6 +3628,8 @@ public final class LangParser {
 
 						break;
 
+					case OPENING_BLOCK_BRACKET:
+					case CLOSING_BLOCK_BRACKET:
 					case LINE_CONTINUATION:
 					case END_COMMENT:
 					case END_MULTILINE_TEXT:
@@ -3826,7 +3819,7 @@ public final class LangParser {
 			//Trim before comment
 			if(tokens.get(i).getTokenType() == Token.TokenType.END_COMMENT) {
 				while(i >= 0 && tokens.get(i).getTokenType() != Token.TokenType.START_COMMENT &&
-					tokens.get(i).getTokenType() != Token.TokenType.START_DOC_COMMENT) {
+						tokens.get(i).getTokenType() != Token.TokenType.START_DOC_COMMENT) {
 
 					i--;
 				}
