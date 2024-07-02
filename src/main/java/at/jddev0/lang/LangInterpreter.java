@@ -4354,6 +4354,15 @@ public final class LangInterpreter {
 		}
 		
 		resetVarsAndFuncPtrs();
+
+		if(scopeId > 0) {
+			//Copy translation map (except "lang.* = *") to the new scope's translation map
+			data.get(scopeId - 1).lang.forEach((k, v) -> {
+				if(!k.startsWith("lang.")) {
+					getData().lang.put(k, v);
+				}
+			});
+		}
 	}
 	private void resetVarsAndFuncPtrs() {
 		DataObject langArgs = getData().var.get("&LANG_ARGS");
