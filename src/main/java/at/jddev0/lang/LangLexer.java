@@ -748,7 +748,9 @@ public class LangLexer {
 
                 return currentLine.substring(token.length());
             }
-        }else if(currentLine.startsWith(" = ")) {
+        }
+
+        if(currentLine.startsWith(" = ")) {
             int fromColumn = column;
             column += 3;
 
