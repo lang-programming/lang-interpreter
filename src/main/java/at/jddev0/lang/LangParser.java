@@ -2717,13 +2717,6 @@ public final class LangParser {
 						continue tokenProcessing;
 					}
 
-					if(isOverrideMethod) {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-								"The override keyword can only be used for methods"));
-
-						return ast;
-					}
-
 					if(t.getTokenType() == Token.TokenType.IDENTIFIER &&
 							LangPatterns.matches(t.getValue(), LangPatterns.METHOD_NAME)) {
 						Token methodNameToken = tokens.remove(0);
@@ -2753,6 +2746,13 @@ public final class LangParser {
 						methodOverrideFlag.add(isOverrideMethod);
 
 						continue tokenProcessing;
+					}
+
+					if(isOverrideMethod) {
+						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+								"The override keyword can only be used for methods"));
+
+						return ast;
 					}
 
 					//Members
