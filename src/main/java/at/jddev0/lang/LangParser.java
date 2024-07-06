@@ -2645,39 +2645,7 @@ public final class LangParser {
 						t = tokens.get(0);
 					}
 
-					if(t.getTokenType() == Token.TokenType.IDENTIFIER &&
-							LangPatterns.matches(t.getValue(), LangPatterns.METHOD_NAME)) {
-						Token methodNameToken = tokens.remove(0);
-						String methodName = methodNameToken.getValue();
-
-						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
-									"Missing value after normal method"));
-
-							return ast;
-						}
-
-						t = tokens.get(0);
-						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
-									"Invalid assignment for method (only \" = \" is allowed)"));
-
-							return ast;
-						}
-
-						tokens.remove(0);
-
-						AbstractSyntaxTree.Node rvalueNode = parseLRvalue(tokens, true).convertToNode();
-
-						methodNames.add(methodName);
-						methodDefinitions.add(rvalueNode);
-						methodOverrideFlag.add(isOverrideMethod);
-
-						continue tokenProcessing;
-					}
-
-					if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("op") &&
-							tokens.get(1).getTokenType() == Token.TokenType.OPERATOR && tokens.get(1).getValue().equals(":")) {
+					if(t.getTokenType() == Token.TokenType.IDENTIFIER && t.getValue().startsWith("op:")) {
 						if(visibility != '+') {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid visibility for operator method (only \"+\" is allowed)"));
@@ -2685,49 +2653,8 @@ public final class LangParser {
 							return ast;
 						}
 
-						String methodName = "op:";
-
-						tokens.remove(0);
-						tokens.remove(0);
-
-						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
-									"Missing identifier after operator method keyword"));
-
-							return ast;
-						}
-
-						t = tokens.get(0);
-						if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER &&
-								t.getValue().equals("r") && tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
-								tokens.get(1).getValue().equals("-")) {
-							methodName += "r-";
-
-							tokens.remove(0);
-							tokens.remove(0);
-
-							if(tokens.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
-										"Missing identifier after to operator method keyword"));
-
-								return ast;
-							}
-						}
-
-						t = tokens.get(0);
-						if(t.getTokenType() == Token.TokenType.OTHER) {
-							methodName += t.getValue();
-
-							tokens.remove(0);
-
-							if(tokens.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
-										"Missing identifier after to operator method keyword"));
-
-								return ast;
-							}
-						}
-
+						Token methodNameToken = tokens.remove(0);
+						String methodName = methodNameToken.getValue();
 						if(!LangPatterns.matches(methodName, LangPatterns.OPERATOR_METHOD_NAME)) {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Invalid operator method name: \"" + methodName + "\""));
@@ -2754,8 +2681,7 @@ public final class LangParser {
 						continue tokenProcessing;
 					}
 
-					if(tokens.size() >= 2 && t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("to") &&
-							tokens.get(1).getTokenType() == Token.TokenType.OPERATOR && tokens.get(1).getValue().equals(":")) {
+					if(t.getTokenType() == Token.TokenType.IDENTIFIER && t.getValue().startsWith("to:")) {
 						if(visibility != '+') {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
 									"Invalid visibility for conversion method (only \"+\" is allowed)"));
@@ -2763,32 +2689,8 @@ public final class LangParser {
 							return ast;
 						}
 
-						String methodName = "to:";
-
-						tokens.remove(0);
-						tokens.remove(0);
-
-						if(tokens.isEmpty()) {
-							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
-									"Missing identifier after conversion method keyword"));
-
-							return ast;
-						}
-
-						t = tokens.get(0);
-						if(t.getTokenType() == Token.TokenType.OTHER) {
-							methodName += t.getValue();
-
-							tokens.remove(0);
-
-							if(tokens.isEmpty()) {
-								nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
-										"Missing identifier after to conversion method keyword"));
-
-								return ast;
-							}
-						}
-
+						Token methodNameToken = tokens.remove(0);
+						String methodName = methodNameToken.getValue();
 						if(!LangPatterns.matches(methodName, LangPatterns.CONVERSION_METHOD_NAME)) {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
 									"Invalid conversion method name: \"" + methodName + "\""));
@@ -2820,6 +2722,37 @@ public final class LangParser {
 								"The override keyword can only be used for methods"));
 
 						return ast;
+					}
+
+					if(t.getTokenType() == Token.TokenType.IDENTIFIER &&
+							LangPatterns.matches(t.getValue(), LangPatterns.METHOD_NAME)) {
+						Token methodNameToken = tokens.remove(0);
+						String methodName = methodNameToken.getValue();
+
+						if(tokens.isEmpty()) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+									"Missing value after normal method"));
+
+							return ast;
+						}
+
+						t = tokens.get(0);
+						if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
+									"Invalid assignment for method (only \" = \" is allowed)"));
+
+							return ast;
+						}
+
+						tokens.remove(0);
+
+						AbstractSyntaxTree.Node rvalueNode = parseLRvalue(tokens, true).convertToNode();
+
+						methodNames.add(methodName);
+						methodDefinitions.add(rvalueNode);
+						methodOverrideFlag.add(isOverrideMethod);
+
+						continue tokenProcessing;
 					}
 
 					//Members
@@ -3677,7 +3610,8 @@ public final class LangParser {
 		tokens.remove(0);
 
 		if(tokens.isEmpty() || tokens.get(0).getTokenType() != Token.TokenType.OPENING_BRACKET ||
-				!tokens.get(0).getValue().equals("(") || !LangPatterns.matches(identifierToken.getValue(), LangPatterns.VAR_NAME_FUNCS)) {
+				!tokens.get(0).getValue().equals("(") || !LangPatterns.matches(identifierToken.getValue(),
+				LangPatterns.VAR_NAME_FUNCS_WITH_OPERATOR_AND_CONVERSION_METHOD)) {
 			return new AbstractSyntaxTree.UnprocessedVariableNameNode(identifierToken.pos, identifierToken.getValue());
 		}
 

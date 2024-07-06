@@ -476,6 +476,24 @@ public final class LangInterpreter {
 			return convertVariableNameToVariableNameNodeOrComposition(moduleName, variableName, variableNames,
 					"", false, node.getPos());
 		}
+
+		if(variableName.startsWith("op:") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
+				!compositeType.getObject().isClass()) {
+			Set<String> variableNames = compositeType.getObject().getMethods().keySet().stream().
+					filter(key -> key.startsWith("op:")).collect(Collectors.toSet());
+
+			return convertVariableNameToVariableNameNodeOrComposition(moduleName, variableName, variableNames,
+					"", false, node.getPos());
+		}
+
+		if(variableName.startsWith("to:") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
+				!compositeType.getObject().isClass()) {
+			Set<String> variableNames = compositeType.getObject().getMethods().keySet().stream().
+					filter(key -> key.startsWith("to:")).collect(Collectors.toSet());
+
+			return convertVariableNameToVariableNameNodeOrComposition(moduleName, variableName, variableNames,
+					"", false, node.getPos());
+		}
 		
 		if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp.")) {
 			Set<String> variableNames;
@@ -1902,6 +1920,22 @@ public final class LangInterpreter {
 							variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
 									setVariableName(functionName).setFinalData(true));
 						});
+					}else if(variableName.startsWith("op:")) {
+						compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("op:")).forEach(entry -> {
+							String functionName = entry.getKey();
+							FunctionPointerObject functions = entry.getValue();
+
+							variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
+									setVariableName(functionName).setFinalData(true));
+						});
+					}else if(variableName.startsWith("to:")) {
+						compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("to:")).forEach(entry -> {
+							String functionName = entry.getKey();
+							FunctionPointerObject functions = entry.getValue();
+
+							variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
+									setVariableName(functionName).setFinalData(true));
+						});
 					}else {
 						for(DataObject staticMember:compositeType.getObject().getStaticMembers())
 							variables.put(staticMember.getVariableName(), staticMember);
@@ -2021,13 +2055,14 @@ public final class LangInterpreter {
 			variableName = variableName.substring(indexModuleIdientifierEnd + 4);
 		}
 		
-		if(!isVarNameFullWithFuncsWithoutPrefix(variableName) && !isVarNamePtrAndDereferenceWithoutPrefix(variableName))
+		if(!isVarNameFullWithFuncsWithoutPrefix(variableName) && !isVarNamePtrAndDereferenceWithoutPrefix(variableName) &&
+				!isOperatorMethodName(variableName) && !isConversionMethodName(variableName))
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 
-		if(variableName.startsWith("mp.") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
-				!compositeType.getObject().isClass()) {
+		if((variableName.startsWith("mp.") || variableName.startsWith("op:") || variableName.startsWith("to:")) &&
+				compositeType != null && compositeType.getType() == DataType.OBJECT && !compositeType.getObject().isClass()) {
 			return getOrCreateDataObjectFromVariableName(compositeType, moduleName, variableName, false,
-					variableName.startsWith("$"), false, null, node.getPos());
+					false, false, null, node.getPos());
 		}
 
 		if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp."))
@@ -3854,7 +3889,8 @@ public final class LangInterpreter {
 					"The method \"" + rawMethodName + "\" is not part of this object", pos);
 
 		String methodName = (langObject.isClass() || rawMethodName.startsWith("fp."))?
-				null:((rawMethodName.startsWith("mp.")?"":"mp.") + rawMethodName);
+				null:((rawMethodName.startsWith("mp.") || rawMethodName.startsWith("op:") ||
+				rawMethodName.startsWith("to:")?"":"mp.") + rawMethodName);
 
 		FunctionPointerObject fp;
 		try {
@@ -3865,7 +3901,7 @@ public final class LangInterpreter {
 							"The method \"" + rawMethodName + "\" is not part of this object",
 							pos);
 
-				if(!rawMethodName.startsWith("fp."))
+				if(!rawMethodName.startsWith("fp.") && !rawMethodName.startsWith("op:") && !rawMethodName.startsWith("to:"))
 					rawMethodName = "fp." + rawMethodName;
 
 				DataObject member;
@@ -3928,7 +3964,8 @@ public final class LangInterpreter {
 			return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
 					"The method \"" + rawMethodName + "\" is not part of this object", pos);
 
-		String methodName = rawMethodName.startsWith("mp.")?rawMethodName:("mp." + rawMethodName);
+		String methodName = rawMethodName.startsWith("mp.") || rawMethodName.startsWith("op:") || rawMethodName.startsWith("to:")?
+				rawMethodName:("mp." + rawMethodName);
 
 		FunctionPointerObject methods = langObject.getSuperMethods().get(methodName);
 		if(methods == null)

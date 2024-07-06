@@ -668,7 +668,7 @@ public class LangLexer {
     }
 
     private String tryParseIdentifier(String currentLine, List<String> lines, List<Token> tokens) {
-        Matcher matcher = LangPatterns.VAR_NAME_FULL_WITH_FUNCS_AND_PTR_AND_DEREFERENCE.matcher(currentLine);
+        Matcher matcher = LangPatterns.VAR_NAME_FULL_WITH_FUNCS_AND_PTR_AND_DEREFERENCE_WITH_OPERATOR_AND_CONVERSION_METHODS.matcher(currentLine);
         if(matcher.find()) {
             String token = matcher.group();
             int index = currentLine.indexOf(token);
