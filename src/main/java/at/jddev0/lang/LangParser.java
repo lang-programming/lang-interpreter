@@ -1082,8 +1082,17 @@ public final class LangParser {
 				break;
 			}
 
-			if(tokens.get(i).getTokenType() == Token.TokenType.ASSIGNMENT && assignmentIndex == -1)
-				assignmentIndex = i;
+			if(assignmentIndex == -1) {
+				if(tokens.get(i).getTokenType() == Token.TokenType.ASSIGNMENT)
+					assignmentIndex = i;
+
+				//Do not parse assignments in function body definition
+				if(i + 2 < tokens.size() &&
+						tokens.get(i).getTokenType() == Token.TokenType.CLOSING_BRACKET && tokens.get(i).getValue().equals(")") &&
+						tokens.get(i + 1).getTokenType() == Token.TokenType.WHITESPACE &&
+						tokens.get(i + 2).getTokenType() == Token.TokenType.OPERATOR && tokens.get(i + 2).getValue().equals("->"))
+					return null;
+			}
 		}
 
 		if(tokenCountFirstLine == -1)
@@ -1175,7 +1184,7 @@ public final class LangParser {
 					new AbstractSyntaxTree.NullValueNode(assignmentToken.pos));
 		}
 
-		if(!isInnerAssignment && LangPatterns.matches(assignmentToken.getValue(), LangPatterns.PARSING_ASSIGNMENT_OPERATOR)) {
+		if(LangPatterns.matches(assignmentToken.getValue(), LangPatterns.PARSING_ASSIGNMENT_OPERATOR)) {
 			tokens.subList(0, assignmentIndex + 1).clear();
 
 			String assignmentOperator = assignmentToken.getValue().substring(1, assignmentToken.getValue().length() - 2);
