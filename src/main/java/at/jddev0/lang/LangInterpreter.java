@@ -103,7 +103,7 @@ public final class LangInterpreter {
 	 */
 	public LangInterpreter(String langPath, String langFile, TerminalIO term, ILangPlatformAPI langPlatformAPI, String[] langArgs) {
 		callStack = new LinkedList<>();
-		currentCallStackElement = new StackElement(langPath, langFile, null, null);
+		currentCallStackElement = new StackElement(langPath, langFile, null, null, null);
 		this.term = term;
 		this.langPlatformAPI = langPlatformAPI;
 
@@ -2266,6 +2266,7 @@ public final class LangInterpreter {
 			StackElement currentStackElement = getCurrentCallStackElement();
 			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
 					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
+					thisObject == null?null:(thisObject.getClassName() == null?"<class>":thisObject.getClassName()),
 					functionName, currentStackElement.getModule()), parentPos);
 
 
@@ -3338,7 +3339,7 @@ public final class LangInterpreter {
 		}
 
 		try {
-			LangObject classObject = new LangObject(staticMembers, memberNames.toArray(new String[0]),
+			LangObject classObject = new LangObject(className, staticMembers, memberNames.toArray(new String[0]),
 					memberTypeConstraintsArray, memberFinalFlagArray, methods, methodOverrideFlags, constructors,
 					parentClassObjectList.toArray(new LangObject[0]));
 
@@ -4341,7 +4342,7 @@ public final class LangInterpreter {
 			throw new IllegalStateException("Initialization of lang standard implementation was already completed");
 
 		//Temporary scope for lang standard implementation in lang code
-		pushStackElement(new StackElement("<standard>", "standard.lang", null, null),
+		pushStackElement(new StackElement("<standard>", "standard.lang", null, null, null),
 				CodePosition.EMPTY);
 		enterScope();
 
@@ -4516,22 +4517,24 @@ public final class LangInterpreter {
 		private final String langPath;
 		private final String langFile;
 		private final CodePosition pos;
+		private final String langClasName;
 		private final String langFunctionName;
 		final LangModule module;
 		
-		public StackElement(String langPath, String langFile, CodePosition pos, String langFunctionName, LangModule module) {
+		public StackElement(String langPath, String langFile, CodePosition pos, String langClasName, String langFunctionName, LangModule module) {
 			this.langPath = langPath;
 			this.langFile = langFile;
+			this.langClasName = langClasName;
 			this.langFunctionName = langFunctionName;
 			this.pos = pos;
 			this.module = module;
 		}
-		public StackElement(String langPath, String langFile, String langFunctionName, LangModule module) {
-			this(langPath, langFile, CodePosition.EMPTY, langFunctionName, module);
+		public StackElement(String langPath, String langFile, String langClasName, String langFunctionName, LangModule module) {
+			this(langPath, langFile, CodePosition.EMPTY, langClasName, langFunctionName, module);
 		}
 		
 		public StackElement withPos(CodePosition pos) {
-			return new StackElement(langPath, langFile, pos, langFunctionName, module);
+			return new StackElement(langPath, langFile, pos, langClasName, langFunctionName, module);
 		}
 		
 		public String getLangPath() {
@@ -4545,7 +4548,11 @@ public final class LangInterpreter {
 		public CodePosition getPos() {
 			return pos;
 		}
-		
+
+		public String getLangClasName() {
+			return langClasName;
+		}
+
 		public String getLangFunctionName() {
 			return langFunctionName;
 		}
@@ -4557,8 +4564,9 @@ public final class LangInterpreter {
 		@Override
 		public String toString() {
 			String langPathWithFile = langPath + (langPath.endsWith("/")?"":"/") + (langFile == null?"<shell>":langFile);
-			return String.format("    at \"%s:%s\" in function \"%s\"", langPathWithFile, pos.equals(CodePosition.EMPTY)?"x":
-							pos.toCompactString(), langFunctionName == null?"<main>":langFunctionName);
+			return String.format("    at \"%s:%s\" in %s \"%s\"", langPathWithFile, pos.equals(CodePosition.EMPTY)?"x":
+					pos.toCompactString(), langClasName == null?"function":"method", langFunctionName == null?"<main>":
+					(langClasName == null?langFunctionName:(langClasName + "::" + langFunctionName)));
 		}
 	}
 	

@@ -1123,11 +1123,13 @@ public class DataObject {
 				}
 			});
 
-			OBJECT_CLASS = new LangObject(true, new DataObject[0], new String[0], new DataTypeConstraint[0],
-					new boolean[0], methods, methodOverrideFlags, constructors, null);
+			OBJECT_CLASS = new LangObject(true, "&Object", new DataObject[0], new String[0],
+					new DataTypeConstraint[0], new boolean[0], methods, methodOverrideFlags, constructors, null);
 		}
 
 		private int superLevel = 0;
+
+		private final String className;
 
 		private final DataObject[] staticMembers;
 		private final String[] memberNames;
@@ -1152,18 +1154,20 @@ public class DataObject {
 		 */
 		private boolean initialized = false;
 
-		public LangObject(DataObject[] staticMembers, String[] memberNames, DataTypeConstraint[] memberTypeConstraints,
-						  boolean[] memberFinalFlags, Map<String, FunctionPointerObject> methods,
-						  Map<String, Boolean[]> methodOverrideFlags, FunctionPointerObject constructors,
-						  LangObject[] parentClasses) throws DataTypeConstraintException {
-			this(false, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, methodOverrideFlags,
+		public LangObject(String className, DataObject[] staticMembers, String[] memberNames,
+						  DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
+						  Map<String, FunctionPointerObject> methods, Map<String, Boolean[]> methodOverrideFlags,
+						  FunctionPointerObject constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
+			this(false, className, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, methodOverrideFlags,
 					constructors, parentClasses);
 		}
 
-		private LangObject(boolean isBaseObject, DataObject[] staticMembers, String[] memberNames,
+		private LangObject(boolean isBaseObject, String className, DataObject[] staticMembers, String[] memberNames,
 						   DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
 						   Map<String, FunctionPointerObject> methods, Map<String, Boolean[]> methodOverrideFlags,
 						   FunctionPointerObject constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
+			this.className = className;
+
 			if(isBaseObject) {
 				this.parentClasses = parentClasses = new LangObject[0];
 			}else if(parentClasses == null || parentClasses.length == 0) {
@@ -1397,6 +1401,8 @@ public class DataObject {
 			//Must be set first for isClass checks
 			this.classBaseDefinition = classBaseDefinition;
 
+			this.className = classBaseDefinition.className;
+
 			//No copies, because static members should be the same across all objects
 			this.staticMembers = Arrays.copyOf(classBaseDefinition.staticMembers, classBaseDefinition.staticMembers.length);
 
@@ -1454,6 +1460,10 @@ public class DataObject {
 
 		public boolean isClass() {
 			return classBaseDefinition == null;
+		}
+
+		public String getClassName() {
+			return className;
 		}
 
 		public DataObject[] getStaticMembers() {
