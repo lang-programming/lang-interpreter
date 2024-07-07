@@ -1082,7 +1082,7 @@ public final class LangParser {
 				break;
 			}
 
-			if(tokens.get(i).getTokenType() == Token.TokenType.ASSIGNMENT)
+			if(tokens.get(i).getTokenType() == Token.TokenType.ASSIGNMENT && assignmentIndex == -1)
 				assignmentIndex = i;
 		}
 
@@ -1129,11 +1129,16 @@ public final class LangParser {
 				tokens.subList(0, assignmentIndex + 1).clear();
 				trimFirstLine(tokens);
 
-				//The assignment value for empty simple assignments will be set to empty text ""
+				if(isSimpleAssignment) {
+					//The assignment value for empty simple assignments will be set to empty text ""
+					return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(
+							pos, lvalueTokens.get(0).getValue()), parseSimpleAssignmentValue(tokens).convertToNode());
+				}
+
+				AbstractSyntaxTree.AssignmentNode returnedNode = parseAssignment(tokens, true);
+				AbstractSyntaxTree.Node rvalueNode = returnedNode != null?returnedNode:parseLRvalue(tokens, true).convertToNode();
 				return new AbstractSyntaxTree.AssignmentNode(new AbstractSyntaxTree.UnprocessedVariableNameNode(
-						pos, lvalueTokens.get(0).getValue()),
-						(isSimpleAssignment?parseSimpleAssignmentValue(tokens):parseLRvalue(tokens, true)).
-								convertToNode());
+						pos, lvalueTokens.get(0).getValue()), rvalueNode);
 			}
 
 			String lvalue = lvalueTokens.stream().map(Token::toRawString).collect(Collectors.joining());
