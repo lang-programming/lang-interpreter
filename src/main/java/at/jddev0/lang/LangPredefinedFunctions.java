@@ -563,6 +563,7 @@ final class LangPredefinedFunctions {
 							new DataObject().setInt(currentStackElement.getPos().columnFrom),
 							new DataObject().setInt(currentStackElement.getPos().columnTo)
 					})),
+					new DataObject(currentStackElement.getLangClasName()),
 					new DataObject(currentStackElement.getLangFunctionName()),
 					new DataObject(modulePath),
 					new DataObject(moduleFile)
@@ -598,6 +599,7 @@ final class LangPredefinedFunctions {
 								new DataObject().setInt(ele.getPos().columnFrom),
 								new DataObject().setInt(ele.getPos().columnTo)
 						})),
+						new DataObject(ele.getLangClasName()),
 						new DataObject(ele.getLangFunctionName()),
 						new DataObject(modulePath),
 						new DataObject(moduleFile)
