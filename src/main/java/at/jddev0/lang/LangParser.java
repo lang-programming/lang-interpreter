@@ -1356,7 +1356,6 @@ public final class LangParser {
 				List<AbstractSyntaxTree.TryStatementPartNode> tryStatmentParts = new ArrayList<>();
 
 				boolean blockBracketFlag = endsWithOpeningBracket;
-				boolean firstStatement = true;
 				while(!tokens.isEmpty()) {
 					trimFirstLine(tokens);
 
@@ -1486,8 +1485,6 @@ public final class LangParser {
 					}else if(conExpression.equals("con.finally")) {
 						tryStatmentParts.add(new AbstractSyntaxTree.TryStatementPartFinallyNode(CodePosition.EMPTY, tryBody));
 					}
-
-					firstStatement = false;
 				}
 
 				//TODO line numbers
@@ -1498,7 +1495,6 @@ public final class LangParser {
 				List<AbstractSyntaxTree.LoopStatementPartNode> loopStatmentParts = new ArrayList<>();
 
 				boolean blockBracketFlag = endsWithOpeningBracket;
-				boolean firstStatement = true;
 
 				while(!tokens.isEmpty()) {
 					trimFirstLine(tokens);
@@ -1675,8 +1671,6 @@ public final class LangParser {
 							loopStatmentParts.add(new AbstractSyntaxTree.LoopStatementPartForEachNode(CodePosition.EMPTY, loopBody,
 									varPointerNode, repeatCountOrArrayOrTextNode));
 					}
-
-					firstStatement = false;
 				}
 
 				//TODO line numbers
@@ -1687,7 +1681,6 @@ public final class LangParser {
 				List<AbstractSyntaxTree.IfStatementPartNode> ifStatmentParts = new ArrayList<>();
 
 				boolean blockBracketFlag = endsWithOpeningBracket;
-				boolean firstStatement = true;
 
 				while(!tokens.isEmpty()) {
 					trimFirstLine(tokens);
@@ -1812,8 +1805,6 @@ public final class LangParser {
 
 						ifStatmentParts.add(new AbstractSyntaxTree.IfStatementPartIfNode(CodePosition.EMPTY, ifBody, conNonNode));
 					}
-
-					firstStatement = false;
 				}
 
 				//TODO line numbers
