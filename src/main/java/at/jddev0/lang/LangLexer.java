@@ -86,7 +86,7 @@ public class LangLexer {
         if(!lines.isEmpty()) {
             String currentLine = lines.remove(0);
             while(currentLine != null)
-                currentLine = parseNextTokens(currentLine, lines, tokens);
+                currentLine = tokenizeNextTokens(currentLine, lines, tokens);
         }
 
         tokens.add(new Token(lineNumber, lineNumber, column, column, "", Token.TokenType.EOF));
@@ -94,11 +94,11 @@ public class LangLexer {
         return tokens;
     }
 
-    private String parseNextTokens(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tokenizeNextTokens(String currentLine, List<String> lines, List<Token> tokens) {
         String ret;
 
         boolean wasLinesEmpty = lines.isEmpty();
-        ret = tryParseNewLine(currentLine, lines, tokens);
+        ret = tryTokenizeNewLine(currentLine, lines, tokens);
         if(ret != null || linesIsEmpty) {
             if(linesIsEmpty || (ret.isEmpty() && wasLinesEmpty))
                 return null;
@@ -107,11 +107,11 @@ public class LangLexer {
             return ret;
         }
 
-        ret = tryParseTokens(currentLine, lines, tokens);
+        ret = tryTokenizeTokens(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 
-        //Parse as OTHER if not matched with anything else
+        //Tokenize as OTHER if not matched with anything else
 
         int tokenIndex = tokens.size();
         int fromColumn = column;
@@ -122,10 +122,10 @@ public class LangLexer {
             //Skip parsing of "+" and "-" if floating point number contains an "e" or an "E"
             if(!LangPatterns.matches(currentLine.substring(0, i), LangPatterns.PARSING_FLOATING_POINT_E_SYNTAX_START) ||
                     (currentLine.charAt(i) != '+' && currentLine.charAt(i) != '-')) {
-                ret = tryParseTokens(currentLine.substring(i), lines, tokens);
+                ret = tryTokenizeTokens(currentLine.substring(i), lines, tokens);
                 if(ret != null) {
                     String token = currentLine.substring(0, i);
-                    tokens.add(tokenIndex, parseOtherValue(token, new CodePosition(fromLineNumber, fromLineNumber,
+                    tokens.add(tokenIndex, tokenizeOtherValue(token, new CodePosition(fromLineNumber, fromLineNumber,
                             fromColumn, fromColumn + i)));
 
                     return ret;
@@ -138,84 +138,84 @@ public class LangLexer {
 
         column += currentLine.length();
 
-        tokens.add(tokenIndex, parseOtherValue(currentLine, new CodePosition(fromLineNumber, fromLineNumber,
+        tokens.add(tokenIndex, tokenizeOtherValue(currentLine, new CodePosition(fromLineNumber, fromLineNumber,
                 fromColumn, column)));
 
         return "";
     }
 
-    private String tryParseTokens(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeTokens(String currentLine, List<String> lines, List<Token> tokens) {
         String ret;
 
-        ret = tryParseMultilineText(currentLine, lines, tokens);
+        ret = tryTokenizeMultilineText(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseLineContinuation(currentLine, lines, tokens);
+        ret = tryTokenizeLineContinuation(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 
-        ret = tryParseEscapeSequence(currentLine, lines, tokens);
+        ret = tryTokenizeEscapeSequence(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseSingleLineText(currentLine, lines, tokens);
+        ret = tryTokenizeSingleLineText(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseAssignment(currentLine, lines, tokens);
+        ret = tryTokenizeAssignment(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseArgumentSeparator(currentLine, lines, tokens);
+        ret = tryTokenizeArgumentSeparator(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseWhitespace(currentLine, lines, tokens);
+        ret = tryTokenizeWhitespace(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 
-        ret = tryParseComment(currentLine, lines, tokens);
+        ret = tryTokenizeComment(currentLine, lines, tokens);
         if(ret != null)
             return ret;
 
-        ret = tryParseParserFunctionIdentifier(currentLine, lines, tokens);
+        ret = tryTokenizeParserFunctionIdentifier(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseIdentifier(currentLine, lines, tokens);
+        ret = tryTokenizeIdentifier(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseBracket(currentLine, lines, tokens);
+        ret = tryTokenizeBracket(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
             return ret;
         }
 
-        ret = tryParseOperator(currentLine, lines, tokens);
+        ret = tryTokenizeOperator(currentLine, lines, tokens);
         if(ret != null) {
             isFirstCodeTokenInLine = false;
 
@@ -226,7 +226,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseNewLine(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeNewLine(String currentLine, List<String> lines, List<Token> tokens) {
         if(currentLine.isEmpty() && !linesIsEmpty) {
             int fromColumn = column;
             column++;
@@ -248,7 +248,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseWhitespace(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeWhitespace(String currentLine, List<String> lines, List<Token> tokens) {
         int i = 0;
         char c;
         while(i < currentLine.length()) {
@@ -273,14 +273,14 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseMultilineText(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeMultilineText(String currentLine, List<String> lines, List<Token> tokens) {
         if(currentLine.startsWith("\"\"\""))
-            return tryParseMultilineTextWithEscapeSequenceSupport(currentLine, lines, tokens);
+            return tryTokenizeMultilineTextWithEscapeSequenceSupport(currentLine, lines, tokens);
 
-        return tryParseMultilineTextWithoutEscapeSequenceSupport(currentLine, lines, tokens);
+        return tryTokenizeMultilineTextWithoutEscapeSequenceSupport(currentLine, lines, tokens);
     }
 
-    private String tryParseMultilineTextWithEscapeSequenceSupport(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeMultilineTextWithEscapeSequenceSupport(String currentLine, List<String> lines, List<Token> tokens) {
         if(!currentLine.startsWith("\"\"\""))
             return null;
 
@@ -306,7 +306,7 @@ public class LangLexer {
 
                 currentLine = currentLine.substring(index);
 
-                String ret = tryParseEscapeSequence(currentLine, lines, tokens);
+                String ret = tryTokenizeEscapeSequence(currentLine, lines, tokens);
                 if(ret != null)
                     currentLine = ret;
 
@@ -314,7 +314,7 @@ public class LangLexer {
             }
 
             boolean wasLinesEmpty = lines.isEmpty();
-            String ret = tryParseNewLine(currentLine, lines, tokens);
+            String ret = tryTokenizeNewLine(currentLine, lines, tokens);
             if(ret == null) {
                 int len = endIndex == -1?currentLine.length():endIndex;
 
@@ -347,7 +347,7 @@ public class LangLexer {
         return currentLine.substring(3);
     }
 
-    private String tryParseMultilineTextWithoutEscapeSequenceSupport(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeMultilineTextWithoutEscapeSequenceSupport(String currentLine, List<String> lines, List<Token> tokens) {
         if(!currentLine.startsWith("{{{"))
             return null;
 
@@ -360,7 +360,7 @@ public class LangLexer {
 
         while(!currentLine.contains("}}}")) {
             boolean wasLinesEmpty = lines.isEmpty();
-            String ret = tryParseNewLine(currentLine, lines, tokens);
+            String ret = tryTokenizeNewLine(currentLine, lines, tokens);
             if(ret == null) {
                 fromColumn = column;
                 column += currentLine.length();
@@ -400,7 +400,7 @@ public class LangLexer {
         return currentLine.substring(3);
     }
 
-    private String tryParseSingleLineText(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeSingleLineText(String currentLine, List<String> lines, List<Token> tokens) {
         if(!currentLine.startsWith("\""))
             return null;
 
@@ -444,7 +444,7 @@ public class LangLexer {
 
                 currentLine = currentLine.substring(index);
 
-                String ret = tryParseEscapeSequence(currentLine, lines, tokens);
+                String ret = tryTokenizeEscapeSequence(currentLine, lines, tokens);
                 if(ret != null) {
                     endIndex -= currentLine.length() - ret.length();
                     currentLine = ret;
@@ -472,7 +472,7 @@ public class LangLexer {
         return currentLine.substring(1);
     }
 
-    private String tryParseLineContinuation(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeLineContinuation(String currentLine, List<String> lines, List<Token> tokens) {
         if(currentLine.length() == 1 && currentLine.charAt(0) == '\\') {
             int originalOpenBracketCount = openingBracketCount;
 
@@ -482,7 +482,7 @@ public class LangLexer {
             tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\\", Token.TokenType.LINE_CONTINUATION));
 
             currentLine = "";
-            String ret = tryParseNewLine(currentLine, lines, tokens);
+            String ret = tryTokenizeNewLine(currentLine, lines, tokens);
             if(ret != null)
                 currentLine = ret;
 
@@ -493,7 +493,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseComment(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeComment(String currentLine, List<String> lines, List<Token> tokens) {
         char c = currentLine.charAt(0);
         if(c != '#')
             return null;
@@ -530,7 +530,7 @@ public class LangLexer {
                     currentLine = currentLine.substring(multilineTextStartIndex);
                 }
 
-                String ret = tryParseMultilineText(currentLine, lines, tokens);
+                String ret = tryTokenizeMultilineText(currentLine, lines, tokens);
                 if(ret != null)
                     currentLine = ret;
 
@@ -548,7 +548,7 @@ public class LangLexer {
                     currentLine = currentLine.substring(currentLine.length() - 1);
                 }
 
-                String ret = tryParseLineContinuation(currentLine, lines, tokens);
+                String ret = tryTokenizeLineContinuation(currentLine, lines, tokens);
                 if(ret != null)
                     currentLine = ret;
 
@@ -568,7 +568,7 @@ public class LangLexer {
         return currentLine;
     }
 
-    private String tryParseBracket(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeBracket(String currentLine, List<String> lines, List<Token> tokens) {
         char c = currentLine.charAt(0);
 
         if(c == '{' || c == '(' || c == '[') {
@@ -635,7 +635,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseEscapeSequence(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeEscapeSequence(String currentLine, List<String> lines, List<Token> tokens) {
         if(currentLine.length() >= 2 && currentLine.charAt(0) == '\\') {
             int fromColumn = column;
             column += 2;
@@ -649,7 +649,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseParserFunctionIdentifier(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeParserFunctionIdentifier(String currentLine, List<String> lines, List<Token> tokens) {
         Matcher matcher = LangPatterns.PARSER_FUNCTION_IDENTIFIER.matcher(currentLine);
         if(matcher.find()) {
             String token = matcher.group();
@@ -667,7 +667,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseIdentifier(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeIdentifier(String currentLine, List<String> lines, List<Token> tokens) {
         Matcher matcher = LangPatterns.VAR_NAME_FULL_WITH_FUNCS_AND_PTR_AND_DEREFERENCE_WITH_OPERATOR_AND_CONVERSION_METHODS.matcher(currentLine);
         if(matcher.find()) {
             String token = matcher.group();
@@ -700,7 +700,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseOperator(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeOperator(String currentLine, List<String> lines, List<Token> tokens) {
         for(String operator:OPERATORS) {
             if(currentLine.startsWith(operator)) {
                 int fromColumn = column;
@@ -714,7 +714,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseArgumentSeparator(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeArgumentSeparator(String currentLine, List<String> lines, List<Token> tokens) {
         Matcher matcher = LangPatterns.ARGUMENT_SEPARATOR.matcher(currentLine);
         if(matcher.find()) {
             String token = matcher.group();
@@ -732,7 +732,7 @@ public class LangLexer {
         return null;
     }
 
-    private String tryParseAssignment(String currentLine, List<String> lines, List<Token> tokens) {
+    private String tryTokenizeAssignment(String currentLine, List<String> lines, List<Token> tokens) {
         if(openingBracketCount > 0)
             return null;
 
@@ -781,7 +781,7 @@ public class LangLexer {
         return null;
     }
 
-    Token parseOtherValue(String token, CodePosition pos) {
+    Token tokenizeOtherValue(String token, CodePosition pos) {
         Token.TokenType tokenType = Token.TokenType.OTHER;
 
         if(isNullValue(token))

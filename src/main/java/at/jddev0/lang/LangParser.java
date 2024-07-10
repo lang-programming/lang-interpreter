@@ -279,7 +279,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						tokens.add(0, new Token(t.pos, "&", Token.TokenType.OPERATOR));
-						tokens.add(lexer.parseOtherValue(t.getValue().substring(1), t.pos));
+						tokens.add(lexer.tokenizeOtherValue(t.getValue().substring(1), t.pos));
 
 						break;
 					}
