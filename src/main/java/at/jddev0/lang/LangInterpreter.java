@@ -1603,7 +1603,7 @@ public final class LangInterpreter {
 						conversions.toText(messageObject, node.getMessage().getPos())));
 			executionState.returnedOrThrownValue = errorObject;
 		}
-		executionState.isThrownValue = true;
+		executionState.isThrownValue = executionState.returnedOrThrownValue.getError().getErrno() > 0;
 		executionState.returnOrThrowStatementPos = node.getPos();
 		executionState.stopExecutionFlag = true;
 		
