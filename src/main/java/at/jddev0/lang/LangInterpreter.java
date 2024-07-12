@@ -1585,7 +1585,6 @@ public final class LangInterpreter {
 		Node returnValueNode = node.getReturnValue();
 		
 		executionState.returnedOrThrownValue = returnValueNode == null?null:interpretNode(null, returnValueNode);
-		executionState.isThrownValue = false;
 		executionState.returnOrThrowStatementPos = node.getPos();
 		executionState.stopExecutionFlag = true;
 	}
@@ -2180,7 +2179,7 @@ public final class LangInterpreter {
 		DataObject retTmp = executionState.returnedOrThrownValue;
 		executionState.returnedOrThrownValue = null;
 		
-		if(executionState.isThrownValue && scopeId > -1)
+		if(retTmp != null && executionState.isThrownValue && scopeId > -1)
 			setErrno(retTmp.getError().getInterprettingError(), retTmp.getError().getMessage(),
 					executionState.returnOrThrowStatementPos);
 		
@@ -2509,7 +2508,7 @@ public final class LangInterpreter {
 					DataObject retTmp = combinatorFunctionCallRet == null?LangUtils.nullToLangVoid(getAndResetReturnValue()):
 							combinatorFunctionCallRet;
 
-					if(returnValueTypeConstraint != null && thrownValue) {
+					if(returnValueTypeConstraint != null && !thrownValue) {
 						//Thrown values are always allowed
 						
 						if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
@@ -4476,11 +4475,14 @@ public final class LangInterpreter {
 			else
 				term.logln(newErrno < 0?Level.WARNING:Level.ERROR, output, LangInterpreter.class);
 		}
-		
-		if(newErrno > 0 && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
-			executionState.tryThrownError = error;
+
+		if(newErrno > 0) {
 			executionState.isThrownValue = true;
-			executionState.stopExecutionFlag = true;
+
+			if(executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
+				executionState.tryThrownError = error;
+				executionState.stopExecutionFlag = true;
+			}
 		}
 	}
 	
