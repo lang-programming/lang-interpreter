@@ -2504,11 +2504,12 @@ public final class LangInterpreter {
 
 					CodePosition returnOrThrowStatementPos = combinatorFunctionCallRet == null?
 							executionState.returnOrThrowStatementPos:CodePosition.EMPTY;
-					
+
+					boolean thrownValue = isThrownValue();
 					DataObject retTmp = combinatorFunctionCallRet == null?LangUtils.nullToLangVoid(getAndResetReturnValue()):
 							combinatorFunctionCallRet;
 
-					if(returnValueTypeConstraint != null && !isThrownValue()) {
+					if(returnValueTypeConstraint != null && thrownValue) {
 						//Thrown values are always allowed
 						
 						if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
@@ -4478,6 +4479,7 @@ public final class LangInterpreter {
 		
 		if(newErrno > 0 && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
 			executionState.tryThrownError = error;
+			executionState.isThrownValue = true;
 			executionState.stopExecutionFlag = true;
 		}
 	}
