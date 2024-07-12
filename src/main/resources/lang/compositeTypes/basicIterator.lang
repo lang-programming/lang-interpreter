@@ -10,6 +10,10 @@ class &BasicIterator {
         ::$index $= 0
     }
 
+    +op:iter = ():{OBJECT} -> {
+        return &this
+    }
+
     +op:hasNext = ():{INT} -> {
         return parser.op(::$index < @::$value)
     }
