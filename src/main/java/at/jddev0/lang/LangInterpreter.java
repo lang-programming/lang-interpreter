@@ -1606,7 +1606,11 @@ public final class LangInterpreter {
 		executionState.isThrownValue = executionState.returnedOrThrownValue.getError().getErrno() > 0;
 		executionState.returnOrThrowStatementPos = node.getPos();
 		executionState.stopExecutionFlag = true;
-		
+
+		if(executionState.isThrownValue && scopeId > -1)
+			setErrno(errorObject.getError().getInterprettingError(), errorObject.getError().getMessage(),
+					executionState.returnOrThrowStatementPos);
+
 		if(executionState.returnedOrThrownValue.getError().getErrno() > 0 && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
 			executionState.tryThrownError = executionState.returnedOrThrownValue.getError().getInterprettingError();
 			executionState.stopExecutionFlag = true;
@@ -2178,14 +2182,10 @@ public final class LangInterpreter {
 	DataObject getAndResetReturnValue() {
 		DataObject retTmp = executionState.returnedOrThrownValue;
 		executionState.returnedOrThrownValue = null;
-		
-		if(retTmp != null && executionState.isThrownValue && scopeId > -1)
-			setErrno(retTmp.getError().getInterprettingError(), retTmp.getError().getMessage(),
-					executionState.returnOrThrowStatementPos);
-		
+
 		if(executionFlags.langTest && scopeId == langTestExpectedReturnValueScopeID) {
 			if(langTestExpectedThrowValue != null) {
-				InterpretingError gotError = executionState.isThrownValue?retTmp.getError().getInterprettingError():null;
+				InterpretingError gotError = retTmp != null && executionState.isThrownValue?retTmp.getError().getInterprettingError():null;
 				langTestStore.addAssertResult(new LangTest.AssertResultThrow(gotError == langTestExpectedThrowValue,
 						printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, gotError, langTestExpectedThrowValue));
 				
