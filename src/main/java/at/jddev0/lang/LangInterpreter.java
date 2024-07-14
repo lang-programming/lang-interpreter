@@ -2883,6 +2883,7 @@ public final class LangInterpreter {
 		StringBuilder stringBuilder = new StringBuilder();
 		if(docComment != null) {
 			for(String token:docComment.split("\\n")) {
+				token = token.trim();
 				if(token.startsWith("@param") && token.contains(":") && Character.isWhitespace(token.charAt(6))) {
 					int colonIndex = token.indexOf(':');
 
