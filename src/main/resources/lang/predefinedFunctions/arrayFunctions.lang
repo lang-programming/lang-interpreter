@@ -1,6 +1,27 @@
 lang.version = v1.0.0
 lang.name = Lang Standard Implementation (Array Functions)
 
+function arrayFrom($iterable, $maxCount{number}) {
+    try {
+        $iter = fn.iter($iterable)
+
+        $list = fn.listCreate()
+
+        $i = 0
+        while(fn.hasNext($iter) && ($maxCount < 0 || $i < $maxCount)) {
+            $list += fn.next($iter)
+
+            $i += 1
+        }
+
+        return fn.array($list)
+    }
+}
+
+function overload arrayFrom($iterable) {
+    return func.arrayFrom($iterable, -1)
+}
+
 function arrayPermutationsIterator(&array{ARRAY}, $r{number}):{OBJECT} {
     $count $= fn.int($r)
 
