@@ -186,11 +186,7 @@ public final class LangInterpreter {
 		
 		return builder.toString();
 	}
-	
-	boolean interpretCondition(OperationNode node) throws StoppedException {
-		return conversions.toBool(interpretOperationNode(node), node.getPos());
-	}
-	
+
 	int getParserLineNumber() {
 		return parser.getLineNumber();
 	}
