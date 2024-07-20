@@ -2542,16 +2542,20 @@ public final class LangParser {
 		List<String> staticMemberTypeConstraints = new LinkedList<>();
 		List<AbstractSyntaxTree.Node> staticMemberValues = new LinkedList<>();
 		List<Boolean> staticMemberFinalFlag = new LinkedList<>();
+		List<AbstractSyntaxTree.ClassDefinitionNode.Visibility> staticMemberVisibility = new LinkedList<>();
 
 		List<String> memberNames = new LinkedList<>();
 		List<String> memberTypeConstraints = new LinkedList<>();
 		List<Boolean> memberFinalFlag = new LinkedList<>();
+		List<AbstractSyntaxTree.ClassDefinitionNode.Visibility> memberVisibility = new LinkedList<>();
 
 		List<String> methodNames = new LinkedList<>();
 		List<AbstractSyntaxTree.Node> methodDefinitions = new LinkedList<>();
 		List<Boolean> methodOverrideFlag = new LinkedList<>();
+		List<AbstractSyntaxTree.ClassDefinitionNode.Visibility> methodVisibility = new LinkedList<>();
 
 		List<AbstractSyntaxTree.Node> constructorDefinitions = new LinkedList<>();
+		List<AbstractSyntaxTree.ClassDefinitionNode.Visibility> constructorVisibility = new LinkedList<>();
 
 		tokenProcessing:
 		while(!tokens.isEmpty()) {
@@ -2588,15 +2592,44 @@ public final class LangParser {
 
 				case OTHER:
 				case OPERATOR:
-					char visibility = t.getValue().charAt(0);
-					if(visibility != '-' && visibility != '~' && visibility != '+') {
-						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-								"Invalid visibility specifier (One of [\"-\", \"~\", \"+\"] must be used)"
-						));
+					AbstractSyntaxTree.ClassDefinitionNode.Visibility visibility;
+					boolean visibilityKeywordUsed;
 
-						return ast;
+					if(t.getValue().length() == 1) {
+						char visibilitySymbol = t.getValue().charAt(0);
+						visibility = AbstractSyntaxTree.ClassDefinitionNode.Visibility.fromSymbol(visibilitySymbol);
+						visibilityKeywordUsed = false;
+
+						if(visibility == null) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+									"Invalid visibility symbol (One of [\"-\", \"~\", or \"+\"] must be used)"
+							));
+
+							return ast;
+						}
+						tokens.remove(0);
+					}else {
+						String visibilityKeyword = t.getValue();
+						visibility = AbstractSyntaxTree.ClassDefinitionNode.Visibility.fromKeyword(visibilityKeyword);
+						visibilityKeywordUsed = true;
+
+						if(visibility == null) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+									"Invalid visibility keyword (One of [\"private\", \"protected\", or \"public\"] must be used)"
+							));
+
+							return ast;
+						}
+						tokens.remove(0);
+
+						if(tokens.isEmpty() || tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
+							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+									"Missing whitespace after visibility keyword specifier"));
+
+							return ast;
+						}
+						tokens.remove(0);
 					}
-					tokens.remove(0);
 
 					if(tokens.isEmpty()) {
 						nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
@@ -2628,6 +2661,7 @@ public final class LangParser {
 						tokens.remove(0);
 
 						constructorDefinitions.add(parseLRvalue(tokens, true).convertToNode());
+						constructorVisibility.add(visibility);
 
 						continue tokenProcessing;
 					}
@@ -2651,9 +2685,9 @@ public final class LangParser {
 					}
 
 					if(t.getTokenType() == Token.TokenType.IDENTIFIER && t.getValue().startsWith("op:")) {
-						if(visibility != '+') {
+						if(visibility != AbstractSyntaxTree.ClassDefinitionNode.Visibility.PUBLIC) {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
-									"Invalid visibility for operator method (only \"+\" is allowed)"));
+									"Operator method must be public"));
 
 							return ast;
 						}
@@ -2682,14 +2716,15 @@ public final class LangParser {
 						methodNames.add(methodName);
 						methodDefinitions.add(rvalueNode);
 						methodOverrideFlag.add(isOverrideMethod);
+						methodVisibility.add(visibility);
 
 						continue tokenProcessing;
 					}
 
 					if(t.getTokenType() == Token.TokenType.IDENTIFIER && t.getValue().startsWith("to:")) {
-						if(visibility != '+') {
+						if(visibility != AbstractSyntaxTree.ClassDefinitionNode.Visibility.PUBLIC) {
 							nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
-									"Invalid visibility for conversion method (only \"+\" is allowed)"));
+									"Conversion method must be public"));
 
 							return ast;
 						}
@@ -2718,6 +2753,7 @@ public final class LangParser {
 						methodNames.add(methodName);
 						methodDefinitions.add(rvalueNode);
 						methodOverrideFlag.add(isOverrideMethod);
+						methodVisibility.add(visibility);
 
 						continue tokenProcessing;
 					}
@@ -2749,6 +2785,7 @@ public final class LangParser {
 						methodNames.add(methodName);
 						methodDefinitions.add(rvalueNode);
 						methodOverrideFlag.add(isOverrideMethod);
+						methodVisibility.add(visibility);
 
 						continue tokenProcessing;
 					}
@@ -2910,6 +2947,7 @@ public final class LangParser {
 						staticMemberTypeConstraints.add(typeConstraint);
 						staticMemberValues.add(staticMemberValue);
 						staticMemberFinalFlag.add(isFinalMember);
+						staticMemberVisibility.add(visibility);
 
 						continue tokenProcessing;
 					}
@@ -2917,6 +2955,7 @@ public final class LangParser {
 					memberNames.add(memberName);
 					memberTypeConstraints.add(typeConstraint);
 					memberFinalFlag.add(isFinalMember);
+					memberVisibility.add(visibility);
 
 					break;
 
@@ -2961,8 +3000,9 @@ public final class LangParser {
 
 		//TODO line numbers
 		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(CodePosition.EMPTY, className, staticMemberNames,
-				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, memberNames, memberTypeConstraints,
-				memberFinalFlag, methodNames, methodDefinitions, methodOverrideFlag, constructorDefinitions, parentClasses
+				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, staticMemberVisibility,
+				memberNames, memberTypeConstraints, memberFinalFlag, memberVisibility, methodNames, methodDefinitions,
+				methodOverrideFlag, methodVisibility, constructorDefinitions, constructorVisibility, parentClasses
 		));
 
 		return ast;

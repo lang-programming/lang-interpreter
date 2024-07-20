@@ -3134,10 +3134,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final List<String> staticMemberTypeConstraints;
 		private final List<Node> staticMemberValues;
 		private final List<Boolean> staticMemberFinalFlag;
+		private final List<Visibility> staticMemberVisibility;
 
 		private final List<String> memberNames;
 		private final List<String> memberTypeConstraints;
 		private final List<Boolean> memberFinalFlag;
+		private final List<Visibility> memberVisibility;
 
 		/**
 		 * If multiple methods have the same name, they are overloaded
@@ -3145,8 +3147,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 		private final List<String> methodNames;
 		private final List<Node> methodDefinitions;
 		private final List<Boolean> methodOverrideFlag;
+		private final List<Visibility> methodVisibility;
 
 		private final List<Node> constructorDefinitions;
+		private final List<Visibility> constructorVisibility;
 
 		/**
 		 * List of parent nodes separated by ArgumentSeparator nodes
@@ -3155,10 +3159,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
 		public ClassDefinitionNode(CodePosition pos, String className, List<String> staticMemberNames,
 								   List<String> staticMemberTypeConstraints, List<Node> staticMemberValues,
-								   List<Boolean> staticMemberFinalFlag, List<String> memberNames, List<String> memberTypeConstraints,
-								   List<Boolean> memberFinalFlag, List<String> methodNames, List<Node> methodDefinitions,
-								   List<Boolean> methodOverrideFlag, List<Node> constructorDefinitions,
-								   List<Node> parentClasses) {
+								   List<Boolean> staticMemberFinalFlag, List<Visibility> staticMemberVisibility,
+								   List<String> memberNames, List<String> memberTypeConstraints,
+								   List<Boolean> memberFinalFlag, List<Visibility> memberVisibility,
+								   List<String> methodNames, List<Node> methodDefinitions, List<Boolean> methodOverrideFlag,
+								   List<Visibility> methodVisibility, List<Node> constructorDefinitions,
+								   List<Visibility> constructorVisibility, List<Node> parentClasses) {
 			super(pos);
 
 			this.className = className;
@@ -3167,16 +3173,20 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			this.staticMemberTypeConstraints = staticMemberTypeConstraints;
 			this.staticMemberValues = staticMemberValues;
 			this.staticMemberFinalFlag = staticMemberFinalFlag;
+			this.staticMemberVisibility = staticMemberVisibility;
 
 			this.memberNames = memberNames;
 			this.memberTypeConstraints = memberTypeConstraints;
 			this.memberFinalFlag = memberFinalFlag;
+			this.memberVisibility = memberVisibility;
 
 			this.methodNames = methodNames;
 			this.methodDefinitions = methodDefinitions;
 			this.methodOverrideFlag = methodOverrideFlag;
+			this.methodVisibility = methodVisibility;
 
 			this.constructorDefinitions = constructorDefinitions;
+			this.constructorVisibility = constructorVisibility;
 
 			this.parentClasses = parentClasses;
 		}
@@ -3201,6 +3211,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			return staticMemberFinalFlag;
 		}
 
+		public List<Visibility> getStaticMemberVisibility() {
+			return staticMemberVisibility;
+		}
+
 		public List<String> getMemberNames() {
 			return memberNames;
 		}
@@ -3211,6 +3225,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
 		public List<Boolean> getMemberFinalFlag() {
 			return memberFinalFlag;
+		}
+
+		public List<Visibility> getMemberVisibility() {
+			return memberVisibility;
 		}
 
 		public List<String> getMethodNames() {
@@ -3225,8 +3243,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			return methodOverrideFlag;
 		}
 
+		public List<Visibility> getMethodVisibility() {
+			return methodVisibility;
+		}
+
 		public List<Node> getConstructorDefinitions() {
 			return constructorDefinitions;
+		}
+
+		public List<Visibility> getConstructorVisibility() {
+			return constructorVisibility;
 		}
 
 		public List<AbstractSyntaxTree.Node> getParentClasses() {
@@ -3243,8 +3269,17 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			if(staticMemberNames.size() != staticMemberTypeConstraints.size() ||
 					staticMemberNames.size() != staticMemberValues.size() ||
 					staticMemberNames.size() != staticMemberFinalFlag.size() ||
-					memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size() ||
-					methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size())
+					staticMemberNames.size() != staticMemberVisibility.size() ||
+
+					memberNames.size() != memberTypeConstraints.size() ||
+					memberNames.size() != memberFinalFlag.size() ||
+					memberNames.size() != memberVisibility.size() ||
+
+					methodNames.size() != methodDefinitions.size() ||
+					methodNames.size() != methodOverrideFlag.size() ||
+					methodNames.size() != methodVisibility.size() ||
+
+					constructorDefinitions.size() != constructorVisibility.size())
 				return "ClassDefinitionNode: <INVALID>";
 
 			StringBuilder builder = new StringBuilder();
@@ -3255,6 +3290,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append("\", StaticMembers{TypeConstraints} = <value>: {\n");
 			for(int i = 0;i < staticMemberNames.size();i++) {
 				builder.append("\t");
+				builder.append(staticMemberVisibility.get(i).getVisibilitySymbol());
 				builder.append(staticMemberFinalFlag.get(i)?"final:":"");
 				builder.append(staticMemberNames.get(i));
 				if(staticMemberTypeConstraints.get(i) != null) {
@@ -3277,6 +3313,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append("}, Members{TypeConstraints}: {\n");
 			for(int i = 0;i < memberNames.size();i++) {
 				builder.append("\t");
+				builder.append(memberVisibility.get(i).getVisibilitySymbol());
 				builder.append(memberFinalFlag.get(i)?"final:":"");
 				builder.append(memberNames.get(i));
 				if(memberTypeConstraints.get(i) != null) {
@@ -3289,6 +3326,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 			builder.append("}, MethodName = <definition>: {\n");
 			for(int i = 0;i < methodNames.size();i++) {
 				builder.append("\t");
+				builder.append(methodVisibility.get(i).getVisibilitySymbol());
 				builder.append(methodOverrideFlag.get(i)?"override:":"");
 				builder.append(methodNames.get(i));
 				builder.append(" = {\n");
@@ -3301,14 +3339,18 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 				builder.append("\t}\n");
 			}
 			builder.append("}, Constructors: {\n");
-			constructorDefinitions.forEach(node -> {
-                String[] tokens = node.toString().split("\\n");
-                for (String token:tokens) {
-                    builder.append("\t");
-                    builder.append(token);
-                    builder.append("\n");
-                }
-            });
+			for(int i = 0;i < constructorDefinitions.size();i++) {
+				builder.append("\t");
+				builder.append(constructorVisibility.get(i).getVisibilitySymbol());
+				builder.append("construct = {\n");
+				String[] tokens = constructorDefinitions.get(i).toString().split("\\n");
+				for (String token:tokens) {
+					builder.append("\t\t");
+					builder.append(token);
+					builder.append("\n");
+				}
+				builder.append("\t}\n");
+			}
 			builder.append("}, ParentClasses: {\n");
 			String[] tokens = parentClasses.toString().split("\\n");
 			for (String token:tokens) {
@@ -3334,22 +3376,74 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
 			ClassDefinitionNode that = (ClassDefinitionNode)obj;
 			return this.getNodeType().equals(that.getNodeType()) && Objects.equals(this.className, that.className) &&
+
 					this.staticMemberNames.equals(that.staticMemberNames) &&
 					this.staticMemberTypeConstraints.equals(that.staticMemberTypeConstraints) &&
 					this.staticMemberFinalFlag.equals(that.staticMemberFinalFlag) &&
-					this.staticMemberValues.equals(that.staticMemberValues) && this.memberNames.equals(that.memberNames) &&
-					this.memberTypeConstraints.equals(that.memberTypeConstraints) && this.memberFinalFlag.equals(that.memberFinalFlag) &&
-					this.methodNames.equals(that.methodNames) && this.methodDefinitions.equals(that.methodDefinitions) &&
+					this.staticMemberValues.equals(that.staticMemberValues) &&
+					this.staticMemberVisibility.equals(that.staticMemberVisibility) &&
+
+					this.memberNames.equals(that.memberNames) &&
+					this.memberTypeConstraints.equals(that.memberTypeConstraints) &&
+					this.memberFinalFlag.equals(that.memberFinalFlag) &&
+					this.memberVisibility.equals(that.memberVisibility) &&
+
+					this.methodNames.equals(that.methodNames) &&
+					this.methodDefinitions.equals(that.methodDefinitions) &&
 					this.methodOverrideFlag.equals(that.methodOverrideFlag) &&
-					this.constructorDefinitions.equals(that.constructorDefinitions) && this.parentClasses.equals(that.parentClasses);
+					this.methodVisibility.equals(that.methodVisibility) &&
+
+					this.constructorDefinitions.equals(that.constructorDefinitions) &&
+					this.constructorVisibility.equals(that.constructorVisibility) &&
+
+					this.parentClasses.equals(that.parentClasses);
 		}
 
 		@Override
 		public int hashCode() {
 			return Objects.hash(this.getNodeType(), this.className, this.staticMemberNames, this.staticMemberTypeConstraints,
-					this.staticMemberValues, this.staticMemberFinalFlag, this.memberNames, this.memberTypeConstraints,
-					this.methodNames, this.methodDefinitions, this.methodOverrideFlag, this.constructorDefinitions,
+					this.staticMemberFinalFlag, this.staticMemberValues, this.staticMemberVisibility, this.memberNames,
+					this.memberTypeConstraints, this.memberFinalFlag, this.memberVisibility, this.methodNames, this.methodDefinitions,
+					this.methodOverrideFlag, this.methodVisibility, this.constructorDefinitions, this.constructorVisibility,
 					this.parentClasses);
+		}
+
+		public enum Visibility {
+			PRIVATE  ('-', "private"),
+			PROTECTED('~', "protected"),
+			PUBLIC   ('+', "public");
+
+			private final char visibilitySymbol;
+			private final String visibilityKeyword;
+
+			Visibility(char visibilitySymbol, String visibilityKeyword) {
+				this.visibilitySymbol = visibilitySymbol;
+				this.visibilityKeyword = visibilityKeyword;
+			}
+
+			public static Visibility fromSymbol(char visibilitySymbol) {
+				for(Visibility visibility:Visibility.values())
+					if(visibility.getVisibilitySymbol() == visibilitySymbol)
+						return visibility;
+
+				return null;
+			}
+
+			public static Visibility fromKeyword(String visibilityKeyword) {
+				for(Visibility visibility:Visibility.values())
+					if(visibility.getVisibilityKeyword().equals(visibilityKeyword))
+						return visibility;
+
+				return null;
+			}
+
+			public char getVisibilitySymbol() {
+				return visibilitySymbol;
+			}
+
+			public String getVisibilityKeyword() {
+				return visibilityKeyword;
+			}
 		}
 	}
 
