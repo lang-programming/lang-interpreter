@@ -48,6 +48,8 @@ public class DataObject {
 	private boolean staticData;
 	private boolean copyStaticAndFinalModifiers;
 	private boolean langVar;
+	private LangObject memberOfClass;
+	private Visibility memberVisibility;
 
 	public static DataTypeConstraint getTypeConstraintFor(String variableName) {
 		if(variableName == null)
@@ -513,6 +515,32 @@ public class DataObject {
 		return typeConstraint;
 	}
 
+	DataObject setMemberVisibility(Visibility memberVisibility) {
+		this.memberVisibility = memberVisibility;
+
+		return this;
+	}
+
+	public Visibility getMemberVisibility() {
+		return memberVisibility;
+	}
+
+	DataObject setMemberOfClass(LangObject memberOfClass) {
+		this.memberOfClass = memberOfClass;
+
+		return this;
+	}
+
+	public LangObject getMemberOfClass() {
+		return memberOfClass;
+	}
+
+	public boolean isAccessible(LangObject accessingClass) {
+		return memberOfClass == null || memberVisibility == null || memberVisibility == Visibility.PUBLIC ||
+				(accessingClass != null && (accessingClass.equals(memberOfClass) ||
+						(memberVisibility == Visibility.PROTECTED && accessingClass.isInstanceOf(memberOfClass))));
+	}
+
 	@Override
 	public String toString() {
 		return "<DataObject>";
@@ -883,14 +911,31 @@ public class DataObject {
 			private final LangBaseFunction function;
 			private final int functionPointerType;
 
+			private final LangObject memberOfClass;
+			private final Visibility memberVisibility;
+
+			/**
+			 * For normal and native function pointer definition
+			 * Used for setting member of class and visibility for objects
+			 */
+			InternalFunction(InternalFunction func, LangObject memberOfClass, Visibility memberVisibility) {
+				this.superLevel = func.superLevel;
+				this.function = func.function;
+				this.functionPointerType = func.functionPointerType;
+				this.memberOfClass = memberOfClass;
+				this.memberVisibility = memberVisibility;
+			}
+
 			/**
 			 * For normal and native function pointer definition
 			 * Used for setting superLevel for objects
 			 */
-			public InternalFunction(InternalFunction func, int superLevel) throws DataTypeConstraintException {
+			public InternalFunction(InternalFunction func, int superLevel) {
 				this.superLevel = superLevel;
 				this.function = func.function;
 				this.functionPointerType = func.functionPointerType;
+				this.memberOfClass = func.memberOfClass;
+				this.memberVisibility = func.memberVisibility;
 			}
 
 			/**
@@ -900,6 +945,8 @@ public class DataObject {
 				this.superLevel = -1;
 				this.function = normalFunction;
 				this.functionPointerType = NORMAL;
+				this.memberOfClass = null;
+				this.memberVisibility = null;
 			}
 
 			/**
@@ -909,6 +956,8 @@ public class DataObject {
 				this.superLevel = -1;
 				this.function = nativeFunction;
 				this.functionPointerType = NATIVE;
+				this.memberOfClass = null;
+				this.memberVisibility = null;
 			}
 
 			public int getSuperLevel() {
@@ -935,6 +984,20 @@ public class DataObject {
 
 			public int getFunctionPointerType() {
 				return functionPointerType;
+			}
+
+			public LangObject getMemberOfClass() {
+				return memberOfClass;
+			}
+
+			public Visibility getMemberVisibility() {
+				return memberVisibility;
+			}
+
+			public boolean isAccessible(LangObject accessingClass) {
+				return memberOfClass == null || memberVisibility == null || memberVisibility == Visibility.PUBLIC ||
+						(accessingClass != null && (accessingClass.equals(memberOfClass) ||
+								(memberVisibility == Visibility.PROTECTED && accessingClass.isInstanceOf(memberOfClass))));
 			}
 
 			public String toFunctionSignatureSyntax() {
@@ -1098,6 +1161,7 @@ public class DataObject {
 		static {
 			Map<String, FunctionPointerObject> methods = new HashMap<>();
 			Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
+			Map<String, List<Visibility>> methodVisibility = new HashMap<>();
 			methods.put("mp.getClass", LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="mp.getClass", isMethod=true)
 				@LangFunction.AllowedTypes(DataType.OBJECT)
@@ -1111,6 +1175,9 @@ public class DataObject {
 			methodOverrideFlags.put("mp.getClass", new Boolean[] {
 					false
 			});
+			methodVisibility.put("mp.getClass", Arrays.asList(
+					Visibility.PUBLIC
+			));
 
 			FunctionPointerObject constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
 				@LangFunction(value="construct", isMethod=true)
@@ -1122,9 +1189,12 @@ public class DataObject {
 					return null;
 				}
 			});
+			List<Visibility> constructorVisibility = new LinkedList<>();
+			constructorVisibility.add(Visibility.PUBLIC);
 
 			OBJECT_CLASS = new LangObject(true, "&Object", new DataObject[0], new String[0],
-					new DataTypeConstraint[0], new boolean[0], methods, methodOverrideFlags, constructors, null);
+					new DataTypeConstraint[0], new boolean[0], new Visibility[0], methods, methodOverrideFlags,
+					methodVisibility, constructors, constructorVisibility, null);
 		}
 
 		private int superLevel = 0;
@@ -1135,6 +1205,8 @@ public class DataObject {
 		private final String[] memberNames;
 		private final DataTypeConstraint[] memberTypeConstraints;
 		private final boolean[] memberFinalFlags;
+		private final Visibility[] memberVisibility;
+		private final LangObject[] memberOfClass;
 		private final DataObject[] members;
 		private final Map<String, FunctionPointerObject> methods;
 		private final FunctionPointerObject constructors;
@@ -1156,16 +1228,20 @@ public class DataObject {
 
 		public LangObject(String className, DataObject[] staticMembers, String[] memberNames,
 						  DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
+						  DataObject.Visibility[] memberVisibility,
 						  Map<String, FunctionPointerObject> methods, Map<String, Boolean[]> methodOverrideFlags,
-						  FunctionPointerObject constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
-			this(false, className, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, methods, methodOverrideFlags,
-					constructors, parentClasses);
+						  Map<String, List<DataObject.Visibility>> methodVisibility, FunctionPointerObject constructors,
+						  List<DataObject.Visibility> constructorVisibility, LangObject[] parentClasses) throws DataTypeConstraintException {
+			this(false, className, staticMembers, memberNames, memberTypeConstraints, memberFinalFlags, memberVisibility,
+					methods, methodOverrideFlags, methodVisibility, constructors, constructorVisibility, parentClasses);
 		}
 
 		private LangObject(boolean isBaseObject, String className, DataObject[] staticMembers, String[] memberNames,
 						   DataTypeConstraint[] memberTypeConstraints, boolean[] memberFinalFlags,
-						   Map<String, FunctionPointerObject> methods, Map<String, Boolean[]> methodOverrideFlags,
-						   FunctionPointerObject constructors, LangObject[] parentClasses) throws DataTypeConstraintException {
+						   DataObject.Visibility[] memberVisibility, Map<String, FunctionPointerObject> methods,
+						   Map<String, Boolean[]> methodOverrideFlags, Map<String, List<DataObject.Visibility>> methodVisibility,
+						   FunctionPointerObject constructors, List<DataObject.Visibility> constructorVisibility,
+						   LangObject[] parentClasses) throws DataTypeConstraintException {
 			this.className = className;
 
 			if(isBaseObject) {
@@ -1196,6 +1272,9 @@ public class DataObject {
 							" (For static member \"" + staticMemberName + "\")");
 			}
 
+			for(DataObject staticMember:staticMembers)
+				staticMember.setMemberOfClass(this);
+
 			//TODO allow multi-inheritance (Check if a static member is in both super classes)
 			this.staticMembers = Arrays.copyOf(staticMembers, staticMembers.length + Arrays.stream(parentClasses).
 					mapToInt(parentClass -> parentClass.getStaticMembers().length).sum());
@@ -1216,6 +1295,9 @@ public class DataObject {
 
 			if(memberNames.length != memberFinalFlags.length)
 				throw new DataTypeConstraintException("The count of members must be equals to the count of member final flags");
+
+			if(memberNames.length != memberVisibility.length)
+				throw new DataTypeConstraintException("The count of members must be equals to the count of member visibility");
 
 			for(String memberName:memberNames) {
 				if(Arrays.stream(parentClasses).map(LangObject::getStaticMembers).
@@ -1241,6 +1323,10 @@ public class DataObject {
 			this.memberNames = Arrays.copyOf(memberNames, memberNames.length + superClassMemberCount);
 			this.memberTypeConstraints = Arrays.copyOf(memberTypeConstraints, memberTypeConstraints.length + superClassMemberCount);
 			this.memberFinalFlags = Arrays.copyOf(memberFinalFlags, memberFinalFlags.length + superClassMemberCount);
+			this.memberVisibility = Arrays.copyOf(memberVisibility, memberVisibility.length + superClassMemberCount);
+			this.memberOfClass = new LangObject[memberNames.length + superClassMemberCount];
+			for(int i = 0;i < memberNames.length;i++)
+				this.memberOfClass[i] = this;
 			{
 				int memberIndex = memberNames.length;
 				for(LangObject parentClass:parentClasses) {
@@ -1248,6 +1334,8 @@ public class DataObject {
 						this.memberNames[memberIndex] = parentClass.getMemberNames()[i];
 						this.memberTypeConstraints[memberIndex] = parentClass.getMemberTypeConstraints()[i];
 						this.memberFinalFlags[memberIndex] = parentClass.getMemberFinalFlags()[i];
+						this.memberVisibility[memberIndex] = parentClass.getMemberVisibility()[i];
+						this.memberOfClass[memberIndex] = parentClass;
 
 						memberIndex++;
 					}
@@ -1261,12 +1349,24 @@ public class DataObject {
 			for(String methodName:methodNames) {
 				FunctionPointerObject overloadedMethods = methods.get(methodName);
 				Boolean[] overloadedMethodOverrideFlags = methodOverrideFlags.get(methodName);
+				List<Visibility> overloadedMethodVisibility = methodVisibility.get(methodName);
 
 				if(overloadedMethodOverrideFlags == null || overloadedMethods.getOverloadedFunctionCount() != overloadedMethodOverrideFlags.length)
 					throw new DataTypeConstraintException("Invalid override flag values for \"" + methodName + "\"");
+				if(overloadedMethodVisibility == null || overloadedMethods.getOverloadedFunctionCount() != overloadedMethodVisibility.size())
+					throw new DataTypeConstraintException("Invalid visibility values for \"" + methodName + "\"");
 				if(overloadedMethods.getOverloadedFunctionCount() == 0)
 					throw new DataTypeConstraintException("No method present for method \"" + methodName + "\"");
 
+				//Set visibility
+				List<FunctionPointerObject.InternalFunction> internalFunctions = overloadedMethods.getFunctions();
+				for(int i = 0;i < internalFunctions.size();i++)
+					internalFunctions.set(i, new FunctionPointerObject.InternalFunction(internalFunctions.get(i),
+							this, overloadedMethodVisibility.get(i)));
+				overloadedMethods = overloadedMethods.withFunctions(internalFunctions);
+				this.methods.put(methodName, overloadedMethods);
+
+				//Check override flag
 				List<LangBaseFunction> functionSignatures = overloadedMethods.getFunctions().stream().
 						map(FunctionPointerObject.InternalFunction::getFunction).collect(Collectors.toList());
 
@@ -1364,8 +1464,17 @@ public class DataObject {
 				}
 			}
 
-			this.constructors = constructors.withFunctionName("construct").withMappedFunctions(
+			if(constructors.getOverloadedFunctionCount() != constructorVisibility.size())
+				throw new DataTypeConstraintException("The count of constructors must be equals to the count of constructor visibility");
+
+			constructors = constructors.withFunctionName("construct").withMappedFunctions(
 					internalFunction -> new FunctionPointerObject.InternalFunction(internalFunction, 0));
+			List<FunctionPointerObject.InternalFunction> internalFunctions = constructors.getFunctions();
+			for(int i = 0;i < internalFunctions.size();i++)
+				internalFunctions.set(i, new FunctionPointerObject.InternalFunction(internalFunctions.get(i),
+						this, constructorVisibility.get(i)));
+			constructors = constructors.withFunctions(internalFunctions);
+			this.constructors = constructors;
 			if(this.constructors.getOverloadedFunctionCount() < 1)
 				throw new DataTypeConstraintException("There must be at least one constructor");
 
@@ -1409,10 +1518,13 @@ public class DataObject {
 			this.memberNames = Arrays.copyOf(classBaseDefinition.memberNames, classBaseDefinition.memberNames.length);
 			this.memberTypeConstraints = Arrays.copyOf(classBaseDefinition.memberTypeConstraints, classBaseDefinition.memberTypeConstraints.length);
 			this.memberFinalFlags = Arrays.copyOf(classBaseDefinition.memberFinalFlags, classBaseDefinition.memberFinalFlags.length);
+			this.memberVisibility = Arrays.copyOf(classBaseDefinition.memberVisibility, classBaseDefinition.memberVisibility.length);
+			this.memberOfClass = Arrays.copyOf(classBaseDefinition.memberOfClass, classBaseDefinition.memberOfClass.length);
 
 			this.members = new DataObject[classBaseDefinition.memberNames.length];
 			for(int i = 0;i < members.length;i++)
-				this.members[i] = new DataObject().setNull().setVariableName(memberNames[i]);
+				this.members[i] = new DataObject().setNull().setMemberVisibility(this.memberVisibility[i]).
+						setMemberOfClass(this.memberOfClass[i]).setVariableName(this.memberNames[i]);
 
 			this.methods = new HashMap<>(classBaseDefinition.methods);
 			this.methods.replaceAll((k, v) -> new FunctionPointerObject(v, this));
@@ -1499,6 +1611,14 @@ public class DataObject {
 
 		public boolean[] getMemberFinalFlags() {
 			return Arrays.copyOf(memberFinalFlags, memberFinalFlags.length);
+		}
+
+		public LangObject[] getMemberOfClass() {
+			return Arrays.copyOf(memberOfClass, memberOfClass.length);
+		}
+
+		public Visibility[] getMemberVisibility() {
+			return Arrays.copyOf(memberVisibility, memberVisibility.length);
 		}
 
 		/**
@@ -1680,6 +1800,25 @@ public class DataObject {
 		@Override
 		public int hashCode() {
 			return Objects.hash(err);
+		}
+	}
+	public static enum Visibility {
+		PRIVATE, PROTECTED, PUBLIC;
+
+		public static Visibility fromASTNode(AbstractSyntaxTree.ClassDefinitionNode.Visibility visibility) {
+			if(visibility == null)
+				return null;
+
+			switch(visibility) {
+				case PRIVATE:
+					return PRIVATE;
+				case PROTECTED:
+					return PROTECTED;
+				case PUBLIC:
+					return PUBLIC;
+			}
+
+			return null;
 		}
 	}
 

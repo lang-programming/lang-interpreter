@@ -415,8 +415,9 @@ final class LangPredefinedFunctions {
 			//Update call stack
 			StackElement currentStackElement = interpreter.getCurrentCallStackElement();
 			interpreter.pushStackElement(new StackElement(currentStackElement.getLangPath(),
-					currentStackElement.getLangFile(), currentStackElement.getLangClasName(), "<exec-code>",
-					currentStackElement.getModule()), CodePosition.EMPTY);
+					currentStackElement.getLangFile(), currentStackElement.getLangClass(),
+					currentStackElement.getLangClasName(), "<exec-code>", currentStackElement.getModule()),
+					CodePosition.EMPTY);
 
 			int originalLineNumber = interpreter.getParserLineNumber();
 			try(BufferedReader lines = new BufferedReader(new StringReader(
@@ -6265,19 +6266,19 @@ final class LangPredefinedFunctions {
 
 				//Update call stack
 				interpreter.pushStackElement(new StackElement("<standard>" + langPathTmp, langFileName.substring(langFileName.lastIndexOf('/') + 1),
-						null, null, module), CodePosition.EMPTY);
+						null, null, null, module), CodePosition.EMPTY);
 			}else if(insideModule) {
 				langPathTmp = absolutePath.substring(0, absolutePath.lastIndexOf('/'));
 
 				//Update call stack
 				interpreter.pushStackElement(new StackElement("<module:" + module.getFile() + "[" + module.getLangModuleConfiguration().getName() + "]>" + langPathTmp,
-						langFileName.substring(langFileName.lastIndexOf('/') + 1), null, null, module), CodePosition.EMPTY);
+						langFileName.substring(langFileName.lastIndexOf('/') + 1), null, null, null, module), CodePosition.EMPTY);
 			}else {
 				langPathTmp = interpreter.langPlatformAPI.getLangPath(langPathTmp);
 
 				//Update call stack
 				interpreter.pushStackElement(new StackElement(langPathTmp, interpreter.langPlatformAPI.getLangFileName(langFileName),
-						null, null, null), CodePosition.EMPTY);
+						null, null, null, null), CodePosition.EMPTY);
 			}
 
 			LangInterpreter.Data callerData = interpreter.getData();

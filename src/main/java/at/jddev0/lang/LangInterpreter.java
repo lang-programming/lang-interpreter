@@ -103,7 +103,7 @@ public final class LangInterpreter {
 	 */
 	public LangInterpreter(String langPath, String langFile, TerminalIO term, ILangPlatformAPI langPlatformAPI, String[] langArgs) {
 		callStack = new LinkedList<>();
-		currentCallStackElement = new StackElement(langPath, langFile, null, null, null);
+		currentCallStackElement = new StackElement(langPath, langFile, null, null, null, null);
 		this.term = term;
 		this.langPlatformAPI = langPlatformAPI;
 
@@ -2261,6 +2261,7 @@ public final class LangInterpreter {
 			StackElement currentStackElement = getCurrentCallStackElement();
 			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
 					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
+					thisObject != null && !thisObject.isClass()?thisObject.getClassBaseDefinition():thisObject,
 					thisObject == null?null:(thisObject.getClassName() == null?"<class>":thisObject.getClassName()),
 					functionName, currentStackElement.getModule()), parentPos);
 
@@ -3172,9 +3173,10 @@ public final class LangInterpreter {
 		List<String> staticMemberTypeConstraints = node.getStaticMemberTypeConstraints();
 		List<Node> staticMemberValues = node.getStaticMemberValues();
 		List<Boolean> staticMemberFinalFlag = node.getStaticMemberFinalFlag();
+		List<ClassDefinitionNode.Visibility> staticMemberVisibility = node.getStaticMemberVisibility();
 
 		if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size() ||
-				staticMemberNames.size() != staticMemberFinalFlag.size())
+				staticMemberNames.size() != staticMemberFinalFlag.size() || staticMemberNames.size() != staticMemberVisibility.size())
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		for(String staticMemberName:staticMemberNames)
@@ -3221,6 +3223,8 @@ public final class LangInterpreter {
 
 				if(staticMemberFinalFlagArray[i])
 					staticMembers[i].setFinalData(true);
+
+				staticMembers[i].setMemberVisibility(DataObject.Visibility.fromASTNode(staticMemberVisibility.get(i)));
 			}
 		}catch(DataTypeConstraintException e) {
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
@@ -3229,8 +3233,10 @@ public final class LangInterpreter {
 		List<String> memberNames = node.getMemberNames();
 		List<String> memberTypeConstraints = node.getMemberTypeConstraints();
 		List<Boolean> memberFinalFlag = node.getMemberFinalFlag();
+		List<ClassDefinitionNode.Visibility> memberVisibility = node.getMemberVisibility();
 
-		if(memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size())
+		if(memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size() ||
+				memberNames.size() != memberVisibility.size())
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		for(String memberName:memberNames)
@@ -3264,11 +3270,17 @@ public final class LangInterpreter {
 			memberFinalFlagArray[i] = memberFinalFlag.get(i);
 		}
 
+		DataObject.Visibility[] memberVisibilityArray = new DataObject.Visibility[memberVisibility.size()];
+		for(int i = 0;i < memberVisibility.size();i++)
+			memberVisibilityArray[i] = DataObject.Visibility.fromASTNode(memberVisibility.get(i));
+
 		List<String> methodNames = node.getMethodNames();
 		List<Node> methodDefinitions = node.getMethodDefinitions();
 		List<Boolean> methodOverrideFlag = node.getMethodOverrideFlag();
+		List<ClassDefinitionNode.Visibility> methodVisibility = node.getMethodVisibility();
 
-		if(methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size())
+		if(methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size() ||
+				methodNames.size() != methodVisibility.size())
 			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		for(String methodName:methodNames)
@@ -3278,6 +3290,7 @@ public final class LangInterpreter {
 
 		Map<String, FunctionPointerObject> methods = new HashMap<>();
 		Map<String, List<Boolean>> rawMethodOverrideFlags = new HashMap<>();
+		Map<String, List<DataObject.Visibility>> methodVisibilities = new HashMap<>();
 		for(int i = 0;i < methodNames.size();i++) {
 			if(methodOverrideFlag.get(i) == null)
 				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for method at index " + i,
@@ -3296,19 +3309,29 @@ public final class LangInterpreter {
 			}else {
 				methods.put(methodName, methodDefinition.getFunctionPointer());
 				rawMethodOverrideFlags.put(methodName, new LinkedList<>());
+				methodVisibilities.put(methodName, new LinkedList<>());
 			}
 
 			List<Boolean> methodOverrideFlags = rawMethodOverrideFlags.get(methodName);
 			for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
 				methodOverrideFlags.add(methodOverrideFlag.get(i));
+
+			List<DataObject.Visibility> methodVisibilityList = methodVisibilities.get(methodName);
+			for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
+				methodVisibilityList.add(DataObject.Visibility.fromASTNode(methodVisibility.get(i)));
 		}
 
 		Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
 		rawMethodOverrideFlags.forEach((k, v) -> methodOverrideFlags.put(k, v.toArray(new Boolean[0])));
 
 		List<Node> constructorDefinitions = node.getConstructorDefinitions();
+		List<ClassDefinitionNode.Visibility> constructorVisibility = node.getConstructorVisibility();
+
+		if(constructorDefinitions.size() != constructorVisibility.size())
+			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
 
 		FunctionPointerObject constructors = null;
+		List<DataObject.Visibility> constructorVisibilities = new LinkedList<>();
 		for(int i = 0;i < constructorDefinitions.size();i++) {
 			DataObject constructorDefinition = interpretNode(null, constructorDefinitions.get(i));
 			if(constructorDefinition == null || constructorDefinition.getType() != DataType.FUNCTION_POINTER)
@@ -3319,6 +3342,9 @@ public final class LangInterpreter {
 				constructors = constructorDefinition.getFunctionPointer();
 			else
 				constructors = constructors.withAddedFunctions(constructorDefinition.getFunctionPointer());
+
+			for(int j = 0;j < constructorDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
+				constructorVisibilities.add(DataObject.Visibility.fromASTNode(constructorVisibility.get(i)));
 		}
 
 		//Set default constructor
@@ -3333,11 +3359,13 @@ public final class LangInterpreter {
 					return null;
 				}
 			});
+			constructorVisibilities.add(DataObject.Visibility.PUBLIC);
 		}
 
 		try {
 			LangObject classObject = new LangObject(className, staticMembers, memberNames.toArray(new String[0]),
-					memberTypeConstraintsArray, memberFinalFlagArray, methods, methodOverrideFlags, constructors,
+					memberTypeConstraintsArray, memberFinalFlagArray, memberVisibilityArray,
+					methods, methodOverrideFlags, methodVisibilities, constructors, constructorVisibilities,
 					parentClassObjectList.toArray(new LangObject[0]));
 
 			if(classDataObject == null)
@@ -4339,7 +4367,7 @@ public final class LangInterpreter {
 			throw new IllegalStateException("Initialization of lang standard implementation was already completed");
 
 		//Temporary scope for lang standard implementation in lang code
-		pushStackElement(new StackElement("<standard>", "standard.lang", null, null, null),
+		pushStackElement(new StackElement("<standard>", "standard.lang", null, null, null, null),
 				CodePosition.EMPTY);
 		enterScope();
 
@@ -4518,24 +4546,26 @@ public final class LangInterpreter {
 		private final String langPath;
 		private final String langFile;
 		private final CodePosition pos;
+		private final LangObject langClass;
 		private final String langClasName;
 		private final String langFunctionName;
 		final LangModule module;
 		
-		public StackElement(String langPath, String langFile, CodePosition pos, String langClasName, String langFunctionName, LangModule module) {
+		public StackElement(String langPath, String langFile, CodePosition pos, LangObject langClass, String langClasName, String langFunctionName, LangModule module) {
 			this.langPath = langPath;
 			this.langFile = langFile;
+			this.langClass = langClass;
 			this.langClasName = langClasName;
 			this.langFunctionName = langFunctionName;
 			this.pos = pos;
 			this.module = module;
 		}
-		public StackElement(String langPath, String langFile, String langClasName, String langFunctionName, LangModule module) {
-			this(langPath, langFile, CodePosition.EMPTY, langClasName, langFunctionName, module);
+		public StackElement(String langPath, String langFile, LangObject langClass, String langClasName, String langFunctionName, LangModule module) {
+			this(langPath, langFile, CodePosition.EMPTY, langClass, langClasName, langFunctionName, module);
 		}
 		
 		public StackElement withPos(CodePosition pos) {
-			return new StackElement(langPath, langFile, pos, langClasName, langFunctionName, module);
+			return new StackElement(langPath, langFile, pos, langClass, langClasName, langFunctionName, module);
 		}
 		
 		public String getLangPath() {
@@ -4548,6 +4578,10 @@ public final class LangInterpreter {
 		
 		public CodePosition getPos() {
 			return pos;
+		}
+
+		public LangObject getLangClass() {
+			return langClass;
 		}
 
 		public String getLangClasName() {

@@ -117,7 +117,7 @@ final class LangModuleManager {
 		try {
 			//Update call stack (Path inside module archive)
 			interpreter.pushStackElement(new StackElement("<module:" + module.getFile()  + "[" + lmc.getName() + "]>",
-					"<entryPoint>", null, null, module), CodePosition.EMPTY);
+					"<entryPoint>", null, null, null, module), CodePosition.EMPTY);
 			
 			String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
 					interpreter.conversions.toText(ele, CodePosition.EMPTY)).
@@ -213,7 +213,7 @@ final class LangModuleManager {
 		LangNativeModule nativeModule = lnmArray[0];
 		
 		interpreter.pushStackElement(new StackElement("<module:" + module.getFile() + "[" + module.getLangModuleConfiguration().getName() + "]>",
-				(moduleEntryPoint?"<entryPoint>":entryPoint), null, "<native:" + (load?"load":"unload") + ">", module), CodePosition.EMPTY);
+				(moduleEntryPoint?"<entryPoint>":entryPoint), null, null, "<native:" + (load?"load":"unload") + ">", module), CodePosition.EMPTY);
 		
 		String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
 				interpreter.conversions.toText(ele, CodePosition.EMPTY)).collect(Collectors.toList()).toArray(new String[0]);
