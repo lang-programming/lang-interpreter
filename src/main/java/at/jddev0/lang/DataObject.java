@@ -1585,9 +1585,9 @@ public class DataObject {
 		/**
 		 * @return Will return -1, if the member was not found
 		 */
-		public int getIndexOfStaticMember(String memeberName) {
+		public int getIndexOfStaticMember(String memberName) {
 			for(int i = 0;i < staticMembers.length;i++)
-				if(staticMembers[i].getVariableName().equals(memeberName))
+				if(staticMembers[i].getVariableName().equals(memberName))
 					return i;
 
 			return -1;

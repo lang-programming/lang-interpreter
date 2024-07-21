@@ -1966,8 +1966,12 @@ public final class LangInterpreter {
 		}
 		
 		DataObject ret = variables.get(variableName);
-		if(ret != null)
+		if(ret != null) {
+			if(!ret.isAccessible(currentCallStackElement.getLangClass()))
+				return setErrnoErrorObject(InterpretingError.MEMBER_NOT_ACCESSIBLE, "For member \"" + variableName + "\"");
+
 			return ret;
+		}
 		
 		if(supportsPointerDereferencing && variableName.contains("*")) {
 			int index = variableName.indexOf('*');
@@ -2246,10 +2250,15 @@ public final class LangInterpreter {
 					map(FunctionPointerObject.InternalFunction::toFunctionSignatureSyntax).
 					collect(Collectors.joining("\n    " + functionName)));
 
+		if(!internalFunction.isAccessible(getCurrentCallStackElement().getLangClass()))
+			return setErrnoErrorObject(InterpretingError.MEMBER_NOT_ACCESSIBLE, "For member \"" + functionName + "\"");
+
 		if(thisObject != null && !thisObject.isClass()) {
 			originalSuperLevel = thisObject.getSuperLevel();
 			thisObject.setSuperLevel(internalFunction.getSuperLevel());
 		}
+
+		LangObject memberOfClass = internalFunction.getMemberOfClass();
 
 		try {
 			String functionLangPath = internalFunction.getLangPath();
@@ -2261,8 +2270,8 @@ public final class LangInterpreter {
 			StackElement currentStackElement = getCurrentCallStackElement();
 			pushStackElement(new StackElement(functionLangPath == null?currentStackElement.getLangPath():functionLangPath,
 					(functionLangPath == null && functionLangFile == null)?currentStackElement.getLangFile():functionLangFile,
-					thisObject != null && !thisObject.isClass()?thisObject.getClassBaseDefinition():thisObject,
-					thisObject == null?null:(thisObject.getClassName() == null?"<class>":thisObject.getClassName()),
+					memberOfClass != null && !memberOfClass.isClass()?memberOfClass.getClassBaseDefinition():memberOfClass,
+					memberOfClass == null?null:(memberOfClass.getClassName() == null?"<class>":memberOfClass.getClassName()),
 					functionName, currentStackElement.getModule()), parentPos);
 
 
@@ -3940,6 +3949,9 @@ public final class LangInterpreter {
 					member = langObject.getMember(rawMethodName);
 				}
 
+				if(!member.isAccessible(getCurrentCallStackElement().getLangClass()))
+					return setErrnoErrorObject(InterpretingError.MEMBER_NOT_ACCESSIBLE, "For member \"" + rawMethodName + "\"");
+
 				if(member.getType() != DataType.FUNCTION_POINTER)
 					return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + rawMethodName +
 							"\": Function pointer is invalid", pos);
@@ -4720,7 +4732,8 @@ public final class LangInterpreter {
 		INVALID_TEMPLATE_SYNTAX(43, "Invalid translation template syntax"),
 		INVALID_MODULE         (44, "The Lang module is invalid"),
 		MODULE_LOAD_UNLOAD_ERR (45, "Error during load or unload of Lang module"),
-		
+		MEMBER_NOT_ACCESSIBLE  (46, "The class/object member is not visible/accessible from the current scope"),
+
 		//WARNINGS
 		DEPRECATED_FUNC_CALL   (-1, "A deprecated predefined function was called"),
 		NO_TERMINAL_WARNING    (-2, "No terminal available"),
