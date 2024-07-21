@@ -3033,15 +3033,21 @@ public final class LangInterpreter {
 
 		if(functionPointerDataObject == null)
 			return new DataObject().setFunctionPointer(new FunctionPointerObject(normalFunction).
-					withFunctionInfo(functionDocComment));
+					withFunctionInfo(functionDocComment).withMappedFunctions(internalFunction ->
+							new FunctionPointerObject.InternalFunction(internalFunction,
+									getCurrentCallStackElement().langClass, DataObject.Visibility.PUBLIC)));
 
 		try {
 			if(overloaded) {
 				functionPointerDataObject.setFunctionPointer(functionPointerDataObject.getFunctionPointer().
-						withAddedFunction(new FunctionPointerObject.InternalFunction(normalFunction)));
+						withAddedFunction(new FunctionPointerObject.InternalFunction(
+								new FunctionPointerObject.InternalFunction(normalFunction), getCurrentCallStackElement().langClass,
+								DataObject.Visibility.PUBLIC)));
 			}else {
 				functionPointerDataObject.setFunctionPointer(new FunctionPointerObject(normalFunction).
-								withFunctionInfo(functionDocComment)).
+								withFunctionInfo(functionDocComment).withMappedFunctions(internalFunction ->
+										new FunctionPointerObject.InternalFunction(internalFunction,
+												getCurrentCallStackElement().langClass, DataObject.Visibility.PUBLIC))).
 						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.FUNCTION_POINTER));
 			}
 		}catch(DataTypeConstraintViolatedException e) {
