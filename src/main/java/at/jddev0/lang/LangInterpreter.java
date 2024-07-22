@@ -1784,8 +1784,8 @@ public final class LangInterpreter {
 					if(isVarNameFullWithoutPrefix(variableName) || isVarNamePtrAndDereferenceWithoutPrefix(variableName)) {
 						if(variableName.indexOf("[") == -1) { //Pointer redirection is no longer supported
 							boolean[] flags = new boolean[] {false, false};
-							DataObject lvalue = getOrCreateDataObjectFromVariableName(null, moduleName, variableName, false, true, true, flags,
-									node.getPos());
+							DataObject lvalue = getOrCreateDataObjectFromVariableName(null, moduleName, variableName,
+									false, true, true, flags, node.getPos());
 							if(flags[0])
 								return lvalue; //Forward error from getOrCreateDataObjectFromVariableName()
 							
@@ -3081,8 +3081,8 @@ public final class LangInterpreter {
 		DataObject structDataObject = null;
 		boolean[] flags = new boolean[] {false, false};
 		if(structName != null) {
-			structDataObject = getOrCreateDataObjectFromVariableName(null, null, structName, false, false, true, flags,
-					node.getPos());
+			structDataObject = getOrCreateDataObjectFromVariableName(null, null, structName,
+					false, false, true, flags, node.getPos());
 			if(flags[0])
 				return structDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
@@ -3149,257 +3149,269 @@ public final class LangInterpreter {
 
 	private DataObject interpretClassDefinitionNode(ClassDefinitionNode node) {
 		String className = node.getClassName();
-		DataObject classDataObject = null;
-		boolean[] flags = new boolean[] {false, false};
-		if(className != null) {
-			classDataObject = getOrCreateDataObjectFromVariableName(null, null, className, false, false, true, flags,
-					node.getPos());
-			if(flags[0])
-				return classDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
-			if(classDataObject.getVariableName() == null) {
-				return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
-			}
-
-			if(classDataObject.isFinalData() || classDataObject.isLangVar()) {
-				if(flags[1])
-					getData().var.remove(classDataObject.getVariableName());
-
-				return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
-			}
-		}
-
-		List<AbstractSyntaxTree.Node> parentClasses = node.getParentClasses();
-
-		List<DataObject> parentClassList = new LinkedList<>(interpretFunctionPointerArguments(parentClasses));
-		List<DataObject> combinedParentClassList = LangUtils.combineArgumentsWithoutArgumentSeparators(parentClassList,
-				this, node.getPos());
-
-		List<LangObject> parentClassObjectList = new LinkedList<>();
-		for(DataObject parentClass:combinedParentClassList) {
-			if(parentClass.getType() != DataType.OBJECT || !parentClass.getObject().isClass())
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Parent classes must be classes",
-						node.getPos());
-
-			parentClassObjectList.add(parentClass.getObject());
-		}
-
-		List<String> staticMemberNames = node.getStaticMemberNames();
-		List<String> staticMemberTypeConstraints = node.getStaticMemberTypeConstraints();
-		List<Node> staticMemberValues = node.getStaticMemberValues();
-		List<Boolean> staticMemberFinalFlag = node.getStaticMemberFinalFlag();
-		List<ClassDefinitionNode.Visibility> staticMemberVisibility = node.getStaticMemberVisibility();
-
-		if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size() ||
-				staticMemberNames.size() != staticMemberFinalFlag.size() || staticMemberNames.size() != staticMemberVisibility.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
-
-		for(String staticMemberName:staticMemberNames)
-			if(!isVarNameWithoutPrefix(staticMemberName))
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + staticMemberName + "\" is no valid static member name",
-						node.getPos());
-
-		if(new HashSet<>(staticMemberNames).size() < staticMemberNames.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Static member name may not be duplicated",
-					node.getPos());
-
-		DataTypeConstraint[] staticMemberTypeConstraintsArray = new DataTypeConstraint[staticMemberTypeConstraints.size()];
-		for(int i = 0;i < staticMemberTypeConstraintsArray.length;i++) {
-			String typeConstraint = staticMemberTypeConstraints.get(i);
-			if(typeConstraint == null)
-				continue;
-
-			DataObject errorOut = new DataObject().setVoid();
-			staticMemberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
-
-			if(errorOut.getType() == DataType.ERROR)
-				return errorOut;
-		}
-
-		boolean[] staticMemberFinalFlagArray = new boolean[staticMemberFinalFlag.size()];
-		for(int i = 0;i < staticMemberFinalFlagArray.length;i++) {
-			if(staticMemberFinalFlag.get(i) == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for static member at index " + i,
-						node.getPos());
-
-			staticMemberFinalFlagArray[i] = staticMemberFinalFlag.get(i);
-		}
-
-		DataObject[] staticMembers = new DataObject[staticMemberNames.size()];
 		try {
-			for(int i = 0;i < staticMembers.length;i++) {
-				DataObject value = staticMemberValues.get(i) == null?new DataObject().setNull():interpretNode(null, staticMemberValues.get(i));
-				if(value == null)
-					value = new DataObject().setVoid();
-				staticMembers[i] = new DataObject(value).setVariableName(staticMemberNames.get(i));
+			//Update call stack
+			StackElement currentStackElement = getCurrentCallStackElement();
+			pushStackElement(new StackElement(currentStackElement.getLangPath(), currentStackElement.getLangFile(),
+					LangObject.DUMMY_CLASS_DEFINITION_CLASS, className == null?"<class>":className,
+					"<class-definition>", currentStackElement.getModule()), node.getPos());
 
-				if(staticMemberTypeConstraintsArray[i] != null)
-					staticMembers[i].setTypeConstraint(staticMemberTypeConstraintsArray[i]);
+			DataObject classDataObject = null;
+			boolean[] flags = new boolean[] {false, false};
+			if(className != null) {
+				classDataObject = getOrCreateDataObjectFromVariableName(null, null, className,
+						false, false, true, flags, node.getPos());
+				if(flags[0])
+					return classDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
-				if(staticMemberFinalFlagArray[i])
-					staticMembers[i].setFinalData(true);
-
-				staticMembers[i].setMemberVisibility(DataObject.Visibility.fromASTNode(staticMemberVisibility.get(i)));
-			}
-		}catch(DataTypeConstraintException e) {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
-		}
-
-		List<String> memberNames = node.getMemberNames();
-		List<String> memberTypeConstraints = node.getMemberTypeConstraints();
-		List<Boolean> memberFinalFlag = node.getMemberFinalFlag();
-		List<ClassDefinitionNode.Visibility> memberVisibility = node.getMemberVisibility();
-
-		if(memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size() ||
-				memberNames.size() != memberVisibility.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
-
-		for(String memberName:memberNames)
-			if(!isVarNameWithoutPrefix(memberName))
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + memberName + "\" is no valid member name",
-						node.getPos());
-
-		if(new HashSet<>(memberNames).size() < memberNames.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Member name may not be duplicated",
-					node.getPos());
-
-		DataTypeConstraint[] memberTypeConstraintsArray = new DataTypeConstraint[memberTypeConstraints.size()];
-		for(int i = 0;i < memberTypeConstraintsArray.length;i++) {
-			String typeConstraint = memberTypeConstraints.get(i);
-			if(typeConstraint == null)
-				continue;
-
-			DataObject errorOut = new DataObject().setVoid();
-			memberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
-
-			if(errorOut.getType() == DataType.ERROR)
-				return errorOut;
-		}
-
-		boolean[] memberFinalFlagArray = new boolean[memberFinalFlag.size()];
-		for(int i = 0;i < memberFinalFlagArray.length;i++) {
-			if(memberFinalFlag.get(i) == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for member at index " + i,
-						node.getPos());
-
-			memberFinalFlagArray[i] = memberFinalFlag.get(i);
-		}
-
-		DataObject.Visibility[] memberVisibilityArray = new DataObject.Visibility[memberVisibility.size()];
-		for(int i = 0;i < memberVisibility.size();i++)
-			memberVisibilityArray[i] = DataObject.Visibility.fromASTNode(memberVisibility.get(i));
-
-		List<String> methodNames = node.getMethodNames();
-		List<Node> methodDefinitions = node.getMethodDefinitions();
-		List<Boolean> methodOverrideFlag = node.getMethodOverrideFlag();
-		List<ClassDefinitionNode.Visibility> methodVisibility = node.getMethodVisibility();
-
-		if(methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size() ||
-				methodNames.size() != methodVisibility.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
-
-		for(String methodName:methodNames)
-			if(!isMethodName(methodName) && !isOperatorMethodName(methodName) && !isConversionMethodName(methodName))
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
-						node.getPos());
-
-		Map<String, FunctionPointerObject> methods = new HashMap<>();
-		Map<String, List<Boolean>> rawMethodOverrideFlags = new HashMap<>();
-		Map<String, List<DataObject.Visibility>> methodVisibilities = new HashMap<>();
-		for(int i = 0;i < methodNames.size();i++) {
-			if(methodOverrideFlag.get(i) == null)
-				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for method at index " + i,
-						node.getPos());
-
-			String methodName = methodNames.get(i);
-
-			DataObject methodDefinition = interpretNode(null, methodDefinitions.get(i));
-			if(methodDefinition == null || methodDefinition.getType() != DataType.FUNCTION_POINTER)
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Methods must be of type \"" + DataType.FUNCTION_POINTER + "\"",
-						methodDefinitions.get(i).getPos());
-
-			if(methods.containsKey(methodName)) {
-				FunctionPointerObject functions = methods.get(methodName);
-				methods.put(methodName, functions.withAddedFunctions(methodDefinition.getFunctionPointer()));
-			}else {
-				methods.put(methodName, methodDefinition.getFunctionPointer());
-				rawMethodOverrideFlags.put(methodName, new LinkedList<>());
-				methodVisibilities.put(methodName, new LinkedList<>());
-			}
-
-			List<Boolean> methodOverrideFlags = rawMethodOverrideFlags.get(methodName);
-			for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
-				methodOverrideFlags.add(methodOverrideFlag.get(i));
-
-			List<DataObject.Visibility> methodVisibilityList = methodVisibilities.get(methodName);
-			for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
-				methodVisibilityList.add(DataObject.Visibility.fromASTNode(methodVisibility.get(i)));
-		}
-
-		Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
-		rawMethodOverrideFlags.forEach((k, v) -> methodOverrideFlags.put(k, v.toArray(new Boolean[0])));
-
-		List<Node> constructorDefinitions = node.getConstructorDefinitions();
-		List<ClassDefinitionNode.Visibility> constructorVisibility = node.getConstructorVisibility();
-
-		if(constructorDefinitions.size() != constructorVisibility.size())
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
-
-		FunctionPointerObject constructors = null;
-		List<DataObject.Visibility> constructorVisibilities = new LinkedList<>();
-		for(int i = 0;i < constructorDefinitions.size();i++) {
-			DataObject constructorDefinition = interpretNode(null, constructorDefinitions.get(i));
-			if(constructorDefinition == null || constructorDefinition.getType() != DataType.FUNCTION_POINTER)
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Constructor must be of type \"" + DataType.FUNCTION_POINTER + "\"",
-						constructorDefinitions.get(i).getPos());
-
-			if(constructors == null)
-				constructors = constructorDefinition.getFunctionPointer();
-			else
-				constructors = constructors.withAddedFunctions(constructorDefinition.getFunctionPointer());
-
-			for(int j = 0;j < constructorDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
-				constructorVisibilities.add(DataObject.Visibility.fromASTNode(constructorVisibility.get(i)));
-		}
-
-		//Set default constructor
-		if(constructorDefinitions.isEmpty()) {
-			constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
-				@LangFunction(value="construct", isMethod=true)
-				@LangFunction.AllowedTypes(DataType.VOID)
-				@SuppressWarnings("unused")
-				public DataObject defaultConstructMethod(
-						LangInterpreter interpreter, LangObject thisObject
-				) {
-					return null;
+				if(classDataObject.getVariableName() == null) {
+					return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
 				}
-			});
-			constructorVisibilities.add(DataObject.Visibility.PUBLIC);
-		}
 
-		try {
-			LangObject classObject = new LangObject(className, staticMembers, memberNames.toArray(new String[0]),
-					memberTypeConstraintsArray, memberFinalFlagArray, memberVisibilityArray,
-					methods, methodOverrideFlags, methodVisibilities, constructors, constructorVisibilities,
-					parentClassObjectList.toArray(new LangObject[0]));
+				if(classDataObject.isFinalData() || classDataObject.isLangVar()) {
+					if(flags[1])
+						getData().var.remove(classDataObject.getVariableName());
 
-			if(classDataObject == null)
-				return new DataObject().setObject(classObject);
+					return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
+				}
+			}
+
+			List<AbstractSyntaxTree.Node> parentClasses = node.getParentClasses();
+
+			List<DataObject> parentClassList = new LinkedList<>(interpretFunctionPointerArguments(parentClasses));
+			List<DataObject> combinedParentClassList = LangUtils.combineArgumentsWithoutArgumentSeparators(parentClassList,
+					this, node.getPos());
+
+			List<LangObject> parentClassObjectList = new LinkedList<>();
+			for(DataObject parentClass:combinedParentClassList) {
+				if(parentClass.getType() != DataType.OBJECT || !parentClass.getObject().isClass())
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Parent classes must be classes",
+							node.getPos());
+
+				parentClassObjectList.add(parentClass.getObject());
+			}
+
+			List<String> staticMemberNames = node.getStaticMemberNames();
+			List<String> staticMemberTypeConstraints = node.getStaticMemberTypeConstraints();
+			List<Node> staticMemberValues = node.getStaticMemberValues();
+			List<Boolean> staticMemberFinalFlag = node.getStaticMemberFinalFlag();
+			List<ClassDefinitionNode.Visibility> staticMemberVisibility = node.getStaticMemberVisibility();
+
+			if(staticMemberNames.size() != staticMemberTypeConstraints.size() || staticMemberNames.size() != staticMemberValues.size() ||
+					staticMemberNames.size() != staticMemberFinalFlag.size() || staticMemberNames.size() != staticMemberVisibility.size())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
+
+			for(String staticMemberName:staticMemberNames)
+				if(!isVarNameWithoutPrefix(staticMemberName))
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + staticMemberName + "\" is no valid static member name",
+							node.getPos());
+
+			if(new HashSet<>(staticMemberNames).size() < staticMemberNames.size())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Static member name may not be duplicated",
+						node.getPos());
+
+			DataTypeConstraint[] staticMemberTypeConstraintsArray = new DataTypeConstraint[staticMemberTypeConstraints.size()];
+			for(int i = 0;i < staticMemberTypeConstraintsArray.length;i++) {
+				String typeConstraint = staticMemberTypeConstraints.get(i);
+				if(typeConstraint == null)
+					continue;
+
+				DataObject errorOut = new DataObject().setVoid();
+				staticMemberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
+
+				if(errorOut.getType() == DataType.ERROR)
+					return errorOut;
+			}
+
+			boolean[] staticMemberFinalFlagArray = new boolean[staticMemberFinalFlag.size()];
+			for(int i = 0;i < staticMemberFinalFlagArray.length;i++) {
+				if(staticMemberFinalFlag.get(i) == null)
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for static member at index " + i,
+							node.getPos());
+
+				staticMemberFinalFlagArray[i] = staticMemberFinalFlag.get(i);
+			}
+
+			DataObject[] staticMembers = new DataObject[staticMemberNames.size()];
+			try {
+				for(int i = 0;i < staticMembers.length;i++) {
+					DataObject value = staticMemberValues.get(i) == null?new DataObject().setNull():interpretNode(null, staticMemberValues.get(i));
+					if(value == null)
+						value = new DataObject().setVoid();
+					staticMembers[i] = new DataObject(value).setVariableName(staticMemberNames.get(i));
+
+					if(staticMemberTypeConstraintsArray[i] != null)
+						staticMembers[i].setTypeConstraint(staticMemberTypeConstraintsArray[i]);
+
+					if(staticMemberFinalFlagArray[i])
+						staticMembers[i].setFinalData(true);
+
+					staticMembers[i].setMemberVisibility(DataObject.Visibility.fromASTNode(staticMemberVisibility.get(i)));
+				}
+			}catch(DataTypeConstraintException e) {
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
+			}
+
+			List<String> memberNames = node.getMemberNames();
+			List<String> memberTypeConstraints = node.getMemberTypeConstraints();
+			List<Boolean> memberFinalFlag = node.getMemberFinalFlag();
+			List<ClassDefinitionNode.Visibility> memberVisibility = node.getMemberVisibility();
+
+			if(memberNames.size() != memberTypeConstraints.size() || memberNames.size() != memberFinalFlag.size() ||
+					memberNames.size() != memberVisibility.size())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
+
+			for(String memberName:memberNames)
+				if(!isVarNameWithoutPrefix(memberName))
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + memberName + "\" is no valid member name",
+							node.getPos());
+
+			if(new HashSet<>(memberNames).size() < memberNames.size())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Member name may not be duplicated",
+						node.getPos());
+
+			DataTypeConstraint[] memberTypeConstraintsArray = new DataTypeConstraint[memberTypeConstraints.size()];
+			for(int i = 0;i < memberTypeConstraintsArray.length;i++) {
+				String typeConstraint = memberTypeConstraints.get(i);
+				if(typeConstraint == null)
+					continue;
+
+				DataObject errorOut = new DataObject().setVoid();
+				memberTypeConstraintsArray[i] = interpretTypeConstraint(typeConstraint, errorOut, node.getPos());
+
+				if(errorOut.getType() == DataType.ERROR)
+					return errorOut;
+			}
+
+			boolean[] memberFinalFlagArray = new boolean[memberFinalFlag.size()];
+			for(int i = 0;i < memberFinalFlagArray.length;i++) {
+				if(memberFinalFlag.get(i) == null)
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in final flag for member at index " + i,
+							node.getPos());
+
+				memberFinalFlagArray[i] = memberFinalFlag.get(i);
+			}
+
+			DataObject.Visibility[] memberVisibilityArray = new DataObject.Visibility[memberVisibility.size()];
+			for(int i = 0;i < memberVisibility.size();i++)
+				memberVisibilityArray[i] = DataObject.Visibility.fromASTNode(memberVisibility.get(i));
+
+			List<String> methodNames = node.getMethodNames();
+			List<Node> methodDefinitions = node.getMethodDefinitions();
+			List<Boolean> methodOverrideFlag = node.getMethodOverrideFlag();
+			List<ClassDefinitionNode.Visibility> methodVisibility = node.getMethodVisibility();
+
+			if(methodNames.size() != methodDefinitions.size() || methodNames.size() != methodOverrideFlag.size() ||
+					methodNames.size() != methodVisibility.size())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
+
+			for(String methodName:methodNames)
+				if(!isMethodName(methodName) && !isOperatorMethodName(methodName) && !isConversionMethodName(methodName))
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "\"" + methodName + "\" is no valid method name",
+							node.getPos());
+
+			Map<String, FunctionPointerObject> methods = new HashMap<>();
+			Map<String, List<Boolean>> rawMethodOverrideFlags = new HashMap<>();
+			Map<String, List<DataObject.Visibility>> methodVisibilities = new HashMap<>();
+			for(int i = 0;i < methodNames.size();i++) {
+				if(methodOverrideFlag.get(i) == null)
+					return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Null value in override flag for method at index " + i,
+							node.getPos());
+
+				String methodName = methodNames.get(i);
+
+				DataObject methodDefinition = interpretNode(null, methodDefinitions.get(i));
+				if(methodDefinition == null || methodDefinition.getType() != DataType.FUNCTION_POINTER)
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Methods must be of type \"" + DataType.FUNCTION_POINTER + "\"",
+							methodDefinitions.get(i).getPos());
+
+				if(methods.containsKey(methodName)) {
+					FunctionPointerObject functions = methods.get(methodName);
+					methods.put(methodName, functions.withAddedFunctions(methodDefinition.getFunctionPointer()));
+				}else {
+					methods.put(methodName, methodDefinition.getFunctionPointer());
+					rawMethodOverrideFlags.put(methodName, new LinkedList<>());
+					methodVisibilities.put(methodName, new LinkedList<>());
+				}
+
+				List<Boolean> methodOverrideFlags = rawMethodOverrideFlags.get(methodName);
+				for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
+					methodOverrideFlags.add(methodOverrideFlag.get(i));
+
+				List<DataObject.Visibility> methodVisibilityList = methodVisibilities.get(methodName);
+				for(int j = 0;j < methodDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
+					methodVisibilityList.add(DataObject.Visibility.fromASTNode(methodVisibility.get(i)));
+			}
+
+			Map<String, Boolean[]> methodOverrideFlags = new HashMap<>();
+			rawMethodOverrideFlags.forEach((k, v) -> methodOverrideFlags.put(k, v.toArray(new Boolean[0])));
+
+			List<Node> constructorDefinitions = node.getConstructorDefinitions();
+			List<ClassDefinitionNode.Visibility> constructorVisibility = node.getConstructorVisibility();
+
+			if(constructorDefinitions.size() != constructorVisibility.size())
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
+
+			FunctionPointerObject constructors = null;
+			List<DataObject.Visibility> constructorVisibilities = new LinkedList<>();
+			for(int i = 0;i < constructorDefinitions.size();i++) {
+				DataObject constructorDefinition = interpretNode(null, constructorDefinitions.get(i));
+				if(constructorDefinition == null || constructorDefinition.getType() != DataType.FUNCTION_POINTER)
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Constructor must be of type \"" + DataType.FUNCTION_POINTER + "\"",
+							constructorDefinitions.get(i).getPos());
+
+				if(constructors == null)
+					constructors = constructorDefinition.getFunctionPointer();
+				else
+					constructors = constructors.withAddedFunctions(constructorDefinition.getFunctionPointer());
+
+				for(int j = 0;j < constructorDefinition.getFunctionPointer().getOverloadedFunctionCount();j++)
+					constructorVisibilities.add(DataObject.Visibility.fromASTNode(constructorVisibility.get(i)));
+			}
+
+			//Set default constructor
+			if(constructorDefinitions.isEmpty()) {
+				constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+					@LangFunction(value="construct", isMethod=true)
+					@LangFunction.AllowedTypes(DataType.VOID)
+					@SuppressWarnings("unused")
+					public DataObject defaultConstructMethod(
+							LangInterpreter interpreter, LangObject thisObject
+					) {
+						return null;
+					}
+				});
+				constructorVisibilities.add(DataObject.Visibility.PUBLIC);
+			}
 
 			try {
-				classDataObject.setObject(classObject).
-						setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.OBJECT)).setFinalData(true);
-			}catch(DataTypeConstraintViolatedException e) {
-				if(flags[1])
-					getData().var.remove(className);
+				LangObject classObject = new LangObject(className, staticMembers, memberNames.toArray(new String[0]),
+						memberTypeConstraintsArray, memberFinalFlagArray, memberVisibilityArray,
+						methods, methodOverrideFlags, methodVisibilities, constructors, constructorVisibilities,
+						parentClassObjectList.toArray(new LangObject[0]));
 
-				return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for class definition: \"" +
-						className + "\" was already defined and cannot be set to a class", node.getPos());
+				if(classDataObject == null)
+					return new DataObject().setObject(classObject);
+
+				try {
+					classDataObject.setObject(classObject).
+							setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.OBJECT)).setFinalData(true);
+				}catch(DataTypeConstraintViolatedException e) {
+					if(flags[1])
+						getData().var.remove(className);
+
+					return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for class definition: \"" +
+							className + "\" was already defined and cannot be set to a class", node.getPos());
+				}
+
+				return classDataObject;
+			}catch(DataTypeConstraintException e) {
+				return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
 			}
-
-			return classDataObject;
-		}catch(DataTypeConstraintException e) {
-			return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, e.getMessage(), node.getPos());
+		}finally {
+			//Update call stack
+			popStackElement();
 		}
 	}
 	

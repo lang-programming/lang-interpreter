@@ -1197,6 +1197,26 @@ public class DataObject {
 					methodVisibility, constructors, constructorVisibility, null);
 		}
 
+		static final LangObject DUMMY_CLASS_DEFINITION_CLASS;
+		static {
+			FunctionPointerObject constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
+				@LangFunction(value="construct", isMethod=true)
+				@LangFunction.AllowedTypes(DataType.VOID)
+				@SuppressWarnings("unused")
+				public DataObject defaultConstructMethod(
+						LangInterpreter interpreter, LangObject thisObject
+				) {
+					return null;
+				}
+			});
+			List<Visibility> constructorVisibility = new LinkedList<>();
+			constructorVisibility.add(Visibility.PUBLIC);
+
+			DUMMY_CLASS_DEFINITION_CLASS = new LangObject("<class-definition>", new DataObject[0], new String[0],
+					new DataTypeConstraint[0], new boolean[0], new Visibility[0], new HashMap<>(), new HashMap<>(),
+					new HashMap<>(), constructors, constructorVisibility, new LangObject[] {OBJECT_CLASS});
+		}
+
 		private int superLevel = 0;
 
 		private final String className;
@@ -1272,8 +1292,20 @@ public class DataObject {
 							" (For static member \"" + staticMemberName + "\")");
 			}
 
-			for(DataObject staticMember:staticMembers)
+			for(DataObject staticMember:staticMembers) {
 				staticMember.setMemberOfClass(this);
+
+				if(staticMember.getType() == DataType.FUNCTION_POINTER && staticMember.fp != null) {
+					staticMember.fp = staticMember.fp.withMappedFunctions(internalFunction -> {
+						if(internalFunction.getMemberOfClass() == DUMMY_CLASS_DEFINITION_CLASS) {
+							return new FunctionPointerObject.InternalFunction(internalFunction,
+									this, Visibility.PUBLIC);
+						}
+
+						return internalFunction;
+					});
+				}
+			}
 
 			//TODO allow multi-inheritance (Check if a static member is in both super classes)
 			this.staticMembers = Arrays.copyOf(staticMembers, staticMembers.length + Arrays.stream(parentClasses).
