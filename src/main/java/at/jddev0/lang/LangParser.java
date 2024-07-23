@@ -2064,6 +2064,8 @@ public final class LangParser {
 			Token structDefinitionStartToken = tokens.remove(0);
 			tokenCountFirstLine--;
 
+			CodePosition startPos = structDefinitionStartToken.pos;
+
 			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
 				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
 						"Invalid class definition: Whitespace is missing after \"class\""));
@@ -2133,7 +2135,7 @@ public final class LangParser {
 			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.EOL)
 				tokens.remove(0);
 
-			nodes.addAll(parseClassDefinition(className, parentClassesToken, tokens).getChildren());
+			nodes.addAll(parseClassDefinition(startPos, className, parentClassesToken, tokens).getChildren());
 
 			return ast;
 		}
@@ -2365,11 +2367,13 @@ public final class LangParser {
 					tokens.get(tokenCountFirstLine - 1).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
 				//Class definition
 
+				CodePosition startPos = tokens.get(0).pos;
+
 				//TODO check for matching brackets ("<" and ">")
 				List<Token> parentClassesToken = new ArrayList<>(tokens.subList(1, tokenCountFirstLine - 2));
 				tokens.subList(0, tokenCountFirstLine + 1).clear();
 
-				nodes.addAll(parseClassDefinition(null, parentClassesToken, tokens).getChildren());
+				nodes.addAll(parseClassDefinition(startPos, null, parentClassesToken, tokens).getChildren());
 
 				return ast;
 			}
@@ -2528,7 +2532,8 @@ public final class LangParser {
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseClassDefinition(String className, List<Token> parentClassesToken, List<Token> tokens) {
+	private AbstractSyntaxTree parseClassDefinition(CodePosition startPos, String className,
+													List<Token> parentClassesToken, List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
@@ -2557,9 +2562,12 @@ public final class LangParser {
 		List<AbstractSyntaxTree.Node> constructorDefinitions = new LinkedList<>();
 		List<AbstractSyntaxTree.ClassDefinitionNode.Visibility> constructorVisibility = new LinkedList<>();
 
+		CodePosition endPos = CodePosition.EMPTY;
+
 		tokenProcessing:
 		while(!tokens.isEmpty()) {
 			Token t = tokens.get(0);
+			endPos = t.pos;
 
 			switch(t.getTokenType()) {
 				case EOF:
@@ -2990,16 +2998,15 @@ public final class LangParser {
 			}
 		}
 
+		CodePosition pos = startPos.combine(endPos);
+
 		if(!hasEndBrace) {
-			//TODO line numbers
-			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "\"}\" is missing in class definition"
-			));
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.EOF, "\"}\" is missing in class definition"));
 
 			return ast;
 		}
 
-		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(CodePosition.EMPTY, className, staticMemberNames,
+		nodes.add(new AbstractSyntaxTree.ClassDefinitionNode(pos, className, staticMemberNames,
 				staticMemberTypeConstraints, staticMemberValues, staticMemberFinalFlag, staticMemberVisibility,
 				memberNames, memberTypeConstraints, memberFinalFlag, memberVisibility, methodNames, methodDefinitions,
 				methodOverrideFlag, methodVisibility, constructorDefinitions, constructorVisibility, parentClasses
