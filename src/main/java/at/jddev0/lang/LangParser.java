@@ -2013,6 +2013,8 @@ public final class LangParser {
 			Token structDefinitionStartToken = tokens.remove(0);
 			tokenCountFirstLine--;
 
+			CodePosition startPos = structDefinitionStartToken.pos;
+
 			if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
 				nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
 						"Invalid struct definition: Whitespace is missing after \"struct\""));
@@ -2053,7 +2055,7 @@ public final class LangParser {
 			if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.EOL)
 				tokens.remove(0);
 
-			nodes.addAll(parseStructDefinition(structName, tokens).getChildren());
+			nodes.addAll(parseStructDefinition(startPos, structName, tokens).getChildren());
 
 			return ast;
 		}
@@ -2356,9 +2358,11 @@ public final class LangParser {
 					tokens.get(0).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
 				//Struct definition
 
+				CodePosition startPos = tokens.get(0).pos;
+
 				tokens.remove(0);
 				tokens.remove(0);
-				nodes.addAll(parseStructDefinition(null, tokens).getChildren());
+				nodes.addAll(parseStructDefinition(startPos, null, tokens).getChildren());
 
 				return ast;
 			}else if(tokenCountFirstLine >= 3 && tokenCountFirstLine != tokens.size() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
@@ -2402,7 +2406,7 @@ public final class LangParser {
 		return ast;
 	}
 
-	private AbstractSyntaxTree parseStructDefinition(String structName, List<Token> tokens) {
+	private AbstractSyntaxTree parseStructDefinition(CodePosition startPos, String structName, List<Token> tokens) {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
@@ -2413,9 +2417,12 @@ public final class LangParser {
 		List<String> memberNames = new LinkedList<>();
 		List<String> typeConstraints = new LinkedList<>();
 
+		CodePosition endPos = CodePosition.EMPTY;
+
 		tokenProcessing:
 		while(!tokens.isEmpty()) {
 			Token t = tokens.get(0);
+			endPos = t.pos;
 
 			switch(t.getTokenType()) {
 				case EOF:
@@ -2518,16 +2525,15 @@ public final class LangParser {
 			}
 		}
 
+		CodePosition pos = startPos.combine(endPos);
+
 		if(!hasEndBrace) {
-			//TODO line numbers
-			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "\"}\" is missing in struct definition"
-			));
+			nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.EOF, "\"}\" is missing in struct definition"));
 
 			return ast;
 		}
 
-		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(CodePosition.EMPTY, structName, memberNames, typeConstraints));
+		nodes.add(new AbstractSyntaxTree.StructDefinitionNode(pos, structName, memberNames, typeConstraints));
 
 		return ast;
 	}
