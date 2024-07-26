@@ -9,7 +9,7 @@ import java.util.Objects;
  * @author JDDev0
  * @version v1.0.0
  */
-public class Token {
+public final class Token {
     public final CodePosition pos;
     public final String value;
     public final TokenType tokenType;
