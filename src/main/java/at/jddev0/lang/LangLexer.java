@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * @author JDDev0
  * @version v1.0.0
  */
-public class LangLexer {
+public final class LangLexer {
     private static final List<String> OPERATORS = Arrays.asList(
             /* Array unpacking */ "...",
             "!==", "!=~", "!=", "===", "=~", "==", "<=>", "<=", ">=", "|||", "&&", "||", "!", "&", "~~", "~/", "~",
