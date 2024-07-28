@@ -3395,6 +3395,8 @@ public final class LangParser {
 
 							String typeConstraint = null;
 
+							CodePosition pos = t.pos;
+
 							if(tokens.size() > 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
 									tokens.get(0).getValue().equals("{")) {
 								int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
@@ -3405,6 +3407,8 @@ public final class LangParser {
 									return ast;
 								}
 
+								pos = pos.combine(tokens.get(bracketEndIndex).pos);
+
 								List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
 								tokens.subList(0, bracketEndIndex + 1).clear();
 
@@ -3413,13 +3417,15 @@ public final class LangParser {
 
 							if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
 									tokens.get(0).getValue().equals("...")) {
+								pos = pos.combine(tokens.get(0).pos);
+
 								//Varargs parameter
 								tokens.remove(0);
 
 								variableName += "...";
 							}
 
-							nodes.add(new AbstractSyntaxTree.VariableNameNode(t.pos, variableName, typeConstraint));
+							nodes.add(new AbstractSyntaxTree.VariableNameNode(pos, variableName, typeConstraint));
 
 							break;
 
