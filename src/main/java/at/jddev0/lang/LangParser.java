@@ -3541,7 +3541,7 @@ public final class LangParser {
 						break;
 
 					case OPENING_BRACKET:
-						if(t.getTokenType() == Token.TokenType.OPENING_BRACKET && t.getValue().equals("(")) {
+						if(t.getValue().equals("(")) {
 							int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
 							if(endIndex != -1) {
 								Token openingBracketToken = tokens.get(0);
