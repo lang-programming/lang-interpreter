@@ -513,34 +513,6 @@ public final class LangUtils {
 	}
 	
 	/**
-	 * @return Returns an escaped string which would be parsed as value
-	 */
-	public static String escapeString(String str) {
-		if(str == null)
-			return null;
-		
-		//Escape slashes
-		str = str.replace("\\", "\\\\");
-		
-		//Escape numbers
-		for(int i = 0;i < 10;i++)
-			str = str.replace(i + "", i + "\\e");
-		
-		//"\e": Used for escaping empty text
-		return "\\e" + str.replace("\0", "\\0").replace("\n", "\\n").replace("\r", "\\r").replace("\f", "\\f").
-		replace(" ", "\\s").replace("\b", "\\b").replace("\033", "\\E").replace("\t", "\\t").replace("$", "\\$").
-		replace("&", "\\&").replace("#", "\\#").replace(",", "\\,").replace(".", "\\.").replace("(", "\\(").
-		replace(")", "\\)").replace("[", "\\[").replace("]", "\\]").replace("{", "\\{").replace("}", "\\}").
-		replace("=", "\\=").replace("<", "\\<").replace(">", "\\>").replace("+", "\\+").replace("-", "\\-").
-		replace("/", "\\/").replace("*", "\\*").replace("%", "\\%").replace("|", "\\|").replace("~", "\\~").
-		replace("^", "\\^").replace("?", "\\?").replace(":", "\\:").replace("@", "\\@").replace("\u25b2", "\\\u25b2").
-		replace("\u25bc", "\\\u25bc").replace("\"", "\\\"").
-		
-		replace("!", "\\!!").replace("null", "nul\\!l").replace("return", "retur\\!n").
-		replace("throw", "thro\\!w") + "\\e";
-	}
-	
-	/**
 	 * @return Returns true if the backslash at the index index is escaped else false
 	 */
 	public static boolean isBackslashAtIndexEscaped(String str, int index) {
