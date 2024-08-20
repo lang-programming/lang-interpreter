@@ -2160,10 +2160,17 @@ public final class LangParser {
 		AbstractSyntaxTree ast = new AbstractSyntaxTree();
 		List<AbstractSyntaxTree.Node> nodes = ast.getChildren();
 
+		CodePosition pos = tokens.isEmpty()?CodePosition.EMPTY:tokens.get(0).pos;
+
 		trimFirstLine(tokens);
 
-		//TODO line numbers
-		nodes.add(new AbstractSyntaxTree.TextValueNode(CodePosition.EMPTY, ""));
+		if(CodePosition.EMPTY.equals(pos))
+			pos = tokens.isEmpty()?CodePosition.EMPTY:tokens.get(0).pos;
+
+		if(!CodePosition.EMPTY.equals(pos))
+			pos = new CodePosition(pos.lineNumberFrom, pos.lineNumberFrom, pos.columnFrom, pos.columnFrom);
+
+		nodes.add(new AbstractSyntaxTree.TextValueNode(pos, ""));
 
 		if(tokens.size() >= 2 && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
 				tokens.get(0).getValue().equals("%") &&
