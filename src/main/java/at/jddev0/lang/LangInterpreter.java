@@ -342,17 +342,16 @@ public final class LangInterpreter {
 			if(module == null) {
 				setErrno(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", pos);
 				
-				return new TextValueNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
+				return new TextValueNode(pos, "[[" + moduleName + "]]::" + variablePrefixAppendAfterSearch + variableName);
 			}
 			
 			variableNameStream = module.getExportedVariables().keySet().stream();
 		}
-		
-		Optional<String> optionalReturnedVariableName = variableNameStream.filter(varName -> {
-			return variableName.startsWith(varName);
-		}).sorted((s0, s1) -> { //Sort keySet from large to small length (e.g.: $abcd and $abc and $ab)
-			return s0.length() < s1.length()?1:(s0.length() == s1.length()?0:-1);
-		}).findFirst();
+
+		//Sort keySet from large to small length (e.g.: $abcd and $abc and $ab)
+		Optional<String> optionalReturnedVariableName = variableNameStream.filter(variableName::startsWith).min((s0, s1) -> {
+			return Integer.compare(s1.length(), s0.length());//Sort keySet from large to small length (e.g.: $abcd and $abc and $ab)
+		});
 		
 		if(!optionalReturnedVariableName.isPresent()) {
 			if(supportsPointerDereferencingAndReferencing) {
