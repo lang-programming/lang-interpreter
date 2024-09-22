@@ -1,11 +1,6 @@
 package at.jddev0.lang;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.StringReader;
+import java.io.*;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
@@ -6287,9 +6282,12 @@ final class LangPredefinedFunctions {
 
             DataObject retTmp;
 
+            InputStream inputStream = insideLangStandardImplementation?LangPredefinedFunctions.class.getClassLoader().getResourceAsStream(absolutePath):null;
+            if(insideLangStandardImplementation && inputStream == null)
+                return interpreter.setErrnoErrorObject(InterpretingError.FILE_NOT_FOUND, "File not found during loading of lang standard implementation.");
+
             int originalLineNumber = interpreter.getParserLineNumber();
-            try(BufferedReader reader = insideLangStandardImplementation?new BufferedReader(new InputStreamReader(
-                    Objects.requireNonNull(LangPredefinedFunctions.class.getClassLoader().getResourceAsStream(absolutePath)))):
+            try(BufferedReader reader = insideLangStandardImplementation?new BufferedReader(new InputStreamReader(inputStream)):
                     (insideModule?LangModuleManager.readModuleLangFile(module, absolutePath):
                             interpreter.langPlatformAPI.getLangReader(absolutePath))) {
                 interpreter.resetParserPositionVars();
