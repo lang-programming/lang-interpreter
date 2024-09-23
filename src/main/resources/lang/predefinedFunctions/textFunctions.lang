@@ -1,0 +1,26 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Text Functions)
+
+function strlen($text...) {
+    return parser.op(@$text)
+}
+
+function isEmpty($text...) {
+    return parser.op(@$text === 0)
+}
+
+function isNotEmpty($text...) {
+    return parser.op(@$text !== 0)
+}
+
+function isBlank($text...) {
+    return parser.op(@trim($text) === 0)
+}
+
+function isNotBlank($text...) {
+    return parser.op(@trim($text) !== 0)
+}
+
+function format($format, &args...) {
+    return parser.op(text($format) % &args)
+}

@@ -1138,51 +1138,6 @@ final class LangPredefinedFunctions {
     public static final class LangPredefinedTextFunctions {
         private LangPredefinedTextFunctions() {}
 
-        @LangFunction("strlen")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject strlenFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") @VarArgs DataObject textObject
-        ) {
-            return new DataObject().setInt(interpreter.conversions.toText(textObject, CodePosition.EMPTY).length());
-        }
-
-        @LangFunction("isEmpty")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject isEmptyFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") @VarArgs DataObject textObject
-        ) {
-            return new DataObject().setBoolean(interpreter.conversions.toText(textObject, CodePosition.EMPTY).isEmpty());
-        }
-
-        @LangFunction("isNotEmpty")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject isNotEmptyFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") @VarArgs DataObject textObject
-        ) {
-            return new DataObject().setBoolean(!interpreter.conversions.toText(textObject, CodePosition.EMPTY).isEmpty());
-        }
-
-        @LangFunction("isBlank")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject isBlankFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") @VarArgs DataObject textObject
-        ) {
-            return new DataObject().setBoolean(interpreter.conversions.toText(textObject, CodePosition.EMPTY).trim().isEmpty());
-        }
-
-        @LangFunction("isNotBlank")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject isNotBlankFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") @VarArgs DataObject textObject
-        ) {
-            return new DataObject().setBoolean(!interpreter.conversions.toText(textObject, CodePosition.EMPTY).trim().isEmpty());
-        }
-
         @LangFunction("toUpper")
         @AllowedTypes(DataObject.DataType.TEXT)
         public static DataObject toUpperFunction(
@@ -1332,16 +1287,6 @@ final class LangPredefinedFunctions {
                 builder.delete(len, builder.length());
 
             return new DataObject(builder.toString());
-        }
-
-        @LangFunction("format")
-        @AllowedTypes(DataObject.DataType.TEXT)
-        public static DataObject formatFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$format") DataObject formatObject,
-                @LangParameter("&args") @VarArgs List<DataObject> args
-        ) {
-            return interpreter.formatText(interpreter.conversions.toText(formatObject, CodePosition.EMPTY), args);
         }
 
         @LangFunction("formatTemplatePluralization")
