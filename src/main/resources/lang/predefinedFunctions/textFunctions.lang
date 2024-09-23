@@ -22,5 +22,5 @@ function isNotBlank($text...) {
 }
 
 function format($format, &args...) {
-    return parser.op(text($format) % &args)
+    return parser.op($LANG_TYPE_TEXT($format) % &args)
 }
