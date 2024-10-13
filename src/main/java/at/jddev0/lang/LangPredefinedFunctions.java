@@ -1182,53 +1182,6 @@ final class LangPredefinedFunctions {
             }
         }
 
-        @LangFunction(value="substring", hasInfo=true)
-        @AllowedTypes(DataObject.DataType.TEXT)
-        public static DataObject substringFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") DataObject textObject,
-                @LangParameter("$startIndex") @NumberValue Number startIndex
-        ) {
-            return substringFunction(interpreter, textObject, startIndex, null);
-        }
-        @LangFunction("substring")
-        @AllowedTypes(DataObject.DataType.TEXT)
-        public static DataObject substringFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") DataObject textObject,
-                @LangParameter("$startIndex") @NumberValue Number startIndex,
-                @LangParameter("$endIndex") @NumberValue Number endIndex
-        ) {
-            try {
-                if(endIndex == null)
-                    return new DataObject(interpreter.conversions.toText(textObject, CodePosition.EMPTY).substring(startIndex.intValue()));
-
-                return new DataObject(interpreter.conversions.toText(textObject, CodePosition.EMPTY).substring(startIndex.intValue(), endIndex.intValue()));
-            }catch(StringIndexOutOfBoundsException e) {
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-            }
-        }
-
-        @LangFunction("charAt")
-        @AllowedTypes(DataObject.DataType.CHAR)
-        public static DataObject charAtFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") DataObject textObject,
-                @LangParameter("$index") @NumberValue Number indexNumber
-        ) {
-            String txt = interpreter.conversions.toText(textObject, CodePosition.EMPTY);
-            int len = txt.length();
-
-            int index = indexNumber.intValue();
-            if(index < 0)
-                index += len;
-
-            if(index < 0 || index >= len)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-
-            return new DataObject().setChar(txt.charAt(index));
-        }
-
         @LangFunction("lpad")
         @LangInfo("Adds padding to the left of the $text value if needed")
         @AllowedTypes(DataObject.DataType.TEXT)
