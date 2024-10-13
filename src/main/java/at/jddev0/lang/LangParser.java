@@ -377,7 +377,7 @@ public final class LangParser {
                         }
                     }
 
-                    //(Optional) Get Item / Array Creation
+                    //(Optional) Get Item / (Optional) Slice / Array Creation
                     if((t.getTokenType() == Token.TokenType.OPENING_BRACKET && value.equals("[")) ||
                             (t.getTokenType() == Token.TokenType.OPERATOR && value.equals("?.") &&
                                     tokens.size() >= 2 && tokens.get(1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
@@ -421,7 +421,75 @@ public final class LangParser {
                                 otherTokens.clear();
                             }
 
+                            //Parse middle part (":") for potential slice operator
+                            List<Token> innerTokensLeftBehindMiddlePartEnd = new LinkedList<>();
+
+                            //Add dummy whitespace token to allow empty end index in slice operator
+                            innerTokensLeftBehindMiddlePartEnd.add(new Token(CodePosition.EMPTY, "DUMMY-A", Token.TokenType.WHITESPACE));
+
                             List<Token> tokensList = new ArrayList<>(tokens.subList(startsWithOptionalMarker?2:1, endIndex));
+
+                            AbstractSyntaxTree.OperationNode innerMiddleNodeRet = parseOperationExpr(tokensList, null, innerTokensLeftBehindMiddlePartEnd, 0, type);
+                            if(innerMiddleNodeRet != null) {
+                                //Contains matching ":" -> Slice
+
+                                if(startsWithOptionalMarker)
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_SLICE;
+                                else
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.SLICE;
+
+                                //Remove dummy whitespace token
+                                innerTokensLeftBehindMiddlePartEnd.remove(0);
+
+                                tokens.subList(0, endIndex + 1).clear();
+
+                                tokensList = new ArrayList<>(innerTokensLeftBehindMiddlePartEnd);
+
+                                AbstractSyntaxTree.OperationNode innerRightNodeRet = parseOperationExpr(tokensList, type);
+                                if(tokens.isEmpty()) {
+                                    //Add middle node directly if node has NON operator
+                                    if(innerMiddleNodeRet.getOperator() == nonOperator)
+                                        middleNode = innerMiddleNodeRet.getLeftSideOperand();
+                                    else
+                                        middleNode = innerMiddleNodeRet;
+
+                                    //Add right node directly if node has NON operator
+                                    if(innerRightNodeRet.getOperator() == nonOperator)
+                                        rightNode = innerRightNodeRet.getLeftSideOperand();
+                                    else
+                                        rightNode = innerRightNodeRet;
+
+                                    break;
+                                }else {
+                                    AbstractSyntaxTree.Node innerMiddleNode;
+                                    AbstractSyntaxTree.Node innerRightNode;
+
+                                    //Add middle node directly if node has NON operator
+                                    if(innerMiddleNodeRet.getOperator() == nonOperator)
+                                        innerMiddleNode = innerMiddleNodeRet.getLeftSideOperand();
+                                    else
+                                        innerMiddleNode = innerMiddleNodeRet;
+
+                                    //Add node directly if node has NON operator
+                                    if(innerRightNodeRet.getOperator() == nonOperator)
+                                        innerRightNode = innerRightNodeRet.getLeftSideOperand();
+                                    else
+                                        innerRightNode = innerRightNodeRet;
+
+                                    AbstractSyntaxTree.Node leftNode;
+                                    if(leftNodes.size() == 1)
+                                        leftNode = leftNodes.get(0);
+                                    else
+                                        leftNode = new AbstractSyntaxTree.ListNode(leftNodes);
+
+                                    leftNodes.clear();
+                                    leftNodes.add(new AbstractSyntaxTree.OperationNode(leftNode, innerMiddleNode, innerRightNode, operator, type));
+                                    operator = null;
+                                    continue tokenProcessing;
+                                }
+                            }
+
+                            tokensList = new ArrayList<>(tokens.subList(startsWithOptionalMarker?2:1, endIndex));
                             tokens.subList(0, endIndex + 1).clear();
 
                             AbstractSyntaxTree.OperationNode node = parseOperationExpr(tokensList, type);
@@ -793,7 +861,6 @@ public final class LangParser {
                         }
                     }
 
-
                     if(value.equals("?")) {
                         AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
 
@@ -915,7 +982,13 @@ public final class LangParser {
                     }
 
                     if(tokensLeftBehindMiddlePartEnd != null && value.equals(":")) {
-                        //End of inline if
+                        //End of inline if or slice
+
+                        //Replace DUMMY slice operator
+                        if(!tokensLeftBehindMiddlePartEnd.isEmpty() &&
+                                tokensLeftBehindMiddlePartEnd.get(0).getTokenType() == Token.TokenType.WHITESPACE &&
+                                tokensLeftBehindMiddlePartEnd.get(0).getValue().equals("DUMMY-A"))
+                            tokensLeftBehindMiddlePartEnd.set(0, new Token(CodePosition.EMPTY, "DUMMY-B", Token.TokenType.WHITESPACE));
 
                         if(!whitespaces.isEmpty())
                             whitespaces.clear();
@@ -992,6 +1065,12 @@ public final class LangParser {
                     break tokenProcessing;
             }
         }
+
+        //Remove DUMMY token from slice operator
+        if(tokensLeftBehindMiddlePartEnd != null && !tokensLeftBehindMiddlePartEnd.isEmpty() &&
+                tokensLeftBehindMiddlePartEnd.get(0).getTokenType() == Token.TokenType.WHITESPACE &&
+                tokensLeftBehindMiddlePartEnd.get(0).getValue().equals("DUMMY-A"))
+            tokensLeftBehindMiddlePartEnd.remove(0);
 
         //End of middle part was not found for ternary operator -> ignore ternary operator
         if(tokensLeftBehindMiddlePartEnd != null && tokensLeftBehindMiddlePartEnd.isEmpty())

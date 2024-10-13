@@ -117,6 +117,10 @@ function setItem($leftSideOperand, $middleOperand, $rightSideOperand) {
     $leftSideOperand[$middleOperand] $= $rightSideOperand
 }
 
+function slice($leftSideOperand, $middleOperand, $rightSideOperand) {
+    return parser.op($leftSideOperand[$middleOperand:$rightSideOperand])
+}
+
 function conNot($operand{bool}) {
     return parser.op(!$operand)
 }

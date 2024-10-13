@@ -2869,13 +2869,198 @@ public final class LangOperators {
         return null;
     }
     /**
-     * For "?[...]"
+     * For "?.[...]"
      */
     public DataObject opOptionalGetItem(DataObject leftSideOperand, DataObject rightSideOperand, CodePosition pos) {
         if(leftSideOperand.getType() == DataType.NULL || leftSideOperand.getType() == DataType.VOID)
             return new DataObject().setVoid();
 
         return opGetItem(leftSideOperand, rightSideOperand, pos);
+    }
+    /**
+     * For "[...:...]"
+     */
+    public DataObject opSlice(DataObject leftSideOperand, DataObject middleOperand, DataObject rightSideOperand, CodePosition pos) {
+        DataObject ret = callOperatorMethod("slice", leftSideOperand, middleOperand, rightSideOperand, pos);
+        if(ret != null)
+            return ret;
+
+        switch(leftSideOperand.getType()) {
+            case BYTE_BUFFER:
+                if(middleOperand.getType() == DataType.VOID)
+                    middleOperand = new DataObject().setInt(0);
+
+                if(rightSideOperand.getType() == DataType.VOID)
+                    rightSideOperand = new DataObject().setInt(leftSideOperand.getByteBuffer().length);
+
+                if(middleOperand.getType() == DataType.INT && rightSideOperand.getType() == DataType.INT) {
+                    int len = leftSideOperand.getByteBuffer().length;
+                    int fromIndex = middleOperand.getInt();
+                    int toIndex = rightSideOperand.getInt();
+                    if(fromIndex < 0)
+                        fromIndex += len;
+
+                    if(toIndex < 0)
+                        toIndex += len;
+
+                    if(fromIndex < 0 || fromIndex >= len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice from index", pos);
+
+                    if(toIndex < 0 || toIndex > len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice to index", pos);
+
+                    if(toIndex < fromIndex)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "to index is less than from index", pos);
+
+                    return new DataObject().setByteBuffer(Arrays.copyOfRange(leftSideOperand.getByteBuffer(), fromIndex, toIndex));
+                }
+
+                return null;
+            case ARRAY:
+                if(middleOperand.getType() == DataType.VOID)
+                    middleOperand = new DataObject().setInt(0);
+
+                if(rightSideOperand.getType() == DataType.VOID)
+                    rightSideOperand = new DataObject().setInt(leftSideOperand.getArray().length);
+
+                if(middleOperand.getType() == DataType.INT && rightSideOperand.getType() == DataType.INT) {
+                    int len = leftSideOperand.getArray().length;
+                    int fromIndex = middleOperand.getInt();
+                    int toIndex = rightSideOperand.getInt();
+                    if(fromIndex < 0)
+                        fromIndex += len;
+
+                    if(toIndex < 0)
+                        toIndex += len;
+
+                    if(fromIndex < 0 || fromIndex >= len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice from index", pos);
+
+                    if(toIndex < 0 || toIndex > len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice to index", pos);
+
+                    if(toIndex < fromIndex)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "to index is less than from index", pos);
+
+                    return new DataObject().setArray(Arrays.copyOfRange(leftSideOperand.getArray(), fromIndex, toIndex));
+                }
+
+                return null;
+            case LIST:
+                if(middleOperand.getType() == DataType.VOID)
+                    middleOperand = new DataObject().setInt(0);
+
+                if(rightSideOperand.getType() == DataType.VOID)
+                    rightSideOperand = new DataObject().setInt(leftSideOperand.getList().size());
+
+                if(middleOperand.getType() == DataType.INT && rightSideOperand.getType() == DataType.INT) {
+                    int len = leftSideOperand.getList().size();
+                    int fromIndex = middleOperand.getInt();
+                    int toIndex = rightSideOperand.getInt();
+                    if(fromIndex < 0)
+                        fromIndex += len;
+
+                    if(toIndex < 0)
+                        toIndex += len;
+
+                    if(fromIndex < 0 || fromIndex >= len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice from index", pos);
+
+                    if(toIndex < 0 || toIndex > len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice to index", pos);
+
+                    if(toIndex < fromIndex)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "to index is less than from index", pos);
+
+                    return new DataObject().setList(new LinkedList<>(leftSideOperand.getList().subList(fromIndex, toIndex)));
+                }
+
+                return null;
+            case TEXT:
+                if(middleOperand.getType() == DataType.VOID)
+                    middleOperand = new DataObject().setInt(0);
+
+                if(rightSideOperand.getType() == DataType.VOID)
+                    rightSideOperand = new DataObject().setInt(leftSideOperand.getText().length());
+
+                if(middleOperand.getType() == DataType.INT && rightSideOperand.getType() == DataType.INT) {
+                    int len = leftSideOperand.getText().length();
+                    int fromIndex = middleOperand.getInt();
+                    int toIndex = rightSideOperand.getInt();
+                    if(fromIndex < 0)
+                        fromIndex += len;
+
+                    if(toIndex < 0)
+                        toIndex += len;
+
+                    if(fromIndex < 0 || fromIndex >= len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice from index", pos);
+
+                    if(toIndex < 0 || toIndex > len)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice to index", pos);
+
+                    if(toIndex < fromIndex)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "to index is less than from index", pos);
+
+                    return new DataObject(leftSideOperand.getText().substring(fromIndex, toIndex));
+                }
+
+                return null;
+            case CHAR:
+                if(middleOperand.getType() == DataType.VOID)
+                    middleOperand = new DataObject().setInt(0);
+
+                if(rightSideOperand.getType() == DataType.VOID)
+                    rightSideOperand = new DataObject().setInt(1);
+
+                if(middleOperand.getType() == DataType.INT && rightSideOperand.getType() == DataType.INT) {
+                    int fromIndex = middleOperand.getInt();
+                    int toIndex = rightSideOperand.getInt();
+                    if(fromIndex < 0)
+                        fromIndex++;
+
+                    if(toIndex < 0)
+                        toIndex++;
+
+                    if(fromIndex != 0)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice from index", pos);
+
+                    if(toIndex != 0 && toIndex != 1)
+                        return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS, "For slice to index", pos);
+
+                    if(toIndex == 0)
+                        return new DataObject("");
+
+                    return new DataObject().setChar(leftSideOperand.getChar());
+                }
+
+                return null;
+            case STRUCT:
+            case INT:
+            case LONG:
+            case FLOAT:
+            case DOUBLE:
+            case ERROR:
+            case VAR_POINTER:
+            case FUNCTION_POINTER:
+            case OBJECT:
+            case NULL:
+            case VOID:
+            case ARGUMENT_SEPARATOR:
+            case TYPE:
+                return null;
+        }
+
+        return null;
+    }
+    /**
+     * For "?.[...:...]"
+     */
+    public DataObject opOptionalSlice(DataObject leftSideOperand, DataObject middleOperand, DataObject rightSideOperand, CodePosition pos) {
+        if(leftSideOperand.getType() == DataType.NULL || leftSideOperand.getType() == DataType.VOID)
+            return new DataObject().setVoid();
+
+        return opSlice(leftSideOperand, middleOperand, rightSideOperand, pos);
     }
     public DataObject opSetItem(DataObject leftSideOperand, DataObject middleOperand, DataObject rightSideOperand, CodePosition pos) {
         DataObject ret = callOperatorMethod("setItem", leftSideOperand, middleOperand, rightSideOperand, pos);

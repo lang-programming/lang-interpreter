@@ -1225,6 +1225,15 @@ public final class LangInterpreter {
             return null;
         }
 
+        //Allow null values in slice and replace with Lang VOID values
+        if(node.getOperator() == Operator.SLICE || node.getOperator() == Operator.OPTIONAL_SLICE) {
+            if(middleOperand == null)
+                middleOperand = new DataObject().setVoid();
+
+            if(rightSideOperand == null)
+                rightSideOperand = new DataObject().setVoid();
+        }
+
         if((leftSideOperand == null && (!node.getOperator().isUnary() || !node.getOperator().isLazyEvaluation())) ||
                 (!node.getOperator().isLazyEvaluation() && ((!node.getOperator().isUnary() && rightSideOperand == null) ||
                         (node.getOperator().isTernary() && middleOperand == null))))
@@ -1243,6 +1252,12 @@ public final class LangInterpreter {
                     break;
                 case GET_ITEM:
                     output = operators.opGetItem(leftSideOperand, rightSideOperand, node.getPos());
+                    break;
+                case OPTIONAL_SLICE:
+                    output = operators.opOptionalSlice(leftSideOperand, middleOperand, rightSideOperand, node.getPos());
+                    break;
+                case SLICE:
+                    output = operators.opSlice(leftSideOperand, middleOperand, rightSideOperand, node.getPos());
                     break;
                 case MEMBER_ACCESS_POINTER:
                     if(leftSideOperand.getType() != DataType.VAR_POINTER)
@@ -4162,7 +4177,7 @@ public final class LangInterpreter {
     /**
      * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|
      * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
-     * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))</code>
+     * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))</code>
      */
     private static final String[] OPERATOR_METHOD_NAMES = new String[] {
             "op:len",
@@ -4200,6 +4215,7 @@ public final class LangInterpreter {
 
             "op:getItem",
             "op:setItem",
+            "op:slice",
 
             "op:call"
     };

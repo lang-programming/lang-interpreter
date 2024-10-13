@@ -37,12 +37,12 @@ final class LangPatterns {
     public static final Pattern VAR_NAME_FUNCS = Pattern.compile("((\\[\\[\\w+\\]\\]::)?fp|mp|func|fn|linker|ln)\\.\\w+");
     /**
      * RegEx: "<code>(op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|
-     * floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))|
+     * floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))|
      * (to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number))|(((\[\[\w+\]\]::)?fp|mp|func|fn|linker|ln)\.\w+)</code>"
      */
     public static final Pattern VAR_NAME_FUNCS_WITH_OPERATOR_AND_CONVERSION_METHOD = Pattern.compile(
             "(op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|" +
-                    "floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))|" +
+                    "floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))|" +
                     "(to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number))|(((\\[\\[\\w+\\]\\]::)?fp|mp|func|fn|linker|ln)\\.\\w+)");
     /**
      * RegEx: "<code>(((\[\[\w+\]\]::)?(\$\**|&|fp\.|mp\.)|func\.|fn\.|linker\.|ln\.)\w+|(\[\[\w+\]\]::)?\$\**\[+\w+\]+)</code>"
@@ -51,13 +51,13 @@ final class LangPatterns {
             "(((\\[\\[\\w+\\]\\]::)?(\\$\\**|&|fp\\.|mp\\.)|func\\.|fn\\.|linker\\.|ln\\.)\\w+|(\\[\\[\\w+\\]\\]::)?\\$\\**\\[+\\w+\\]+)");
     /**
      * RegEx: "<code>(op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|
-     * floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))|
+     * floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))|
      * (to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number))|
      * (((\[\[\w+\]\]::)?(\$\**|&|fp\.|mp\.)|func\.|fn\.|linker\.|ln\.)\w+|(\[\[\w+\]\]::)?\$\**\[+\w+\]+)</code>"
      */
     public static final Pattern VAR_NAME_FULL_WITH_FUNCS_AND_PTR_AND_DEREFERENCE_WITH_OPERATOR_AND_CONVERSION_METHODS = Pattern.compile(
             "(op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|" +
-                    "floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call)))|" +
+                    "floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))|" +
                     "(to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number))|" +
                     "(((\\[\\[\\w+\\]\\]::)?(\\$\\**|&|fp\\.|mp\\.)|func\\.|fn\\.|linker\\.|ln\\.)\\w+|(\\[\\[\\w+\\]\\]::)?\\$\\**\\[+\\w+\\]+)");
     /**
@@ -70,11 +70,11 @@ final class LangPatterns {
     public static final Pattern METHOD_NAME = Pattern.compile("mp\\.\\w+");
     /**
      * RegEx: "<code>op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|((r-)?(concat|add|sub|mul|pow|div|truncDiv|
-     * floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call))</code>"
+     * floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call))</code>"
      */
     public static final Pattern OPERATOR_METHOD_NAME = Pattern.compile("op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|" +
             "((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|" +
-            "isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem)|(call))");
+            "isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call))");
     /**
      * RegEx: "<code>to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number)</code>"
      */
