@@ -3365,11 +3365,15 @@ public final class LangParser {
 
         String value = valueTokens.stream().map(Token::toRawString).collect(Collectors.joining());
 
-        //CHAR
-        if(value.length() == 1) {
-            nodes.add(new AbstractSyntaxTree.CharValueNode(pos, value.charAt(0)));
+        if(!value.isEmpty()) {
+            int codePoint = value.codePointAt(0);
 
-            return;
+            //CHAR
+            if(value.length() == Character.toChars(codePoint).length) {
+                nodes.add(new AbstractSyntaxTree.CharValueNode(pos, codePoint));
+
+                return;
+            }
         }
 
         //TEXT

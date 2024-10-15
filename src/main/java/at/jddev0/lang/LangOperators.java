@@ -180,17 +180,17 @@ public final class LangOperators {
 
         switch(leftSideOperand.getType()) {
             case INT:
-                return new DataObject(leftSideOperand.getInt() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(leftSideOperand.getInt() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case LONG:
-                return new DataObject(leftSideOperand.getLong() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(leftSideOperand.getLong() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case FLOAT:
-                return new DataObject(leftSideOperand.getFloat() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(leftSideOperand.getFloat() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case DOUBLE:
-                return new DataObject(leftSideOperand.getDouble() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(leftSideOperand.getDouble() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case CHAR:
-                return new DataObject(leftSideOperand.getChar() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(new String(Character.toChars(leftSideOperand.getChar())) + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case TEXT:
-                return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case BYTE_BUFFER:
                 if(rightSideOperand.getType() != DataType.BYTE_BUFFER)
                     return null;
@@ -305,7 +305,7 @@ public final class LangOperators {
             case DOUBLE:
                 return new DataObject().setDouble(operand.getDouble() + 1.d);
             case CHAR:
-                return new DataObject().setChar((char)(operand.getChar() + 1));
+                return new DataObject().setChar(operand.getChar() + 1);
 
             case FUNCTION_POINTER:
                 final FunctionPointerObject func = operand.getFunctionPointer();
@@ -356,7 +356,7 @@ public final class LangOperators {
             case DOUBLE:
                 return new DataObject().setDouble(operand.getDouble() - 1.d);
             case CHAR:
-                return new DataObject().setChar((char)(operand.getChar() - 1));
+                return new DataObject().setChar(operand.getChar() - 1);
 
             case FUNCTION_POINTER:
                 final FunctionPointerObject func = operand.getFunctionPointer();
@@ -418,9 +418,9 @@ public final class LangOperators {
             case DOUBLE:
                 return new DataObject().setDouble(-operand.getDouble());
             case CHAR:
-                return new DataObject().setChar((char)(-operand.getChar()));
+                return new DataObject().setChar(-operand.getChar());
             case TEXT:
-                return new DataObject(new StringBuilder(operand.getText()).reverse().toString());
+                return new DataObject(new StringBuilder(operand.getText().toString()).reverse().toString());
             case BYTE_BUFFER:
                 byte[] revByteBuf = new byte[operand.getByteBuffer().length];
                 for(int i = 0;i < revByteBuf.length;i++)
@@ -609,7 +609,7 @@ public final class LangOperators {
                 }
                 return null;
             case TEXT:
-                return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, pos));
+                return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case ARRAY:
                 DataObject[] arrNew = new DataObject[leftSideOperand.getArray().length + 1];
                 for(int i = 0;i < leftSideOperand.getArray().length;i++)
@@ -2108,7 +2108,7 @@ public final class LangOperators {
 
             case TEXT:
                 if(rightSideOperand.getType() == DataType.ARRAY)
-                    return interpreter.formatText(leftSideOperand.getText(), new LinkedList<>(Arrays.asList(rightSideOperand.getArray())));
+                    return interpreter.formatText(leftSideOperand.getText().toString(), new LinkedList<>(Arrays.asList(rightSideOperand.getArray())));
 
                 return null;
 
@@ -2694,13 +2694,13 @@ public final class LangOperators {
 
         switch(leftSideOperand.getTypeValue()) {
             case TEXT:
-                String txt = interpreter.conversions.toText(rightSideOperand, pos);
+                DataObject.Text txt = interpreter.conversions.toText(rightSideOperand, pos);
                 if(txt == null)
                     return null;
 
                 return new DataObject(txt);
             case CHAR:
-                Character chr = interpreter.conversions.toChar(rightSideOperand, pos);
+                Integer chr = interpreter.conversions.toChar(rightSideOperand, pos);
                 if(chr == null)
                     return null;
 
@@ -2843,7 +2843,7 @@ public final class LangOperators {
             case STRUCT:
                 if(rightSideOperand.getType() == DataType.TEXT) {
                     try {
-                        return new DataObject(leftSideOperand.getStruct().getMember(rightSideOperand.getText()));
+                        return new DataObject(leftSideOperand.getStruct().getMember(rightSideOperand.getText().toString()));
                     }catch(DataTypeConstraintException e) {
                         return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
                     }
@@ -3122,7 +3122,7 @@ public final class LangOperators {
             case STRUCT:
                 if(middleOperand.getType() == DataType.TEXT) {
                     try {
-                        leftSideOperand.getStruct().setMember(middleOperand.getText(), rightSideOperand);
+                        leftSideOperand.getStruct().setMember(middleOperand.getText().toString(), rightSideOperand);
 
                         return new DataObject().setVoid();
                     }catch(DataTypeConstraintException e) {
@@ -3950,7 +3950,7 @@ public final class LangOperators {
 
             case ERROR:
                 if(rightSideOperand.getType() == DataType.TEXT && number.getType() == DataType.NULL)
-                    return leftSideOperand.getError().getErrtxt().compareTo(rightSideOperand.getText()) < 0;
+                    return leftSideOperand.getError().getErrtxt().compareTo(rightSideOperand.getText().toString()) < 0;
                 switch(number.getType()) {
                     case INT:
                         return leftSideOperand.getError().getErrno() < number.getInt();
@@ -4305,7 +4305,7 @@ public final class LangOperators {
 
             case ERROR:
                 if(rightSideOperand.getType() == DataType.TEXT && number.getType() == DataType.NULL)
-                    return leftSideOperand.getError().getErrtxt().compareTo(rightSideOperand.getText()) > 0;
+                    return leftSideOperand.getError().getErrtxt().compareTo(rightSideOperand.getText().toString()) > 0;
                 switch(number.getType()) {
                     case INT:
                         return leftSideOperand.getError().getErrno() > number.getInt();

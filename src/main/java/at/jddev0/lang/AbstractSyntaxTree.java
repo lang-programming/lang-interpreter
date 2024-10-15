@@ -2796,9 +2796,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
     }
 
     public static final class CharValueNode extends ValueNode {
-        private final char c;
+        private final int c;
 
-        public CharValueNode(CodePosition pos, char c) {
+        public CharValueNode(CodePosition pos, int c) {
             super(pos);
 
             this.c = c;
@@ -2809,7 +2809,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             return NodeType.CHAR_VALUE;
         }
 
-        public char getChar() {
+        public int getChar() {
             return c;
         }
 
@@ -2819,7 +2819,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             builder.append("CharValueNode: Position: ");
             builder.append(pos.toCompactString());
             builder.append(", Value: \"");
-            builder.append(c);
+            builder.appendCodePoint(c);
             builder.append("\"\n");
 
             return builder.toString();

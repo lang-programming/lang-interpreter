@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 
@@ -20,7 +21,7 @@ public class DataObject {
     public final static DataTypeConstraint CONSTRAINT_FUNCTION_POINTER = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.FUNCTION_POINTER, DataType.NULL));
 
     //Value
-    private String txt;
+    private Text txt;
     private byte[] byteBuf;
     private DataObject[] arr;
     private LinkedList<DataObject> list;
@@ -32,7 +33,7 @@ public class DataObject {
     private long longValue;
     private float floatValue;
     private double doubleValue;
-    private char charValue;
+    private int charValue;
     private ErrorObject error;
     private DataType typeValue;
 
@@ -75,10 +76,17 @@ public class DataObject {
     public DataObject() {
         setNull();
     }
-    public DataObject(String txt) {
+    public DataObject(String str) {
+        this(str, false);
+    }
+    public DataObject(String str, boolean finalData) {
+        setText(str);
+        setFinalData(finalData);
+    }
+    public DataObject(Text txt) {
         this(txt, false);
     }
-    public DataObject(String txt, boolean finalData) {
+    public DataObject(Text txt, boolean finalData) {
         setText(txt);
         setFinalData(finalData);
     }
@@ -144,20 +152,23 @@ public class DataObject {
         this.typeValue = null;
     }
 
-    DataObject setArgumentSeparator(String txt) throws DataTypeConstraintViolatedException {
+    DataObject setArgumentSeparator(String str) throws DataTypeConstraintViolatedException {
         if(finalData)
             return this;
-        if(txt == null)
+        if(str == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.ARGUMENT_SEPARATOR);
         resetValue();
-        this.txt = txt;
+        this.txt = Text.fromString(str);
 
         return this;
     }
 
-    public DataObject setText(String txt) throws DataTypeConstraintViolatedException {
+    public DataObject setText(String str) throws DataTypeConstraintViolatedException {
+        return setText(Text.fromString(str));
+    }
+    public DataObject setText(Text txt) throws DataTypeConstraintViolatedException {
         if(finalData)
             return this;
         if(txt == null)
@@ -170,7 +181,7 @@ public class DataObject {
         return this;
     }
 
-    public String getText() {
+    public Text getText() {
         return txt;
     }
 
@@ -381,18 +392,18 @@ public class DataObject {
         return doubleValue;
     }
 
-    public DataObject setChar(char charValue) throws DataTypeConstraintViolatedException {
+    public DataObject setChar(int charValue) throws DataTypeConstraintViolatedException {
         if(finalData)
             return this;
 
         this.type = checkAndRetType(DataType.CHAR);
         resetValue();
-        this.charValue = charValue;
+        this.charValue = Character.isValidCodePoint(charValue)?charValue:'\uFFFD';
 
         return this;
     }
 
-    public char getChar() {
+    public int getChar() {
         return charValue;
     }
 
@@ -652,6 +663,163 @@ public class DataObject {
         @Override
         public int hashCode() {
             return Objects.hash(new HashSet<>(getAllowedTypes()));
+        }
+    }
+    public static final class Text implements Comparable<Text> {
+        public static final Text EMPTY = new Text("");
+
+        private final String cachedStr;
+        private final int[] chars;
+
+        public static Text fromString(String str) {
+            return str == null?null:new Text(str);
+        }
+
+        public static Text fromCodePoint(int codePoint) {
+            if(!Character.isValidCodePoint(codePoint))
+                return new Text("\uFFFD");
+
+            return new Text(new String(Character.toChars(codePoint)));
+        }
+
+        private Text(String cachedStr, int[] chars) {
+            this.cachedStr = cachedStr;
+            this.chars = chars;
+        }
+
+        private Text(String cachedStr) {
+            this.cachedStr = cachedStr;
+            this.chars = cachedStr.codePoints().toArray();
+        }
+
+        private Text(int[] chars) {
+            StringBuilder builder = new StringBuilder(chars.length);
+
+            IntStream.of(chars).forEach(builder::appendCodePoint);
+
+            this.cachedStr = builder.toString();
+            this.chars = chars;
+        }
+
+        public int charAt(int index) {
+            return chars[index];
+        }
+
+        public int length() {
+            return chars.length;
+        }
+
+        public Text trim() {
+            return Text.fromString(cachedStr.trim());
+        }
+
+        public Text toLowerCase() {
+            return Text.fromString(cachedStr.toLowerCase());
+        }
+
+        public Text toUpperCase() {
+            return Text.fromString(cachedStr.toUpperCase());
+        }
+
+        public int indexOf(Text txt) {
+            int index = cachedStr.indexOf(txt.cachedStr);
+            int newIndex = index;
+            for(int i = 0;i <= index;i++)
+                if(Character.isLowSurrogate(cachedStr.charAt(i)))
+                    newIndex--;
+
+            return newIndex;
+        }
+
+        public int indexOf(Text txt, int fromIndex) {
+            int fromIndexOrig = fromIndex;
+            for(int i = 0;i <= fromIndexOrig && i < cachedStr.length();i++)
+                if(Character.isLowSurrogate(cachedStr.charAt(i)))
+                    fromIndex++;
+
+            int index = cachedStr.indexOf(txt.cachedStr, fromIndex);
+            int newIndex = index;
+            for(int i = 0;i <= index;i++)
+                if(Character.isLowSurrogate(cachedStr.charAt(i)))
+                    newIndex--;
+
+            return newIndex;
+        }
+
+        public int lastIndexOf(Text txt) {
+            int index = cachedStr.lastIndexOf(txt.cachedStr);
+            int newIndex = index;
+            for(int i = 0;i <= index;i++)
+                if(Character.isLowSurrogate(cachedStr.charAt(i)))
+                    newIndex--;
+
+            return newIndex;
+        }
+
+        public int lastIndexOf(Text txt, int fromIndex) {
+            int fromIndexOrig = fromIndex;
+            for(int i = 0;i <= fromIndexOrig && i < cachedStr.length();i++)
+                if(Character.isLowSurrogate(cachedStr.charAt(i)))
+                    fromIndex++;
+
+            int index = cachedStr.lastIndexOf(txt.cachedStr, fromIndex);
+            int newIndex = index;
+            for(int i = 0;i <= index;i++)
+                if(Character.isLowSurrogate(cachedStr.charAt(i)))
+                    newIndex--;
+
+            return newIndex;
+        }
+
+        public Text substring(int fromIndex, int toIndex) {
+            return new Text(Arrays.copyOfRange(chars, fromIndex, toIndex));
+        }
+
+        public boolean startsWith(Text txt) {
+            return cachedStr.startsWith(txt.cachedStr);
+        }
+
+        public boolean endsWith(Text txt) {
+            return cachedStr.endsWith(txt.cachedStr);
+        }
+
+        public boolean isEmpty() {
+            return cachedStr.isEmpty();
+        }
+
+        public boolean contains(CharSequence str) {
+            return cachedStr.contains(str);
+        }
+
+        public boolean contains(Text txt) {
+            return cachedStr.contains(txt.cachedStr);
+        }
+
+        public int[] toCharArray() {
+            return Arrays.copyOf(chars, chars.length);
+        }
+
+        @Override
+        public int compareTo(Text txt) {
+            return cachedStr.compareTo(txt.cachedStr);
+        }
+
+        @Override
+        public String toString() {
+            return cachedStr;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(this == o) return true;
+            if(o == null || getClass() != o.getClass()) return false;
+            Text text = (Text)o;
+            return Objects.equals(cachedStr, text.cachedStr);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(cachedStr);
         }
     }
     public static final class FunctionPointerObject {

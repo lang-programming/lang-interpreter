@@ -41,7 +41,7 @@ public final class LangConversions {
     }
 
     //DataType conversion methods
-    private String convertByteBufferToText(DataObject operand, CodePosition pos) {
+    private DataObject.Text convertByteBufferToText(DataObject operand, CodePosition pos) {
         StringBuilder builder = new StringBuilder();
         if(operand.getByteBuffer().length > 0) {
             final String HEX_DIGITS = "0123456789ABCDEF";
@@ -54,24 +54,24 @@ public final class LangConversions {
         }else {
             builder.append("<Empty ByteBuffer>");
         }
-        return builder.toString();
+        return DataObject.Text.fromString(builder.toString());
     }
 
-    private String convertToTextMaxRecursion(DataObject ele, CodePosition pos) {
+    private DataObject.Text convertToTextMaxRecursion(DataObject ele, CodePosition pos) {
         if(ele.getType() == DataType.ARRAY) {
-            return "<Array[" + ele.getArray().length + "]>";
+            return DataObject.Text.fromString("<Array[" + ele.getArray().length + "]>");
         }else if(ele.getType() == DataType.LIST) {
-            return "<List[" + ele.getList().size() + "]>";
+            return DataObject.Text.fromString("<List[" + ele.getList().size() + "]>");
         }else if(ele.getType() == DataType.STRUCT) {
-            return ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>";
+            return DataObject.Text.fromString(ele.getStruct().isDefinition()?"<Struct[Definition]>":"<Struct[Instance]>");
         }else if(ele.getType() == DataType.OBJECT) {
-            return ele.getObject().isClass()?"<Class>":"<Object>";
+            return DataObject.Text.fromString(ele.getObject().isClass()?"<Class>":"<Object>");
         }else {
-            return "...";
+            return DataObject.Text.fromString("...");
         }
     }
 
-    private String convertArrayToText(DataObject operand, int recursionStep, CodePosition pos) {
+    private DataObject.Text convertArrayToText(DataObject operand, int recursionStep, CodePosition pos) {
         StringBuilder builder = new StringBuilder("[");
         if(operand.getArray().length > 0) {
             for(DataObject ele:operand.getArray()) {
@@ -81,10 +81,10 @@ public final class LangConversions {
             builder.delete(builder.length() - 2, builder.length());
         }
         builder.append(']');
-        return builder.toString();
+        return DataObject.Text.fromString(builder.toString());
     }
 
-    private String convertListToText(DataObject operand, int recursionStep, CodePosition pos) {
+    private DataObject.Text convertListToText(DataObject operand, int recursionStep, CodePosition pos) {
         StringBuilder builder = new StringBuilder("[");
         if(!operand.getList().isEmpty()) {
             for(DataObject ele:operand.getList()) {
@@ -94,10 +94,10 @@ public final class LangConversions {
             builder.delete(builder.length() - 2, builder.length());
         }
         builder.append(']');
-        return builder.toString();
+        return DataObject.Text.fromString(builder.toString());
     }
 
-    private String convertStructToText(DataObject operand, int recursionStep, CodePosition pos) {
+    private DataObject.Text convertStructToText(DataObject operand, int recursionStep, CodePosition pos) {
         StringBuilder builder = new StringBuilder("{");
         String[] memberNames = operand.getStruct().getMemberNames();
         if(memberNames.length > 0) {
@@ -115,10 +115,10 @@ public final class LangConversions {
             builder.delete(builder.length() - 2, builder.length());
         }
         builder.append('}');
-        return builder.toString();
+        return DataObject.Text.fromString(builder.toString());
     }
 
-    private String toText(DataObject operand, int recursionStep, CodePosition pos) {
+    private DataObject.Text toText(DataObject operand, int recursionStep, CodePosition pos) {
         DataObject ret = callConversionMethod("text", operand, pos);
         if(ret != null)
             operand = ret;
@@ -139,56 +139,56 @@ public final class LangConversions {
                 return convertListToText(operand, recursionStep, pos);
             case VAR_POINTER:
                 DataObject var = operand.getVarPointer().getVar();
-                return "-->{" + toText(var, recursionStep - 1, pos) + "}";
+                return DataObject.Text.fromString("-->{" + toText(var, recursionStep - 1, pos) + "}");
 
             case FUNCTION_POINTER:
                 if(operand.getVariableName() != null)
-                    return operand.getVariableName();
+                    return DataObject.Text.fromString(operand.getVariableName());
 
-                return operand.getFunctionPointer().toString();
+                return DataObject.Text.fromString(operand.getFunctionPointer().toString());
             case STRUCT:
                 return convertStructToText(operand, recursionStep, pos);
             case OBJECT:
-                return operand.getObject().toString();
+                return DataObject.Text.fromString(operand.getObject().toString());
             case VOID:
-                return "";
+                return DataObject.Text.EMPTY;
             case NULL:
-                return "null";
+                return DataObject.Text.fromString("null");
             case INT:
-                return operand.getInt() + "";
+                return DataObject.Text.fromString(operand.getInt() + "");
             case LONG:
-                return operand.getLong() + "";
+                return DataObject.Text.fromString(operand.getLong() + "");
             case FLOAT:
-                return operand.getFloat() + "";
+                return DataObject.Text.fromString(operand.getFloat() + "");
             case DOUBLE:
-                return operand.getDouble() + "";
+                return DataObject.Text.fromString(operand.getDouble() + "");
             case CHAR:
-                return operand.getChar() + "";
+                return DataObject.Text.fromCodePoint(operand.getChar());
             case ERROR:
-                return operand.getError().toString();
+                return DataObject.Text.fromString(operand.getError().toString());
             case TYPE:
-                return operand.getTypeValue().name();
+                return DataObject.Text.fromString(operand.getTypeValue().name());
         }
 
         return null;
     }
-    public String toText(DataObject operand, CodePosition pos) {
+    public DataObject.Text toText(DataObject operand, CodePosition pos) {
         return toText(operand, MAX_TO_TEXT_RECURSION_DEPTH, pos);
     }
-    public Character toChar(DataObject operand, CodePosition pos) {
+    public Integer toChar(DataObject operand, CodePosition pos) {
         DataObject ret = callConversionMethod("char", operand, pos);
         if(ret != null)
             operand = ret;
 
         switch(operand.getType()) {
             case INT:
-                return (char)operand.getInt();
+                return operand.getInt();
             case LONG:
-                return (char)operand.getLong();
+                return (int)operand.getLong();
             case FLOAT:
-                return (char)operand.getFloat();
+                return (int)operand.getFloat();
             case DOUBLE:
-                return (char)operand.getDouble();
+                return (int)operand.getDouble();
             case CHAR:
                 return operand.getChar();
             case TEXT:
@@ -218,13 +218,13 @@ public final class LangConversions {
             case TEXT:
                 if(operand.getText().trim().length() == operand.getText().length()) {
                     try {
-                        return Integer.parseInt(operand.getText());
+                        return Integer.parseInt(operand.getText().toString());
                     }catch(NumberFormatException ignore) {}
                 }
 
                 return null;
             case CHAR:
-                return (int)operand.getChar();
+                return operand.getChar();
             case INT:
                 return operand.getInt();
             case LONG:
@@ -265,7 +265,7 @@ public final class LangConversions {
             case TEXT:
                 if(operand.getText().trim().length() == operand.getText().length()) {
                     try {
-                        return Long.parseLong(operand.getText());
+                        return Long.parseLong(operand.getText().toString());
                     }catch(NumberFormatException ignore) {}
                 }
 
@@ -311,12 +311,13 @@ public final class LangConversions {
         switch(operand.getType()) {
             case TEXT:
                 if(operand.getText().length() > 0) {
-                    char lastChar = operand.getText().charAt(operand.getText().length() - 1);
+                    String txt = operand.getText().toString();
+                    char lastChar = txt.charAt(txt.length() - 1);
 
-                    if(operand.getText().trim().length() == operand.getText().length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
-                            lastChar != 'D' && !operand.getText().contains("x") && !operand.getText().contains("X")) {
+                    if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
+                            lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
                         try {
-                            return Float.parseFloat(operand.getText());
+                            return Float.parseFloat(txt);
                         }catch(NumberFormatException ignore) {}
                     }
                 }
@@ -363,12 +364,13 @@ public final class LangConversions {
         switch(operand.getType()) {
             case TEXT:
                 if(operand.getText().length() > 0) {
-                    char lastChar = operand.getText().charAt(operand.getText().length() - 1);
+                    String txt = operand.getText().toString();
+                    char lastChar = txt.charAt(txt.length() - 1);
 
-                    if(operand.getText().trim().length() == operand.getText().length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
-                            lastChar != 'D' && !operand.getText().contains("x") && !operand.getText().contains("X")) {
+                    if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
+                            lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
                         try {
-                            return Double.parseDouble(operand.getText());
+                            return Double.parseDouble(txt);
                         }catch(NumberFormatException ignore) {}
                     }
                 }
@@ -447,7 +449,7 @@ public final class LangConversions {
             case ARRAY:
                 return operand.getArray();
             case LIST:
-                return operand.getList().stream().map(DataObject::new).toArray(len -> new DataObject[len]);
+                return operand.getList().stream().map(DataObject::new).toArray(DataObject[]::new);
             case STRUCT:
                 try {
                     DataObject operandCopy = operand;
@@ -569,8 +571,8 @@ public final class LangConversions {
 
         switch(operand.getType()) {
             case TEXT:
-                String txt = operand.getText();
-                if(txt.length() > 0) {
+                String txt = operand.getText().toString();
+                if(!txt.isEmpty()) {
                     char lastChar = txt.charAt(txt.length() - 1);
 
                     if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
@@ -604,7 +606,7 @@ public final class LangConversions {
 
                 return null;
             case CHAR:
-                return (int)operand.getChar();
+                return operand.getChar();
             case INT:
                 return operand.getInt();
             case LONG:

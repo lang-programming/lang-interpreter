@@ -21,7 +21,11 @@ public abstract class LangNativeModule {
      */
     protected LangModule module;
 
-    protected final DataObject createDataObject(String textValue) {
+    protected final DataObject createDataObject(String stringValue) {
+        return new DataObject(stringValue);
+    }
+
+    protected final DataObject createDataObject(DataObject.Text textValue) {
         return new DataObject(textValue);
     }
 
@@ -94,6 +98,8 @@ public abstract class LangNativeModule {
             return new DataObject();
         }else if(objectValue instanceof CharSequence) {
             return new DataObject("" + (CharSequence)objectValue);
+        }else if(objectValue instanceof DataObject.Text) {
+            return new DataObject((DataObject.Text)objectValue);
         }else if(objectValue instanceof byte[]) {
             byte[] byteBuf = (byte[])objectValue;
 

@@ -459,7 +459,7 @@ public class LangNativeFunction extends LangBaseFunction {
 
                             DataObject combinedArgument = LangUtils.combineDataObjects(argumentListCopy,
                                     interpreter, CodePosition.EMPTY);
-                            argument = new DataObject(combinedArgument == null?"":interpreter.conversions.
+                            argument = new DataObject(combinedArgument == null?DataObject.Text.EMPTY:interpreter.conversions.
                                     toText(combinedArgument, CodePosition.EMPTY)).setVariableName(variableName);
                         }else {
                             argument = new DataObject().setVariableName(variableName).

@@ -1610,7 +1610,7 @@ public final class LangInterpreter {
             DataObject messageObject = messageNode == null?null:interpretNode(null, messageNode);
             if(messageObject != null)
                 errorObject = new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(),
-                        conversions.toText(messageObject, node.getMessage().getPos())));
+                        conversions.toText(messageObject, node.getMessage().getPos()).toString()));
             executionState.returnedOrThrownValue = errorObject;
         }
         executionState.isThrownValue = executionState.returnedOrThrownValue.getError().getErrno() > 0;
@@ -1634,7 +1634,7 @@ public final class LangInterpreter {
         switch(langDataExecutionFlag) {
             //Data
             case "lang.version":
-                String langVer = conversions.toText(value, pos);
+                String langVer = conversions.toText(value, pos).toString();
                 Integer compVer = LangUtils.compareVersions(LangInterpreter.VERSION, langVer);
                 if(compVer == null) {
                     setErrno(InterpretingError.LANG_VER_ERROR, "lang.version has an invalid format", pos);
@@ -1886,11 +1886,11 @@ public final class LangInterpreter {
                     if(translationKeyDataObject == null)
                         return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getPos());
 
-                    String translationKey = conversions.toText(translationKeyDataObject, node.getPos());
+                    String translationKey = conversions.toText(translationKeyDataObject, node.getPos()).toString();
                     if(translationKey.startsWith("lang."))
                         interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getPos());
 
-                    getData().lang.put(translationKey, conversions.toText(rvalue, node.getPos()));
+                    getData().lang.put(translationKey, conversions.toText(rvalue, node.getPos()).toString());
                     break;
 
                 case GENERAL:
@@ -2211,8 +2211,8 @@ public final class LangInterpreter {
                         operators.isStrictEquals(langTestExpectedReturnValue, retTmp, CodePosition.EMPTY),
                         printStackTrace(CodePosition.EMPTY),
                         langTestMessageForLastTestResult, retTmp, retTmp == null?null:conversions.toText(retTmp,
-                        CodePosition.EMPTY), langTestExpectedReturnValue, conversions.toText(langTestExpectedReturnValue,
-                        CodePosition.EMPTY)));
+                        CodePosition.EMPTY).toString(), langTestExpectedReturnValue, conversions.toText(langTestExpectedReturnValue,
+                        CodePosition.EMPTY).toString()));
 
                 langTestExpectedReturnValue = null;
             }
@@ -2220,7 +2220,7 @@ public final class LangInterpreter {
             if(langTestExpectedNoReturnValue) {
                 langTestStore.addAssertResult(new LangTest.AssertResultNoReturn(retTmp == null,
                         printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, retTmp, retTmp == null?null
-                        :conversions.toText(retTmp, CodePosition.EMPTY)));
+                        :conversions.toText(retTmp, CodePosition.EMPTY).toString()));
 
                 langTestExpectedNoReturnValue = false;
             }
@@ -3779,17 +3779,17 @@ public final class LangInterpreter {
                 if(number == null)
                     return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = "" + (char)number.intValue();
+                output = new String(Character.toChars(number.intValue()));
 
                 break;
 
             case 's':
-                output = conversions.toText(dataObject, CodePosition.EMPTY);
+                output = conversions.toText(dataObject, CodePosition.EMPTY).toString();
 
                 break;
 
             case 't':
-                String translationKey = conversions.toText(dataObject, CodePosition.EMPTY);
+                String translationKey = conversions.toText(dataObject, CodePosition.EMPTY).toString();
 
                 output = getData().lang.get(translationKey);
                 if(output == null)
