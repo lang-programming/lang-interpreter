@@ -6,8 +6,8 @@ class &Complex {
     +final:$imag{DOUBLE}
 
     +construct = ($real{number}, $imag{number}):{VOID} -> {
-        ::$real $= double($real)
-        ::$imag $= double($imag)
+        ::$real $= $LANG_TYPE_DOUBLE($real)
+        ::$imag $= $LANG_TYPE_DOUBLE($imag)
     }
 
     +mp.conjugate = ():{OBJECT} -> {

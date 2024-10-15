@@ -1,0 +1,42 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Conversion Functions)
+
+function text($value) {
+    return $LANG_TYPE_TEXT($value)
+}
+
+function char($value) {
+    return $LANG_TYPE_CHAR($value)
+}
+
+function int($value) {
+    return $LANG_TYPE_INT($value)
+}
+
+function long($value) {
+    return $LANG_TYPE_LONG($value)
+}
+
+function float($value) {
+    return $LANG_TYPE_FLOAT($value)
+}
+
+function double($value) {
+    return $LANG_TYPE_DOUBLE($value)
+}
+
+function byteBuffer($value) {
+    return $LANG_TYPE_BYTE_BUFFER($value)
+}
+
+function array($value) {
+    return $LANG_TYPE_ARRAY($value)
+}
+
+function list($value) {
+    return $LANG_TYPE_LIST($value)
+}
+
+function bool($value) {
+    return parser.con($value)
+}

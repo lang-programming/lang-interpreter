@@ -16,15 +16,15 @@ function byteBufferOf(&numbers...) {
 }
 
 function byteBufferPartialCopy($byteBuffer{BYTE_BUFFER}, $startIndex{number}, $endIndex{number}) {
-    return parser.op($byteBuffer[int($startIndex):int($endIndex)])
+    return parser.op($byteBuffer[$LANG_TYPE_INT($startIndex):$LANG_TYPE_INT($endIndex)])
 }
 
 function byteBufferSet($byteBuffer{BYTE_BUFFER}, $index{number}, $value{number}) {
-    $byteBuffer[int($index)] $= int($value)
+    $byteBuffer[$LANG_TYPE_INT($index)] $= $LANG_TYPE_INT($value)
 }
 
 function byteBufferGet($byteBuffer{BYTE_BUFFER}, $index{number}) {
-    return parser.op($byteBuffer[int($index)])
+    return parser.op($byteBuffer[$LANG_TYPE_INT($index)])
 }
 
 function byteBufferLength($byteBuffer{BYTE_BUFFER}) {

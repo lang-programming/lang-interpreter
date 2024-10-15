@@ -23,7 +23,7 @@ function overload arrayFrom($iterable) {
 }
 
 function arrayPermutationsIterator(&array{ARRAY}, $r{number}):{OBJECT} {
-    $count $= fn.int($r)
+    $count $= $LANG_TYPE_INT($r)
 
     if($count < 0) {
         throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 2 (\"$r\") must be >= 0!"

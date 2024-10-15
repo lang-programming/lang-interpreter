@@ -39,7 +39,6 @@ final class LangPredefinedFunctions {
         funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedSystemFunctions.class));
         funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedIOFunctions.class));
         funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedNumberFunctions.class));
-        funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedCharacterFunctions.class));
         funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedTextFunctions.class));
         funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedConversionFunctions.class));
         funcs.putAll(LangNativeFunction.getLangFunctionsOfClass(LangPredefinedOperationFunctions.class));
@@ -1099,42 +1098,6 @@ final class LangPredefinedFunctions {
     }
 
     @SuppressWarnings("unused")
-    public static final class LangPredefinedCharacterFunctions {
-        private LangPredefinedCharacterFunctions() {}
-
-        @LangFunction("toValue")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject toValueFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$char") @AllowedTypes(DataObject.DataType.CHAR) DataObject charObject
-        ) {
-            return new DataObject().setInt(charObject.getChar());
-        }
-
-        @LangFunction("toChar")
-        @AllowedTypes(DataObject.DataType.CHAR)
-        public static DataObject toCharFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$utfValue") @NumberValue Number utfValue
-        ) {
-            return new DataObject().setChar(utfValue.intValue());
-        }
-
-        @LangFunction("ttoc")
-        @AllowedTypes(DataObject.DataType.CHAR)
-        public static DataObject ttocFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$text") DataObject textObject
-        ) {
-            DataObject.Text str = interpreter.conversions.toText(textObject, CodePosition.EMPTY);
-            if(str.length() == 1)
-                return new DataObject().setChar(str.charAt(0));
-
-            return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, String.format("Argument 1 (\"%s\") must be of length 1", textObject.getVariableName()));
-        }
-    }
-
-    @SuppressWarnings("unused")
     public static final class LangPredefinedTextFunctions {
         private LangPredefinedTextFunctions() {}
 
@@ -1460,145 +1423,9 @@ final class LangPredefinedFunctions {
         }
     }
 
-
     @SuppressWarnings("unused")
     public static final class LangPredefinedConversionFunctions {
         private LangPredefinedConversionFunctions() {}
-
-        @LangFunction("text")
-        @AllowedTypes(DataObject.DataType.TEXT)
-        public static DataObject textFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            DataObject.Text value = interpreter.conversions.toText(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.TEXT);
-
-            return new DataObject(value);
-        }
-
-        @LangFunction("char")
-        @AllowedTypes(DataObject.DataType.CHAR)
-        public static DataObject charFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            Integer value = interpreter.conversions.toChar(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.CHAR);
-
-            return new DataObject().setChar(value);
-        }
-
-        @LangFunction("int")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject intFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            Integer value = interpreter.conversions.toInt(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.INT);
-
-            return new DataObject().setInt(value);
-        }
-
-        @LangFunction("long")
-        @AllowedTypes(DataObject.DataType.LONG)
-        public static DataObject longFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            Long value = interpreter.conversions.toLong(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.LONG);
-
-            return new DataObject().setLong(value);
-        }
-
-        @LangFunction("float")
-        @AllowedTypes(DataObject.DataType.FLOAT)
-        public static DataObject floatFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            Float value = interpreter.conversions.toFloat(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.FLOAT);
-
-            return new DataObject().setFloat(value);
-        }
-
-        @LangFunction("double")
-        @AllowedTypes(DataObject.DataType.DOUBLE)
-        public static DataObject doubleFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            Double value = interpreter.conversions.toDouble(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.DOUBLE);
-
-            return new DataObject().setDouble(value);
-        }
-
-        @LangFunction("byteBuffer")
-        @AllowedTypes(DataObject.DataType.BYTE_BUFFER)
-        public static DataObject byteBufferFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            byte[] value = interpreter.conversions.toByteBuffer(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.BYTE_BUFFER);
-
-            return new DataObject().setByteBuffer(value);
-        }
-
-        @LangFunction("array")
-        @AllowedTypes(DataObject.DataType.ARRAY)
-        public static DataObject arrayFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            DataObject[] value = interpreter.conversions.toArray(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.ARRAY);
-
-            return new DataObject().setArray(value);
-        }
-
-        @LangFunction("list")
-        @AllowedTypes(DataObject.DataType.LIST)
-        public static DataObject listFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            LinkedList<DataObject> value = interpreter.conversions.toList(valueObject, CodePosition.EMPTY);
-            if(value == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "Argument 1 (\"$value\") can not be converted to type " + DataObject.DataType.LIST);
-
-            return new DataObject().setList(value);
-        }
-
-        @LangFunction("bool")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject boolFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            return new DataObject().setBoolean(interpreter.conversions.toBool(valueObject, CodePosition.EMPTY));
-        }
 
         @LangFunction("number")
         @AllowedTypes({DataObject.DataType.INT, DataObject.DataType.LONG, DataObject.DataType.FLOAT, DataObject.DataType.DOUBLE})

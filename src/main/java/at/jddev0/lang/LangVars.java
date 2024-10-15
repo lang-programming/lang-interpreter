@@ -31,20 +31,13 @@ public final class LangVars {
         interpreter.getData().var.put("&LANG_ARGS", langArgs == null?new DataObject().setArray(new DataObject[0]).
                 setFinalData(true).setLangVar().setVariableName("&LANG_ARGS"):langArgs);
 
-        //Non-final
-        addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)));
-    }
-
-    public void addLangVars(DataObject langArgs) {
-        addEssentialLangVars(langArgs);
-
         addSystemLangVars();
-        addExectionLangVars(interpreter.getCurrentCallStackElement());
-        addNumberLangVars();
+        addBasicNumberLangVars();
         addErrorLangVars();
         addTypeLangVars();
-        addStructDefinitionLangVars();
-        addClassDefinitionLangVars();
+
+        //Non-final
+        addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)));
     }
     private void addSystemLangVars() {
         addLangVar("$LANG_VERSION", new DataObject(LangInterpreter.VERSION, true).setFinalData(true));
@@ -55,6 +48,46 @@ public final class LangVars {
         addLangVar("$LANG_OS_ARCH", new DataObject(System.getProperty("os.arch")).setFinalData(true));
         addLangVar("$LANG_OS_FILE_SEPARATOR", new DataObject(System.getProperty("file.separator")).setFinalData(true));
         addLangVar("$LANG_OS_LINE_SEPARATOR", new DataObject(System.getProperty("line.separator")).setFinalData(true));
+    }
+    private void addBasicNumberLangVars() {
+        addLangVar("$LANG_INT_MIN", new DataObject().setInt(Integer.MIN_VALUE).setFinalData(true));
+        addLangVar("$LANG_INT_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true));
+
+        addLangVar("$LANG_LONG_MIN", new DataObject().setLong(Long.MIN_VALUE).setFinalData(true));
+        addLangVar("$LANG_LONG_MAX", new DataObject().setLong(Long.MAX_VALUE).setFinalData(true));
+
+        addLangVar("$LANG_FLOAT_NAN", new DataObject().setFloat(Float.NaN).setFinalData(true));
+        addLangVar("$LANG_FLOAT_POS_INF", new DataObject().setFloat(Float.POSITIVE_INFINITY).setFinalData(true));
+        addLangVar("$LANG_FLOAT_NEG_INF", new DataObject().setFloat(Float.NEGATIVE_INFINITY).setFinalData(true));
+
+        addLangVar("$LANG_DOUBLE_NAN", new DataObject().setDouble(Double.NaN).setFinalData(true));
+        addLangVar("$LANG_DOUBLE_POS_INF", new DataObject().setDouble(Double.POSITIVE_INFINITY).setFinalData(true));
+        addLangVar("$LANG_DOUBLE_NEG_INF", new DataObject().setDouble(Double.NEGATIVE_INFINITY).setFinalData(true));
+    }
+    private void addErrorLangVars() {
+        for(InterpretingError error:InterpretingError.values()) {
+            String upperCaseErrorName = error.name().toUpperCase();
+            String variableName = "$LANG_ERROR_" + upperCaseErrorName;
+            addLangVar(variableName, new DataObject().setError(new ErrorObject(error)).setFinalData(true));
+            variableName = "$LANG_ERRNO_" + upperCaseErrorName;
+            addLangVar(variableName, new DataObject().setInt(error.getErrorCode()).setFinalData(true));
+        }
+    }
+    private void addTypeLangVars() {
+        for(DataType type:DataType.values()) {
+            String upperCaseTypeName = type.name().toUpperCase();
+            String variableName = "$LANG_TYPE_" + upperCaseTypeName;
+            addLangVar(variableName, new DataObject().setTypeValue(type).setFinalData(true));
+        }
+    }
+
+    public void addLangVars(DataObject langArgs) {
+        addEssentialLangVars(langArgs);
+
+        addExectionLangVars(interpreter.getCurrentCallStackElement());
+        addNumberLangVars();
+        addStructDefinitionLangVars();
+        addClassDefinitionLangVars();
     }
     private void addExectionLangVars(StackElement currentStackElement) {
         addLangVar("$LANG_PATH", new DataObject(currentStackElement.getLangPath(), true).setFinalData(true));
@@ -76,39 +109,9 @@ public final class LangVars {
         }
     }
     private void addNumberLangVars() {
-        addLangVar("$LANG_INT_MIN", new DataObject().setInt(Integer.MIN_VALUE).setFinalData(true));
-        addLangVar("$LANG_INT_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true));
-
-        addLangVar("$LANG_LONG_MIN", new DataObject().setLong(Long.MIN_VALUE).setFinalData(true));
-        addLangVar("$LANG_LONG_MAX", new DataObject().setLong(Long.MAX_VALUE).setFinalData(true));
-
-        addLangVar("$LANG_FLOAT_NAN", new DataObject().setFloat(Float.NaN).setFinalData(true));
-        addLangVar("$LANG_FLOAT_POS_INF", new DataObject().setFloat(Float.POSITIVE_INFINITY).setFinalData(true));
-        addLangVar("$LANG_FLOAT_NEG_INF", new DataObject().setFloat(Float.NEGATIVE_INFINITY).setFinalData(true));
-
-        addLangVar("$LANG_DOUBLE_NAN", new DataObject().setDouble(Double.NaN).setFinalData(true));
-        addLangVar("$LANG_DOUBLE_POS_INF", new DataObject().setDouble(Double.POSITIVE_INFINITY).setFinalData(true));
-        addLangVar("$LANG_DOUBLE_NEG_INF", new DataObject().setDouble(Double.NEGATIVE_INFINITY).setFinalData(true));
-
         addLangVar("$LANG_MATH_PI", new DataObject().setDouble(Math.PI).setFinalData(true));
         addLangVar("$LANG_MATH_E", new DataObject().setDouble(Math.E).setFinalData(true));
         addLangVar("$LANG_MATH_I", interpreter.standardTypes.get("$COMPLEX_I").setFinalData(true));
-    }
-    private void addErrorLangVars() {
-        for(InterpretingError error:InterpretingError.values()) {
-            String upperCaseErrorName = error.name().toUpperCase();
-            String variableName = "$LANG_ERROR_" + upperCaseErrorName;
-            addLangVar(variableName, new DataObject().setError(new ErrorObject(error)).setFinalData(true));
-            variableName = "$LANG_ERRNO_" + upperCaseErrorName;
-            addLangVar(variableName, new DataObject().setInt(error.getErrorCode()).setFinalData(true));
-        }
-    }
-    private void addTypeLangVars() {
-        for(DataType type:DataType.values()) {
-            String upperCaseTypeName = type.name().toUpperCase();
-            String variableName = "$LANG_TYPE_" + upperCaseTypeName;
-            addLangVar(variableName, new DataObject().setTypeValue(type).setFinalData(true));
-        }
     }
     private void addStructDefinitionLangVars() {
         addStaticLangVar("&CodePosition", interpreter.standardTypes.get("&CodePosition").setFinalData(true));
