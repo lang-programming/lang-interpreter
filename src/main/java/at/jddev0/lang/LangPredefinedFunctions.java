@@ -933,9 +933,9 @@ final class LangPredefinedFunctions {
             long numberLong = number.longValue();
             try {
                 if(numberLong < 0?(numberLong < numberInt):(numberLong > numberInt))
-                    return new DataObject().setText(Long.toString(number.longValue(), base.intValue()).toUpperCase());
+                    return new DataObject().setText(Long.toString(number.longValue(), base.intValue()).toUpperCase(Locale.ENGLISH));
                 else
-                    return new DataObject().setText(Integer.toString(number.intValue(), base.intValue()).toUpperCase());
+                    return new DataObject().setText(Integer.toString(number.intValue(), base.intValue()).toUpperCase(Locale.ENGLISH));
             }catch(NumberFormatException e) {
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$number\") is invalid: " + e.getMessage());
             }

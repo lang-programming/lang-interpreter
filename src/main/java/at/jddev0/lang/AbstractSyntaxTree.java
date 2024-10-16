@@ -401,6 +401,57 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
     }
 
+    public static final class UnicodeEscapeSequenceNode extends ChildlessNode {
+        private final String hexCodepoint;
+
+        public UnicodeEscapeSequenceNode(CodePosition pos, String hexCodepoint) {
+            super(pos);
+
+            this.hexCodepoint = hexCodepoint;
+        }
+
+        @Override
+        public NodeType getNodeType() {
+            return NodeType.UNIDOCE_ESCAPE_SEQUENCE;
+        }
+
+        public String getHexCodepoint() {
+            return hexCodepoint;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("UnicodeEscapeSequenceNode: Position: ");
+            builder.append(pos.toCompactString());
+            builder.append(", hexCodePoint: \"");
+            builder.append(hexCodepoint);
+            builder.append("\"\n");
+
+            return builder.toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(this == obj)
+                return true;
+
+            if(obj == null)
+                return false;
+
+            if(!(obj instanceof UnicodeEscapeSequenceNode))
+                return false;
+
+            UnicodeEscapeSequenceNode that = (UnicodeEscapeSequenceNode)obj;
+            return this.getNodeType().equals(that.getNodeType()) && this.hexCodepoint.equals(that.hexCodepoint);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.getNodeType(), this.hexCodepoint);
+        }
+    }
+
     /**
      * Unprocessed name of variable (Could be more than variable name)<br>
      * e.g.: $var = ABC<br>
@@ -3450,7 +3501,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
     }
 
     public static enum NodeType {
-        GENERAL, LIST, PARSING_ERROR, ASSIGNMENT, ESCAPE_SEQUENCE, UNPROCESSED_VARIABLE_NAME, VARIABLE_NAME, ARGUMENT_SEPARATOR,
+        GENERAL, LIST, PARSING_ERROR, ASSIGNMENT, ESCAPE_SEQUENCE, UNIDOCE_ESCAPE_SEQUENCE, UNPROCESSED_VARIABLE_NAME, VARIABLE_NAME, ARGUMENT_SEPARATOR,
         FUNCTION_CALL, FUNCTION_CALL_PREVIOUS_NODE_VALUE, FUNCTION_DEFINITION, CONDITION, IF_STATEMENT_PART_IF, IF_STATEMENT_PART_ELSE,
         IF_STATEMENT, LOOP_STATEMENT_PART_LOOP, LOOP_STATEMENT_PART_WHILE, LOOP_STATEMENT_PART_UNTIL, LOOP_STATEMENT_PART_REPEAT, LOOP_STATEMENT_PART_FOR_EACH,
         LOOP_STATEMENT_PART_ELSE, LOOP_STATEMENT, LOOP_STATEMENT_CONTINUE_BREAK, TRY_STATEMENT_PART_TRY, TRY_STATEMENT_PART_SOFT_TRY, TRY_STATEMENT_PART_NON_TRY,

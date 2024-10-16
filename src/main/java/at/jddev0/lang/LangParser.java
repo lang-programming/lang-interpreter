@@ -3381,6 +3381,31 @@ public final class LangParser {
     }
 
     private void parseEscapeSequenceToken(Token escapeSequenceToken, List<AbstractSyntaxTree.Node> nodes) {
+        if(escapeSequenceToken.getValue().length() >= 5 && escapeSequenceToken.getValue().length() <= 10) {
+            if(!escapeSequenceToken.getValue().startsWith("\\u{") || !escapeSequenceToken.getValue().endsWith("}")) {
+                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(escapeSequenceToken.pos, ParsingError.LEXER_ERROR,
+                        "Invalid unicode escape sequence: " + escapeSequenceToken.getValue()));
+
+                return;
+            }
+
+            String hexCodepoint = escapeSequenceToken.getValue().substring(3, escapeSequenceToken.getValue().length() - 1);
+            for(int i = 0;i < hexCodepoint.length();i++) {
+                char c = hexCodepoint.charAt(i);
+
+                if(!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                    nodes.add(new AbstractSyntaxTree.ParsingErrorNode(escapeSequenceToken.pos, ParsingError.LEXER_ERROR,
+                            "Invalid unicode escape sequence: " + escapeSequenceToken.getValue()));
+
+                    return;
+                }
+            }
+
+            nodes.add(new AbstractSyntaxTree.UnicodeEscapeSequenceNode(escapeSequenceToken.pos, hexCodepoint));
+
+            return;
+        }
+
         if(escapeSequenceToken.getValue().length() != 2 || escapeSequenceToken.getValue().charAt(0) != '\\') {
             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(escapeSequenceToken.pos, ParsingError.LEXER_ERROR,
                     "Invalid escape sequence: " + escapeSequenceToken.getValue()));

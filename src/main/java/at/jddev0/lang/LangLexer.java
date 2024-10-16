@@ -640,6 +640,35 @@ public final class LangLexer {
 
     private String tryTokenizeEscapeSequence(String currentLine, List<String> lines, List<Token> tokens) {
         if(currentLine.length() >= 2 && currentLine.charAt(0) == '\\') {
+            unicodeEscapeSequence:
+            if(currentLine.charAt(1) == 'u' && currentLine.length() >= 5 && currentLine.charAt(2) == '{' &&
+                    currentLine.charAt(3) != '}' && currentLine.contains("}")) {
+                int i = 3;
+                while(i < 10 && i < currentLine.length()) {
+                    char c = currentLine.charAt(i);
+                    if(c == '}')
+                        break;
+
+                    if(!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                        break unicodeEscapeSequence;
+
+                    i++;
+                }
+
+                if(currentLine.charAt(i) != '}')
+                    break unicodeEscapeSequence;
+
+                i++;
+
+                int fromColumn = column;
+                column += i;
+
+                String token = currentLine.substring(0, i);
+                tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, token, Token.TokenType.ESCAPE_SEQUENCE));
+
+                return currentLine.substring(i);
+            }
+
             int fromColumn = column;
             column += 2;
 

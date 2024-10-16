@@ -296,6 +296,9 @@ public final class LangInterpreter {
                     case ESCAPE_SEQUENCE:
                         return interpretEscapeSequenceNode((EscapeSequenceNode)node);
 
+                    case UNIDOCE_ESCAPE_SEQUENCE:
+                        return interpretUnicodeEscapeSequenceNode((UnicodeEscapeSequenceNode)node);
+
                     case ARGUMENT_SEPARATOR:
                         return interpretArgumentSeparatotNode((ArgumentSeparatorNode)node);
 
@@ -1847,6 +1850,7 @@ public final class LangInterpreter {
                 case OPERATION:
                 case DOUBLE_VALUE:
                 case ESCAPE_SEQUENCE:
+                case UNIDOCE_ESCAPE_SEQUENCE:
                 case FLOAT_VALUE:
                 case FUNCTION_CALL:
                 case FUNCTION_CALL_PREVIOUS_NODE_VALUE:
@@ -2187,6 +2191,17 @@ public final class LangInterpreter {
 
                 return new DataObject().setChar(node.getEscapeSequenceChar());
         }
+    }
+
+    private DataObject interpretUnicodeEscapeSequenceNode(UnicodeEscapeSequenceNode node) {
+        for(int i = 0;i < node.getHexCodepoint().length();i++) {
+            char c = node.getHexCodepoint().charAt(i);
+
+            if(!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid unicode escape sequence: \"\\u{" + node.getHexCodepoint() + "}\"", node.getPos());
+        }
+
+        return new DataObject().setChar(Integer.valueOf(node.getHexCodepoint().toUpperCase(Locale.ENGLISH), 16));
     }
 
     private DataObject interpretArgumentSeparatotNode(ArgumentSeparatorNode node) {
@@ -3708,7 +3723,7 @@ public final class LangInterpreter {
                 if(number == null)
                     return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = Long.toString(number.longValue(), 2).toUpperCase();
+                output = Long.toString(number.longValue(), 2).toUpperCase(Locale.ENGLISH);
                 if(forceSign && output.charAt(0) != '-')
                     output = "+" + output;
 
@@ -3722,7 +3737,7 @@ public final class LangInterpreter {
                 if(number == null)
                     return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = Long.toString(number.longValue(), 8).toUpperCase();
+                output = Long.toString(number.longValue(), 8).toUpperCase(Locale.ENGLISH);
                 if(forceSign && output.charAt(0) != '-')
                     output = "+" + output;
 
@@ -3736,7 +3751,7 @@ public final class LangInterpreter {
                 if(number == null)
                     return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = Long.toString(number.longValue(), 16).toUpperCase();
+                output = Long.toString(number.longValue(), 16).toUpperCase(Locale.ENGLISH);
                 if(forceSign && output.charAt(0) != '-')
                     output = "+" + output;
 

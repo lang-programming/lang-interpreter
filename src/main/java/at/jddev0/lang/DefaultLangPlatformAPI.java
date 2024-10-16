@@ -12,6 +12,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import at.jddev0.io.TerminalIO;
@@ -34,7 +35,7 @@ public class DefaultLangPlatformAPI implements ILangPlatformAPI {
         if(in != null) {
             for(String str:in) {
                 File f = new File(langPath, str);
-                if(!f.isDirectory() && f.getName().toLowerCase().endsWith(".lang")) {
+                if(!f.isDirectory() && f.getName().toLowerCase(Locale.ENGLISH).endsWith(".lang")) {
                     files.add(f.getPath());
                 }
             }
