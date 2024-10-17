@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import at.jddev0.lang.LangInterpreter.InterpretingError;
+import at.jddev0.lang.data.*;
 
 /**
  * Lang-Module<br>
@@ -16,26 +17,17 @@ import at.jddev0.lang.LangInterpreter.InterpretingError;
  * @version v1.0.0
  */
 public class DataObject {
-    public final static DataTypeConstraint CONSTRAINT_NORMAL = DataTypeConstraint.fromNotAllowedTypes(new ArrayList<>());
-    public final static DataTypeConstraint CONSTRAINT_COMPOSITE = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.ARRAY, DataType.LIST, DataType.STRUCT, DataType.OBJECT, DataType.NULL));
-    public final static DataTypeConstraint CONSTRAINT_FUNCTION_POINTER = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.FUNCTION_POINTER, DataType.NULL));
+    public static final DataTypeConstraint CONSTRAINT_NORMAL = DataTypeConstraint.fromNotAllowedTypes(new ArrayList<>());
+    public static final DataTypeConstraint CONSTRAINT_COMPOSITE = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.ARRAY, DataType.LIST, DataType.STRUCT, DataType.OBJECT, DataType.NULL));
+    public static final DataTypeConstraint CONSTRAINT_FUNCTION_POINTER = DataTypeConstraint.fromAllowedTypes(Arrays.asList(DataType.FUNCTION_POINTER, DataType.NULL));
+
+    private static final int FLAG_FINAL = 1;
+    private static final int FLAG_STATIC = 2;
+    private static final int FLAG_COPY_STATIC_AND_FINAL = 4;
+    private static final int FLAG_LANG_VAR = 8;
 
     //Value
-    private Text txt;
-    private byte[] byteBuf;
-    private DataObject[] arr;
-    private LinkedList<DataObject> list;
-    private VarPointerObject vp;
-    private FunctionPointerObject fp;
-    private StructObject sp;
-    private LangObject op;
-    private int intValue;
-    private long longValue;
-    private float floatValue;
-    private double doubleValue;
-    private int charValue;
-    private ErrorObject error;
-    private DataType typeValue;
+    private DataValue value;
 
     private DataTypeConstraint typeConstraint = CONSTRAINT_NORMAL;
 
@@ -44,11 +36,8 @@ public class DataObject {
      * Variable name of the DataObject (null for anonymous variable)
      */
     private String variableName;
+    private int flags;
     private DataType type;
-    private boolean finalData;
-    private boolean staticData;
-    private boolean copyStaticAndFinalModifiers;
-    private boolean langVar;
     private LangObject memberOfClass;
     private Visibility memberVisibility;
 
@@ -99,68 +88,30 @@ public class DataObject {
     public void setData(DataObject dataObject) throws DataTypeConstraintViolatedException {
         this.type = checkAndRetType(dataObject.type);
 
-        this.txt = dataObject.txt;
-        this.byteBuf = dataObject.byteBuf; //ByteBuffer: copy reference only
-        this.arr = dataObject.arr; //Array: copy reference only
-        this.list = dataObject.list; //List: copy reference only
-        this.vp = dataObject.vp; //Var pointer: copy reference only
-
         //Func pointer: copy reference only
         //Set function name for better debugging experience
-        this.fp = (dataObject.fp != null && getVariableName() != null && dataObject.fp.getFunctionName() == null)?
-                dataObject.fp.withFunctionName(getVariableName()):dataObject.fp;
+        if(dataObject.value.getFunctionPointer() != null)
+            this.value = new FunctionValue((getVariableName() != null && dataObject.value.getFunctionPointer().getFunctionName() == null)?
+                    dataObject.value.getFunctionPointer().withFunctionName(getVariableName()):dataObject.value.getFunctionPointer());
+        else
+            this.value = dataObject.value;
 
-        this.sp = dataObject.sp; //Struct: copy reference only
-        this.op = dataObject.op; //Object: copy reference only
-
-        this.intValue = dataObject.intValue;
-        this.longValue = dataObject.longValue;
-        this.floatValue = dataObject.floatValue;
-        this.doubleValue = dataObject.doubleValue;
-        this.charValue = dataObject.charValue;
-        this.error = dataObject.error; //Error: copy reference only
-        this.typeValue = dataObject.typeValue;
-
-        if(dataObject.copyStaticAndFinalModifiers) {
-            if(dataObject.finalData)
-                this.finalData = true;
-            if(dataObject.staticData)
-                this.staticData = true;
+        if(dataObject.isCopyStaticAndFinalModifiers()) {
+            if(dataObject.isFinalData())
+                this.flags |= FLAG_FINAL;
+            if(dataObject.isStaticData())
+                this.flags |= FLAG_STATIC;
         }
     }
 
-    //Data value methods
-    /**
-     * This method <b>ignores</b> the final state of the data object<br>
-     * This method will not change variableName nor finalData
-     */
-    private void resetValue() {
-        this.txt = null;
-        this.byteBuf = null;
-        this.arr = null;
-        this.list = null;
-        this.vp = null;
-        this.fp = null;
-        this.sp = null;
-        this.op = null;
-        this.intValue = 0;
-        this.longValue = 0;
-        this.floatValue = 0;
-        this.doubleValue = 0;
-        this.charValue = 0;
-        this.error = null;
-        this.typeValue = null;
-    }
-
     DataObject setArgumentSeparator(String str) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(str == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.ARGUMENT_SEPARATOR);
-        resetValue();
-        this.txt = Text.fromString(str);
+        this.value = new TextValue(Text.fromString(str));
 
         return this;
     }
@@ -169,175 +120,165 @@ public class DataObject {
         return setText(Text.fromString(str));
     }
     public DataObject setText(Text txt) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(txt == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.TEXT);
-        resetValue();
-        this.txt = txt;
+        this.value = new TextValue(txt);
 
         return this;
     }
 
     public Text getText() {
-        return txt;
+        return value.getText();
     }
 
     public DataObject setByteBuffer(byte[] byteBuf) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(byteBuf == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.BYTE_BUFFER);
-        resetValue();
-        this.byteBuf = byteBuf;
+        this.value = new ByteBufferValue(byteBuf);
 
         return this;
     }
 
     public byte[] getByteBuffer() {
-        return byteBuf;
+        return value.getByteBuffer();
     }
 
     public DataObject setArray(DataObject[] arr) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(arr == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.ARRAY);
-        resetValue();
-        this.arr = arr;
+        this.value = new ArrayValue(arr);
 
         return this;
     }
 
     public DataObject[] getArray() {
-        return arr;
+        return value.getArray();
     }
 
     public DataObject setList(LinkedList<DataObject> list) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(list == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.LIST);
-        resetValue();
-        this.list = list;
+        this.value = new ListValue(list);
 
         return this;
     }
 
     public LinkedList<DataObject> getList() {
-        return list;
+        return value.getList();
     }
 
     public DataObject setVarPointer(VarPointerObject vp) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(vp == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.VAR_POINTER);
-        resetValue();
-        this.vp = vp;
+        this.value = new VarPointerValue(vp);
 
         return this;
     }
 
     public VarPointerObject getVarPointer() {
-        return vp;
+        return value.getVarPointer();
     }
 
     public DataObject setFunctionPointer(FunctionPointerObject fp) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(fp == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.FUNCTION_POINTER);
-        resetValue();
-
-        this.fp = (getVariableName() != null && fp.getFunctionName() == null)?fp.withFunctionName(getVariableName()):fp;
+        this.value = new FunctionValue((getVariableName() != null && fp.getFunctionName() == null)?fp.withFunctionName(getVariableName()):fp);
 
         return this;
     }
 
     public FunctionPointerObject getFunctionPointer() {
-        return fp;
+        return value.getFunctionPointer();
     }
 
     public DataObject setStruct(StructObject sp) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(sp == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.STRUCT);
-        resetValue();
-        this.sp = sp;
+        this.value = new StructValue(sp);
 
         return this;
     }
 
     public StructObject getStruct() {
-        return sp;
+        return value.getStruct();
     }
 
     public DataObject setObject(LangObject op) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(op == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.OBJECT);
-        resetValue();
-        this.op = op;
+        this.value = new ObjectValue(op);
 
         return this;
     }
 
     public LangObject getObject() {
-        return op;
+        return value.getObject();
     }
 
     public DataObject setNull() throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.NULL);
-        resetValue();
+        this.value = EmptyValue.INSTANCE;
 
         return this;
     }
 
     public DataObject setVoid() throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.VOID);
-        resetValue();
+        this.value = EmptyValue.INSTANCE;
 
         return this;
     }
 
     public DataObject setInt(int intValue) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.INT);
-        resetValue();
-        this.intValue = intValue;
+        this.value = new IntValue(intValue);
 
         return this;
     }
 
     public int getInt() {
-        return intValue;
+        return value.getInt();
     }
 
     /**
@@ -348,97 +289,91 @@ public class DataObject {
     }
 
     public DataObject setLong(long longValue) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.LONG);
-        resetValue();
-        this.longValue = longValue;
+        this.value = new LongValue(longValue);
 
         return this;
     }
 
     public long getLong() {
-        return longValue;
+        return value.getLong();
     }
 
     public DataObject setFloat(float floatValue) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.FLOAT);
-        resetValue();
-        this.floatValue = floatValue;
+        this.value = new FloatValue(floatValue);
 
         return this;
     }
 
     public float getFloat() {
-        return floatValue;
+        return value.getFloat();
     }
 
     public DataObject setDouble(double doubleValue) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.DOUBLE);
-        resetValue();
-        this.doubleValue = doubleValue;
+        this.value = new DoubleValue(doubleValue);
 
         return this;
     }
 
     public double getDouble() {
-        return doubleValue;
+        return value.getDouble();
     }
 
     public DataObject setChar(int charValue) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
 
         this.type = checkAndRetType(DataType.CHAR);
-        resetValue();
-        this.charValue = Character.isValidCodePoint(charValue)?charValue:'\uFFFD';
+        this.value = new CharValue(Character.isValidCodePoint(charValue)?charValue:'\uFFFD');
 
         return this;
     }
 
     public int getChar() {
-        return charValue;
+        return value.getChar();
     }
 
     public DataObject setError(ErrorObject error) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(error == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.ERROR);
-        resetValue();
-        this.error = error;
+        this.value = new ErrorValue(error);
 
         return this;
     }
 
     public ErrorObject getError() {
-        return error;
+        return value.getError();
     }
 
     public DataObject setTypeValue(DataType typeValue) throws DataTypeConstraintViolatedException {
-        if(finalData)
+        if(isFinalData())
             return this;
         if(typeValue == null)
             return setNull();
 
         this.type = checkAndRetType(DataType.TYPE);
-        resetValue();
-        this.typeValue = typeValue;
+        this.value = new TypeValue(typeValue);
 
         return this;
     }
 
     public DataType getTypeValue() {
-        return typeValue;
+        return value.getTypeValue();
     }
 
     //Meta data methods
@@ -458,43 +393,43 @@ public class DataObject {
     }
 
     public DataObject setFinalData(boolean finalData) {
-        this.finalData = finalData;
+        this.flags = (flags | FLAG_FINAL) ^ (finalData?0:FLAG_FINAL);
 
         return this;
     }
 
     public boolean isFinalData() {
-        return finalData;
+        return (flags & FLAG_FINAL) != 0;
     }
 
     public DataObject setStaticData(boolean staticData) {
-        this.staticData = staticData;
+        this.flags = (flags | FLAG_STATIC) ^ (staticData?0:FLAG_STATIC);
 
         return this;
     }
 
     public boolean isStaticData() {
-        return staticData;
+        return (flags & FLAG_STATIC) != 0;
     }
 
     DataObject setCopyStaticAndFinalModifiers(boolean copyStaticAndFinalModifiers) {
-        this.copyStaticAndFinalModifiers = copyStaticAndFinalModifiers;
+        this.flags = (flags | FLAG_COPY_STATIC_AND_FINAL) ^ (copyStaticAndFinalModifiers?0:FLAG_COPY_STATIC_AND_FINAL);
 
         return this;
     }
 
     public boolean isCopyStaticAndFinalModifiers() {
-        return copyStaticAndFinalModifiers;
+        return (flags & FLAG_COPY_STATIC_AND_FINAL) != 0;
     }
 
     DataObject setLangVar() {
-        this.langVar = true;
+        this.flags = flags | FLAG_LANG_VAR;
 
         return this;
     }
 
     public boolean isLangVar() {
-        return langVar;
+        return (flags & FLAG_LANG_VAR) != 0;
     }
 
     public DataType getType() {
@@ -1463,15 +1398,15 @@ public class DataObject {
             for(DataObject staticMember:staticMembers) {
                 staticMember.setMemberOfClass(this);
 
-                if(staticMember.getType() == DataType.FUNCTION_POINTER && staticMember.fp != null) {
-                    staticMember.fp = staticMember.fp.withMappedFunctions(internalFunction -> {
+                if(staticMember.getType() == DataType.FUNCTION_POINTER && staticMember.getFunctionPointer() != null) {
+                    staticMember.value = new FunctionValue(staticMember.getFunctionPointer().withMappedFunctions(internalFunction -> {
                         if(internalFunction.getMemberOfClass() == DUMMY_CLASS_DEFINITION_CLASS) {
                             return new FunctionPointerObject.InternalFunction(internalFunction,
                                     this, Visibility.PUBLIC);
                         }
 
                         return internalFunction;
-                    });
+                    }));
                 }
             }
 
