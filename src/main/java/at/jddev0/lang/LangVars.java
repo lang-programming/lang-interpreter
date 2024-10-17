@@ -84,12 +84,12 @@ public final class LangVars {
     public void addLangVars(DataObject langArgs) {
         addEssentialLangVars(langArgs);
 
-        addExectionLangVars(interpreter.getCurrentCallStackElement());
+        addExecutionLangVars(interpreter.getCurrentCallStackElement());
         addNumberLangVars();
         addStructDefinitionLangVars();
         addClassDefinitionLangVars();
     }
-    private void addExectionLangVars(StackElement currentStackElement) {
+    private void addExecutionLangVars(StackElement currentStackElement) {
         addLangVar("$LANG_PATH", new DataObject(currentStackElement.getLangPath(), true).setFinalData(true));
         addLangVar("$LANG_FILE", new DataObject(currentStackElement.getLangFile(), true).setFinalData(true));
         addLangVar("$LANG_CURRENT_FUNCTION", new DataObject(currentStackElement.getLangFunctionName(), true).setFinalData(true));
