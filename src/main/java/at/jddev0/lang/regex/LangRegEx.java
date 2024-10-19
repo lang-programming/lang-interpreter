@@ -15,35 +15,35 @@ import java.util.regex.PatternSyntaxException;
 public final class LangRegEx {
     private LangRegEx() {}
 
-    public static boolean matches(DataObject.Text text, DataObject.Text regex) throws InvalidPaternSyntaxException {
+    public static boolean matches(DataObject.Text text, DataObject.Text regex) throws InvalidPatternSyntaxException {
         try {
             return text.toString().matches(regex.toString());
         }catch(PatternSyntaxException e) {
-            throw new InvalidPaternSyntaxException(e.getMessage());
+            throw new InvalidPatternSyntaxException(e.getMessage());
         }
     }
 
-    public static DataObject.Text[] split(DataObject.Text text, DataObject.Text regex) throws InvalidPaternSyntaxException {
+    public static DataObject.Text[] split(DataObject.Text text, DataObject.Text regex) throws InvalidPatternSyntaxException {
         try {
             return Arrays.stream(text.toString().split(regex.toString())).map(DataObject.Text::fromString).toArray(DataObject.Text[]::new);
         }catch(PatternSyntaxException e) {
-            throw new InvalidPaternSyntaxException(e.getMessage());
+            throw new InvalidPatternSyntaxException(e.getMessage());
         }
     }
 
-    public static DataObject.Text[] split(DataObject.Text text, DataObject.Text regex, int limit) throws InvalidPaternSyntaxException {
+    public static DataObject.Text[] split(DataObject.Text text, DataObject.Text regex, int limit) throws InvalidPatternSyntaxException {
         try {
             return Arrays.stream(text.toString().split(regex.toString(), limit)).map(DataObject.Text::fromString).toArray(DataObject.Text[]::new);
         }catch(PatternSyntaxException e) {
-            throw new InvalidPaternSyntaxException(e.getMessage());
+            throw new InvalidPatternSyntaxException(e.getMessage());
         }
     }
 
-    public static DataObject.Text replace(DataObject.Text text, DataObject.Text regex, DataObject.Text replacement) throws InvalidPaternSyntaxException {
+    public static DataObject.Text replace(DataObject.Text text, DataObject.Text regex, DataObject.Text replacement) throws InvalidPatternSyntaxException {
         try {
             return DataObject.Text.fromString(text.toString().replaceAll(regex.toString(), replacement.toString()));
         }catch(PatternSyntaxException e) {
-            throw new InvalidPaternSyntaxException(e.getMessage());
+            throw new InvalidPatternSyntaxException(e.getMessage());
         }
     }
 }

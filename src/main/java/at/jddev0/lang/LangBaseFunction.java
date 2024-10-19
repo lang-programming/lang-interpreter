@@ -149,7 +149,7 @@ public class LangBaseFunction {
             builder.append(", ");
         }
 
-        if(parameterList.size() > 0)
+        if(!parameterList.isEmpty())
             builder.delete(builder.length() - 2, builder.length());
 
         builder.append(")");
@@ -216,7 +216,7 @@ public class LangBaseFunction {
         return true;
     }
 
-    public static enum ParameterAnnotation {
+    public enum ParameterAnnotation {
         NORMAL, NUMBER, CALLABLE, BOOLEAN, CALL_BY_POINTER, VAR_ARGS, RAW_VAR_ARGS;
     }
 }

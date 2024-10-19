@@ -28,43 +28,43 @@ public @interface LangFunction {
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.METHOD)
-    public static @interface CombinatorFunction {}
+    @interface CombinatorFunction {}
 
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.PARAMETER)
-    public static @interface LangParameter {
+    @interface LangParameter {
         String value();
 
         @Documented
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.PARAMETER)
-        public static @interface NumberValue {}
+        @interface NumberValue {}
 
         @Documented
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.PARAMETER)
-        public static @interface CallableValue {}
+        @interface CallableValue {}
 
         @Documented
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.PARAMETER)
-        public static @interface BooleanValue {}
+        @interface BooleanValue {}
 
         @Documented
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.PARAMETER)
-        public static @interface CallByPointer {}
+        @interface CallByPointer {}
 
         @Documented
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.PARAMETER)
-        public static @interface VarArgs {}
+        @interface VarArgs {}
 
         @Documented
         @Retention(RetentionPolicy.RUNTIME)
         @Target(ElementType.PARAMETER)
-        public static @interface RawVarArgs {}
+        @interface RawVarArgs {}
     }
 
     /**
@@ -73,7 +73,7 @@ public @interface LangFunction {
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.PARAMETER})
-    public static @interface AllowedTypes {
+    @interface AllowedTypes {
         DataObject.DataType[] value();
     }
 
@@ -83,14 +83,14 @@ public @interface LangFunction {
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.PARAMETER})
-    public static @interface NotAllowedTypes {
+    @interface NotAllowedTypes {
         DataObject.DataType[] value();
     }
 
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.METHOD, ElementType.PARAMETER})
-    public static @interface LangInfo {
+    @interface LangInfo {
         String value();
     }
 }

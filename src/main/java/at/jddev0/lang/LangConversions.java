@@ -310,7 +310,7 @@ public final class LangConversions {
 
         switch(operand.getType()) {
             case TEXT:
-                if(operand.getText().length() > 0) {
+                if(!operand.getText().isEmpty()) {
                     String txt = operand.getText().toString();
                     char lastChar = txt.charAt(txt.length() - 1);
 
@@ -363,7 +363,7 @@ public final class LangConversions {
 
         switch(operand.getType()) {
             case TEXT:
-                if(operand.getText().length() > 0) {
+                if(!operand.getText().isEmpty()) {
                     String txt = operand.getText().toString();
                     char lastChar = txt.charAt(txt.length() - 1);
 
@@ -486,7 +486,7 @@ public final class LangConversions {
 
         switch(operand.getType()) {
             case ARRAY:
-                return new LinkedList<>(Arrays.stream(operand.getArray()).map(DataObject::new).collect(Collectors.toList()));
+                return Arrays.stream(operand.getArray()).map(DataObject::new).collect(Collectors.toCollection(LinkedList::new));
             case LIST:
                 return operand.getList();
             case STRUCT:

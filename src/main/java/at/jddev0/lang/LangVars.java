@@ -5,6 +5,8 @@ import at.jddev0.lang.DataObject.ErrorObject;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 import at.jddev0.lang.LangInterpreter.StackElement;
 
+import java.nio.file.FileSystems;
+
 /**
  * Lang-Module<br>
  * Definition of Lang vars
@@ -46,8 +48,8 @@ public final class LangVars {
         addLangVar("$LANG_OS_NAME", new DataObject(System.getProperty("os.name")).setFinalData(true));
         addLangVar("$LANG_OS_VER", new DataObject(System.getProperty("os.version")).setFinalData(true));
         addLangVar("$LANG_OS_ARCH", new DataObject(System.getProperty("os.arch")).setFinalData(true));
-        addLangVar("$LANG_OS_FILE_SEPARATOR", new DataObject(System.getProperty("file.separator")).setFinalData(true));
-        addLangVar("$LANG_OS_LINE_SEPARATOR", new DataObject(System.getProperty("line.separator")).setFinalData(true));
+        addLangVar("$LANG_OS_FILE_SEPARATOR", new DataObject(FileSystems.getDefault().getSeparator()).setFinalData(true));
+        addLangVar("$LANG_OS_LINE_SEPARATOR", new DataObject(System.lineSeparator()).setFinalData(true));
     }
     private void addBasicNumberLangVars() {
         addLangVar("$LANG_INT_MIN", new DataObject().setInt(Integer.MIN_VALUE).setFinalData(true));

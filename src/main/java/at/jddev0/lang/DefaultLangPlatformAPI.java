@@ -63,7 +63,7 @@ public class DefaultLangPlatformAPI implements ILangPlatformAPI {
     }
 
     public InputStream getInputStream(String langFile) throws IOException {
-        return new FileInputStream(new File(langFile));
+        return new FileInputStream(langFile);
     }
 
     public boolean writeLangFile(File langFile, Map<String, String> translationMap, TerminalIO term) {
@@ -92,7 +92,7 @@ public class DefaultLangPlatformAPI implements ILangPlatformAPI {
     /**
      * This method is not implemented
      */
-    public String showInputDialog(String text) throws Exception {
+    public String showInputDialog(String text) {
         throw new UnsupportedOperationException("Not Implemented");
     }
 }

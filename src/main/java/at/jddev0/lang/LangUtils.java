@@ -52,7 +52,7 @@ public final class LangUtils {
         dataObjects.removeIf(dataObject -> dataObject.getType() == DataType.VOID);
 
         //Return a single void object if every data object is a void object
-        if(dataObjects.size() == 0)
+        if(dataObjects.isEmpty())
             return new DataObject().setVoid();
 
         if(dataObjects.size() == 1)
@@ -302,7 +302,7 @@ public final class LangUtils {
      * @return Returns the version as an integer array of length 3 or null if the version is invalid
      */
     public static int[] getVersionComponents(String version) {
-        if(version.length() < 1)
+        if(version.isEmpty())
             return null;
 
         if(version.charAt(0) != 'v')

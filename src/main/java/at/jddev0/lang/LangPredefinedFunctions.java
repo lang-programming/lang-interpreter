@@ -19,7 +19,7 @@ import at.jddev0.lang.LangFunction.LangParameter.*;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 import at.jddev0.lang.LangInterpreter.StackElement;
 import at.jddev0.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
-import at.jddev0.lang.regex.InvalidPaternSyntaxException;
+import at.jddev0.lang.regex.InvalidPatternSyntaxException;
 import at.jddev0.lang.regex.LangRegEx;
 
 /**
@@ -678,7 +678,6 @@ final class LangPredefinedFunctions {
             if(interpreter.term == null) {
                 interpreter.setErrno(InterpretingError.NO_TERMINAL_WARNING);
 
-                @SuppressWarnings("resource")
                 PrintStream stream = logLevel > 3?System.err:System.out; //Write to standard error if the log level is WARNING or higher
                 stream.printf("[%-8s]: ", level.getLevelName());
                 stream.println(text);
@@ -712,7 +711,6 @@ final class LangPredefinedFunctions {
             String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
 
             if(interpreter.term == null) {
-                @SuppressWarnings("resource")
                 PrintStream stream = level.getLevel() > 3?System.err:System.out; //Write to standard error if the log level is WARNING or higher
                 stream.printf("[%-8s]: ", level.getLevelName());
                 stream.println((text.isEmpty()?"":(text + ": ")) + error.getErrorText());
@@ -1140,7 +1138,7 @@ final class LangPredefinedFunctions {
                 return new DataObject(LangRegEx.replace(interpreter.conversions.toText(textObject, CodePosition.EMPTY),
                         interpreter.conversions.toText(regexObject, CodePosition.EMPTY),
                         interpreter.conversions.toText(replacementObject, CodePosition.EMPTY)));
-            }catch(InvalidPaternSyntaxException e) {
+            }catch(InvalidPatternSyntaxException e) {
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage());
             }
         }
@@ -1331,7 +1329,7 @@ final class LangPredefinedFunctions {
             try {
                 return new DataObject().setBoolean(LangRegEx.matches(interpreter.conversions.toText(textObject, CodePosition.EMPTY),
                         interpreter.conversions.toText(regexObject, CodePosition.EMPTY)));
-            }catch(InvalidPaternSyntaxException e) {
+            }catch(InvalidPatternSyntaxException e) {
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage());
             }
         }
@@ -1411,7 +1409,7 @@ final class LangPredefinedFunctions {
                     arrTmp = LangRegEx.split(interpreter.conversions.toText(textObject, CodePosition.EMPTY),
                             interpreter.conversions.toText(regexObject, CodePosition.EMPTY), maxSplitCount.intValue());
                 }
-            }catch(InvalidPaternSyntaxException e) {
+            }catch(InvalidPatternSyntaxException e) {
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage());
             }
 
@@ -1576,7 +1574,7 @@ final class LangPredefinedFunctions {
                 LangInterpreter interpreter,
                 @LangParameter("&args") @VarArgs List<DataObject> args
         ) {
-            return args.size() == 0?null:args.get(interpreter.RAN.nextInt(args.size()));
+            return args.isEmpty()?null:args.get(interpreter.RAN.nextInt(args.size()));
         }
 
         @LangFunction("setSeed")
@@ -2016,9 +2014,9 @@ final class LangPredefinedFunctions {
                 @LangParameter("&args") @VarArgs List<DataObject> args
         ) {
             List<DataObject> argsA = new LinkedList<>();
-            for(int i = 0;i < args.size();i++) {
+            for(DataObject arg:args) {
                 DataObject retB = interpreter.operators.opCall(b, Arrays.asList(
-                        args.get(i)
+                        arg
                 ), CodePosition.EMPTY);
                 argsA.add(LangUtils.nullToLangVoid(retB));
             }
@@ -2649,12 +2647,11 @@ final class LangPredefinedFunctions {
                 @LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcPointerObject,
                 @LangParameter("$count") @NumberValue Number countNumber
         ) {
-            List<DataObject> elements = IntStream.range(0, countNumber.intValue()).mapToObj(i -> {
+            return new DataObject().setArray(IntStream.range(0, countNumber.intValue()).mapToObj(i -> {
                 return interpreter.callFunctionPointer(funcPointerObject.getFunctionPointer(), funcPointerObject.getVariableName(), Arrays.asList(
                         new DataObject().setInt(i)
                 ));
-            }).collect(Collectors.toList());
-            return new DataObject().setArray(elements.toArray(new DataObject[0]));
+            }).toArray(DataObject[]::new));
         }
 
         @LangFunction("arrayZip")
@@ -3028,7 +3025,7 @@ final class LangPredefinedFunctions {
         ) {
             DataObject[] arr = arrayObject.getArray();
 
-            List<DataObject> elements = Arrays.stream(arr).map(DataObject::new).sorted((a, b) -> {
+            return new DataObject().setArray(Arrays.stream(arr).map(DataObject::new).sorted((a, b) -> {
                 DataObject retObject = interpreter.callFunctionPointer(comparatorObject.getFunctionPointer(), comparatorObject.getVariableName(),
                         LangUtils.asListWithArgumentSeparators(
                                 a, b
@@ -3041,8 +3038,7 @@ final class LangPredefinedFunctions {
                 }
 
                 return retNumber.intValue();
-            }).collect(Collectors.toList());
-            return new DataObject().setArray(elements.toArray(new DataObject[0]));
+            }).toArray(DataObject[]::new));
         }
 
         @LangFunction("arrayFiltered")
@@ -3054,13 +3050,12 @@ final class LangPredefinedFunctions {
         ) {
             DataObject[] arr = arrayObject.getArray();
 
-            List<DataObject> elements = Arrays.stream(arr).map(DataObject::new).filter(dataObject -> {
+            return new DataObject().setArray(Arrays.stream(arr).map(DataObject::new).filter(dataObject -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(filterObject.getFunctionPointer(),
                         filterObject.getVariableName(), Arrays.asList(
                                 dataObject
                         )), CodePosition.EMPTY);
-            }).collect(Collectors.toList());
-            return new DataObject().setArray(elements.toArray(new DataObject[0]));
+            }).toArray(DataObject[]::new));
         }
 
         @LangFunction("arrayFilteredCount")
@@ -3216,7 +3211,7 @@ final class LangPredefinedFunctions {
                             "The length of the array at index " + i + " of argument 1 (\"&arrays\") must be " + len);
             }
 
-            if(arrays.size() == 0)
+            if(arrays.isEmpty())
                 return new DataObject().setArray(new DataObject[0]);
 
             DataObject[] reducedArrays = new DataObject[len];
@@ -3711,7 +3706,7 @@ final class LangPredefinedFunctions {
                 @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
         ) {
             LinkedList<DataObject> list = listObject.getList();
-            if(list.size() == 0)
+            if(list.isEmpty())
                 return null;
 
             return list.pollFirst();
@@ -3735,7 +3730,7 @@ final class LangPredefinedFunctions {
                 @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
         ) {
             LinkedList<DataObject> list = listObject.getList();
-            if(list.size() == 0)
+            if(list.isEmpty())
                 return null;
 
             return list.peekFirst();
@@ -3747,7 +3742,7 @@ final class LangPredefinedFunctions {
                 @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
         ) {
             LinkedList<DataObject> list = listObject.getList();
-            if(list.size() == 0)
+            if(list.isEmpty())
                 return null;
 
             return list.pollLast();
@@ -3771,7 +3766,7 @@ final class LangPredefinedFunctions {
                 @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
         ) {
             LinkedList<DataObject> list = listObject.getList();
-            if(list.size() == 0)
+            if(list.isEmpty())
                 return null;
 
             return list.peekLast();
@@ -3873,8 +3868,7 @@ final class LangPredefinedFunctions {
                 @LangParameter("$value") DataObject valueObject
         ) {
             List<DataObject> list = listObject.getList();
-            for(int i = 0;i < list.size();i++)
-                list.set(i, new DataObject(valueObject));
+            list.replaceAll(ignored -> new DataObject(valueObject));
 
             return null;
         }
@@ -4139,11 +4133,9 @@ final class LangPredefinedFunctions {
         ) {
             List<DataObject> list = listObject.getList();
 
-            for(int i = 0;i < list.size();i++) {
-                list.set(i, interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
-                        list.get(i)
-                )));
-            }
+            list.replaceAll(dataObject -> interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
+                    dataObject
+            )));
 
             return null;
         }
@@ -4158,9 +4150,9 @@ final class LangPredefinedFunctions {
             List<DataObject> list = listObject.getList();
 
             LinkedList<DataObject> newList = new LinkedList<>();
-            for(int i = 0;i < list.size();i++) {
+            for(DataObject dataObject:list) {
                 newList.add(interpreter.callFunctionPointer(mapFunction.getFunctionPointer(), mapFunction.getVariableName(), Arrays.asList(
-                        list.get(i)
+                        dataObject
                 )));
             }
 
@@ -4246,7 +4238,7 @@ final class LangPredefinedFunctions {
                             "The length of the array at index " + i + " of argument 1 (\"&lists\") must be " + len);
             }
 
-            if(lists.size() == 0)
+            if(lists.isEmpty())
                 return new DataObject().setList(new LinkedList<>());
 
             LinkedList<DataObject> reduceedLists = new LinkedList<>();

@@ -21,7 +21,7 @@ import at.jddev0.lang.DataObject.LangObject;
 import at.jddev0.lang.DataObject.StructObject;
 import at.jddev0.lang.DataObject.VarPointerObject;
 import at.jddev0.lang.LangUtils.InvalidTranslationTemplateSyntaxException;
-import at.jddev0.lang.regex.InvalidPaternSyntaxException;
+import at.jddev0.lang.regex.InvalidPatternSyntaxException;
 import at.jddev0.lang.regex.LangRegEx;
 
 /**
@@ -296,7 +296,7 @@ public final class LangInterpreter {
                     case ESCAPE_SEQUENCE:
                         return interpretEscapeSequenceNode((EscapeSequenceNode)node);
 
-                    case UNIDOCE_ESCAPE_SEQUENCE:
+                    case UNICODE_ESCAPE_SEQUENCE:
                         return interpretUnicodeEscapeSequenceNode((UnicodeEscapeSequenceNode)node);
 
                     case ARGUMENT_SEPARATOR:
@@ -745,11 +745,10 @@ public final class LangInterpreter {
     }
 
     /**
-     * @return null if neither continue nor break<br>
-     * true if break or continue with level > 1<br>
-     * false if continue for the current level
+     * @return false if not break or continue with level <= 1<br>
+     * true if break or continue with level > 1
      */
-    private Boolean interpretLoopContinueAndBreak() {
+    private boolean shouldBreakCurrentLoopIteration() {
         if(executionState.stopExecutionFlag) {
             if(executionState.breakContinueCount == 0)
                 return true;
@@ -761,13 +760,10 @@ public final class LangInterpreter {
 
             executionState.stopExecutionFlag = false;
 
-            if(executionState.isContinueStatement)
-                return false;
-            else
-                return true;
+            return !executionState.isContinueStatement;
         }
 
-        return null;
+        return false;
     }
 
     /**
@@ -781,13 +777,8 @@ public final class LangInterpreter {
                 case LOOP_STATEMENT_PART_LOOP:
                     while(true) {
                         interpretAST(node.getLoopBody());
-                        Boolean ret = interpretLoopContinueAndBreak();
-                        if(ret != null) {
-                            if(ret)
-                                return true;
-                            else
-                                continue;
-                        }
+                        if(shouldBreakCurrentLoopIteration())
+                            return true;
                     }
                 case LOOP_STATEMENT_PART_WHILE:
                     while(conversions.toBool(interpretOperationNode(((LoopStatementPartWhileNode)node).getCondition()),
@@ -795,13 +786,8 @@ public final class LangInterpreter {
                         flag = true;
 
                         interpretAST(node.getLoopBody());
-                        Boolean ret = interpretLoopContinueAndBreak();
-                        if(ret != null) {
-                            if(ret)
-                                return true;
-                            else
-                                continue;
-                        }
+                        if(shouldBreakCurrentLoopIteration())
+                            return true;
                     }
 
                     break;
@@ -811,13 +797,8 @@ public final class LangInterpreter {
                         flag = true;
 
                         interpretAST(node.getLoopBody());
-                        Boolean ret = interpretLoopContinueAndBreak();
-                        if(ret != null) {
-                            if(ret)
-                                return true;
-                            else
-                                continue;
-                        }
+                        if(shouldBreakCurrentLoopIteration())
+                            return true;
                     }
 
                     break;
@@ -861,13 +842,8 @@ public final class LangInterpreter {
                         }
 
                         interpretAST(node.getLoopBody());
-                        Boolean ret = interpretLoopContinueAndBreak();
-                        if(ret != null) {
-                            if(ret)
-                                return true;
-                            else
-                                continue;
-                        }
+                        if(shouldBreakCurrentLoopIteration())
+                            return true;
                     }
 
                     break;
@@ -920,13 +896,8 @@ public final class LangInterpreter {
                         }
 
                         interpretAST(node.getLoopBody());
-                        Boolean ret = interpretLoopContinueAndBreak();
-                        if(ret != null) {
-                            if(ret)
-                                return true;
-                            else
-                                continue;
-                        }
+                        if(shouldBreakCurrentLoopIteration())
+                            return true;
                     }
 
                     break;
@@ -1132,8 +1103,8 @@ public final class LangInterpreter {
                         return false;
 
                     TryStatementPartCatchNode catchNode = (TryStatementPartCatchNode)node;
-                    if(catchNode.getExpections() != null) {
-                        if(catchNode.getExpections().size() == 0) {
+                    if(catchNode.getExceptions() != null) {
+                        if(catchNode.getExceptions().size() == 0) {
                             setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty catch part \"catch()\" is not allowed!\n"
                                     + "For checking all warnings \"catch\" without \"()\" should be used", node.getPos());
 
@@ -1144,7 +1115,7 @@ public final class LangInterpreter {
                         List<DataObject> interpretedNodes = new LinkedList<>();
                         int foundErrorIndex = -1;
                         DataObject previousDataObject = null;
-                        for(Node argument:catchNode.getExpections()) {
+                        for(Node argument:catchNode.getExceptions()) {
                             if(argument.getNodeType() == NodeType.FUNCTION_CALL_PREVIOUS_NODE_VALUE && previousDataObject != null) {
                                 try {
                                     Node ret = processFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)argument, previousDataObject);
@@ -1557,7 +1528,7 @@ public final class LangInterpreter {
                     try {
                         conditionOutput = LangRegEx.matches(conversions.toText(leftSideOperand, node.getPos()),
                                 conversions.toText(rightSideOperand, node.getPos()));
-                    }catch(InvalidPaternSyntaxException e) {
+                    }catch(InvalidPatternSyntaxException e) {
                         return setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), node.getPos());
                     }
 
@@ -1850,7 +1821,7 @@ public final class LangInterpreter {
                 case OPERATION:
                 case DOUBLE_VALUE:
                 case ESCAPE_SEQUENCE:
-                case UNIDOCE_ESCAPE_SEQUENCE:
+                case UNICODE_ESCAPE_SEQUENCE:
                 case FLOAT_VALUE:
                 case FUNCTION_CALL:
                 case FUNCTION_CALL_PREVIOUS_NODE_VALUE:

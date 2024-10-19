@@ -273,43 +273,7 @@ public final class LangParser {
 
                 case IDENTIFIER:
                 case PARSER_FUNCTION_IDENTIFIER:
-                    //TODO: Improve
-                    //Parse "&<name>" if something is before "&<name>" as "&" operator with new other value lexical analysis of "<name>"
-                    if((!otherTokens.isEmpty() || !leftNodes.isEmpty()) && t.getValue().startsWith("&")) {
-                        tokens.remove(0);
-
-                        tokens.add(0, new Token(t.pos, "&", Token.TokenType.OPERATOR));
-                        tokens.add(lexer.tokenizeOtherValue(t.getValue().substring(1), t.pos));
-
-                        break;
-                    }
-
-                    if(!whitespaces.isEmpty()) {
-                        otherTokens.addAll(whitespaces);
-                        whitespaces.clear();
-                    }
-
-                    if(!otherTokens.isEmpty()) {
-                        parseTextAndCharValue(otherTokens, leftNodes);
-                        otherTokens.clear();
-                    }
-
-                    boolean isIdentifier = t.getTokenType() == Token.TokenType.IDENTIFIER;
-                    AbstractSyntaxTree.Node ret = isIdentifier?parseVariableNameAndFunctionCall(tokens, type):
-                            parseParserFunctionCall(tokens);
-                    if(ret != null) {
-                        if(isIdentifier && ret instanceof AbstractSyntaxTree.UnprocessedVariableNameNode &&
-                                !tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
-                                tokens.get(0).getValue().equals("...")) {
-                            Token arrayUnpackingOperatorToken = tokens.remove(0);
-                            leftNodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(ret.getPos().
-                                    combine(arrayUnpackingOperatorToken.getPos()),
-                                    ((AbstractSyntaxTree.UnprocessedVariableNameNode)ret).getVariableName() +
-                                            arrayUnpackingOperatorToken.getValue()));
-                        }else {
-                            leftNodes.add(ret);
-                        }
-                    }
+                    parseOperationExprVariableNameAndFunctionCall(tokens, type, otherTokens, leftNodes, t, whitespaces);
 
                     break;
 
@@ -652,98 +616,156 @@ public final class LangParser {
                         boolean somethingBeforeOperator = !otherTokens.isEmpty() || !leftNodes.isEmpty();
 
                         AbstractSyntaxTree.OperationNode.Operator oldOperator = operator;
-                        if(value.equals("!==") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_NOT_EQUALS;
-                        }else if(value.equals("!=~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.NOT_MATCHES;
-                        }else if(value.equals("!=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.NOT_EQUALS;
-                        }else if(value.equals("===") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_EQUALS;
-                        }else if(value.equals("=~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.MATCHES;
-                        }else if(value.equals("==") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.EQUALS;
-                        }else if(value.equals("?::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_MEMBER_ACCESS;
-                        }else if(value.equals("::") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-                            if(somethingBeforeOperator)
-                                operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS;
-                            else
-                                operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_THIS;
-                        }else if(value.equals("->") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_POINTER;
-                        }else if(value.equals("<<") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.LSHIFT;
-                        }else if(value.equals(">>>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.RZSHIFT;
-                        }else if(value.equals(">>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.RSHIFT;
-                        }else if(value.equals("<=>") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.SPACESHIP;
-                        }else if(value.equals("<=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN_OR_EQUALS;
-                        }else if(value.equals(">=") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN_OR_EQUALS;
-                        }else if(value.equals("<") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN;
-                        }else if(value.equals(">") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN;
-                        }else if(value.equals("|||") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.CONCAT;
-                        }else if(value.equals("&&") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.AND;
-                        }else if(value.equals("||") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.OR;
-                        }else if(value.equals("!") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.NOT;
-                        }else if(value.equals("&") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_AND;
-                        }else if(value.equals("~~") && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.INSTANCE_OF;
-                        }else if(value.equals("~/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.TRUNC_DIV;
-                        }else if(value.equals("~") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_NOT;
-                        }else if(value.equals("\u25b2") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.INC;
-                        }else if(value.equals("\u25bc") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
-                        }else if(value.equals("+|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.INC;
-                        }else if(value.equals("-|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
-                        }else if(value.equals("*") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.MUL;
-                        }else if(value.equals("^/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.CEIL_DIV;
-                        }else if(value.equals("//") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.FLOOR_DIV;
-                        }else if(value.equals("/") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.DIV;
-                        }else if(value.equals("%") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.MOD;
-                        }else if(value.equals("^")) {
-                            if(somethingBeforeOperator && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type))
-                                operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_XOR;
-                            else if(!somethingBeforeOperator && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type))
-                                operator = AbstractSyntaxTree.OperationNode.Operator.DEEP_COPY;
-                        }else if(value.equals("|") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_OR;
-                        }else if(value.equals("+") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.ADD:AbstractSyntaxTree.OperationNode.Operator.POS;
-                        }else if(value.equals("-") && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
-                            operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.SUB:AbstractSyntaxTree.OperationNode.Operator.INV;
-                        }else if(value.equals("@") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.LEN;
-                        }else if(value.equals("?:") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.ELVIS;
-                        }else if(value.equals("??") && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.NULL_COALESCING;
-                        }else if(value.equals(",") && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
-                            operator = AbstractSyntaxTree.OperationNode.Operator.COMMA;
-                        }else {
-                            operator = null;
+                        operator = null;
+
+                        if(operator == null && AbstractSyntaxTree.OperationNode.OperatorType.ALL.isCompatibleWith(type)) {
+                            switch(value) {
+                                case "?::":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.OPTIONAL_MEMBER_ACCESS;
+                                    break;
+                                case "::":
+                                    if(somethingBeforeOperator)
+                                        operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS;
+                                    else
+                                        operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_THIS;
+                                    break;
+                                case "->":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.MEMBER_ACCESS_POINTER;
+                                    break;
+                                case ",":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.COMMA;
+                                    break;
+                            }
+                        }
+
+                        if(operator == null && AbstractSyntaxTree.OperationNode.OperatorType.GENERAL.isCompatibleWith(type)) {
+                            switch(value) {
+                                case "|||":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.CONCAT;
+                                    break;
+                                case "@":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.LEN;
+                                    break;
+                                case "?:":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.ELVIS;
+                                    break;
+                                case "??":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.NULL_COALESCING;
+                                    break;
+                                case "^":
+                                    if(!somethingBeforeOperator)
+                                        operator = AbstractSyntaxTree.OperationNode.Operator.DEEP_COPY;
+                                    break;
+                            }
+                        }
+
+                        if(operator == null && AbstractSyntaxTree.OperationNode.OperatorType.MATH.isCompatibleWith(type)) {
+                            switch(value) {
+                                case "<<":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.LSHIFT;
+                                    break;
+                                case ">>>":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.RZSHIFT;
+                                    break;
+                                case ">>":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.RSHIFT;
+                                    break;
+                                case "<=>":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.SPACESHIP;
+                                    break;
+                                case "&":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_AND;
+                                    break;
+                                case "~/":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.TRUNC_DIV;
+                                    break;
+                                case "~":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_NOT;
+                                    break;
+                                case "+|":
+                                case "\u25b2":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.INC;
+                                    break;
+                                case "-|":
+                                case "\u25bc":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.DEC;
+                                    break;
+                                case "*":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.MUL;
+                                    break;
+                                case "^/":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.CEIL_DIV;
+                                    break;
+                                case "//":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.FLOOR_DIV;
+                                    break;
+                                case "/":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.DIV;
+                                    break;
+                                case "%":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.MOD;
+                                    break;
+                                case "|":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_OR;
+                                    break;
+                                case "+":
+                                    operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.ADD:AbstractSyntaxTree.OperationNode.Operator.POS;
+                                    break;
+                                case "-":
+                                    operator = somethingBeforeOperator?AbstractSyntaxTree.OperationNode.Operator.SUB:AbstractSyntaxTree.OperationNode.Operator.INV;
+                                    break;
+                                case "^":
+                                    if(somethingBeforeOperator)
+                                        operator = AbstractSyntaxTree.OperationNode.Operator.BITWISE_XOR;
+                                    break;
+                            }
+                        }
+
+                        if(operator == null && AbstractSyntaxTree.OperationNode.OperatorType.CONDITION.isCompatibleWith(type)) {
+                            switch(value) {
+                                case "!==":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_NOT_EQUALS;
+                                    break;
+                                case "!=~":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.NOT_MATCHES;
+                                    break;
+                                case "!=":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.NOT_EQUALS;
+                                    break;
+                                case "===":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.STRICT_EQUALS;
+                                    break;
+                                case "=~":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.MATCHES;
+                                    break;
+                                case "==":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.EQUALS;
+                                    break;
+                                case "<=":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN_OR_EQUALS;
+                                    break;
+                                case ">=":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN_OR_EQUALS;
+                                    break;
+                                case "<":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.LESS_THAN;
+                                    break;
+                                case ">":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.GREATER_THAN;
+                                    break;
+                                case "&&":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.AND;
+                                    break;
+                                case "||":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.OR;
+                                    break;
+                                case "!":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.NOT;
+                                    break;
+                                case "~~":
+                                    operator = AbstractSyntaxTree.OperationNode.Operator.INSTANCE_OF;
+                                    break;
+                            }
                         }
 
                         if(operator != null && operator.isBinary() && somethingBeforeOperator) {
@@ -1043,7 +1065,7 @@ public final class LangParser {
                         otherTokens.clear();
                     }
 
-                    ret = parseFunctionCallWithoutPrefix(tokens, type);
+                    AbstractSyntaxTree.Node ret = parseFunctionCallWithoutPrefix(tokens, type);
                     if(ret == null) {
                         tokens.remove(0);
                         otherTokens.add(t);
@@ -1108,6 +1130,48 @@ public final class LangParser {
             return new AbstractSyntaxTree.OperationNode(leftNode, middleNode, rightNode, operator, type);
 
         return null;
+    }
+
+    private void parseOperationExprVariableNameAndFunctionCall(List<Token> tokens, AbstractSyntaxTree.OperationNode.OperatorType type,
+                                                               List<Token> otherTokens, List<AbstractSyntaxTree.Node> leftNodes,
+                                                               Token t, List<Token> whitespaces) {
+        //TODO: Improve
+        //Parse "&<name>" if something is before "&<name>" as "&" operator with new other value lexical analysis of "<name>"
+        if((!otherTokens.isEmpty() || !leftNodes.isEmpty()) && t.getValue().startsWith("&")) {
+            tokens.remove(0);
+
+            tokens.add(0, new Token(t.pos, "&", Token.TokenType.OPERATOR));
+            tokens.add(lexer.tokenizeOtherValue(t.getValue().substring(1), t.pos));
+
+            return;
+        }
+
+        if(!whitespaces.isEmpty()) {
+            otherTokens.addAll(whitespaces);
+            whitespaces.clear();
+        }
+
+        if(!otherTokens.isEmpty()) {
+            parseTextAndCharValue(otherTokens, leftNodes);
+            otherTokens.clear();
+        }
+
+        boolean isIdentifier = t.getTokenType() == Token.TokenType.IDENTIFIER;
+        AbstractSyntaxTree.Node ret = isIdentifier?parseVariableNameAndFunctionCall(tokens, type):
+                parseParserFunctionCall(tokens);
+        if(ret != null) {
+            if(isIdentifier && ret instanceof AbstractSyntaxTree.UnprocessedVariableNameNode &&
+                    !tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+                    tokens.get(0).getValue().equals("...")) {
+                Token arrayUnpackingOperatorToken = tokens.remove(0);
+                leftNodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(ret.getPos().
+                        combine(arrayUnpackingOperatorToken.getPos()),
+                        ((AbstractSyntaxTree.UnprocessedVariableNameNode)ret).getVariableName() +
+                                arrayUnpackingOperatorToken.getValue()));
+            }else {
+                leftNodes.add(ret);
+            }
+        }
     }
 
     private List<AbstractSyntaxTree.Node> convertCommaOperatorsToArgumentSeparators(AbstractSyntaxTree.OperationNode operatorNode) {

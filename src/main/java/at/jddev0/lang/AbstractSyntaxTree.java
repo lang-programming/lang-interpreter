@@ -78,13 +78,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         return Objects.hash(nodes);
     }
 
-    public static interface Node extends Iterable<Node> {
-        public List<Node> getChildren();
-        public NodeType getNodeType();
-        public CodePosition getPos();
+    public interface Node extends Iterable<Node> {
+        List<Node> getChildren();
+        NodeType getNodeType();
+        CodePosition getPos();
 
         @Override
-        public default Iterator<AbstractSyntaxTree.Node> iterator() {
+        default Iterator<AbstractSyntaxTree.Node> iterator() {
             return getChildren().iterator();
         }
     }
@@ -234,16 +234,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("ParsingErrorNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Error: \"");
-            builder.append(error);
-            builder.append("\", Message: \"");
-            builder.append(message);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "ParsingErrorNode: Position: " +
+                    pos.toCompactString() + ", Error: \"" +
+                    error + "\", Message: \"" +
+                    message + "\"\n";
         }
 
         @Override
@@ -370,14 +364,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("EscapeSequenceNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Char: \"");
-            builder.append(c);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "EscapeSequenceNode: Position: " +
+                    pos.toCompactString() + ", Char: \"" +
+                    c + "\"\n";
         }
 
         @Override
@@ -412,7 +401,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public NodeType getNodeType() {
-            return NodeType.UNIDOCE_ESCAPE_SEQUENCE;
+            return NodeType.UNICODE_ESCAPE_SEQUENCE;
         }
 
         public String getHexCodepoint() {
@@ -421,14 +410,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("UnicodeEscapeSequenceNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", hexCodePoint: \"");
-            builder.append(hexCodepoint);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "UnicodeEscapeSequenceNode: Position: " +
+                    pos.toCompactString() + ", hexCodePoint: \"" +
+                    hexCodepoint + "\"\n";
         }
 
         @Override
@@ -477,14 +461,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("UnprocessedVariableNameNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", VariableName: \"");
-            builder.append(variableName);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "UnprocessedVariableNameNode: Position: " +
+                    pos.toCompactString() + ", VariableName: \"" +
+                    variableName + "\"\n";
         }
 
         @Override
@@ -537,16 +516,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("VariableNameNode: LineFrom: ");
-            builder.append(pos.toCompactString());
-            builder.append(", VariableName: \"");
-            builder.append(variableName);
-            builder.append(", TypeConstraint: \"");
-            builder.append(typeConstraint);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "VariableNameNode: LineFrom: " +
+                    pos.toCompactString() + ", VariableName: \"" +
+                    variableName + ", TypeConstraint: \"" +
+                    typeConstraint + "\"\n";
         }
 
         @Override
@@ -594,14 +567,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("ArgumentSeparatorNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", OriginalText: \"");
-            builder.append(originalText);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "ArgumentSeparatorNode: Position: " +
+                    pos.toCompactString() + ", OriginalText: \"" +
+                    originalText + "\"\n";
         }
 
         @Override
@@ -914,11 +882,6 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             this.ifBody = ifBody;
         }
 
-        @Override
-        public NodeType getNodeType() {
-            return NodeType.GENERAL;
-        }
-
         public AbstractSyntaxTree getIfBody() {
             return ifBody;
         }
@@ -1135,11 +1098,6 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             super(pos);
 
             this.loopBody = loopBody;
-        }
-
-        @Override
-        public NodeType getNodeType() {
-            return NodeType.GENERAL;
         }
 
         public AbstractSyntaxTree getLoopBody() {
@@ -1697,11 +1655,6 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             this.tryBody = tryBody;
         }
 
-        @Override
-        public NodeType getNodeType() {
-            return NodeType.GENERAL;
-        }
-
         public AbstractSyntaxTree getTryBody() {
             return tryBody;
         }
@@ -1895,7 +1848,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             return NodeType.TRY_STATEMENT_PART_CATCH;
         }
 
-        public List<Node> getExpections() {
+        public List<Node> getExceptions() {
             return errors == null?null:new ArrayList<>(errors);
         }
 
@@ -2299,7 +2252,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             return Objects.hash(this.getNodeType(), this.operator, this.nodes);
         }
 
-        public static enum Operator {
+        public enum Operator {
             //General
             NON                   ("",          1, -1,       OperatorType.GENERAL),
             LEN                   ("@",         1,  1,       OperatorType.GENERAL),
@@ -2373,20 +2326,20 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             private final boolean lazyEvaluation;
             private final OperatorType operatorType;
 
-            private Operator(String symbol, int arity, int precedence, boolean lazyEvaluation, OperatorType operatorType) {
+            Operator(String symbol, int arity, int precedence, boolean lazyEvaluation, OperatorType operatorType) {
                 this.symbol = symbol;
                 this.arity = arity;
                 this.precedence = precedence;
                 this.lazyEvaluation = lazyEvaluation;
                 this.operatorType = operatorType;
             }
-            private Operator(String symbol, int arity, int precedence, OperatorType operatorType) {
+            Operator(String symbol, int arity, int precedence, OperatorType operatorType) {
                 this(symbol, arity, precedence, false, operatorType);
             }
-            private Operator(String symbol, int precedence, boolean lazyEvaluation, OperatorType operatorType) {
+            Operator(String symbol, int precedence, boolean lazyEvaluation, OperatorType operatorType) {
                 this(symbol, 2, precedence, lazyEvaluation, operatorType);
             }
-            private Operator(String symbol, int precedence, OperatorType operatorType) {
+            Operator(String symbol, int precedence, OperatorType operatorType) {
                 this(symbol, 2, precedence, false, operatorType);
             }
 
@@ -2419,7 +2372,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
             }
         }
 
-        public static enum OperatorType {
+        public enum OperatorType {
             ALL, GENERAL, MATH, CONDITION;
 
             public boolean isCompatibleWith(OperatorType type) {
@@ -2617,11 +2570,6 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
-        public NodeType getNodeType() {
-            return NodeType.GENERAL;
-        }
-
-        @Override
         public boolean equals(Object obj) {
             if(this == obj)
                 return true;
@@ -2662,14 +2610,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("IntValueNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Value: \"");
-            builder.append(i);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "IntValueNode: Position: " +
+                    pos.toCompactString() + ", Value: \"" +
+                    i + "\"\n";
         }
 
         @Override
@@ -2713,14 +2656,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("LongValueNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Value: \"");
-            builder.append(l);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "LongValueNode: Position: " +
+                    pos.toCompactString() + ", Value: \"" +
+                    l + "\"\n";
         }
 
         @Override
@@ -2764,14 +2702,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("FloatValueNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Value: \"");
-            builder.append(f);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "FloatValueNode: Position: " +
+                    pos.toCompactString() + ", Value: \"" +
+                    f + "\"\n";
         }
 
         @Override
@@ -2815,14 +2748,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("DoubleValueNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Value: \"");
-            builder.append(d);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "DoubleValueNode: Position: " +
+                    pos.toCompactString() + ", Value: \"" +
+                    d + "\"\n";
         }
 
         @Override
@@ -2917,14 +2845,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("TextValueNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append(", Value: \"");
-            builder.append(text);
-            builder.append("\"\n");
-
-            return builder.toString();
+            return "TextValueNode: Position: " +
+                    pos.toCompactString() + ", Value: \"" +
+                    text + "\"\n";
         }
 
         @Override
@@ -2960,12 +2883,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("NullValueNode: Position: ");
-            builder.append(pos.toCompactString());
-            builder.append("\n");
-
-            return builder.toString();
+            return "NullValueNode: Position: " +
+                    pos.toCompactString() + "\n";
         }
 
         @Override
@@ -3001,12 +2920,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         @Override
         public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append("VoidValueNode: Position");
-            builder.append(pos.toCompactString());
-            builder.append("\n");
-
-            return builder.toString();
+            return "VoidValueNode: Position" +
+                    pos.toCompactString() + "\n";
         }
 
         @Override
@@ -3500,12 +3415,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
     }
 
-    public static enum NodeType {
-        GENERAL, LIST, PARSING_ERROR, ASSIGNMENT, ESCAPE_SEQUENCE, UNIDOCE_ESCAPE_SEQUENCE, UNPROCESSED_VARIABLE_NAME, VARIABLE_NAME, ARGUMENT_SEPARATOR,
+    public enum NodeType {
+        GENERAL, LIST, PARSING_ERROR, ASSIGNMENT, ESCAPE_SEQUENCE, UNICODE_ESCAPE_SEQUENCE, UNPROCESSED_VARIABLE_NAME, VARIABLE_NAME, ARGUMENT_SEPARATOR,
         FUNCTION_CALL, FUNCTION_CALL_PREVIOUS_NODE_VALUE, FUNCTION_DEFINITION, CONDITION, IF_STATEMENT_PART_IF, IF_STATEMENT_PART_ELSE,
         IF_STATEMENT, LOOP_STATEMENT_PART_LOOP, LOOP_STATEMENT_PART_WHILE, LOOP_STATEMENT_PART_UNTIL, LOOP_STATEMENT_PART_REPEAT, LOOP_STATEMENT_PART_FOR_EACH,
         LOOP_STATEMENT_PART_ELSE, LOOP_STATEMENT, LOOP_STATEMENT_CONTINUE_BREAK, TRY_STATEMENT_PART_TRY, TRY_STATEMENT_PART_SOFT_TRY, TRY_STATEMENT_PART_NON_TRY,
         TRY_STATEMENT_PART_CATCH, TRY_STATEMENT_PART_ELSE, TRY_STATEMENT_PART_FINALLY, TRY_STATEMENT, MATH, OPERATION, RETURN, THROW, INT_VALUE, LONG_VALUE,
-        FLOAT_VALUE, DOUBLE_VALUE, CHAR_VALUE, TEXT_VALUE, NULL_VALUE, VOID_VALUE, ARRAY, STRUCT_DEFINITION, CLASS_DEFINITION;
+        FLOAT_VALUE, DOUBLE_VALUE, CHAR_VALUE, TEXT_VALUE, NULL_VALUE, VOID_VALUE, ARRAY, STRUCT_DEFINITION, CLASS_DEFINITION
     }
 }

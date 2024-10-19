@@ -225,8 +225,7 @@ public final class LangOperators {
             case LIST:
                 if(rightSideOperand.getType() == DataType.ARRAY) {
                     LinkedList<DataObject> listNew = new LinkedList<>(leftSideOperand.getList());
-                    for(int i = 0;i < rightSideOperand.getArray().length;i++)
-                        listNew.add(rightSideOperand.getArray()[i]);
+                    listNew.addAll(Arrays.asList(rightSideOperand.getArray()));
 
                     return new DataObject().setList(listNew);
                 }else if(rightSideOperand.getType() == DataType.LIST) {

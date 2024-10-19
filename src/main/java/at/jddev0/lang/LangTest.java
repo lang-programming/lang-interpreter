@@ -123,7 +123,7 @@ public class LangTest {
                 List<AssertResult> failedTests = subUnit.getFailedTests();
 
                 if(subUnit.getName() == null) {
-                    if(failedTests.size() > 0) {
+                    if(!failedTests.isEmpty()) {
                         for(AssertResult failedTest:failedTests) {
                             out += "\n\t\t" + printFailedTestResult("\t\t\t", failedTest);
                         }
@@ -132,7 +132,7 @@ public class LangTest {
                     continue;
                 }
 
-                if(failedTests.size() > 0) {
+                if(!failedTests.isEmpty()) {
                     out += "\n\t\tSubUnit: \"" + subUnit.getName() + "\"";
                     for(AssertResult failedTest:failedTests) {
                         out += "\n\t\t\t" + printFailedTestResult("\t\t\t\t", failedTest);
@@ -172,7 +172,7 @@ public class LangTest {
                 List<AssertResult> failedTests = subUnit.getFailedTests();
 
                 if(subUnit.getName() == null) {
-                    if(failedTests.size() > 0) {
+                    if(!failedTests.isEmpty()) {
                         for(AssertResult failedTest:failedTests) {
                             out += "\n\t\t" + printFailedTestResult("\t\t\t", failedTest);
                         }
@@ -181,7 +181,7 @@ public class LangTest {
                     continue;
                 }
 
-                if(failedTests.size() > 0) {
+                if(!failedTests.isEmpty()) {
                     out += "\n\t\tSubUnit: \"" + subUnit.getName() + "\"";
                     for(AssertResult failedTest:failedTests) {
                         out += "\n\t\t\t" + printFailedTestResult("\t\t\t\t", failedTest);
@@ -253,7 +253,7 @@ public class LangTest {
                 List<AssertResult> failedTests = subUnit.getFailedTests();
 
                 if(subUnit.getName() == null) {
-                    if(failedTests.size() > 0) {
+                    if(!failedTests.isEmpty()) {
                         for(AssertResult failedTest:failedTests) {
                             out += "\n\t" + printFailedTestResult("\t\t", failedTest);
                         }
@@ -264,7 +264,7 @@ public class LangTest {
                     continue;
                 }
 
-                if(failedTests.size() > 0) {
+                if(!failedTests.isEmpty()) {
                     out += "\n\tSubUnit: \"" + subUnit.getName() + "\"";
                     for(AssertResult failedTest:failedTests) {
                         out += "\n\t\t" + printFailedTestResult("\t\t\t", failedTest);
@@ -301,7 +301,7 @@ public class LangTest {
                 List<AssertResult> failedTests = subUnit.getFailedTests();
 
                 if(subUnit.getName() == null) {
-                    if(failedTests.size() > 0) {
+                    if(!failedTests.isEmpty()) {
                         for(AssertResult failedTest:failedTests) {
                             out += "\n\t" + printFailedTestResult("\t\t", failedTest);
                         }
@@ -312,7 +312,7 @@ public class LangTest {
                     continue;
                 }
 
-                if(failedTests.size() > 0) {
+                if(!failedTests.isEmpty()) {
                     out += "\n\tSubUnit: \"" + subUnit.getName() + "\"";
                     for(AssertResult failedTest:failedTests) {
                         out += "\n\t\t" + printFailedTestResult("\t\t\t", failedTest);
@@ -408,7 +408,7 @@ public class LangTest {
 
             String out = "";
             List<AssertResult> failedTests = getFailedTests();
-            if(failedTests.size() > 0) {
+            if(!failedTests.isEmpty()) {
                 out += "\t\tFailed tests:";
 
                 for(AssertResult failedTest:failedTests) {
@@ -418,8 +418,7 @@ public class LangTest {
 
             out += "\n";
 
-            if(!out.isEmpty())
-                term.logln(Level.ERROR, out, LangTest.class);
+            term.logln(Level.ERROR, out, LangTest.class);
         }
 
         @Override
@@ -431,7 +430,7 @@ public class LangTest {
                     "\t\tTests passed: " + getTestPassedCount() + "/" + getTestCount() + "\n";
 
             List<AssertResult> failedTests = getFailedTests();
-            if(failedTests.size() > 0) {
+            if(!failedTests.isEmpty()) {
                 out += "\t\tFailed tests:";
 
                 for(AssertResult failedTest:failedTests) {
@@ -465,7 +464,7 @@ public class LangTest {
         }
     }
 
-    private static interface AssertResult {
+    private interface AssertResult {
         boolean hasTestPassed();
         String getStackTrace();
         String getAssertTestName();

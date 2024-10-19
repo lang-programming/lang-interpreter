@@ -2,7 +2,6 @@ package at.jddev0.lang;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -79,7 +78,7 @@ public final class LangLexer {
 
         linesIsEmpty = false;
 
-        List<String> lines = new ArrayList<>(reader.lines().collect(Collectors.toList()));
+        List<String> lines = reader.lines().collect(Collectors.toList());
 
         List<Token> tokens = new LinkedList<>();
 

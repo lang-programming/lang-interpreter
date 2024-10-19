@@ -9,12 +9,12 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -61,7 +61,7 @@ final class LangModuleManager {
         if(moduleLangBytes == null)
             throw new IOException("File \"" + file + "\" was not found inside the module \"" + module.getLangModuleConfiguration().getName() + "\"");
 
-        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(moduleLangBytes), "UTF-8"));
+        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(moduleLangBytes), StandardCharsets.UTF_8));
     }
 
     public DataObject load(String moduleFile, List<DataObject> args) {
@@ -120,8 +120,7 @@ final class LangModuleManager {
                     "<entryPoint>", null, null, null, module), CodePosition.EMPTY);
 
             String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
-                            interpreter.conversions.toText(ele, CodePosition.EMPTY)).
-                    collect(Collectors.toList()).toArray(new String[0]);
+                    interpreter.conversions.toText(ele, CodePosition.EMPTY).toString()).toArray(String[]::new);
 
             interpreter.enterScope(langArgs);
 
@@ -138,7 +137,7 @@ final class LangModuleManager {
 
                 byte[] moduleLangBytes = zipData.get("lang/module.lang");
                 int originalLineNumber = interpreter.getParserLineNumber();
-                try(BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(moduleLangBytes), "UTF-8"))) {
+                try(BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(moduleLangBytes), StandardCharsets.UTF_8))) {
                     interpreter.resetParserPositionVars();
                     interpreter.interpretLines(br);
                 }catch(IOException e) {
@@ -167,7 +166,7 @@ final class LangModuleManager {
 
                     byte[] moduleLangBytes = zipData.get("lang/module.lang");
                     int originalLineNumber = interpreter.getParserLineNumber();
-                    try(BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(moduleLangBytes), "UTF-8"))) {
+                    try(BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(moduleLangBytes), StandardCharsets.UTF_8))) {
                         interpreter.resetParserPositionVars();
                         interpreter.interpretLines(br);
                     }catch(IOException e) {
@@ -216,7 +215,7 @@ final class LangModuleManager {
                 (moduleEntryPoint?"<entryPoint>":entryPoint), null, null, "<native:" + (load?"load":"unload") + ">", module), CodePosition.EMPTY);
 
         String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
-                interpreter.conversions.toText(ele, CodePosition.EMPTY)).collect(Collectors.toList()).toArray(new String[0]);
+                interpreter.conversions.toText(ele, CodePosition.EMPTY).toString()).toArray(String[]::new);
 
         interpreter.enterScope(langArgs);
 
@@ -269,7 +268,7 @@ final class LangModuleManager {
             }
 
             byte[] dataLmcBytes = zipData.get("data.lmc");
-            LangModuleConfiguration lmc = LangModuleConfiguration.parseLmc(new String(dataLmcBytes, "UTF-8"));
+            LangModuleConfiguration lmc = LangModuleConfiguration.parseLmc(new String(dataLmcBytes, StandardCharsets.UTF_8));
 
             String[] supportedImplementations = lmc.getSupportedImplementations();
             if(supportedImplementations != null) {

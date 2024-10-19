@@ -7,10 +7,10 @@ package at.jddev0.lang.regex;
  * @author JDDev0
  * @version v1.0.0
  */
-public class InvalidPaternSyntaxException extends RuntimeException {
+public class InvalidPatternSyntaxException extends RuntimeException {
     private static final long serialVersionUID = -2631264953536046294L;
 
-    public InvalidPaternSyntaxException(String message) {
+    public InvalidPatternSyntaxException(String message) {
         super(message);
     }
 }

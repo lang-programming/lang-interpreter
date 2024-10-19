@@ -492,7 +492,7 @@ public class DataObject {
         return "<DataObject>";
     }
 
-    public static enum DataType {
+    public enum DataType {
         TEXT, CHAR, INT, LONG, FLOAT, DOUBLE, BYTE_BUFFER, ARRAY, LIST, VAR_POINTER, FUNCTION_POINTER, STRUCT, OBJECT, ERROR, NULL, VOID, ARGUMENT_SEPARATOR, TYPE;
     }
     public static final class DataTypeConstraint {
@@ -522,7 +522,7 @@ public class DataObject {
 
         public List<DataType> getAllowedTypes() {
             if(allowed)
-                return types.stream().collect(Collectors.toList());
+                return new ArrayList<>(types);
 
             return Arrays.stream(DataType.values()).filter(((Predicate<DataType>)types::contains).negate()).collect(Collectors.toList());
         }
@@ -531,7 +531,7 @@ public class DataObject {
             if(allowed)
                 return Arrays.stream(DataType.values()).filter(((Predicate<DataType>)types::contains).negate()).collect(Collectors.toList());
 
-            return types.stream().collect(Collectors.toList());
+            return new ArrayList<>(types);
         }
 
         public String toTypeConstraintSyntax() {
@@ -539,12 +539,12 @@ public class DataObject {
             strBuilder.append("{");
 
             //Invert "!" if no types are set and print all types
-            boolean inverted = !allowed ^ this.types.size() == 0;
+            boolean inverted = !allowed ^ this.types.isEmpty();
 
             if(inverted)
                 strBuilder.append("!");
 
-            Set<DataType> types = new HashSet<>(this.types.size() == 0?Arrays.asList(DataType.values()):this.types);
+            Set<DataType> types = new HashSet<>(this.types.isEmpty()?Arrays.asList(DataType.values()):this.types);
 
             if(!inverted && types.contains(DataType.NULL) && types.size() > 1) {
                 types.remove(DataType.NULL);
@@ -1937,7 +1937,7 @@ public class DataObject {
             return Objects.hash(err);
         }
     }
-    public static enum Visibility {
+    public enum Visibility {
         PRIVATE, PROTECTED, PUBLIC;
 
         public static Visibility fromASTNode(AbstractSyntaxTree.ClassDefinitionNode.Visibility visibility) {
