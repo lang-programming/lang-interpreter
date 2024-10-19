@@ -230,7 +230,7 @@ public final class LangLexer {
             tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "\n", Token.TokenType.EOL));
 
             lineNumber++;
-            column = 0;
+            column = 1;
 
             openingBracketCount = 0;
 
