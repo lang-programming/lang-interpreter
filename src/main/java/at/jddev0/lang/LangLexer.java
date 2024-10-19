@@ -135,8 +135,6 @@ public final class LangLexer {
             i++;
         }
 
-        column += currentLine.length();
-
         tokens.add(tokenIndex, tokenizeOtherValue(currentLine, new CodePosition(fromLineNumber, fromLineNumber,
                 fromColumn, column)));
 
