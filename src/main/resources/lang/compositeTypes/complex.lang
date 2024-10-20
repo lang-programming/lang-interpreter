@@ -11,7 +11,7 @@ class &Complex {
     }
 
     +mp.conjugate = ():{OBJECT} -> {
-        return parser.op(&Complex(::$real, -::$imag))
+        return parser.op(&This(::$real, -::$imag))
     }
 
     +mp.arg = ():{DOUBLE} -> {
@@ -19,11 +19,11 @@ class &Complex {
     }
 
     +op:deepCopy = ():{OBJECT} -> {
-        return parser.op(&Complex(::$real, ::$imag))
+        return parser.op(&This(::$real, ::$imag))
     }
 
     +op:inv = ():{OBJECT} -> {
-        return parser.op(&Complex(-::$real, -::$imag))
+        return parser.op(&This(-::$real, -::$imag))
     }
 
     +op:abs = ():{DOUBLE} -> {
@@ -31,55 +31,55 @@ class &Complex {
     }
 
     +op:add = (&z{OBJECT}):{OBJECT} -> {
-        if(!(&z ~~ &Complex)) {
+        if(!(&z ~~ &This)) {
             throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
-        return parser.op(&Complex(::$real + &z::$real, ::$imag + &z::$imag))
+        return parser.op(&This(::$real + &z::$real, ::$imag + &z::$imag))
     }
 
     +op:add = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex(::$real + $x, ::$imag))
+        return parser.op(&This(::$real + $x, ::$imag))
     }
 
     +op:r-add = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex($x + ::$real, ::$imag))
+        return parser.op(&This($x + ::$real, ::$imag))
     }
 
     +op:sub = (&z{OBJECT}):{OBJECT} -> {
-        if(!(&z ~~ &Complex)) {
+        if(!(&z ~~ &This)) {
             throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
-        return parser.op(&Complex(::$real - &z::$real, ::$imag - &z::$imag))
+        return parser.op(&This(::$real - &z::$real, ::$imag - &z::$imag))
     }
 
     +op:sub = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex(::$real - $x, ::$imag))
+        return parser.op(&This(::$real - $x, ::$imag))
     }
 
     +op:r-sub = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex($x - ::$real, -::$imag))
+        return parser.op(&This($x - ::$real, -::$imag))
     }
 
     +op:mul = (&z{OBJECT}):{OBJECT} -> {
-        if(!(&z ~~ &Complex)) {
+        if(!(&z ~~ &This)) {
             throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
-        return parser.op(&Complex(::$real * &z::$real - ::$imag * &z::$imag, ::$real * &z::$imag + ::$imag * &z::$real))
+        return parser.op(&This(::$real * &z::$real - ::$imag * &z::$imag, ::$real * &z::$imag + ::$imag * &z::$real))
     }
 
     +op:mul = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex(::$real * $x, ::$imag * $x))
+        return parser.op(&This(::$real * $x, ::$imag * $x))
     }
 
     +op:r-mul = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex($x * ::$real, $x * ::$imag))
+        return parser.op(&This($x * ::$real, $x * ::$imag))
     }
 
     +op:pow = (&z{OBJECT}):{OBJECT} -> {
-        if(!(&z ~~ &Complex)) {
+        if(!(&z ~~ &This)) {
             throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
@@ -87,22 +87,22 @@ class &Complex {
         $theta $= ::arg()
 
         return parser.op(($r ** &z::$real) * ($LANG_MATH_E ** (-&z::$imag * $theta)) *\
-            &Complex(cos(&z::$imag * loge($r) + &z::$real * $theta), sin(&z::$imag * loge($r) + &z::$real * $theta)))
+            &This(cos(&z::$imag * loge($r) + &z::$real * $theta), sin(&z::$imag * loge($r) + &z::$real * $theta)))
     }
 
     +op:pow = ($x{number}):{OBJECT} -> {
         $r $= abs(&this)
         $theta $= ::arg()
 
-        return parser.op(($r ** $x) * &Complex(cos($x * $theta), sin($x * $theta)))
+        return parser.op(($r ** $x) * &This(cos($x * $theta), sin($x * $theta)))
     }
 
     +op:r-pow = ($x{number}):{OBJECT} -> {
-        return parser.op(($x ** ::$real) * &Complex(cos(::$imag * loge($x)), sin(::$imag * loge($x))))
+        return parser.op(($x ** ::$real) * &This(cos(::$imag * loge($x)), sin(::$imag * loge($x))))
     }
 
     +op:div = (&z{OBJECT}):{OBJECT} -> {
-        if(!(&z ~~ &Complex)) {
+        if(!(&z ~~ &This)) {
             throw $LANG_ERROR_INVALID_ARGUMENTS, "Argument 1 (\"&z\") must be of type \"&Complex\""
         }
 
@@ -111,11 +111,11 @@ class &Complex {
 
         $denominator $= &z::$real * &z::$real + &z::$imag * &z::$imag
 
-        return parser.op(&Complex($realNumerator / $denominator, $imagNumerator / $denominator))
+        return parser.op(&This($realNumerator / $denominator, $imagNumerator / $denominator))
     }
 
     +op:div = ($x{number}):{OBJECT} -> {
-        return parser.op(&Complex(::$real / $x, ::$imag / $x))
+        return parser.op(&This(::$real / $x, ::$imag / $x))
     }
 
     +op:r-div = ($x{number}):{OBJECT} -> {
@@ -124,7 +124,7 @@ class &Complex {
 
         $denominator $= ::$real * ::$real + ::$imag * ::$imag
 
-        return parser.op(&Complex($realNumerator / $denominator, $imagNumerator / $denominator))
+        return parser.op(&This($realNumerator / $denominator, $imagNumerator / $denominator))
     }
 
     +op:isEquals = ($operand):{INT} -> {
@@ -132,7 +132,7 @@ class &Complex {
             return parser.op(::$real == $operand)
         }
 
-        return parser.op($operand ~~ &Complex && ::$real == $operand::$real && ::$imag == $operand::$imag)
+        return parser.op($operand ~~ &This && ::$real == $operand::$real && ::$imag == $operand::$imag)
     }
 
     +op:r-isEquals = ($operand):{INT} -> {
@@ -140,12 +140,12 @@ class &Complex {
             return parser.op($operand == ::$real)
         }
 
-        return parser.op($operand ~~ &Complex && $operand::$real == ::$real && $operand::$imag == ::$imag)
+        return parser.op($operand ~~ &This && $operand::$real == ::$real && $operand::$imag == ::$imag)
     }
 
     +op:isStrictEquals = ($operand{OBJECT}):{INT} -> {
         # Check for exact class type instead of instanceOf
-        return parser.op($operand::getClass() === &Complex && ::$real === $operand::$real && ::$imag === $operand::$imag)
+        return parser.op($operand::getClass() === &This && ::$real === $operand::$real && ::$imag === $operand::$imag)
     }
 
     +to:text = ():{TEXT} -> {

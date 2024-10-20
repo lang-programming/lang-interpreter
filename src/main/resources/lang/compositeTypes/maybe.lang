@@ -45,14 +45,14 @@ class &Maybe {
     +mp.flatMap = (fp.mapper{FUNCTION_POINTER}):{OBJECT} -> {
         if(::$present) {
             $ret $= fp.mapper(::$value)
-            if(!($ret ~~ &Maybe)) {
+            if(!($ret ~~ &This)) {
                 throw $LANG_ERROR_INVALID_FUNC_PTR, "The value returned by fp.mapperFunc() must be of type \"&Maybe\""
             }
 
             return $ret
         }
 
-        return &Maybe()
+        return &This()
     }
 
     ## fp.func is executed with the value of &Maybe if the value is present otherwise fp.func will not be called
@@ -64,19 +64,19 @@ class &Maybe {
 
     +op:deepCopy = ():{OBJECT} -> {
         if(::$present) {
-            return parser.op(&Maybe(^::$value))
+            return parser.op(&This(^::$value))
         }
 
-        return &Maybe()
+        return &This()
     }
 
     +op:isEquals = ($operand{OBJECT}):{INT} -> {
-        return parser.op($operand ~~ &Maybe && ::$present === $operand::$present && (!::$present || ::$value == $operand::$value)))
+        return parser.op($operand ~~ &This && ::$present === $operand::$present && (!::$present || ::$value == $operand::$value)))
     }
 
     +op:isStrictEquals = ($operand{OBJECT}):{INT} -> {
         # Check for exact class type instead of instanceOf
-        return parser.op($operand::getClass() === &Maybe && ::$present === $operand::$present && (!::$present || ::$value === $operand::$value))
+        return parser.op($operand::getClass() === &This && ::$present === $operand::$present && (!::$present || ::$value === $operand::$value))
     }
 
     +to:text = ():{TEXT} -> {
