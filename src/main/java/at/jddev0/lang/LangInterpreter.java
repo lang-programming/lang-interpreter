@@ -2320,12 +2320,18 @@ public final class LangInterpreter {
                                 getData().var.put(key, val);
                         });
 
-                        //Set this-object
+                        //Set this-object and This-class
                         if(thisObject != null) {
                             DataObject old = getData().var.put("&this", new DataObject().setObject(thisObject).
                                     setFinalData(true).setVariableName("&this"));
                             if(old != null && old.isStaticData())
                                 setErrno(InterpretingError.VAR_SHADOWING_WARNING, "This-object \"&this\" shadows a static variable",
+                                        functionBody.getPos());
+
+                            old = getData().var.put("&This", new DataObject().setObject(thisObject.getClassBaseDefinition()).
+                                    setFinalData(true).setVariableName("&This"));
+                            if(old != null && old.isStaticData())
+                                setErrno(InterpretingError.VAR_SHADOWING_WARNING, "This-class \"&This\" shadows a static variable",
                                         functionBody.getPos());
                         }
 
