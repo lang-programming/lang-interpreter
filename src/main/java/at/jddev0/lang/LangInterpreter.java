@@ -1251,7 +1251,7 @@ public final class LangInterpreter {
                     return interpretNode(leftSideOperand, node.getRightSideOperand());
                 case MEMBER_ACCESS:
                     if(!(node.getLeftSideOperand() instanceof TextValueNode && leftSideOperand.getType() == DataType.TEXT &&
-                            leftSideOperand.getText().equals("super")) && leftSideOperand.getType() != DataType.STRUCT &&
+                            leftSideOperand.getText().toString().equals("super")) && leftSideOperand.getType() != DataType.STRUCT &&
                             leftSideOperand.getType() != DataType.OBJECT)
                         return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                                 "The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
@@ -2679,7 +2679,7 @@ public final class LangInterpreter {
 
         if(functionName.startsWith("mp.")) {
             if(compositeType == null || (compositeType.getType() != DataType.OBJECT &&
-                    !(compositeType.getType() == DataType.TEXT && compositeType.getText().equals("super"))))
+                    !(compositeType.getType() == DataType.TEXT && compositeType.getText().toString().equals("super"))))
                 return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Method call without object", node.getPos());
 
             if(compositeType.getType() == DataType.OBJECT && compositeType.getObject().isClass())
@@ -2729,7 +2729,7 @@ public final class LangInterpreter {
                 }catch(DataTypeConstraintException e) {
                     return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), node.getPos());
                 }
-            }else if(compositeType.getType() == DataType.TEXT && compositeType.getText().equals("super")) {
+            }else if(compositeType.getType() == DataType.TEXT && compositeType.getText().toString().equals("super")) {
                 compositeType = getData().var.get("&this");
 
                 if(compositeType == null || compositeType.getType() != DataType.OBJECT)
