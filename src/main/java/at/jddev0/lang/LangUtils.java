@@ -540,6 +540,12 @@ public final class LangUtils {
                 (type == DataType.OBJECT && valueObject.getObject().isClass());
     }
 
+    public static boolean isMemberAccessAllowed(DataObject valueObject) {
+        DataType type = valueObject.getType();
+
+        return type == DataType.STRUCT || type == DataType.OBJECT;
+    }
+
     /**
      * @return Will return a formatted template translation ("{" can be escaped with "{{")
      */

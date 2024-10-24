@@ -1243,7 +1243,7 @@ public final class LangInterpreter {
                     if(leftSideOperand == null)
                         return setErrnoErrorObject(InterpretingError.INVALID_PTR, node.getPos());
 
-                    if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
+                    if(!LangUtils.isMemberAccessAllowed(leftSideOperand))
                         return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                                 "The left side operand of the member access pointer operator (\"" + node.getOperator().getSymbol() + "\") must be a pointer pointing to a composite type",
                                 node.getPos());
@@ -1251,8 +1251,7 @@ public final class LangInterpreter {
                     return interpretNode(leftSideOperand, node.getRightSideOperand());
                 case MEMBER_ACCESS:
                     if(!(node.getLeftSideOperand() instanceof TextValueNode && leftSideOperand.getType() == DataType.TEXT &&
-                            leftSideOperand.getText().toString().equals("super")) && leftSideOperand.getType() != DataType.STRUCT &&
-                            leftSideOperand.getType() != DataType.OBJECT)
+                            leftSideOperand.getText().toString().equals("super")) && !LangUtils.isMemberAccessAllowed(leftSideOperand))
                         return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                                 "The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
                                 node.getPos());
@@ -1270,7 +1269,7 @@ public final class LangInterpreter {
                     if(leftSideOperand.getType() == DataType.NULL || leftSideOperand.getType() == DataType.VOID)
                         return new DataObject().setVoid();
 
-                    if(leftSideOperand.getType() != DataType.STRUCT && leftSideOperand.getType() != DataType.OBJECT)
+                    if(!LangUtils.isMemberAccessAllowed(leftSideOperand))
                         return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                                 "The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
                                 node.getPos());
