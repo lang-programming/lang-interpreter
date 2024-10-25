@@ -496,7 +496,13 @@ public final class LangInterpreter {
         if(variableName.startsWith("$") || variableName.startsWith("&") || variableName.startsWith("fp.")) {
             Set<String> variableNames;
             if(compositeType != null) {
-                if(compositeType.getType() == DataType.STRUCT) {
+                if(compositeType.getType() == DataType.ERROR) {
+                    variableNames = new HashSet<>(Arrays.asList(
+                            "$text",
+                            "$code",
+                            "$message"
+                    ));
+                }else if(compositeType.getType() == DataType.STRUCT) {
                     variableNames = new HashSet<>(Arrays.asList(compositeType.getStruct().getMemberNames()));
                 }else if(compositeType.getType() == DataType.OBJECT) {
                     variableNames = Arrays.stream(compositeType.getObject().getStaticMembers()).
@@ -1888,7 +1894,19 @@ public final class LangInterpreter {
                                                              boolean supportsPointerDereferencing, boolean shouldCreateDataObject, final boolean[] flags, CodePosition pos) {
         Map<String, DataObject> variables;
         if(compositeType != null) {
-            if(compositeType.getType() == DataType.STRUCT) {
+            if(compositeType.getType() == DataType.ERROR) {
+                variables = new HashMap<>();
+                variables.put("$text", new DataObject(compositeType.getError().getErrtxt()).setVariableName("$text").
+                        setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.TEXT)).setFinalData(true));
+                variables.put("$code", new DataObject().setInt(compositeType.getError().getErrno()).setVariableName("$code").
+                        setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.INT)).setFinalData(true));
+
+                String msg = compositeType.getError().getMessage();
+                variables.put("$message", (msg == null?new DataObject().setNull():new DataObject().setText(msg)).setVariableName("$message").
+                        setTypeConstraint(DataTypeConstraint.fromAllowedTypes(Arrays.asList(
+                                DataType.NULL, DataType.TEXT
+                        ))).setFinalData(true));
+            }else if(compositeType.getType() == DataType.STRUCT) {
                 variables = new HashMap<>();
                 try {
                     for(String memberName:compositeType.getStruct().getMemberNames())
@@ -2714,6 +2732,9 @@ public final class LangInterpreter {
         FunctionPointerObject[] methods = null;
         if(compositeType != null) {
             if(compositeType.getType() == DataType.STRUCT) {
+                return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
+                        "\": Function pointer is invalid", node.getPos());
+            }else if(compositeType.getType() == DataType.STRUCT) {
                 if(!functionName.startsWith("fp."))
                     functionName = "fp." + functionName;
 

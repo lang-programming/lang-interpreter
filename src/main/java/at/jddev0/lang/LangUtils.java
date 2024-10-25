@@ -543,7 +543,7 @@ public final class LangUtils {
     public static boolean isMemberAccessAllowed(DataObject valueObject) {
         DataType type = valueObject.getType();
 
-        return type == DataType.STRUCT || type == DataType.OBJECT;
+        return type == DataType.ERROR || type == DataType.STRUCT || type == DataType.OBJECT;
     }
 
     /**
