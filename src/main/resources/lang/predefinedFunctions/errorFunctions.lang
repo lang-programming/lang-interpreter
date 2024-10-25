@@ -1,0 +1,14 @@
+lang.version = v1.0.0
+lang.name = Lang Standard Implementation (Error Functions)
+
+function errorText($error{ERROR}):{TEXT} {
+    return parser.op($error::$text)
+}
+
+function errorCode($error{ERROR}):{INT} {
+    return parser.op($error::$code)
+}
+
+function errorMessage($error{ERROR}):{?TEXT} {
+    return parser.op($error::$message)
+}

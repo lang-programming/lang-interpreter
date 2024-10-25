@@ -116,34 +116,6 @@ final class LangPredefinedFunctions {
             return new DataObject(interpreter.getAndClearErrnoErrorObject().getErrorText());
         }
 
-        @LangFunction("errorText")
-        @AllowedTypes(DataObject.DataType.TEXT)
-        public static DataObject errorTextFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
-        ) {
-            return new DataObject(errorObject.getError().getErrtxt());
-        }
-
-        @LangFunction("errorCode")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject errorCodeFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
-        ) {
-            return new DataObject().setInt(errorObject.getError().getErrno());
-        }
-
-        @LangFunction("errorMessage")
-        @AllowedTypes({DataObject.DataType.NULL, DataObject.DataType.TEXT})
-        public static DataObject errorMessageFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject
-        ) {
-            String msg = errorObject.getError().getMessage();
-            return msg == null?new DataObject().setNull():new DataObject().setText(msg);
-        }
-
         @LangFunction("withErrorMessage")
         @AllowedTypes(DataObject.DataType.ERROR)
         public static DataObject withErrorMessageFunction(
