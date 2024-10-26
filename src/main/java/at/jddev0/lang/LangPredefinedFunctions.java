@@ -672,7 +672,7 @@ final class LangPredefinedFunctions {
 
             InterpretingError error = interpreter.getAndClearErrnoErrorObject();
             int errno = error.getErrorCode();
-            Level level = null;
+            Level level;
             if(errno > 0)
                 level = Level.ERROR;
             else if(errno < 0)
@@ -681,13 +681,14 @@ final class LangPredefinedFunctions {
                 level = Level.INFO;
 
             String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
+            text = text.isEmpty()?"":(text + ": ");
 
             if(interpreter.term == null) {
                 PrintStream stream = level.getLevel() > 3?System.err:System.out; //Write to standard error if the log level is WARNING or higher
                 stream.printf("[%-8s]: ", level.getLevelName());
-                stream.println((text.isEmpty()?"":(text + ": ")) + error.getErrorText());
+                stream.println(text + error.getErrorText());
             }else {
-                interpreter.term.logln(level, "[From Lang file]: " + (text.isEmpty()?"":(text + ": ")) + error.getErrorText(), LangInterpreter.class);
+                interpreter.term.logln(level, "[From Lang file]: " + text + error.getErrorText(), LangInterpreter.class);
             }
 
             return null;
@@ -1129,7 +1130,7 @@ final class LangPredefinedFunctions {
             String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
             String paddingText = interpreter.conversions.toText(paddingTextObject, CodePosition.EMPTY).toString();
 
-            if(paddingText.length() == 0)
+            if(paddingText.isEmpty())
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The padding text must not be empty");
 
             if(text.length() >= len)
@@ -1159,7 +1160,7 @@ final class LangPredefinedFunctions {
             String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
             String paddingText = interpreter.conversions.toText(paddingTextObject, CodePosition.EMPTY).toString();
 
-            if(paddingText.length() == 0)
+            if(paddingText.isEmpty())
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The padding text must not be empty");
 
             if(text.length() >= len)
@@ -1169,8 +1170,7 @@ final class LangPredefinedFunctions {
             while(builder.length() < len)
                 builder.append(paddingText);
 
-            if(builder.length() >= len)
-                builder.delete(len, builder.length());
+            builder.delete(len, builder.length());
 
             return new DataObject(builder.toString());
         }
@@ -3627,8 +3627,8 @@ final class LangPredefinedFunctions {
             LinkedList<DataObject> zippedList = new LinkedList<>();
             for(int i = 0;i < len;i++) {
                 LinkedList<DataObject> list = new LinkedList<>();
-                for(int j = 0;j < lists.size();j++)
-                    list.add(new DataObject(lists.get(j).getList().get(i)));
+                for(DataObject dataObject:lists)
+                    list.add(new DataObject(dataObject.getList().get(i)));
 
                 zippedList.add(new DataObject().setList(list));
             }
