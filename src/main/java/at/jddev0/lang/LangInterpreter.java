@@ -607,8 +607,6 @@ public final class LangInterpreter {
 
                 previousDataObject = dataObjects.get(dataObjects.size() - 1);
 
-                compositeType = null;
-
                 continue;
             }
 
@@ -1028,7 +1026,7 @@ public final class LangInterpreter {
 
         if(!flag && !savedStopExecutionFlagForElseBlock) {
             TryStatementPartNode elsePart = null;
-            if(!flag && tryPartNodes.size() > 1) {
+            if(tryPartNodes.size() > 1) {
                 if(tryPartNodes.get(tryPartNodes.size() - 2).getNodeType() == NodeType.TRY_STATEMENT_PART_ELSE)
                     elsePart = tryPartNodes.get(tryPartNodes.size() - 2);
                 if(tryPartNodes.get(tryPartNodes.size() - 1).getNodeType() == NodeType.TRY_STATEMENT_PART_ELSE)
@@ -1110,7 +1108,7 @@ public final class LangInterpreter {
 
                     TryStatementPartCatchNode catchNode = (TryStatementPartCatchNode)node;
                     if(catchNode.getExceptions() != null) {
-                        if(catchNode.getExceptions().size() == 0) {
+                        if(catchNode.getExceptions().isEmpty()) {
                             setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty catch part \"catch()\" is not allowed!\n"
                                     + "For checking all warnings \"catch\" without \"()\" should be used", node.getPos());
 
@@ -1775,7 +1773,7 @@ public final class LangInterpreter {
                     }
 
                     if(isVarNameFullWithoutPrefix(variableName) || isVarNamePtrAndDereferenceWithoutPrefix(variableName)) {
-                        if(variableName.indexOf("[") == -1) { //Pointer redirection is no longer supported
+                        if(!variableName.contains("[")) { //Pointer redirection is no longer supported
                             boolean[] flags = new boolean[] {false, false};
                             DataObject lvalue = getOrCreateDataObjectFromVariableName(null, moduleName, variableName,
                                     false, true, true, flags, node.getPos());
@@ -2729,7 +2727,6 @@ public final class LangInterpreter {
         }
 
         FunctionPointerObject fp;
-        FunctionPointerObject[] methods = null;
         if(compositeType != null) {
             if(compositeType.getType() == DataType.STRUCT) {
                 return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
@@ -3823,7 +3820,7 @@ public final class LangInterpreter {
                 break;
 
             case 'n':
-                output = System.getProperty("line.separator");
+                output = System.lineSeparator();
 
                 break;
         }
@@ -4071,7 +4068,7 @@ public final class LangInterpreter {
      * LangPatterns: Regex: \w+
      */
     private boolean isAlphaNumericWithUnderline(String token) {
-        if(token.length() == 0)
+        if(token.isEmpty())
             return false;
 
         for(int i = 0;i < token.length();i++) {
