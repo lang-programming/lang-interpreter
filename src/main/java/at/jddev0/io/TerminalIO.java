@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,8 +22,8 @@ import java.util.Scanner;
  */
 public class TerminalIO {
     //Map for saving commands
-    private Map<String, ReaderActionObject> actions = new HashMap<String, ReaderActionObject>();
-    private SimpleDateFormat form = new SimpleDateFormat("dd.MM.yyyy|HH:mm:ss");
+    private final Map<String, ReaderActionObject> actions = new HashMap<>();
+    private final SimpleDateFormat form = new SimpleDateFormat("dd.MM.yyyy|HH:mm:ss");
     private BufferedWriter writer;
     private Scanner s;
     //Standard level: all levels will be logged
@@ -41,7 +42,7 @@ public class TerminalIO {
         try {
             //Writer for logFile
             if(logFile != null)
-                writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile), "UTF-8"));
+                writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(logFile), StandardCharsets.UTF_8));
         }catch(Exception e) {
             this.logStackTrace(e, TerminalIO.class);
         }
@@ -58,9 +59,7 @@ public class TerminalIO {
 
                     if(actions.get(strs[0]) != null) {
                         String[] args = new String[strs.length-1];
-                        for(int i = 1;i < strs.length;i++) {
-                            args[i-1] = strs[i];
-                        }
+                        System.arraycopy(strs, 1, args, 0, strs.length - 1);
 
                         actions.get(strs[0]).action(args);
                     }else {
@@ -233,7 +232,7 @@ public class TerminalIO {
      * @author JDDev0
      * @version v0.1
      */
-    public static enum Level {
+    public enum Level {
         //Levels
         NOTSET(-1, "Not Set"), USER(0, "User"), DEBUG(1, "Debug"), CONFIG(2, "Config"), INFO(3, "Info"), WARNING(4, "Warning"),
         ERROR(5, "Error"), CRITICAL(6, "Critical");
@@ -241,7 +240,7 @@ public class TerminalIO {
         private final int lvl;
         private final String name;
 
-        private Level(int lvl, String name) {
+        Level(int lvl, String name) {
             this.lvl = lvl;
             this.name = name;
         }
