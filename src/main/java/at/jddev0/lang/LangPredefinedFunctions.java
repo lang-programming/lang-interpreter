@@ -3394,7 +3394,7 @@ final class LangPredefinedFunctions {
                 LangInterpreter interpreter,
                 @LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
         ) {
-            return arrayPermutationsFunction(interpreter, arrayObject, arrayObject.getArray().length);
+            return arrayPermutationsFunction(interpreter, arrayObject, (Integer)arrayObject.getArray().length);
         }
         @LangFunction("arrayPermutations")
         @AllowedTypes(DataObject.DataType.ARRAY)
@@ -3433,11 +3433,11 @@ final class LangPredefinedFunctions {
 
                 List<Integer> usedIndices = new LinkedList<>();
                 for(int i = 0;i < currentPermutationIndex;i++)
-                    usedIndices.add(indices[i]);
+                    usedIndices.add((Integer)indices[i]);
 
                 for(;currentPermutationIndex < count;currentPermutationIndex++) {
                     int index = indices[currentPermutationIndex] + 1;
-                    while(usedIndices.contains(index))
+                    while(usedIndices.contains((Integer)index))
                         index++;
 
                     if(index == arr.length) {
@@ -3454,7 +3454,7 @@ final class LangPredefinedFunctions {
 
                     indices[currentPermutationIndex] = index;
 
-                    usedIndices.add(index);
+                    usedIndices.add((Integer)index);
                 }
                 currentPermutationIndex = count - 1;
             }
@@ -3471,7 +3471,7 @@ final class LangPredefinedFunctions {
                 @LangInfo("If the value returned by fp.func evaluates to true, this function will stop the execution early.")
                 @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject functionObject
         ) {
-            return arrayPermutationsForEachFunction(interpreter, arrayObject, functionObject, arrayObject.getArray().length);
+            return arrayPermutationsForEachFunction(interpreter, arrayObject, functionObject, (Integer)arrayObject.getArray().length);
         }
         @LangFunction("arrayPermutationsForEach")
         @AllowedTypes(DataObject.DataType.VOID)
@@ -3520,11 +3520,11 @@ final class LangPredefinedFunctions {
 
                 List<Integer> usedIndices = new LinkedList<>();
                 for(int i = 0;i < currentPermutationIndex;i++)
-                    usedIndices.add(indices[i]);
+                    usedIndices.add((Integer)indices[i]);
 
                 for(;currentPermutationIndex < count;currentPermutationIndex++) {
                     int index = indices[currentPermutationIndex] + 1;
-                    while(usedIndices.contains(index))
+                    while(usedIndices.contains((Integer)index))
                         index++;
 
                     if(index == arr.length) {
@@ -3541,7 +3541,7 @@ final class LangPredefinedFunctions {
 
                     indices[currentPermutationIndex] = index;
 
-                    usedIndices.add(index);
+                    usedIndices.add((Integer)index);
                 }
                 currentPermutationIndex = count - 1;
             }
