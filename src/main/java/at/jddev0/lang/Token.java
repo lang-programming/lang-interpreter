@@ -69,7 +69,7 @@ public final class Token {
     }
 
     public enum TokenType {
-        OTHER, //TODO Improve
+        OTHER,
 
         LITERAL_NULL,
         LITERAL_TEXT,
