@@ -1561,9 +1561,6 @@ public final class LangParser {
                         tryArguments = null;
                     }else if(conExpression.equals("con.catch")) {
                         if(tokenCountFirstLine == 1) {
-                            tryStatementPartToken = tokens.remove(0);
-                            tokenCountFirstLine--;
-
                             tryArguments = null;
                         }else {
                             tryStatementPartToken = tokens.remove(0);
