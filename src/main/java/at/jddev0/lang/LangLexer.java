@@ -515,9 +515,21 @@ public final class LangLexer {
         }
 
         while(!currentLine.isEmpty()) {
-            int multilineTextStartIndex = currentLine.indexOf("{{{");
-            if(multilineTextStartIndex == -1)
-                multilineTextStartIndex = currentLine.indexOf("\"\"\"");
+            int multilineTextStartIndex;
+            {
+                int multilineTextStartIndex1 = currentLine.indexOf("{{{");
+                int multilineTextStartIndex2 = currentLine.indexOf("\"\"\"");
+
+                if(multilineTextStartIndex1 == -1) {
+                    multilineTextStartIndex = multilineTextStartIndex2;
+                }else {
+                    if(multilineTextStartIndex2 == -1) {
+                        multilineTextStartIndex = multilineTextStartIndex1;
+                    }else {
+                        multilineTextStartIndex = Math.min(multilineTextStartIndex1, multilineTextStartIndex2);
+                    }
+                }
+            }
 
             if(multilineTextStartIndex != -1) {
                 if(multilineTextStartIndex > 0) {
