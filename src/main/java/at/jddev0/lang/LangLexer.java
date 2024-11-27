@@ -594,6 +594,7 @@ public final class LangLexer {
 
                 if(c == '\\' && i == line.length() - 1 && lineIndex < lines.size()) {
                     line = lines.get(lineIndex);
+                    lineIndex++;
                     i = 0;
 
                     continue;
