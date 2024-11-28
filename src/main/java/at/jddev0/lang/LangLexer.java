@@ -337,7 +337,7 @@ public final class LangLexer {
         }
 
         //Add empty LITERAL_TEXT token
-        tokens.add(new Token(lineNumber, lineNumber, fromColumn, column, "", Token.TokenType.LITERAL_TEXT));
+        tokens.add(new Token(lineNumber, lineNumber, column, column, "", Token.TokenType.LITERAL_TEXT));
 
         fromColumn = column;
         column += 3;
