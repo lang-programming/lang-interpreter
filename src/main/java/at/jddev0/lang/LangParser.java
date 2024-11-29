@@ -143,8 +143,6 @@ public final class LangParser {
                                                                 List<Token> tokensLeftBehindMiddlePartEnd,
                                                                 int currentOperatorPrecedence,
                                                                 AbstractSyntaxTree.OperationNode.OperatorType type) {
-        trimFirstLine(tokens);
-
         final AbstractSyntaxTree.OperationNode.Operator nonOperator;
         switch(type) {
             case MATH:
