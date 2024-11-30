@@ -3519,8 +3519,7 @@ public final class LangParser {
         if(lexerErrorToken.getTokenType() != Token.TokenType.LEXER_ERROR)
             return;
 
-        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lexerErrorToken.pos, ParsingError.LEXER_ERROR, lexerErrorToken.getValue()
-        ));
+        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(lexerErrorToken.pos, ParsingError.LEXER_ERROR, lexerErrorToken.getValue()));
     }
 
     private AbstractSyntaxTree parseFunctionParameterList(List<Token> tokens, boolean functionDefinition) {
