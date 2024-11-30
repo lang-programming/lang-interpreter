@@ -444,16 +444,12 @@ public final class LangUtils {
                     i++;
                 }while(i < endIndex && i < tokens.size() &&
                         tokens.get(i).getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
-
-                continue;
             }else if(token.getTokenType() == Token.TokenType.START_COMMENT ||
                     token.getTokenType() == Token.TokenType.START_DOC_COMMENT) {
                 do {
                     i++;
                 }while(i < endIndex && i < tokens.size() &&
                         tokens.get(i).getTokenType() != Token.TokenType.END_COMMENT);
-
-                continue;
             }
 
             if(abortOnEOL && token.getTokenType() == Token.TokenType.EOL)
@@ -494,16 +490,12 @@ public final class LangUtils {
                     i++;
                 }while(i < endIndex && i < tokens.size() &&
                         tokens.get(i).getTokenType() != Token.TokenType.END_MULTILINE_TEXT);
-
-                continue;
             }else if(token.getTokenType() == Token.TokenType.START_COMMENT ||
                     token.getTokenType() == Token.TokenType.START_DOC_COMMENT) {
                 do {
                     i++;
                 }while(i < endIndex && i < tokens.size() &&
                         tokens.get(i).getTokenType() != Token.TokenType.END_COMMENT);
-
-                continue;
             }
 
             i++;
