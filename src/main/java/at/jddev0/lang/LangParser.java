@@ -287,12 +287,12 @@ public final class LangParser {
                         if(index > 0)
                             whitespaces.add(new Token(t.pos, value.substring(0, index), Token.TokenType.WHITESPACE));
 
+                        if(index < value.length() - 1)
+                            tokens.add(1, new Token(t.pos, value.substring(index + 1), Token.TokenType.WHITESPACE));
+
                         t = new Token(t.getPos(), ",", Token.TokenType.OPERATOR);
                         value = t.getValue();
                         tokens.set(0, t);
-
-                        if(index < value.length() - 1)
-                            tokens.add(1, new Token(t.pos, value.substring(index + 1), Token.TokenType.WHITESPACE));
                     }
 
                     //Grouping
