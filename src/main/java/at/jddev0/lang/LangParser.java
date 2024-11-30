@@ -1136,10 +1136,8 @@ public final class LangParser {
         //TODO: Improve
         //Parse "&<name>" if something is before "&<name>" as "&" operator with new other value lexical analysis of "<name>"
         if((!otherTokens.isEmpty() || !leftNodes.isEmpty()) && t.getValue().startsWith("&")) {
-            tokens.remove(0);
-
-            tokens.add(0, new Token(t.pos, "&", Token.TokenType.OPERATOR));
-            tokens.add(lexer.tokenizeOtherValue(t.getValue().substring(1), t.pos));
+            tokens.set(0, new Token(t.pos, "&", Token.TokenType.OPERATOR));
+            tokens.add(1, lexer.tokenizeOtherValue(t.getValue().substring(1), t.pos));
 
             return;
         }
