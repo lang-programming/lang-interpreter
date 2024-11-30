@@ -521,7 +521,7 @@ public final class LangParser {
                         operator = AbstractSyntaxTree.OperationNode.Operator.POW;
 
                         //If something is before operator and operator type is compatible with type
-                        if(operator.getOperatorType().isCompatibleWith(type) && (!otherTokens.isEmpty() || leftNodes.size() >= 0)) {
+                        if(operator.getOperatorType().isCompatibleWith(type) && (!otherTokens.isEmpty() || !leftNodes.isEmpty())) {
                             if(tokensLeft != null && currentOperatorPrecedence < operator.getPrecedence()) { //No "<=" because it should be parsed right-to-left
                                 tokensLeft.addAll(tokens);
                                 tokens.clear();
