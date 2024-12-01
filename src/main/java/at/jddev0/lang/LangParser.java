@@ -1310,7 +1310,6 @@ public final class LangParser {
                         (isSimpleAssignment?parseSimpleAssignmentValue(tokens):
                                 parseLRvalue(tokens, true)).convertToNode());
             }
-
         }
 
         boolean isVariableAssignment = lvalueTokens.size() == 1 && lvalueTokens.get(0).getTokenType() == Token.TokenType.IDENTIFIER &&
@@ -1449,8 +1448,6 @@ public final class LangParser {
         trimFirstLine(tokens);
 
         int tokenCountFirstLine = getTokenCountFirstLine(tokens);
-        if(tokenCountFirstLine == -1)
-            tokenCountFirstLine = tokens.size();
 
         //Control flow statements
         boolean startsWithConExpression = tokenCountFirstLine > 0 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
@@ -1499,8 +1496,6 @@ public final class LangParser {
                     trimFirstLine(tokens);
 
                     tokenCountFirstLine = getTokenCountFirstLine(tokens);
-                    if(tokenCountFirstLine == -1)
-                        tokenCountFirstLine = tokens.size();
                     endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
                             Token.TokenType.OPENING_BLOCK_BRACKET;
 
@@ -1536,8 +1531,6 @@ public final class LangParser {
                         trimFirstLine(tokens);
 
                         tokenCountFirstLine = getTokenCountFirstLine(tokens);
-                        if(tokenCountFirstLine == -1)
-                            tokenCountFirstLine = tokens.size();
                     }
 
                     Token tryStatementPartToken;
@@ -1636,8 +1629,6 @@ public final class LangParser {
                     trimFirstLine(tokens);
 
                     tokenCountFirstLine = getTokenCountFirstLine(tokens);
-                    if(tokenCountFirstLine == -1)
-                        tokenCountFirstLine = tokens.size();
                     endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
                             Token.TokenType.OPENING_BLOCK_BRACKET;
 
@@ -1673,8 +1664,6 @@ public final class LangParser {
                         trimFirstLine(tokens);
 
                         tokenCountFirstLine = getTokenCountFirstLine(tokens);
-                        if(tokenCountFirstLine == -1)
-                            tokenCountFirstLine = tokens.size();
                     }
 
                     Token loopStatementPartToken;
@@ -1822,8 +1811,6 @@ public final class LangParser {
                     trimFirstLine(tokens);
 
                     tokenCountFirstLine = getTokenCountFirstLine(tokens);
-                    if(tokenCountFirstLine == -1)
-                        tokenCountFirstLine = tokens.size();
                     endsWithOpeningBracket = tokenCountFirstLine > 0 && tokens.get(tokenCountFirstLine - 1).getTokenType() ==
                             Token.TokenType.OPENING_BLOCK_BRACKET;
 
@@ -1859,8 +1846,6 @@ public final class LangParser {
                         trimFirstLine(tokens);
 
                         tokenCountFirstLine = getTokenCountFirstLine(tokens);
-                        if(tokenCountFirstLine == -1)
-                            tokenCountFirstLine = tokens.size();
                     }
 
                     Token ifStatementPartToken;
@@ -2421,8 +2406,6 @@ public final class LangParser {
         trimFirstLine(tokens);
 
         int tokenCountFirstLine = getTokenCountFirstLine(tokens);
-        if(tokenCountFirstLine == -1)
-            tokenCountFirstLine = tokens.size();
 
         if(isRvalue) {
             if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
@@ -3325,8 +3308,6 @@ public final class LangParser {
         trimFirstLine(tokens);
 
         int tokenCountFirstLine = getTokenCountFirstLine(tokens);
-        if(tokenCountFirstLine == -1)
-            tokenCountFirstLine = tokens.size();
 
         if(tokenCountFirstLine == 0 && tokenCountFirstLine != tokens.size()) {
             nodes.add(new AbstractSyntaxTree.TextValueNode(tokens.get(0).pos, ""));
@@ -3982,7 +3963,7 @@ public final class LangParser {
 
         int tokenCountFirstLine = getTokenCountFirstLine(tokens);
 
-        int i = (tokenCountFirstLine == -1?tokens.size():tokenCountFirstLine) - 1;
+        int i = tokenCountFirstLine - 1;
         while(i >= 0 && (tokens.get(i).getTokenType() == Token.TokenType.WHITESPACE ||
                 tokens.get(i).getTokenType() == Token.TokenType.END_COMMENT)) {
             //Trim before comment
@@ -4032,7 +4013,7 @@ public final class LangParser {
                 return iter.previousIndex();
         }
 
-        return -1;
+        return tokens.size();
     }
 
     public static enum ParsingError {
