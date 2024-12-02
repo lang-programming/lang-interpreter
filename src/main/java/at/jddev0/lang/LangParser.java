@@ -1467,7 +1467,7 @@ public final class LangParser {
                 Token lastToken = conExpressionToken;
 
                 List<AbstractSyntaxTree.Node> argumentNodes;
-                if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+                if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
                         tokens.get(0).getValue().equals("(")) {
                     int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
                     if(argumentsEndIndex == -1) {
@@ -1476,7 +1476,7 @@ public final class LangParser {
                         return ast;
                     }
 
-                    lastToken = tokens.get(argumentsEndIndex + 1);
+                    lastToken = tokens.get(argumentsEndIndex);
                     argumentNodes = parseFunctionParameterList(new ArrayList<>(tokens.subList(1, argumentsEndIndex)), false).getChildren();
                     tokens.subList(0, argumentsEndIndex + 1).clear();
                 }else {
@@ -1512,7 +1512,7 @@ public final class LangParser {
                         //Remove "{" and "}" for the curly brackets if statement syntax
                         CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
 
-                        if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BLOCK_BRACKET)
+                        if(!endsWithOpeningBracket)
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
                         tokens.remove(tokenCountFirstLine - 1);
@@ -1592,8 +1592,7 @@ public final class LangParser {
                     if(tryBody == null) {
                         //TODO line numbers
                         nodes.add(new AbstractSyntaxTree.TryStatementNode(CodePosition.EMPTY, tryStatmentParts));
-                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In try body"
-                        ));
+                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In try body"));
 
                         return ast;
                     }
@@ -1645,7 +1644,7 @@ public final class LangParser {
                         //Remove "{" and "}" for the curly brackets if statement syntax
                         CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
 
-                        if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BLOCK_BRACKET)
+                        if(!endsWithOpeningBracket)
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
                         tokens.remove(tokenCountFirstLine - 1);
@@ -1685,13 +1684,6 @@ public final class LangParser {
                         loopStatementPartToken = tokens.remove(0);
                         tokenCountFirstLine--;
 
-                        if(tokenCountFirstLine == 0) {
-                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(loopStatementPartToken.pos, ParsingError.CONT_FLOW_ARG_MISSING,
-                                    "Missing loop statement arguments"));
-
-                            return ast;
-                        }
-
                         if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
                                 tokens.get(0).getValue().equals("(")) {
                             int argumentsEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
@@ -1730,8 +1722,7 @@ public final class LangParser {
                     if(loopBody == null) {
                         //TODO line numbers
                         nodes.add(new AbstractSyntaxTree.LoopStatementNode(CodePosition.EMPTY, loopStatmentParts));
-                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In loop body"
-                        ));
+                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In loop body"));
 
                         return ast;
                     }
@@ -1827,7 +1818,7 @@ public final class LangParser {
                         //Remove "{" and "}" for the curly brackets if statement syntax
                         CodePosition pos = tokens.get(tokenCountFirstLine - 1).pos;
 
-                        if(tokens.get(tokenCountFirstLine - 1).getTokenType() != Token.TokenType.OPENING_BLOCK_BRACKET)
+                        if(!endsWithOpeningBracket)
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.INVALID_CON_PART));
 
                         tokens.remove(tokenCountFirstLine - 1);
@@ -1865,13 +1856,6 @@ public final class LangParser {
                     }else if(conExpression.equals("con.if") || conExpression.equals("con.elif")) {
                         ifStatementPartToken = tokens.remove(0);
                         tokenCountFirstLine--;
-
-                        if(tokenCountFirstLine == 0) {
-                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(ifStatementPartToken.pos, ParsingError.CONT_FLOW_ARG_MISSING,
-                                    "Missing if statement arguments"));
-
-                            return ast;
-                        }
 
                         if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
                                 tokens.get(0).getValue().equals("(")) {
@@ -1911,8 +1895,7 @@ public final class LangParser {
                     if(ifBody == null) {
                         //TODO line numbers
                         nodes.add(new AbstractSyntaxTree.IfStatementNode(CodePosition.EMPTY, ifStatmentParts));
-                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In if body"
-                        ));
+                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(CodePosition.EMPTY, ParsingError.EOF, "In if body"));
 
                         return ast;
                     }
