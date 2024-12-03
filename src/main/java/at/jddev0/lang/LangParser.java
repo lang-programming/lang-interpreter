@@ -1992,7 +1992,7 @@ public final class LangParser {
         }
 
         //Function definition
-        if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
+        if(tokenCountFirstLine > 3 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
                 tokens.get(0).getValue().equals("function") && endsWithOpeningBracket) {
             Token functionDefinitionStartToken = tokens.remove(0);
             tokenCountFirstLine--;
