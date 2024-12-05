@@ -2150,7 +2150,7 @@ public final class LangParser {
 
             if(tokenCountFirstLine != 1) {
                 nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
-                        "Invalid tokens after struct constraint"));
+                        "Invalid tokens after struct identifier"));
                 return ast;
             }
 
@@ -2167,13 +2167,13 @@ public final class LangParser {
         //Class definition
         if(tokenCountFirstLine > 1 && tokens.get(0).getTokenType() == Token.TokenType.OTHER &&
                 tokens.get(0).getValue().equals("class") && endsWithOpeningBracket) {
-            Token structDefinitionStartToken = tokens.remove(0);
+            Token classDefinitionStartToken = tokens.remove(0);
             tokenCountFirstLine--;
 
-            CodePosition startPos = structDefinitionStartToken.pos;
+            CodePosition startPos = classDefinitionStartToken.pos;
 
             if(tokens.get(0).getTokenType() != Token.TokenType.WHITESPACE) {
-                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(classDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
                         "Invalid class definition: Whitespace is missing after \"class\""));
 
                 return ast;
@@ -2184,7 +2184,7 @@ public final class LangParser {
 
             if(tokens.get(0).getTokenType() != Token.TokenType.IDENTIFIER ||
                     !LangPatterns.matches(tokens.get(0).getValue(), LangPatterns.VAR_NAME_NORMAL_ARRAY_WITHOUT_PREFIX)) {
-                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(classDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
                         "Invalid class definition: Invalid class identifier: " + tokens.get(0).getValue()
                 ));
 
@@ -2206,7 +2206,7 @@ public final class LangParser {
                     tokens.get(0).getValue().equals("<")) {
                 //TODO check for matching brackets ("<" and ">")
                 int parentClassesEndIndex = -1;
-                for(int i = tokenCountFirstLine;i >= 0;i--) {
+                for(int i = tokenCountFirstLine - 1;i >= 0;i--) {
                     if(tokens.get(i).getTokenType() == Token.TokenType.OPERATOR && tokens.get(i).getValue().equals(">")) {
                         parentClassesEndIndex = i;
 
@@ -2231,7 +2231,7 @@ public final class LangParser {
             }
 
             if(tokenCountFirstLine != 1) {
-                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(structDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
+                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(classDefinitionStartToken.pos, ParsingError.LEXER_ERROR,
                         "Invalid tokens after class definition"));
                 return ast;
             }
@@ -2388,10 +2388,10 @@ public final class LangParser {
 
         trimFirstLine(tokens);
 
-        int tokenCountFirstLine = getTokenCountFirstLine(tokens);
-
         if(isRvalue) {
-            if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+            int tokenCountFirstLine = getTokenCountFirstLine(tokens);
+
+            if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
                     tokens.get(0).getValue().equals("(")) {
                 //Possible function definition
 
@@ -2404,17 +2404,22 @@ public final class LangParser {
                 }
 
                 List<Token> parameterListTokens = new ArrayList<>(tokens.subList(1, parameterListEndIndex));
+                tokens.subList(0, parameterListEndIndex + 1).clear();
                 List<AbstractSyntaxTree.Node> parameterList = parseFunctionParameterList(parameterListTokens, true).getChildren();
 
-                int tokenIndex = parameterListEndIndex + 1;
+                tokenCountFirstLine -= parameterListEndIndex + 1;
+
                 String returnTypeConstraint = null;
-                if(tokenCountFirstLine > tokenIndex + 1 &&
-                        tokens.get(tokenIndex).getTokenType() == Token.TokenType.OPERATOR &&
-                        tokens.get(tokenIndex).getValue().equals(":") &&
-                        tokens.get(tokenIndex + 1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
-                        tokens.get(tokenIndex + 1).getValue().equals("{")) {
+                if(tokenCountFirstLine >= 2 &&
+                        tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+                        tokens.get(0).getValue().equals(":") &&
+                        tokens.get(1).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+                        tokens.get(1).getValue().equals("{")) {
+                    tokens.remove(0);
+                    tokenCountFirstLine -= 1;
+
                     int returnTypeConstraintEndIndex = LangUtils.getIndexOfMatchingBracket(tokens,
-                            tokenIndex + 1, Integer.MAX_VALUE, "{", "}", true);
+                            0, Integer.MAX_VALUE, "{", "}", true);
                     if(returnTypeConstraintEndIndex == -1) {
                         nodes.add(new AbstractSyntaxTree.ParsingErrorNode(tokens.get(0).pos, ParsingError.BRACKET_MISMATCH,
                                 "Bracket is missing in return type constraint of function definition"
@@ -2423,21 +2428,23 @@ public final class LangParser {
                         return ast;
                     }
 
-                    List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(tokenIndex + 1, returnTypeConstraintEndIndex + 1));
-                    returnTypeConstraint = parseTypeConstraint(typeConstraintTokens, false, nodes);
+                    List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, returnTypeConstraintEndIndex + 1));
+                    tokens.subList(0, returnTypeConstraintEndIndex + 1).clear();
 
-                    tokenIndex = returnTypeConstraintEndIndex + 1;
+                    tokenCountFirstLine -= returnTypeConstraintEndIndex + 1;
+
+                    returnTypeConstraint = parseTypeConstraint(typeConstraintTokens, false, nodes);
                 }
 
-                if(tokenCountFirstLine > tokenIndex + 2 && tokens.get(tokenIndex).getTokenType() == Token.TokenType.WHITESPACE &&
-                        tokens.get(tokenIndex + 1).getTokenType() == Token.TokenType.OPERATOR &&
-                        tokens.get(tokenIndex + 1).getValue().equals("->") &&
-                        tokens.get(tokenIndex + 2).getTokenType() == Token.TokenType.WHITESPACE) {
-                    tokens.subList(0, tokenIndex + 3).clear();
-                    tokenCountFirstLine -= tokenIndex + 3;
+                if(tokenCountFirstLine >= 3 && tokens.get(0).getTokenType() == Token.TokenType.WHITESPACE &&
+                        tokens.get(1).getTokenType() == Token.TokenType.OPERATOR &&
+                        tokens.get(1).getValue().equals("->") &&
+                        tokens.get(2).getTokenType() == Token.TokenType.WHITESPACE) {
+                    tokens.subList(0, 3).clear();
+                    tokenCountFirstLine -= 3;
 
                     //TODO line numbers
-                    if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
+                    if(tokenCountFirstLine >= 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
                         tokens.remove(0);
 
                         nodes.add(new AbstractSyntaxTree.FunctionDefinitionNode(CodePosition.EMPTY, null, false, false, langDocComment, parameterList,
