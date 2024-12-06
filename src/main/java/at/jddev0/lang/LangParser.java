@@ -2470,7 +2470,7 @@ public final class LangParser {
                 Token t = tokens.remove(0);
                 nodes.add(new AbstractSyntaxTree.UnprocessedVariableNameNode(t.pos, t.getValue()));
                 return ast;
-            }else if(tokenCountFirstLine == 1 && tokenCountFirstLine != tokens.size() &&
+            }else if(tokenCountFirstLine == 1 && tokens.size() > tokenCountFirstLine &&
                     tokens.get(0).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
                 //Struct definition
 
@@ -2481,7 +2481,7 @@ public final class LangParser {
                 nodes.addAll(parseStructDefinition(startPos, null, tokens).getChildren());
 
                 return ast;
-            }else if(tokenCountFirstLine >= 3 && tokenCountFirstLine != tokens.size() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+            }else if(tokenCountFirstLine >= 3 && tokens.size() > tokenCountFirstLine && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
                     tokens.get(0).getValue().equals("<") && tokens.get(tokenCountFirstLine - 2).getTokenType() == Token.TokenType.OPERATOR &&
                     tokens.get(tokenCountFirstLine - 2).getValue().equals(">") &&
                     tokens.get(tokenCountFirstLine - 1).getTokenType() == Token.TokenType.OPENING_BLOCK_BRACKET) {
