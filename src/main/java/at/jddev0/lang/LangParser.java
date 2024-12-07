@@ -2765,8 +2765,9 @@ public final class LangParser {
                         return ast;
                     }
 
-                    //Constructor methods
                     t = tokens.get(0);
+
+                    //Constructors
                     if(t.getTokenType() == Token.TokenType.OTHER && t.getValue().equals("construct")) {
                         tokens.remove(0);
 
@@ -2779,7 +2780,7 @@ public final class LangParser {
 
                         t = tokens.get(0);
                         if(t.getTokenType() != Token.TokenType.ASSIGNMENT || !t.getValue().equals(" = ")) {
-                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
                                     "Invalid assignment for constructor (only \" = \" is allowed)"));
 
                             return ast;
@@ -2822,8 +2823,15 @@ public final class LangParser {
                         Token methodNameToken = tokens.remove(0);
                         String methodName = methodNameToken.getValue();
                         if(!LangPatterns.matches(methodName, LangPatterns.OPERATOR_METHOD_NAME)) {
-                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_ASSIGNMENT,
                                     "Invalid operator method name: \"" + methodName + "\""));
+
+                            return ast;
+                        }
+
+                        if(tokens.isEmpty()) {
+                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+                                    "Missing value after operator method"));
 
                             return ast;
                         }
@@ -2861,6 +2869,13 @@ public final class LangParser {
                         if(!LangPatterns.matches(methodName, LangPatterns.CONVERSION_METHOD_NAME)) {
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
                                     "Invalid conversion method name: \"" + methodName + "\""));
+
+                            return ast;
+                        }
+
+                        if(tokens.isEmpty()) {
+                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.EOF,
+                                    "Missing value after conversion method"));
 
                             return ast;
                         }
