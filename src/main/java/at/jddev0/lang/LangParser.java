@@ -2723,12 +2723,10 @@ public final class LangParser {
                 case OTHER:
                 case OPERATOR:
                     AbstractSyntaxTree.ClassDefinitionNode.Visibility visibility;
-                    boolean visibilityKeywordUsed;
 
                     if(t.getValue().length() == 1) {
                         char visibilitySymbol = t.getValue().charAt(0);
                         visibility = AbstractSyntaxTree.ClassDefinitionNode.Visibility.fromSymbol(visibilitySymbol);
-                        visibilityKeywordUsed = false;
 
                         if(visibility == null) {
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
@@ -2741,7 +2739,6 @@ public final class LangParser {
                     }else {
                         String visibilityKeyword = t.getValue();
                         visibility = AbstractSyntaxTree.ClassDefinitionNode.Visibility.fromKeyword(visibilityKeyword);
-                        visibilityKeywordUsed = true;
 
                         if(visibility == null) {
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
