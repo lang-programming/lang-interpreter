@@ -3019,7 +3019,7 @@ public final class LangParser {
                         if(bracketEndIndex == -1) {
                             nodes.add(new AbstractSyntaxTree.ParsingErrorNode(memberNameToken.pos, ParsingError.BRACKET_MISMATCH,
                                     "Bracket is missing in type constraint in class definition for " +
-                                            (isStaticMember?"static ":"") + "member: \"" + memberNameToken.getValue() + "\""
+                                            (isStaticMember?"static ":"") + "member: \"" + memberName + "\""
                             ));
 
                             return ast;
@@ -3223,7 +3223,7 @@ public final class LangParser {
                     break;
 
                 case OPENING_BRACKET:
-                    if(t.getTokenType() == Token.TokenType.OPENING_BRACKET && t.getValue().equals("(")) {
+                    if(t.getValue().equals("(")) {
                         int endIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "(", ")", true);
                         if(endIndex != -1) {
                             Token openingBracketToken = tokens.get(0);
@@ -3293,7 +3293,7 @@ public final class LangParser {
                 case END_MULTILINE_TEXT:
                 case SINGLE_LINE_TEXT_QUOTES:
                     nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-                            "Invalid token type for translation key expression: \"" + t.getTokenType().name() + "\""
+                            "Invalid token type for token value expression: \"" + t.getTokenType().name() + "\""
                     ));
 
                     break tokenProcessing;
@@ -3310,9 +3310,8 @@ public final class LangParser {
         trimFirstLine(tokens);
 
         int tokenCountFirstLine = getTokenCountFirstLine(tokens);
-
         if(tokenCountFirstLine == 0 && tokenCountFirstLine != tokens.size()) {
-            nodes.add(new AbstractSyntaxTree.TextValueNode(tokens.get(0).pos, ""));
+            nodes.add(new AbstractSyntaxTree.TextValueNode(CodePosition.EMPTY, ""));
         }
 
         tokenProcessing:
@@ -3474,7 +3473,6 @@ public final class LangParser {
             else
                 nodes.add(new AbstractSyntaxTree.LongValueNode(numberToken.pos, Long.parseLong(token)));
 
-
             return;
         }catch(NumberFormatException ignore) {}
 
@@ -3510,110 +3508,106 @@ public final class LangParser {
         trimFirstLine(tokens);
 
         if(functionDefinition) {
-            if(!tokens.isEmpty()) {
-                tokenProcessing:
-                while(!tokens.isEmpty()) {
-                    Token t = tokens.get(0);
+            tokenProcessing:
+            while(!tokens.isEmpty()) {
+                Token t = tokens.get(0);
 
-                    switch(t.getTokenType()) {
-                        case EOL:
-                        case EOF:
-                            break tokenProcessing;
+                switch(t.getTokenType()) {
+                    case EOL:
+                    case EOF:
+                        break tokenProcessing;
 
-                        case START_COMMENT:
-                        case START_DOC_COMMENT:
-                            parseCommentTokens(tokens, nodes);
+                    case START_COMMENT:
+                    case START_DOC_COMMENT:
+                        parseCommentTokens(tokens, nodes);
 
-                            break;
+                        break;
 
-                        case ARGUMENT_SEPARATOR:
+                    case ARGUMENT_SEPARATOR:
+                        tokens.remove(0);
+
+                        if(nodes.isEmpty()) {
+                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_PARAMETER,
+                                    "Empty function parameter"));
+                        }
+
+                        if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
+                                tokens.get(0).getTokenType() == Token.TokenType.EOF) {
+                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_PARAMETER,
+                                    "Empty function parameter"));
+                        }
+
+                        break;
+
+                    case IDENTIFIER:
+                        tokens.remove(0);
+
+                        String variableName = t.getValue();
+                        CodePosition pos = t.pos;
+
+                        String typeConstraint = null;
+                        if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
+                                tokens.get(0).getValue().equals("{")) {
+                            int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
+                            if(bracketEndIndex == -1) {
+                                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.BRACKET_MISMATCH,
+                                        "Bracket is missing in return type constraint in function parameter list definition for parameter \"" +
+                                                variableName + "\""));
+                                return ast;
+                            }
+
+                            pos = pos.combine(tokens.get(bracketEndIndex).pos);
+
+                            List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
+                            tokens.subList(0, bracketEndIndex + 1).clear();
+
+                            typeConstraint = parseTypeConstraint(typeConstraintTokens, true, nodes);
+                        }
+
+                        if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
+                                tokens.get(0).getValue().equals("...")) {
+                            pos = pos.combine(tokens.get(0).pos);
+
+                            //Varargs parameter
                             tokens.remove(0);
 
-                            if(nodes.isEmpty()) {
-                                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_PARAMETER,
-                                        "Empty function parameter"));
-                            }
+                            variableName += "...";
+                        }
 
-                            if(tokens.isEmpty() || tokens.get(0).getTokenType() == Token.TokenType.EOL ||
-                                    tokens.get(0).getTokenType() == Token.TokenType.EOF) {
-                                nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.INVALID_PARAMETER,
-                                        "Empty function parameter"));
-                            }
+                        nodes.add(new AbstractSyntaxTree.VariableNameNode(pos, variableName, typeConstraint));
 
-                            break;
+                        break;
 
-                        case IDENTIFIER:
-                            Token variableNameToken = t;
-                            String variableName = t.getValue();
-                            tokens.remove(0);
+                    case LEXER_ERROR:
+                        tokens.remove(0);
 
-                            String typeConstraint = null;
+                        parseLexerErrorToken(t, nodes);
 
-                            CodePosition pos = t.pos;
+                        break;
 
-                            if(tokens.size() > 1 && tokens.get(0).getTokenType() == Token.TokenType.OPENING_BRACKET &&
-                                    tokens.get(0).getValue().equals("{")) {
-                                int bracketEndIndex = LangUtils.getIndexOfMatchingBracket(tokens, 0, Integer.MAX_VALUE, "{", "}", true);
-                                if(bracketEndIndex == -1) {
-                                    nodes.add(new AbstractSyntaxTree.ParsingErrorNode(variableNameToken.pos, ParsingError.BRACKET_MISMATCH,
-                                            "Bracket is missing in return type constraint in function parameter list definition for parameter \"" +
-                                                    variableName + "\""));
-                                    return ast;
-                                }
+                    case LITERAL_NULL:
+                    case LITERAL_TEXT:
+                    case LITERAL_NUMBER:
+                    case ASSIGNMENT:
+                    case CLOSING_BRACKET:
+                    case WHITESPACE:
+                    case OTHER:
+                    case OPERATOR:
+                    case OPENING_BRACKET:
+                    case OPENING_BLOCK_BRACKET:
+                    case CLOSING_BLOCK_BRACKET:
+                    case ESCAPE_SEQUENCE:
+                    case PARSER_FUNCTION_IDENTIFIER:
+                    case START_MULTILINE_TEXT:
+                    case LINE_CONTINUATION:
+                    case END_COMMENT:
+                    case END_MULTILINE_TEXT:
+                    case SINGLE_LINE_TEXT_QUOTES:
+                        nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
+                                "Invalid token type for function parameter list expression: \"" +
+                                        t.getTokenType().name() + "\""));
 
-                                pos = pos.combine(tokens.get(bracketEndIndex).pos);
-
-                                List<Token> typeConstraintTokens = new ArrayList<>(tokens.subList(0, bracketEndIndex + 1));
-                                tokens.subList(0, bracketEndIndex + 1).clear();
-
-                                typeConstraint = parseTypeConstraint(typeConstraintTokens, true, nodes);
-                            }
-
-                            if(!tokens.isEmpty() && tokens.get(0).getTokenType() == Token.TokenType.OPERATOR &&
-                                    tokens.get(0).getValue().equals("...")) {
-                                pos = pos.combine(tokens.get(0).pos);
-
-                                //Varargs parameter
-                                tokens.remove(0);
-
-                                variableName += "...";
-                            }
-
-                            nodes.add(new AbstractSyntaxTree.VariableNameNode(pos, variableName, typeConstraint));
-
-                            break;
-
-                        case LEXER_ERROR:
-                            tokens.remove(0);
-
-                            parseLexerErrorToken(t, nodes);
-
-                            break;
-
-                        case LITERAL_NULL:
-                        case LITERAL_TEXT:
-                        case ASSIGNMENT:
-                        case CLOSING_BRACKET:
-                        case WHITESPACE:
-                        case OTHER:
-                        case OPERATOR:
-                        case LITERAL_NUMBER:
-                        case OPENING_BRACKET:
-                        case OPENING_BLOCK_BRACKET:
-                        case CLOSING_BLOCK_BRACKET:
-                        case ESCAPE_SEQUENCE:
-                        case PARSER_FUNCTION_IDENTIFIER:
-                        case START_MULTILINE_TEXT:
-                        case LINE_CONTINUATION:
-                        case END_COMMENT:
-                        case END_MULTILINE_TEXT:
-                        case SINGLE_LINE_TEXT_QUOTES:
-                            nodes.add(new AbstractSyntaxTree.ParsingErrorNode(t.pos, ParsingError.LEXER_ERROR,
-                                    "Invalid token type for function parameter list expression: \"" +
-                                            t.getTokenType().name() + "\""));
-
-                            break tokenProcessing;
-                    }
+                        break tokenProcessing;
                 }
             }
         }else {
@@ -3902,7 +3896,7 @@ public final class LangParser {
                 LangPatterns.PARSING_TYPE_CONSTRAINT)) {
             CodePosition pos = tokens.get(0).pos.combine(tokens.get(tokens.size() - 1).pos);
 
-            errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.BRACKET_MISMATCH,
+            errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(pos, ParsingError.LEXER_ERROR,
                     "Invalid type constraint syntax"));
 
             return null;
@@ -3922,34 +3916,32 @@ public final class LangParser {
             tokens.remove(0);
 
             boolean isDocComment = currentToken.getTokenType() == Token.TokenType.START_DOC_COMMENT;
-            if(currentToken.getTokenType() == Token.TokenType.START_COMMENT || isDocComment) {
-                StringBuilder stringBuilder = new StringBuilder();
+            StringBuilder stringBuilder = new StringBuilder();
 
-                while(currentToken.getTokenType() != Token.TokenType.END_COMMENT) {
-                    if(tokens.isEmpty())
-                        break;
+            while(currentToken.getTokenType() != Token.TokenType.END_COMMENT) {
+                if(tokens.isEmpty())
+                    break;
 
-                    currentToken = tokens.remove(0);
-                    if(currentToken.getTokenType() == Token.TokenType.LEXER_ERROR)
-                        errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(currentToken.pos, ParsingError.LEXER_ERROR,
-                                currentToken.getValue()));
-
-                    if(isDocComment) {
-                        if(currentToken.getTokenType() == Token.TokenType.LITERAL_TEXT ||
-                                currentToken.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
-                            stringBuilder.append(currentToken.getValue());
-                        else if(currentToken.getTokenType() == Token.TokenType.EOL)
-                            stringBuilder.append("\n");
-                    }
-                }
+                currentToken = tokens.remove(0);
+                if(currentToken.getTokenType() == Token.TokenType.LEXER_ERROR)
+                    errorNodes.add(new AbstractSyntaxTree.ParsingErrorNode(currentToken.pos, ParsingError.LEXER_ERROR,
+                            currentToken.getValue()));
 
                 if(isDocComment) {
-                    String docComment = stringBuilder.toString();
-                    if(langDocComment == null)
-                        langDocComment = docComment;
-                    else
-                        langDocComment += "\n" + docComment;
+                    if(currentToken.getTokenType() == Token.TokenType.LITERAL_TEXT ||
+                            currentToken.getTokenType() == Token.TokenType.ESCAPE_SEQUENCE)
+                        stringBuilder.append(currentToken.getValue());
+                    else if(currentToken.getTokenType() == Token.TokenType.EOL)
+                        stringBuilder.append("\n");
                 }
+            }
+
+            if(isDocComment) {
+                String docComment = stringBuilder.toString();
+                if(langDocComment == null)
+                    langDocComment = docComment;
+                else
+                    langDocComment += "\n" + docComment;
             }
 
             if(tokens.isEmpty())
@@ -3972,7 +3964,6 @@ public final class LangParser {
             if(tokens.get(i).getTokenType() == Token.TokenType.END_COMMENT) {
                 while(i >= 0 && tokens.get(i).getTokenType() != Token.TokenType.START_COMMENT &&
                         tokens.get(i).getTokenType() != Token.TokenType.START_DOC_COMMENT) {
-
                     i--;
                 }
 
