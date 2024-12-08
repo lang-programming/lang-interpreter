@@ -2530,7 +2530,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
                 builder.append("null");
             }else {
                 builder.append("{\n");
-                tokens = throwValue.toString().split("\\n");
+                tokens = message.toString().split("\\n");
                 for(String token:tokens) {
                     builder.append("\t");
                     builder.append(token);
@@ -3068,7 +3068,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
                 }
                 builder.append("\n");
             }
-            builder.append("}");
+            builder.append("}\n");
 
             return builder.toString();
         }
@@ -3326,7 +3326,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
                 builder.append(token);
                 builder.append("\n");
             }
-            builder.append("}");
+            builder.append("}\n");
 
             return builder.toString();
         }
