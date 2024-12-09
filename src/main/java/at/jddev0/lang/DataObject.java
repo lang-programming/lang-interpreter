@@ -1216,9 +1216,9 @@ public class DataObject {
         /**
          * @return Will -1 null, if the member was not found
          */
-        public int getIndexOfMember(String memeberName) {
+        public int getIndexOfMember(String memberName) {
             for(int i = 0;i < memberNames.length;i++)
-                if(memberNames[i].equals(memeberName))
+                if(memberNames[i].equals(memberName))
                     return i;
 
             return -1;
