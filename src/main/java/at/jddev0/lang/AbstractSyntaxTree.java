@@ -2481,6 +2481,16 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         @Override
         public void optimize() {
             nodes.replaceAll(AbstractSyntaxTree::optimizeNode);
+
+            if(operator == Operator.NON || operator == Operator.MATH_NON || operator == Operator.CONDITIONAL_NON) {
+                Node node = nodes.get(0);
+                if(node instanceof OperationNode) {
+                    OperationNode operationNode = (OperationNode)node;
+                    if(operationNode.operator == Operator.NON || operator == operationNode.operator) {
+                        nodes.set(0, operationNode.getLeftSideOperand());
+                    }
+                }
+            }
         }
 
         @Override
