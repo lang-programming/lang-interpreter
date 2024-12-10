@@ -36,6 +36,10 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         return new AbstractSyntaxTree.ListNode(nodes);
     }
 
+    public void optimizeAST() {
+        AbstractSyntaxTree.optimizeNodes(nodes);
+    }
+
     @Override
     public Iterator<AbstractSyntaxTree.Node> iterator() {
         return nodes.iterator();
@@ -78,10 +82,153 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         return Objects.hash(nodes);
     }
 
+    private static String tryEvaluateEscapeSequence(char c) {
+        switch(c) {
+            case '0':
+                return "\0";
+            case 'n':
+                return "\n";
+            case 'r':
+                return "\r";
+            case 'f':
+                return "\f";
+            case 's':
+                return " ";
+            case 'e':
+                return "";
+            case 'E':
+                return "\033";
+            case 'b':
+                return "\b";
+            case 't':
+                return "\t";
+            case '$':
+            case '&':
+            case '#':
+            case ',':
+            case '.':
+            case '(':
+            case ')':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case '=':
+            case '<':
+            case '>':
+            case '+':
+            case '-':
+            case '/':
+            case '*':
+            case '%':
+            case '|':
+            case '~':
+            case '^':
+            case '?':
+            case ':':
+            case '@':
+            case '\u25b2':
+            case '\u25bc':
+            case '\"':
+            case '\\':
+                return "" + c;
+
+            default:
+                return null;
+        }
+    }
+
+    private static void optimizeNodes(List<Node> nodes) {
+        int i = 0;
+        while(i < nodes.size()) {
+            Node node = optimizeNode(nodes.get(i));
+            nodes.set(i, node);
+
+            StringBuilder builder = null;
+            if(node.getNodeType() == NodeType.ESCAPE_SEQUENCE) {
+                String str = tryEvaluateEscapeSequence(((EscapeSequenceNode)node).c);
+                if(str != null)
+                    builder = new StringBuilder(str);
+            }else if(node.getNodeType() == NodeType.TEXT_VALUE) {
+                builder = new StringBuilder(((TextValueNode)node).text);
+            }else if(node.getNodeType() == NodeType.CHAR_VALUE) {
+                builder = new StringBuilder(new String(Character.toChars(((CharValueNode)node).c)));
+            }
+
+            if(builder != null) {
+                CodePosition pos = node.getPos();
+
+                boolean changed = false;
+                int index = i + 1;
+                while(index < nodes.size()) {
+                    Node innerNode = nodes.get(index);
+                    if(innerNode.getNodeType() == NodeType.ESCAPE_SEQUENCE) {
+                        String str = tryEvaluateEscapeSequence(((EscapeSequenceNode)innerNode).c);
+                        if(str != null) {
+                            changed = true;
+
+                            builder.append(str);
+                            pos = pos.combine(innerNode.getPos());
+
+                            nodes.remove(index);
+                            continue;
+                        }
+
+                        break;
+                    }else if(innerNode.getNodeType() == NodeType.TEXT_VALUE) {
+                        String str = ((TextValueNode)innerNode).text;
+                        changed = true;
+
+                        builder.append(str);
+                        pos = pos.combine(innerNode.getPos());
+
+                        nodes.remove(index);
+                        continue;
+                    }else if(innerNode.getNodeType() == NodeType.CHAR_VALUE) {
+                        String str = new String(Character.toChars(((CharValueNode)innerNode).c));
+                        changed = true;
+
+                        builder.append(str);
+                        pos = pos.combine(innerNode.getPos());
+
+                        nodes.remove(index);
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if(changed) {
+                    nodes.set(i, new TextValueNode(pos, builder.toString()));
+                }
+            }
+
+            i++;
+        }
+    }
+
+    private static Node optimizeNode(Node node) {
+        if(node == null)
+            return null;
+
+        node.optimize();
+
+        if(node.getNodeType() == NodeType.LIST) {
+            ListNode listNode = (ListNode)node;
+            if(listNode.nodes.size() == 1) {
+                return listNode.nodes.get(0);
+            }
+        }
+
+        return node;
+    }
+
     public interface Node extends Iterable<Node> {
         List<Node> getChildren();
         NodeType getNodeType();
         CodePosition getPos();
+
+        void optimize();
 
         @Override
         default Iterator<AbstractSyntaxTree.Node> iterator() {
@@ -116,6 +263,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         @Override
         public CodePosition getPos() {
             return pos;
+        }
+
+        @Override
+        public void optimize() {
+            AbstractSyntaxTree.optimizeNodes(nodes);
         }
 
         @Override
@@ -233,6 +385,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {}
+
+        @Override
         public String toString() {
             return "ParsingErrorNode: Position: " +
                     pos.toCompactString() + ", Error: \"" +
@@ -300,6 +455,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            nodes.set(0, AbstractSyntaxTree.optimizeNode(nodes.get(0)));
+            nodes.set(1, AbstractSyntaxTree.optimizeNode(nodes.get(1)));
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("AssignmentNode: Position: ");
@@ -363,6 +524,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {}
+
+        @Override
         public String toString() {
             return "EscapeSequenceNode: Position: " +
                     pos.toCompactString() + ", Char: \"" +
@@ -407,6 +571,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         public String getHexCodepoint() {
             return hexCodepoint;
         }
+
+        @Override
+        public void optimize() {}
 
         @Override
         public String toString() {
@@ -458,6 +625,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         public String getVariableName() {
             return variableName;
         }
+
+        @Override
+        public void optimize() {}
 
         @Override
         public String toString() {
@@ -515,6 +685,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {}
+
+        @Override
         public String toString() {
             return "VariableNameNode: LineFrom: " +
                     pos.toCompactString() + ", VariableName: \"" +
@@ -564,6 +737,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         public String getOriginalText() {
             return originalText;
         }
+
+        @Override
+        public void optimize() {}
 
         @Override
         public String toString() {
@@ -623,6 +799,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public String getFunctionName() {
             return functionName;
+        }
+
+        @Override
+        public void optimize() {
+            AbstractSyntaxTree.optimizeNodes(argumentList);
         }
 
         @Override
@@ -702,6 +883,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         @Override
         public CodePosition getPos() {
             return pos;
+        }
+
+        @Override
+        public void optimize() {
+            AbstractSyntaxTree.optimizeNodes(argumentList);
         }
 
         @Override
@@ -812,6 +998,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            functionBody.optimizeAST();
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("FunctionDefinitionNode: Position: ");
@@ -887,6 +1078,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            ifBody.optimizeAST();
+        }
+
+        @Override
         public boolean equals(Object obj) {
             if(this == obj)
                 return true;
@@ -926,6 +1122,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public OperationNode getCondition() {
             return condition;
+        }
+
+        @Override
+        public void optimize() {
+            super.optimize();
+
+            condition.optimize();
         }
 
         @Override
@@ -1051,6 +1254,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            nodes.forEach(IfStatementPartNode::optimize);
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("IfStatementNode: Position: ");
@@ -1102,6 +1310,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public AbstractSyntaxTree getLoopBody() {
             return loopBody;
+        }
+
+        @Override
+        public void optimize() {
+            loopBody.optimizeAST();
         }
 
         @Override
@@ -1195,6 +1408,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            super.optimize();
+
+            condition.optimize();
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("LoopStatementPartWhileNode: Position: ");
@@ -1261,6 +1481,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            super.optimize();
+
+            condition.optimize();
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("LoopStatementPartUntilNode: Position: ");
@@ -1306,8 +1533,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
     }
 
     public static final class LoopStatementPartRepeatNode extends LoopStatementPartNode {
-        private final Node varPointerNode;
-        private final Node repeatCountNode;
+        private Node varPointerNode;
+        private Node repeatCountNode;
 
         public LoopStatementPartRepeatNode(CodePosition pos, AbstractSyntaxTree loopBody, Node varPointerNode,
                                            Node repeatCountNode) {
@@ -1328,6 +1555,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public Node getRepeatCountNode() {
             return repeatCountNode;
+        }
+
+        @Override
+        public void optimize() {
+            super.optimize();
+
+            varPointerNode = AbstractSyntaxTree.optimizeNode(varPointerNode);
+            repeatCountNode = AbstractSyntaxTree.optimizeNode(repeatCountNode);
         }
 
         @Override
@@ -1384,8 +1619,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
     }
 
     public static final class LoopStatementPartForEachNode extends LoopStatementPartNode {
-        private final Node varPointerNode;
-        private final Node compositeOrTextNode;
+        private Node varPointerNode;
+        private Node compositeOrTextNode;
 
         public LoopStatementPartForEachNode(CodePosition pos, AbstractSyntaxTree loopBody, Node varPointerNode,
                                             Node collectionOrTextNode) {
@@ -1406,6 +1641,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public Node getCompositeOrTextNode() {
             return compositeOrTextNode;
+        }
+
+        @Override
+        public void optimize() {
+            super.optimize();
+
+            varPointerNode = AbstractSyntaxTree.optimizeNode(varPointerNode);
+            compositeOrTextNode = AbstractSyntaxTree.optimizeNode(compositeOrTextNode);
         }
 
         @Override
@@ -1538,6 +1781,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            nodes.forEach(LoopStatementPartNode::optimize);
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("LoopStatementNode: Position: ");
@@ -1578,7 +1826,7 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
     }
 
     public static final class LoopStatementContinueBreakStatement extends ChildlessNode {
-        private final Node numberNode;
+        private Node numberNode;
         private final boolean continueNode;
 
         public LoopStatementContinueBreakStatement(CodePosition pos, Node numberNode, boolean continueNode) {
@@ -1599,6 +1847,12 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public boolean isContinueNode() {
             return continueNode;
+        }
+
+        @Override
+        public void optimize() {
+            if(numberNode != null)
+                numberNode = AbstractSyntaxTree.optimizeNode(numberNode);
         }
 
         @Override
@@ -1657,6 +1911,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public AbstractSyntaxTree getTryBody() {
             return tryBody;
+        }
+
+        @Override
+        public void optimize() {
+            tryBody.optimizeAST();
         }
 
         @Override
@@ -1853,6 +2112,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            super.optimize();
+
+            errors.forEach(Node::optimize);
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("TryStatementPartCatchNode: Position: ");
@@ -2024,6 +2290,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public List<TryStatementPartNode> getTryStatementPartNodes() {
             return nodes;
+        }
+
+        @Override
+        public void optimize() {
+            nodes.forEach(TryStatementPartNode::optimize);
         }
 
         @Override
@@ -2205,6 +2476,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public OperatorType getOperatorType() {
             return operator.getOperatorType();
+        }
+
+        @Override
+        public void optimize() {
+            nodes.replaceAll(AbstractSyntaxTree::optimizeNode);
         }
 
         @Override
@@ -2425,6 +2701,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            nodes.replaceAll(AbstractSyntaxTree::optimizeNode);
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("ReturnNode: Position: ");
@@ -2465,8 +2746,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
     }
 
     public static final class ThrowNode implements Node {
-        private final Node throwValue;
-        private final Node message;
+        private Node throwValue;
+        private Node message;
         private final CodePosition pos;
 
         public ThrowNode(CodePosition pos, Node throwValue, Node messageValue) {
@@ -2511,6 +2792,14 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
 
         public Node getMessage() {
             return message;
+        }
+
+        @Override
+        public void optimize() {
+            throwValue = AbstractSyntaxTree.optimizeNode(throwValue);
+
+            if(message != null)
+                message = AbstractSyntaxTree.optimizeNode(message);
         }
 
         @Override
@@ -2568,6 +2857,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         public ValueNode(CodePosition pos) {
             super(pos);
         }
+
+        @Override
+        public void optimize() {}
 
         @Override
         public boolean equals(Object obj) {
@@ -2975,6 +3267,11 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         }
 
         @Override
+        public void optimize() {
+            nodes.replaceAll(AbstractSyntaxTree::optimizeNode);
+        }
+
+        @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("ArrayNode: Position: ");
@@ -3046,6 +3343,9 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         public NodeType getNodeType() {
             return NodeType.STRUCT_DEFINITION;
         }
+
+        @Override
+        public void optimize() {}
 
         @Override
         public String toString() {
@@ -3230,6 +3530,13 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         @Override
         public NodeType getNodeType() {
             return NodeType.CLASS_DEFINITION;
+        }
+
+        @Override
+        public void optimize() {
+            staticMemberValues.replaceAll(AbstractSyntaxTree::optimizeNode);
+            methodDefinitions.replaceAll(AbstractSyntaxTree::optimizeNode);
+            constructorDefinitions.replaceAll(AbstractSyntaxTree::optimizeNode);
         }
 
         @Override

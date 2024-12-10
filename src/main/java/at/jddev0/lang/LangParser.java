@@ -42,7 +42,11 @@ public final class LangParser {
     public AbstractSyntaxTree parseTokens(List<Token> tokens) {
         removeLineContinuationAndSingleLineTextQuotesTokens(tokens);
 
-        return parseTokensInternal(tokens);
+        AbstractSyntaxTree ast = parseTokensInternal(tokens);
+        if(ast != null)
+            ast.optimizeAST();
+
+        return ast;
     }
 
     private AbstractSyntaxTree parseTokensInternal(List<Token> tokens) {
