@@ -18,6 +18,7 @@ import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import at.jddev0.io.TerminalIO;
 import at.jddev0.lang.LangInterpreter.InterpretingError;
 import at.jddev0.lang.LangInterpreter.StackElement;
 import at.jddev0.lang.LangModuleConfiguration.ModuleType;
@@ -413,6 +414,17 @@ final class LangModuleManager {
             Throwable t = e.getTargetException();
             if(t == null)
                 t = e;
+
+            if(interpreter.executionFlags.nativeStackTraces) {
+                if(interpreter.term == null) {
+                    System.out.println("Native Stack Trace:");
+                    t.printStackTrace(System.out);
+                    System.out.println();
+                }else {
+                    interpreter.term.logln(TerminalIO.Level.ERROR, "Native Stack Trace:", LangModuleManager.class);
+                    interpreter.term.logStackTrace(t, LangModuleManager.class);
+                }
+            }
 
             return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "Invalid entry point (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage());
         }

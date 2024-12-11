@@ -9,6 +9,7 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import at.jddev0.io.TerminalIO;
 import at.jddev0.lang.DataObject.DataType;
 import at.jddev0.lang.DataObject.DataTypeConstraint;
 import at.jddev0.lang.DataObject.DataTypeConstraintException;
@@ -520,6 +521,17 @@ public class LangNativeFunction extends LangBaseFunction {
             Throwable t = e.getTargetException();
             if(t == null)
                 t = e;
+
+            if(interpreter.executionFlags.nativeStackTraces) {
+                if(interpreter.term == null) {
+                    System.out.println("Native Stack Trace:");
+                    t.printStackTrace(System.out);
+                    System.out.println();
+                }else {
+                    interpreter.term.logln(TerminalIO.Level.ERROR, "Native Stack Trace:", LangNativeFunction.class);
+                    interpreter.term.logStackTrace(t, LangNativeFunction.class);
+                }
+            }
 
             return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR,
                     "Native Error (\"" + t.getClass().getSimpleName() + "\"): " + t.getMessage());

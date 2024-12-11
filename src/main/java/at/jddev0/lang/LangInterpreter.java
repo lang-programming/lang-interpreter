@@ -1677,6 +1677,15 @@ public final class LangInterpreter {
                 }
                 executionFlags.rawVariableNames = number.intValue() != 0;
                 break;
+            case "lang.nativeStackTraces":
+                number = conversions.toNumber(value, pos);
+                if(number == null) {
+                    setErrno(InterpretingError.INVALID_ARGUMENTS, "Invalid Data Type for the lang.nativeStackTraces flag!", pos);
+
+                    return;
+                }
+                executionFlags.nativeStackTraces = number.intValue() != 0;
+                break;
             default:
                 setErrno(InterpretingError.INVALID_EXEC_FLAG_DATA, "\"" + langDataExecutionFlag + "\" is neither Lang data nor an execution flag", pos);
         }
@@ -4677,6 +4686,10 @@ public final class LangInterpreter {
          * Will disable variable name processing which makes the interpreter faster
          */
         boolean rawVariableNames = false;
+        /**
+         * Will enable printing of native stack traces
+         */
+        boolean nativeStackTraces = false;
 
         public static enum ErrorOutputFlag {
             NOTHING, ALL, ERROR_ONLY;
