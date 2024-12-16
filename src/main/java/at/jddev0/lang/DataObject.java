@@ -1033,7 +1033,7 @@ public class DataObject {
              * For normal and native function pointer definition
              * Used for setting superLevel for objects
              */
-            public InternalFunction(InternalFunction func, int superLevel) {
+            InternalFunction(InternalFunction func, int superLevel) {
                 this.superLevel = superLevel;
                 this.function = func.function;
                 this.functionPointerType = func.functionPointerType;
