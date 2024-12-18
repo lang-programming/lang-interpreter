@@ -1116,14 +1116,12 @@ public class DataObject {
             }
 
             public boolean isEquals(InternalFunction that, LangInterpreter interpreter, CodePosition pos) {
-                //Check for same reference of thisObjects
                 return this.functionPointerType == that.functionPointerType &&
                         this.superLevel == that.superLevel &&
                         this.function.isEquals(that.function, interpreter, pos);
             }
 
             public boolean isStrictEquals(InternalFunction that, LangInterpreter interpreter, CodePosition pos) {
-                //Check for same reference of thisObjects
                 return this.functionPointerType == that.functionPointerType &&
                         this.superLevel == that.superLevel &&
                         this.function.isStrictEquals(that.function, interpreter, pos);
