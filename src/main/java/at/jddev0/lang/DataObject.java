@@ -808,6 +808,9 @@ public class DataObject {
         public FunctionPointerObject(LangObject thisObject, String functionName, String functionInfo,
                                      boolean linkerFunction, boolean deprecated, String deprecatedRemoveVersion,
                                      String deprecatedReplacementFunction, List<InternalFunction> functions) {
+            if(thisObject != null && thisObject.isClass())
+                throw new DataTypeConstraintException("The this-object must be an object");
+
             this.thisObject = thisObject;
             this.functionName = functionName;
             this.functionInfo = functionInfo;
@@ -825,7 +828,7 @@ public class DataObject {
                                      boolean deprecated, String deprecatedRemoveVersion,
                                      String deprecatedReplacementFunction, LangNormalFunction normalFunction) {
             this.thisObject = null;
-            this.functionName = functionName;
+            this.functionName = functionName == null?normalFunction.getFunctionName():functionName;
             this.functionInfo = functionInfo;
             this.linkerFunction = linkerFunction;
             this.deprecated = deprecated;
