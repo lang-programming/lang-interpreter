@@ -3656,7 +3656,6 @@ public final class LangInterpreter {
 
                 //Fall-through
             case 'c':
-            case 's':
             case '?':
                 if(forceSign || signSpace || leadingZeros)
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
@@ -3670,6 +3669,7 @@ public final class LangInterpreter {
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
                 break;
 
+            case 's':
             case 't':
                 if(forceSign || signSpace || leadingZeros)
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
@@ -3803,6 +3803,14 @@ public final class LangInterpreter {
 
             case 's':
                 output = conversions.toText(dataObject, CodePosition.EMPTY).toString();
+
+                if(decimalPlacesCount != null) {
+                    try {
+                        output = LangUtils.formatTranslationTemplatePluralization(output, decimalPlacesCount.intValue());
+                    }catch(NumberFormatException|InvalidTranslationTemplateSyntaxException e) {
+                        return FORMAT_SEQUENCE_ERROR_TRANSLATION_INVALID_PLURALIZATION_TEMPLATE;
+                    }
+                }
 
                 break;
 
