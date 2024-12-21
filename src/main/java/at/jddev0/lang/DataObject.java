@@ -1567,8 +1567,8 @@ public class DataObject {
                         }
 
                         List<LangBaseFunction> superFunctionSignatures = new LinkedList<>();
-                        for(int i = 0;i < parentClass.methods.get(k).getOverloadedFunctionCount();i++) {
-                            FunctionPointerObject.InternalFunction overloadedMethod = parentClass.methods.get(k).getFunction(i);
+                        for(int i = 0;i < v.getOverloadedFunctionCount();i++) {
+                            FunctionPointerObject.InternalFunction overloadedMethod = v.getFunction(i);
                             superFunctionSignatures.add(overloadedMethod.getFunction());
                         }
 
