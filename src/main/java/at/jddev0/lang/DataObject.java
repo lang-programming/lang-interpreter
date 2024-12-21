@@ -1479,8 +1479,6 @@ public class DataObject {
             }
 
             this.methods = new HashMap<>();
-            methods.forEach((k, v) -> this.methods.put(k, v.withMappedFunctions(
-                    internalFunction -> new FunctionPointerObject.InternalFunction(internalFunction, 0))));
             List<String> methodNames = new ArrayList<>(methods.keySet());
             for(String methodName:methodNames) {
                 FunctionPointerObject overloadedMethods = methods.get(methodName);
@@ -1497,8 +1495,9 @@ public class DataObject {
                 //Set visibility
                 List<FunctionPointerObject.InternalFunction> internalFunctions = overloadedMethods.getFunctions();
                 for(int i = 0;i < internalFunctions.size();i++)
-                    internalFunctions.set(i, new FunctionPointerObject.InternalFunction(internalFunctions.get(i),
-                            this, overloadedMethodVisibility.get(i)));
+                    internalFunctions.set(i, new FunctionPointerObject.InternalFunction(
+                            new FunctionPointerObject.InternalFunction(internalFunctions.get(i),
+                                    this, overloadedMethodVisibility.get(i)), 0));
                 overloadedMethods = overloadedMethods.withFunctions(internalFunctions);
                 this.methods.put(methodName, overloadedMethods);
 
