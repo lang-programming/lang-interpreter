@@ -1642,6 +1642,9 @@ public class DataObject {
          * The constructor must be called separately, afterward postConstructor must be called
          */
         public LangObject(LangObject classBaseDefinition) throws DataTypeConstraintException {
+            if(!classBaseDefinition.isClass())
+                throw new DataTypeConstraintException("Class base definition must be a class");
+
             //Must be set first for isClass checks
             this.classBaseDefinition = classBaseDefinition;
 
