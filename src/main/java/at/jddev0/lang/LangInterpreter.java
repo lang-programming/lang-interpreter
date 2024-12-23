@@ -3552,14 +3552,14 @@ public final class LangInterpreter {
             if(valueSpecifiedIndex >= fullArgumentList.size())
                 return FORMAT_SEQUENCE_ERROR_SPECIFIED_INDEX_OUT_OF_BOUNDS;
         }
-        boolean leftJustify = fullFormat.charAt(0) == '-';
-        if(leftJustify)
-            fullFormat = fullFormat.substring(1);
         boolean forceSign = fullFormat.charAt(0) == '+';
         if(forceSign)
             fullFormat = fullFormat.substring(1);
         boolean signSpace = !forceSign && fullFormat.charAt(0) == ' ';
         if(signSpace)
+            fullFormat = fullFormat.substring(1);
+        boolean leftJustify = fullFormat.charAt(0) == '-';
+        if(leftJustify)
             fullFormat = fullFormat.substring(1);
         boolean leadingZeros = fullFormat.charAt(0) == '0';
         if(leadingZeros)
