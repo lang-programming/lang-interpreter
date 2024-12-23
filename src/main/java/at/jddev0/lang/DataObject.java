@@ -546,7 +546,7 @@ public class DataObject {
 
             Set<DataType> types = new HashSet<>(this.types.isEmpty()?Arrays.asList(DataType.values()):this.types);
 
-            if(!inverted && types.contains(DataType.NULL) && types.size() > 1) {
+            if(!inverted && types.size() > 1 && types.contains(DataType.NULL)) {
                 types.remove(DataType.NULL);
 
                 strBuilder.append("?");
@@ -1762,9 +1762,9 @@ public class DataObject {
         /**
          * @return Will return -1, if the member was not found
          */
-        public int getIndexOfMember(String memeberName) {
+        public int getIndexOfMember(String memberName) {
             for(int i = 0;i < members.length;i++)
-                if(members[i].getVariableName().equals(memeberName))
+                if(members[i].getVariableName().equals(memberName))
                     return i;
 
             return -1;
@@ -1861,7 +1861,7 @@ public class DataObject {
             return classBaseDefinition;
         }
 
-        public boolean isInstanceOf(LangObject classObject) throws DataTypeConstraintException {
+        public boolean isInstanceOf(LangObject classObject) {
             if(!classObject.isClass())
                 return false;
 

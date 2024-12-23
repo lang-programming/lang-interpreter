@@ -382,7 +382,7 @@ final class LangPredefinedFunctions {
             StackElement currentStackElement = interpreter.getCurrentCallStackElement();
             interpreter.pushStackElement(new StackElement(currentStackElement.getLangPath(),
                             currentStackElement.getLangFile(), currentStackElement.getLangClass(),
-                            currentStackElement.getLangClasName(), "<exec-code>", currentStackElement.getModule()),
+                            currentStackElement.getLangClassName(), "<exec-code>", currentStackElement.getModule()),
                     CodePosition.EMPTY);
 
             int originalLineNumber = interpreter.getParserLineNumber();
@@ -530,7 +530,7 @@ final class LangPredefinedFunctions {
                             new DataObject().setInt(currentStackElement.getPos().columnFrom),
                             new DataObject().setInt(currentStackElement.getPos().columnTo)
                     })),
-                    new DataObject(currentStackElement.getLangClasName()),
+                    new DataObject(currentStackElement.getLangClassName()),
                     new DataObject(currentStackElement.getLangFunctionName()),
                     new DataObject(modulePath),
                     new DataObject(moduleFile)
@@ -566,7 +566,7 @@ final class LangPredefinedFunctions {
                                 new DataObject().setInt(ele.getPos().columnFrom),
                                 new DataObject().setInt(ele.getPos().columnTo)
                         })),
-                        new DataObject(ele.getLangClasName()),
+                        new DataObject(ele.getLangClassName()),
                         new DataObject(ele.getLangFunctionName()),
                         new DataObject(modulePath),
                         new DataObject(moduleFile)

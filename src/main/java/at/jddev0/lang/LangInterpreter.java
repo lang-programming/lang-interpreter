@@ -4618,25 +4618,25 @@ public final class LangInterpreter {
         private final String langFile;
         private final CodePosition pos;
         private final LangObject langClass;
-        private final String langClasName;
+        private final String langClassName;
         private final String langFunctionName;
         final LangModule module;
 
-        public StackElement(String langPath, String langFile, CodePosition pos, LangObject langClass, String langClasName, String langFunctionName, LangModule module) {
+        public StackElement(String langPath, String langFile, CodePosition pos, LangObject langClass, String langClassName, String langFunctionName, LangModule module) {
             this.langPath = langPath;
             this.langFile = langFile;
             this.langClass = langClass;
-            this.langClasName = langClasName;
+            this.langClassName = langClassName;
             this.langFunctionName = langFunctionName;
             this.pos = pos;
             this.module = module;
         }
-        public StackElement(String langPath, String langFile, LangObject langClass, String langClasName, String langFunctionName, LangModule module) {
-            this(langPath, langFile, CodePosition.EMPTY, langClass, langClasName, langFunctionName, module);
+        public StackElement(String langPath, String langFile, LangObject langClass, String langClassName, String langFunctionName, LangModule module) {
+            this(langPath, langFile, CodePosition.EMPTY, langClass, langClassName, langFunctionName, module);
         }
 
         public StackElement withPos(CodePosition pos) {
-            return new StackElement(langPath, langFile, pos, langClass, langClasName, langFunctionName, module);
+            return new StackElement(langPath, langFile, pos, langClass, langClassName, langFunctionName, module);
         }
 
         public String getLangPath() {
@@ -4655,8 +4655,8 @@ public final class LangInterpreter {
             return langClass;
         }
 
-        public String getLangClasName() {
-            return langClasName;
+        public String getLangClassName() {
+            return langClassName;
         }
 
         public String getLangFunctionName() {
@@ -4671,8 +4671,8 @@ public final class LangInterpreter {
         public String toString() {
             String langPathWithFile = langPath + (langPath.endsWith("/")?"":"/") + (langFile == null?"<shell>":langFile);
             return String.format("    at \"%s:%s\" in %s \"%s\"", langPathWithFile, pos.equals(CodePosition.EMPTY)?"x":
-                    pos.toCompactString(), langClasName == null?"function":"method", langFunctionName == null?"<main>":
-                    (langClasName == null?langFunctionName:(langClasName + "::" + langFunctionName)));
+                    pos.toCompactString(), langClassName == null?"function":"method", langFunctionName == null?"<main>":
+                    (langClassName == null?langFunctionName:(langClassName + "::" + langFunctionName)));
         }
     }
 

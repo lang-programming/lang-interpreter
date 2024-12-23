@@ -70,12 +70,12 @@ public class DefaultLangPlatformAPI implements ILangPlatformAPI {
         try {
             BufferedWriter w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(langFile), StandardCharsets.UTF_8));
 
-            for(String langRequest:translationMap.keySet()) {
-                String value = translationMap.get(langRequest);
+            for(String translationKeys:translationMap.keySet()) {
+                String value = translationMap.get(translationKeys);
                 //For multiline
                 value = value.replace("\n", "\\n");
 
-                w.write(langRequest + " = " + value);
+                w.write(translationKeys + " = " + value);
                 w.newLine();
             }
 
