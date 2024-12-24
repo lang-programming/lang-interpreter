@@ -2115,7 +2115,8 @@ public final class AbstractSyntaxTree implements Iterable<AbstractSyntaxTree.Nod
         public void optimize() {
             super.optimize();
 
-            errors.forEach(Node::optimize);
+            if(errors != null)
+                errors.forEach(Node::optimize);
         }
 
         @Override
