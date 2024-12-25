@@ -599,7 +599,8 @@ public final class LangInterpreter {
                 try {
                     Node ret = processFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)childNode, previousDataObject);
                     if(ret.getNodeType() == NodeType.FUNCTION_CALL_PREVIOUS_NODE_VALUE) {
-                        dataObjects.remove(dataObjects.size() - 1); //Remove last data Object, because it is used as function pointer for a function call
+                        //Remove last data Object, because it is used as function pointer for a function call
+                        dataObjects.remove(dataObjects.size() - 1);
                         dataObjects.add(interpretFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)ret, previousDataObject));
                     }else {
                         dataObjects.add(interpretNode(null, ret));
@@ -719,6 +720,8 @@ public final class LangInterpreter {
                     if(!conversions.toBool(interpretOperationNode(((IfStatementPartIfNode)node).getCondition()),
                             node.getPos()))
                         return false;
+
+                    //Fall-through
                 case IF_STATEMENT_PART_ELSE:
                     interpretAST(node.getIfBody());
                     return true;
@@ -1027,14 +1030,14 @@ public final class LangInterpreter {
                 (savedExecutionState.isSoftTry && savedExecutionState.tryBodyScopeID != scopeId)))
             savedExecutionState.stopExecutionFlag = false;
 
-        if(!flag && !savedStopExecutionFlagForElseBlock) {
+        if(!flag && !savedStopExecutionFlagForElseBlock && tryPartNodes.size() > 1) {
             TryStatementPartNode elsePart = null;
-            if(tryPartNodes.size() > 1) {
-                if(tryPartNodes.get(tryPartNodes.size() - 2).getNodeType() == NodeType.TRY_STATEMENT_PART_ELSE)
-                    elsePart = tryPartNodes.get(tryPartNodes.size() - 2);
-                if(tryPartNodes.get(tryPartNodes.size() - 1).getNodeType() == NodeType.TRY_STATEMENT_PART_ELSE)
-                    elsePart = tryPartNodes.get(tryPartNodes.size() - 1);
-            }
+
+            if(tryPartNodes.get(tryPartNodes.size() - 2).getNodeType() == NodeType.TRY_STATEMENT_PART_ELSE)
+                elsePart = tryPartNodes.get(tryPartNodes.size() - 2);
+            if(tryPartNodes.get(tryPartNodes.size() - 1).getNodeType() == NodeType.TRY_STATEMENT_PART_ELSE)
+                elsePart = tryPartNodes.get(tryPartNodes.size() - 1);
+
             if(elsePart != null) {
                 flag = interpretTryStatementPartNode(elsePart);
 
@@ -1043,12 +1046,9 @@ public final class LangInterpreter {
             }
         }
 
-        TryStatementPartNode finallyPart = null;
-        if(tryPartNodes.size() > 1 && tryPartNodes.get(tryPartNodes.size() - 1).getNodeType() == NodeType.TRY_STATEMENT_PART_FINALLY)
-            finallyPart = tryPartNodes.get(tryPartNodes.size() - 1);
-
-        if(finallyPart != null)
-            interpretTryStatementPartNode(finallyPart);
+        if(tryPartNodes.size() > 1 && tryPartNodes.get(tryPartNodes.size() - 1).getNodeType() == NodeType.TRY_STATEMENT_PART_FINALLY) {
+            interpretTryStatementPartNode(tryPartNodes.get(tryPartNodes.size() - 1));
+        }
 
         //Reset saved execution flag to stop execution if finally has not set the stop execution flag
         if(!executionState.stopExecutionFlag) {
