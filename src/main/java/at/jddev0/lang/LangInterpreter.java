@@ -329,8 +329,14 @@ public final class LangInterpreter {
      * @param supportsPointerDereferencingAndReferencing If true, this node will return pointer reference or a dereferenced pointers as VariableNameNode<br>
      *                                   (e.g. $[abc] is not in variableNames, but $abc is -> $[abc] will return a VariableNameNode)
      */
-    private Node convertVariableNameToVariableNameNodeOrComposition(String moduleName, String variableName,
-                                                                    Set<String> variableNames, String variablePrefixAppendAfterSearch, final boolean supportsPointerDereferencingAndReferencing, CodePosition pos) {
+    private Node convertVariableNameToVariableNameNodeOrComposition(
+            String moduleName,
+            String variableName,
+            Set<String> variableNames,
+            String variablePrefixAppendAfterSearch,
+            final boolean supportsPointerDereferencingAndReferencing,
+            CodePosition pos
+    ) {
         Stream<String> variableNameStream;
         if(moduleName == null) {
             variableNameStream = variableNames.stream();
@@ -346,9 +352,8 @@ public final class LangInterpreter {
         }
 
         //Sort keySet from large to small length (e.g.: $abcd and $abc and $ab)
-        Optional<String> optionalReturnedVariableName = variableNameStream.filter(variableName::startsWith).min((s0, s1) -> {
-            return Integer.compare(s1.length(), s0.length());//Sort keySet from large to small length (e.g.: $abcd and $abc and $ab)
-        });
+        Optional<String> optionalReturnedVariableName = variableNameStream.filter(variableName::startsWith).min((s0, s1) ->
+            Integer.compare(s1.length(), s0.length()));
 
         if(!optionalReturnedVariableName.isPresent()) {
             if(supportsPointerDereferencingAndReferencing) {
@@ -357,7 +362,8 @@ public final class LangInterpreter {
                 String modifiedVariableName = variableName;
                 Node returnedNode = null;
                 String text = null;
-                if(variableName.contains("*")) { //Check referenced variable name
+                //Check referenced variable name
+                if(variableName.contains("*")) {
                     startIndex = variableName.indexOf('*');
                     int endIndex = variableName.lastIndexOf('*') + 1;
                     if(endIndex >= variableName.length())
@@ -371,13 +377,15 @@ public final class LangInterpreter {
                                 moduleName, modifiedVariableName, variableNames, "", supportsPointerDereferencingAndReferencing, pos);
                 }
 
-                if(modifiedVariableName.contains("[") && modifiedVariableName.contains("]")) { //Check dereferenced variable name
+                //Check dereferenced variable name
+                if(modifiedVariableName.contains("[") && modifiedVariableName.contains("]")) {
                     int indexOpeningBracket = modifiedVariableName.indexOf("[");
                     int indexMatchingBracket = LangUtils.getIndexOfMatchingBracket(modifiedVariableName, indexOpeningBracket, Integer.MAX_VALUE, '[', ']');
                     if(indexMatchingBracket != -1) {
                         //Remove all "[" "]" pairs
                         int currentIndex = indexOpeningBracket;
                         int currentIndexMatchingBracket = indexMatchingBracket;
+
                         //"&" both "++" and "--" must be executed
                         while(modifiedVariableName.charAt(++currentIndex) == '[' & modifiedVariableName.charAt(--currentIndexMatchingBracket) == ']');
 
@@ -431,7 +439,8 @@ public final class LangInterpreter {
         List<Node> nodes = new ArrayList<>();
         //Add matching part of variable as VariableNameNode
         nodes.add(new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + returendVariableName));
-        nodes.add(new TextValueNode(pos, variableName.substring(returendVariableName.length()))); //Add composition part as TextValueNode
+        //Add composition part as TextValueNode
+        nodes.add(new TextValueNode(pos, variableName.substring(returendVariableName.length())));
         return new ListNode(nodes);
     }
     private Node processUnprocessedVariableNameNode(DataObject compositeType, UnprocessedVariableNameNode node) {
@@ -443,21 +452,21 @@ public final class LangInterpreter {
         boolean isModuleVariable = variableName.startsWith("[[");
         String moduleName = null;
         if(isModuleVariable) {
-            int indexModuleIdientifierEnd = variableName.indexOf("]]::");
-            if(indexModuleIdientifierEnd == -1) {
+            int indexModuleIdentifierEnd = variableName.indexOf("]]::");
+            if(indexModuleIdentifierEnd == -1) {
                 setErrno(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
 
                 return new TextValueNode(node.getPos(), variableName);
             }
 
-            moduleName = variableName.substring(2, indexModuleIdientifierEnd);
+            moduleName = variableName.substring(2, indexModuleIdentifierEnd);
             if(!isAlphaNumericWithUnderline(moduleName)) {
                 setErrno(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
 
                 return new TextValueNode(node.getPos(), variableName);
             }
 
-            variableName = variableName.substring(indexModuleIdientifierEnd + 4);
+            variableName = variableName.substring(indexModuleIdentifierEnd + 4);
         }
 
         if(variableName.startsWith("mp.") && compositeType != null && compositeType.getType() == DataType.OBJECT &&
