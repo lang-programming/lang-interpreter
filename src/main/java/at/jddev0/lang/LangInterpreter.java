@@ -170,18 +170,12 @@ public final class LangInterpreter {
     String printStackTrace(CodePosition pos) {
         StringBuilder builder = new StringBuilder();
 
-        ListIterator<StackElement> iter = callStack.listIterator(callStack.size());
         builder.append(currentCallStackElement.withPos(pos));
-        if(!iter.hasPrevious())
-            return builder.toString();
 
-        builder.append("\n");
-        while(true) {
+        ListIterator<StackElement> iter = callStack.listIterator(callStack.size());
+        while(iter.hasPrevious()) {
+            builder.append("\n");
             builder.append(iter.previous());
-            if(iter.hasPrevious())
-                builder.append("\n");
-            else
-                break;
         }
 
         return builder.toString();
