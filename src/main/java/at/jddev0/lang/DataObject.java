@@ -38,7 +38,7 @@ public class DataObject {
     private String variableName;
     private int flags;
     private DataType type;
-    private LangObject memberOfClass;
+    private long memberOfClassId;
     private Visibility memberVisibility;
 
     public static DataTypeConstraint getTypeConstraintFor(String variableName) {
@@ -471,20 +471,21 @@ public class DataObject {
         return memberVisibility;
     }
 
-    DataObject setMemberOfClass(LangObject memberOfClass) {
-        this.memberOfClass = memberOfClass;
+    DataObject setMemberOfClassId(LangObject memberOfClassId) {
+        this.memberOfClassId = memberOfClassId == null?-1:memberOfClassId.classId;
 
         return this;
     }
 
-    public LangObject getMemberOfClass() {
-        return memberOfClass;
+    public long getMemberOfClassId() {
+        return memberOfClassId;
     }
 
     public boolean isAccessible(LangObject accessingClass) {
-        return memberOfClass == null || memberVisibility == null || memberVisibility == Visibility.PUBLIC ||
-                (accessingClass != null && (accessingClass.equals(memberOfClass) ||
-                        (memberVisibility == Visibility.PROTECTED && accessingClass.isInstanceOf(memberOfClass))));
+        return memberOfClassId == -1 || memberVisibility == null || memberVisibility == Visibility.PUBLIC ||
+                (accessingClass != null && (accessingClass.classId == memberOfClassId ||
+                        (memberVisibility == Visibility.PROTECTED && Arrays.stream(LangObject.CLASS_ID_TO_SUPER_CLASS_IDS.get(accessingClass.classId)).
+                                anyMatch(classId -> classId == memberOfClassId))));
     }
 
     @Override
@@ -1261,6 +1262,9 @@ public class DataObject {
         }
     }
     public static final class LangObject {
+        private static long nextClassId = 0;
+        static final Map<Long, Long[]> CLASS_ID_TO_SUPER_CLASS_IDS = new HashMap<>();
+
         public static final LangObject OBJECT_CLASS;
         static {
             Map<String, FunctionPointerObject> methods = new HashMap<>();
@@ -1323,6 +1327,8 @@ public class DataObject {
 
         private int superLevel = 0;
 
+        private final long classId;
+
         private final String className;
 
         private final DataObject[] staticMembers;
@@ -1366,6 +1372,9 @@ public class DataObject {
                            Map<String, Boolean[]> methodOverrideFlags, Map<String, List<DataObject.Visibility>> methodVisibility,
                            FunctionPointerObject constructors, List<DataObject.Visibility> constructorVisibility,
                            LangObject[] parentClasses) throws DataTypeConstraintException {
+            classId = nextClassId;
+            nextClassId++;
+
             this.className = className;
 
             if(isBaseObject) {
@@ -1386,6 +1395,14 @@ public class DataObject {
                 }
             }
 
+            HashSet<Long> superClassIds = new HashSet<>();
+            superClassIds.add(classId);
+            for(LangObject parentClass:this.parentClasses) {
+                Long[] superSuperClassIds = CLASS_ID_TO_SUPER_CLASS_IDS.get(parentClass.classId);
+                superClassIds.addAll(Arrays.asList(superSuperClassIds));
+            }
+            CLASS_ID_TO_SUPER_CLASS_IDS.put(classId, superClassIds.toArray(new Long[0]));
+
             for(DataObject staticMember:staticMembers) {
                 String staticMemberName = staticMember.getVariableName();
 
@@ -1397,7 +1414,7 @@ public class DataObject {
             }
 
             for(DataObject staticMember:staticMembers) {
-                staticMember.setMemberOfClass(this);
+                staticMember.setMemberOfClassId(this);
 
                 if(staticMember.getType() == DataType.FUNCTION_POINTER && staticMember.getFunctionPointer() != null) {
                     staticMember.value = new FunctionValue(staticMember.getFunctionPointer().withMappedFunctions(internalFunction -> {
@@ -1648,6 +1665,8 @@ public class DataObject {
             //Must be set first for isClass checks
             this.classBaseDefinition = classBaseDefinition;
 
+            this.classId = classBaseDefinition.classId;
+
             this.className = classBaseDefinition.className;
 
             //No copies, because static members should be the same across all objects
@@ -1662,7 +1681,7 @@ public class DataObject {
             this.members = new DataObject[classBaseDefinition.memberNames.length];
             for(int i = 0;i < members.length;i++)
                 this.members[i] = new DataObject().setNull().setMemberVisibility(this.memberVisibility[i]).
-                        setMemberOfClass(this.memberOfClass[i]).setVariableName(this.memberNames[i]);
+                        setMemberOfClassId(this.memberOfClass[i]).setVariableName(this.memberNames[i]);
 
             this.methods = new HashMap<>(classBaseDefinition.methods);
             this.methods.replaceAll((k, v) -> new FunctionPointerObject(v, this));
