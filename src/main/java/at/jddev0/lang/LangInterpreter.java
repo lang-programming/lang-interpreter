@@ -1433,10 +1433,8 @@ public final class LangInterpreter {
                 //Unary (Logical operators)
                 case CONDITIONAL_NON:
                 case NOT:
-                    conditionOutput = conversions.toBool(leftSideOperand, node.getPos());
-
-                    if(node.getOperator() == Operator.NOT)
-                        conditionOutput = !conditionOutput;
+                    //Invert if "Not"
+                    conditionOutput = conversions.toBool(leftSideOperand, node.getPos()) ^ node.getOperator() == Operator.NOT;
                     break;
 
                 //Binary (Logical operators)
@@ -1519,29 +1517,24 @@ public final class LangInterpreter {
                             DataType.STRUCT + ", or " + DataType.OBJECT, node.getPos());
                 case EQUALS:
                 case NOT_EQUALS:
-                    conditionOutput = operators.isEquals(leftSideOperand, rightSideOperand, node.getPos());
-
-                    if(node.getOperator() == Operator.NOT_EQUALS)
-                        conditionOutput = !conditionOutput;
+                    //Invert if "NotEquals"
+                    conditionOutput = operators.isEquals(leftSideOperand, rightSideOperand, node.getPos()) ^ node.getOperator() == Operator.NOT_EQUALS;
                     break;
                 case MATCHES:
                 case NOT_MATCHES:
                     try {
+                        //Invert if "NotMatches"
                         conditionOutput = LangRegEx.matches(conversions.toText(leftSideOperand, node.getPos()),
-                                conversions.toText(rightSideOperand, node.getPos()));
+                                conversions.toText(rightSideOperand, node.getPos())) ^ node.getOperator() == Operator.NOT_MATCHES;
                     }catch(InvalidPatternSyntaxException e) {
                         return setErrnoErrorObject(InterpretingError.INVALID_REGEX_SYNTAX, e.getMessage(), node.getPos());
                     }
 
-                    if(node.getOperator() == Operator.NOT_MATCHES)
-                        conditionOutput = !conditionOutput;
                     break;
                 case STRICT_EQUALS:
                 case STRICT_NOT_EQUALS:
-                    conditionOutput = operators.isStrictEquals(leftSideOperand, rightSideOperand, node.getPos());
-
-                    if(node.getOperator() == Operator.STRICT_NOT_EQUALS)
-                        conditionOutput = !conditionOutput;
+                    //Invert if "StrictNotEquals"
+                    conditionOutput = operators.isStrictEquals(leftSideOperand, rightSideOperand, node.getPos()) ^ node.getOperator() == Operator.STRICT_NOT_EQUALS;
                     break;
                 case LESS_THAN:
                     conditionOutput = operators.isLessThan(leftSideOperand, rightSideOperand, node.getPos());
