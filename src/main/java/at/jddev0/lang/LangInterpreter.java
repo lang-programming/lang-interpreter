@@ -1075,7 +1075,7 @@ public final class LangInterpreter {
                 case TRY_STATEMENT_PART_SOFT_TRY:
                     executionState.tryThrownError = null;
                     executionState.tryBlockLevel++;
-                    boolean isSoftTryOld = executionState.isSoftTry;
+                    boolean isOldSoftTryOld = executionState.isSoftTry;
                     executionState.isSoftTry = node.getNodeType() == NodeType.TRY_STATEMENT_PART_SOFT_TRY;
                     int oldTryBlockScopeID = executionState.tryBodyScopeID;
                     executionState.tryBodyScopeID = scopeId;
@@ -1084,7 +1084,7 @@ public final class LangInterpreter {
                         interpretAST(node.getTryBody());
                     }finally {
                         executionState.tryBlockLevel--;
-                        executionState.isSoftTry = isSoftTryOld;
+                        executionState.isSoftTry = isOldSoftTryOld;
                         executionState.tryBodyScopeID = oldTryBlockScopeID;
                     }
                     break;
@@ -1092,7 +1092,7 @@ public final class LangInterpreter {
                     executionState.tryThrownError = null;
                     int oldTryBlockLevel = executionState.tryBlockLevel;
                     executionState.tryBlockLevel = 0;
-                    isSoftTryOld = executionState.isSoftTry;
+                    isOldSoftTryOld = executionState.isSoftTry;
                     executionState.isSoftTry = false;
                     oldTryBlockScopeID = executionState.tryBodyScopeID;
                     executionState.tryBodyScopeID = 0;
@@ -1101,7 +1101,7 @@ public final class LangInterpreter {
                         interpretAST(node.getTryBody());
                     }finally {
                         executionState.tryBlockLevel = oldTryBlockLevel;
-                        executionState.isSoftTry = isSoftTryOld;
+                        executionState.isSoftTry = isOldSoftTryOld;
                         executionState.tryBodyScopeID = oldTryBlockScopeID;
                     }
                     break;
@@ -1118,16 +1118,16 @@ public final class LangInterpreter {
                             return false;
                         }
 
-                        List<DataObject> catchErrors = new LinkedList<>();
                         List<DataObject> interpretedNodes = new LinkedList<>();
-                        int foundErrorIndex = -1;
+                        boolean foundError = false;
                         DataObject previousDataObject = null;
                         for(Node argument:catchNode.getExceptions()) {
                             if(argument.getNodeType() == NodeType.FUNCTION_CALL_PREVIOUS_NODE_VALUE && previousDataObject != null) {
                                 try {
                                     Node ret = processFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)argument, previousDataObject);
                                     if(ret.getNodeType() == NodeType.FUNCTION_CALL_PREVIOUS_NODE_VALUE) {
-                                        interpretedNodes.remove(interpretedNodes.size() - 1); //Remove last data Object, because it is used as function pointer for a function call
+                                        //Remove last data Object, because it is used as function pointer for a function call
+                                        interpretedNodes.remove(interpretedNodes.size() - 1);
                                         interpretedNodes.add(interpretFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)ret, previousDataObject));
                                     }else {
                                         interpretedNodes.add(interpretNode(null, ret));
@@ -1142,13 +1142,10 @@ public final class LangInterpreter {
                             }
 
                             DataObject argumentValue = interpretNode(null, argument);
-                            if(argumentValue == null) {
-                                previousDataObject = null;
-
-                                continue;
+                            if(argumentValue != null) {
+                                interpretedNodes.add(argumentValue);
                             }
 
-                            interpretedNodes.add(argumentValue);
                             previousDataObject = argumentValue;
                         }
                         List<DataObject> errorList = LangUtils.combineArgumentsWithoutArgumentSeparators(interpretedNodes, this, node.getPos());
@@ -1161,12 +1158,10 @@ public final class LangInterpreter {
                             }
 
                             if(dataObject.getError().getInterprettingError() == executionState.tryThrownError)
-                                foundErrorIndex = catchErrors.size();
-
-                            catchErrors.add(dataObject);
+                                foundError = true;
                         }
 
-                        if(foundErrorIndex == -1)
+                        if(!foundError)
                             return false;
                     }
 
@@ -1278,7 +1273,7 @@ public final class LangInterpreter {
 
                     if(!LangUtils.isMemberAccessAllowed(leftSideOperand))
                         return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                                "The left side operand of the member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
+                                "The left side operand of the optional member access operator (\"" + node.getOperator().getSymbol() + "\") must be a composite type",
                                 node.getPos());
 
                     return interpretNode(leftSideOperand, node.getRightSideOperand());
