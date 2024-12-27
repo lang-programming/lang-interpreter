@@ -1984,7 +1984,7 @@ public final class LangInterpreter {
         return dataObject;
     }
     /**
-     * Will create a variable if doesn't exist or returns an error object
+     * Will create a variable if it doesn't exist or returns an error object
      */
     private DataObject interpretVariableNameNode(DataObject compositeType, VariableNameNode node) {
         String variableName = node.getVariableName();
@@ -4216,6 +4216,9 @@ public final class LangInterpreter {
      * LangPatterns: VAR_NAME_FULL ((\$\**|&|fp\.)\w+)
      */
     private boolean isVarNameFullWithoutPrefix(String token) {
+        if(token.isEmpty())
+            return false;
+
         boolean funcPtr = token.startsWith("fp.");
         char firstChar = token.charAt(0);
         boolean normalVar = firstChar == '$';
@@ -4246,6 +4249,9 @@ public final class LangInterpreter {
      * LangPatterns: VAR_NAME_FULL_WITH_FUNCS ((\$\**|&|fp\.|mp\.|func\.|fn\.|linker\.|ln\.)\w+)
      */
     private boolean isVarNameFullWithFuncsWithoutPrefix(String token) {
+        if(token.isEmpty())
+            return false;
+
         boolean funcPtr = token.startsWith("fp.");
         boolean methodPtr = token.startsWith("mp.");
         boolean func = token.startsWith("func.");
@@ -4281,6 +4287,9 @@ public final class LangInterpreter {
      * LangPatterns: VAR_NAME_PTR_AND_DEREFERENCE (\$\**\[+\w+\]+)
      */
     private boolean isVarNamePtrAndDereferenceWithoutPrefix(String token) {
+        if(token.isEmpty())
+            return false;
+
         if(token.charAt(0) != '$')
             return false;
 
