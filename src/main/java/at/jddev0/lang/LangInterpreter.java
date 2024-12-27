@@ -1565,7 +1565,8 @@ public final class LangInterpreter {
 
         DataObject errorObject = interpretNode(null, throwValueNode);
         if(errorObject == null || errorObject.getType() != DataType.ERROR) {
-            executionState.returnedOrThrownValue = new DataObject().setError(new ErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE));
+            errorObject = new DataObject().setError(new ErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE));
+            executionState.returnedOrThrownValue = errorObject;
         }else {
             Node messageNode = node.getMessage();
             DataObject messageObject = messageNode == null?null:interpretNode(null, messageNode);
@@ -1582,7 +1583,7 @@ public final class LangInterpreter {
             setErrno(errorObject.getError().getInterprettingError(), errorObject.getError().getMessage(),
                     executionState.returnOrThrowStatementPos);
 
-        if(executionState.returnedOrThrownValue.getError().getErrno() > 0 && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
+        if(executionState.isThrownValue && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
             executionState.tryThrownError = executionState.returnedOrThrownValue.getError().getInterprettingError();
             executionState.stopExecutionFlag = true;
         }
