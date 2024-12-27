@@ -1463,24 +1463,19 @@ public final class LangInterpreter {
 
                 //Binary (Comparison operators)
                 case INSTANCE_OF:
-                    DataObject dataObject = leftSideOperand;
-                    DataObject typeObject = rightSideOperand;
-
-                    if(typeObject.getType() == DataType.TYPE) {
+                    if(rightSideOperand.getType() == DataType.TYPE) {
                         conditionOutput = leftSideOperand.getType() == rightSideOperand.getTypeValue();
 
                         break;
-                    }
-
-                    if(typeObject.getType() == DataType.STRUCT) {
-                        StructObject typeStruct = typeObject.getStruct();
+                    }else if(rightSideOperand.getType() == DataType.STRUCT) {
+                        StructObject typeStruct = rightSideOperand.getStruct();
 
                         if(!typeStruct.isDefinition())
                             return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
-                                    node.getOperator().getSymbol() + "\" operator must be a struct definition ", node.getPos());
+                                    node.getOperator().getSymbol() + "\" operator must be a struct definition", node.getPos());
 
-                        if(dataObject.getType() == DataType.STRUCT) {
-                            StructObject dataStruct = dataObject.getStruct();
+                        if(leftSideOperand.getType() == DataType.STRUCT) {
+                            StructObject dataStruct = leftSideOperand.getStruct();
 
                             conditionOutput = !dataStruct.isDefinition() && dataStruct.getStructBaseDefinition().equals(typeStruct);
 
@@ -1490,17 +1485,15 @@ public final class LangInterpreter {
                         conditionOutput = false;
 
                         break;
-                    }
-
-                    if(typeObject.getType() == DataType.OBJECT) {
-                        LangObject typeClass = typeObject.getObject();
+                    }else if(rightSideOperand.getType() == DataType.OBJECT) {
+                        LangObject typeClass = rightSideOperand.getObject();
 
                         if(!typeClass.isClass())
                             return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The second operand of the \"" +
                                     node.getOperator().getSymbol() + "\" operator must be a class", node.getPos());
 
-                        if(dataObject.getType() == DataType.OBJECT) {
-                            LangObject langObject = dataObject.getObject();
+                        if(leftSideOperand.getType() == DataType.OBJECT) {
+                            LangObject langObject = leftSideOperand.getObject();
 
                             conditionOutput = !langObject.isClass() && langObject.isInstanceOf(typeClass);
 
