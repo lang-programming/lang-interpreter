@@ -1741,134 +1741,83 @@ public final class LangInterpreter {
                     return rvalue;
                 }
 
-                //Continue in "Lang translation" in the switch statement below
-            }
+                //Continue in "Lang translation" below
+            }else if(lvalueNode.getNodeType() == NodeType.UNPROCESSED_VARIABLE_NAME) {
+                UnprocessedVariableNameNode variableNameNode = (UnprocessedVariableNameNode)lvalueNode;
+                String variableName = variableNameNode.getVariableName();
 
-            switch(lvalueNode.getNodeType()) {
-                //Variable assignment
-                case UNPROCESSED_VARIABLE_NAME:
-                    UnprocessedVariableNameNode variableNameNode = (UnprocessedVariableNameNode)lvalueNode;
-                    String variableName = variableNameNode.getVariableName();
-
-                    boolean isModuleVariable = variableName.startsWith("[[");
-                    String moduleName = null;
-                    if(isModuleVariable) {
-                        int indexModuleIdientifierEnd = variableName.indexOf("]]::");
-                        if(indexModuleIdientifierEnd == -1) {
-                            return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
-                        }
-
-                        moduleName = variableName.substring(2, indexModuleIdientifierEnd);
-                        if(!isAlphaNumericWithUnderline(moduleName)) {
-                            return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
-                        }
-
-                        variableName = variableName.substring(indexModuleIdientifierEnd + 4);
+                boolean isModuleVariable = variableName.startsWith("[[");
+                String moduleName = null;
+                if(isModuleVariable) {
+                    int indexModuleIdentifierEnd = variableName.indexOf("]]::");
+                    if(indexModuleIdentifierEnd == -1) {
+                        return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
                     }
 
-                    if(isVarNameFullWithoutPrefix(variableName) || isVarNamePtrAndDereferenceWithoutPrefix(variableName)) {
-                        if(!variableName.contains("[")) { //Pointer redirection is no longer supported
-                            boolean[] flags = new boolean[] {false, false};
-                            DataObject lvalue = getOrCreateDataObjectFromVariableName(null, moduleName, variableName,
-                                    false, true, true, flags, node.getPos());
-                            if(flags[0])
-                                return lvalue; //Forward error from getOrCreateDataObjectFromVariableName()
+                    moduleName = variableName.substring(2, indexModuleIdentifierEnd);
+                    if(!isAlphaNumericWithUnderline(moduleName)) {
+                        return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
+                    }
 
-                            variableName = lvalue.getVariableName();
-                            if(variableName == null) {
-                                return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
-                            }
+                    variableName = variableName.substring(indexModuleIdentifierEnd + 4);
+                }
 
-                            if(lvalue.isFinalData() || lvalue.isLangVar()) {
-                                if(flags[1])
-                                    getData().var.remove(variableName);
+                if(isVarNameFullWithoutPrefix(variableName)) {
+                    boolean[] flags = new boolean[] {false, false};
+                    DataObject lvalue = getOrCreateDataObjectFromVariableName(null, moduleName, variableName,
+                            false, true, true, flags, node.getPos());
+                    if(flags[0])
+                        return lvalue; //Forward error from getOrCreateDataObjectFromVariableName()
 
-                                return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
-                            }
+                    variableName = lvalue.getVariableName();
+                    if(variableName == null) {
+                        return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
+                    }
 
-                            try {
-                                lvalue.setData(rvalue);
-                            }catch(DataTypeConstraintViolatedException e) {
-                                if(flags[1])
-                                    getData().var.remove(variableName);
+                    if(lvalue.isFinalData() || lvalue.isLangVar()) {
+                        if(flags[1])
+                            getData().var.remove(variableName);
 
-                                return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for rvalue in assignment", node.getPos());
-                            }
+                        return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
+                    }
 
-                            if(variableName.startsWith("fp.")) {
-                                final String functionNameCopy = variableName.substring(3);
-                                Optional<Map.Entry<String, FunctionPointerObject>> ret = funcs.entrySet().stream().filter(entry -> {
-                                    return functionNameCopy.equals(entry.getKey());
-                                }).findFirst();
+                    try {
+                        lvalue.setData(rvalue);
+                    }catch(DataTypeConstraintViolatedException e) {
+                        if(flags[1])
+                            getData().var.remove(variableName);
 
-                                if(ret.isPresent())
-                                    setErrno(InterpretingError.VAR_SHADOWING_WARNING, "\"" + variableName + "\" shadows a predfined, linker, or external function",
-                                            node.getPos());
-                            }
-                            break;
+                        return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for rvalue in assignment", node.getPos());
+                    }
+
+                    if(variableName.startsWith("fp.")) {
+                        final String functionNameCopy = variableName.substring(3);
+                        if(funcs.entrySet().stream().anyMatch(entry -> {
+                            return functionNameCopy.equals(entry.getKey());
+                        })) {
+                            setErrno(InterpretingError.VAR_SHADOWING_WARNING, "\"" + variableName + "\" shadows a predefined, linker, or external function",
+                                    node.getPos());
                         }
                     }
-                    //Fall-through to "Lang translation" if variableName is not valid
 
-                    //Lang translation
-                case ASSIGNMENT:
-                case CHAR_VALUE:
-                case CONDITION:
-                case MATH:
-                case OPERATION:
-                case DOUBLE_VALUE:
-                case ESCAPE_SEQUENCE:
-                case UNICODE_ESCAPE_SEQUENCE:
-                case FLOAT_VALUE:
-                case FUNCTION_CALL:
-                case FUNCTION_CALL_PREVIOUS_NODE_VALUE:
-                case FUNCTION_DEFINITION:
-                case IF_STATEMENT:
-                case IF_STATEMENT_PART_ELSE:
-                case IF_STATEMENT_PART_IF:
-                case LOOP_STATEMENT:
-                case LOOP_STATEMENT_PART_WHILE:
-                case LOOP_STATEMENT_PART_UNTIL:
-                case LOOP_STATEMENT_PART_REPEAT:
-                case LOOP_STATEMENT_PART_FOR_EACH:
-                case LOOP_STATEMENT_PART_LOOP:
-                case LOOP_STATEMENT_PART_ELSE:
-                case LOOP_STATEMENT_CONTINUE_BREAK:
-                case TRY_STATEMENT:
-                case TRY_STATEMENT_PART_TRY:
-                case TRY_STATEMENT_PART_SOFT_TRY:
-                case TRY_STATEMENT_PART_NON_TRY:
-                case TRY_STATEMENT_PART_CATCH:
-                case TRY_STATEMENT_PART_ELSE:
-                case TRY_STATEMENT_PART_FINALLY:
-                case INT_VALUE:
-                case LIST:
-                case LONG_VALUE:
-                case NULL_VALUE:
-                case PARSING_ERROR:
-                case RETURN:
-                case THROW:
-                case TEXT_VALUE:
-                case VARIABLE_NAME:
-                case VOID_VALUE:
-                case ARRAY:
-                case STRUCT_DEFINITION:
-                case CLASS_DEFINITION:
-                    DataObject translationKeyDataObject = interpretNode(null, lvalueNode);
-                    if(translationKeyDataObject == null)
-                        return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getPos());
+                    return rvalue;
+                }
 
-                    String translationKey = conversions.toText(translationKeyDataObject, node.getPos()).toString();
-                    if(translationKey.startsWith("lang."))
-                        interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getPos());
-
-                    getData().lang.put(translationKey, conversions.toText(rvalue, node.getPos()).toString());
-                    break;
-
-                case GENERAL:
-                case ARGUMENT_SEPARATOR:
-                    return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Neither lvalue nor translationKey", node.getPos());
+                //Continue in "Lang translation" below if variableName is not valid
+            }else if(lvalueNode.getNodeType() == NodeType.GENERAL || lvalueNode.getNodeType() == NodeType.ARGUMENT_SEPARATOR) {
+                return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Neither lvalue nor translationKey", node.getPos());
             }
+
+            //Lang translation
+            DataObject translationKeyDataObject = interpretNode(null, lvalueNode);
+            if(translationKeyDataObject == null)
+                return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid translationKey", node.getPos());
+
+            String translationKey = conversions.toText(translationKeyDataObject, node.getPos()).toString();
+            if(translationKey.startsWith("lang."))
+                interpretLangDataAndExecutionFlags(translationKey, rvalue, node.getPos());
+
+            getData().lang.put(translationKey, conversions.toText(rvalue, node.getPos()).toString());
         }catch(ClassCastException e) {
             return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, node.getPos());
         }
