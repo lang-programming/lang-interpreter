@@ -1831,8 +1831,16 @@ public final class LangInterpreter {
      *                                   (e.g. $[abc] is not in variableNames, but $abc is -> $[abc] will return a DataObject)
      * @param flags Will set by this method in format: [error, created]
      */
-    private DataObject getOrCreateDataObjectFromVariableName(DataObject compositeType, String moduleName, String variableName, boolean supportsPointerReferencing,
-                                                             boolean supportsPointerDereferencing, boolean shouldCreateDataObject, final boolean[] flags, CodePosition pos) {
+    private DataObject getOrCreateDataObjectFromVariableName(
+            DataObject compositeType,
+            String moduleName,
+            String variableName,
+            boolean supportsPointerReferencing,
+            boolean supportsPointerDereferencing,
+            boolean shouldCreateDataObject,
+            final boolean[] flags,
+            CodePosition pos
+    ) {
         Map<String, DataObject> variables;
         if(compositeType != null) {
             if(compositeType.getType() == DataType.ERROR) {
@@ -1853,6 +1861,9 @@ public final class LangInterpreter {
                     for(String memberName:compositeType.getStruct().getMemberNames())
                         variables.put(memberName, compositeType.getStruct().getMember(memberName));
                 }catch(DataTypeConstraintException e) {
+                    if(flags != null && flags.length == 2)
+                        flags[0] = true;
+
                     return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
                 }
             }else if(compositeType.getType() == DataType.OBJECT) {
@@ -1893,9 +1904,15 @@ public final class LangInterpreter {
                         }
                     }
                 }catch(DataTypeConstraintException e) {
+                    if(flags != null && flags.length == 2)
+                        flags[0] = true;
+
                     return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
                 }
             }else {
+                if(flags != null && flags.length == 2)
+                    flags[0] = true;
+
                 return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", pos);
             }
         }else if(moduleName == null) {
@@ -1914,8 +1931,12 @@ public final class LangInterpreter {
 
         DataObject ret = variables.get(variableName);
         if(ret != null) {
-            if(!ret.isAccessible(currentCallStackElement.getLangClass()))
+            if(!ret.isAccessible(currentCallStackElement.getLangClass())) {
+                if(flags != null && flags.length == 2)
+                    flags[0] = true;
+
                 return setErrnoErrorObject(InterpretingError.MEMBER_NOT_ACCESSIBLE, "For member \"" + variableName + "\"");
+            }
 
             return ret;
         }
@@ -1970,10 +1991,10 @@ public final class LangInterpreter {
 
             if(compositeType != null)
                 return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, "Composite type members can not be created", pos);
-            else if(moduleName == null)
-                return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, pos);
-            else
+            else if(moduleName != null)
                 return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, "Module variables can not be created", pos);
+            else
+                return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, pos);
         }
 
         if(flags != null && flags.length == 2)
