@@ -2013,17 +2013,17 @@ public final class LangInterpreter {
         boolean isModuleVariable = compositeType == null && variableName.startsWith("[[");
         String moduleName = null;
         if(isModuleVariable) {
-            int indexModuleIdientifierEnd = variableName.indexOf("]]::");
-            if(indexModuleIdientifierEnd == -1) {
+            int indexModuleIdentifierEnd = variableName.indexOf("]]::");
+            if(indexModuleIdentifierEnd == -1) {
                 return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", node.getPos());
             }
 
-            moduleName = variableName.substring(2, indexModuleIdientifierEnd);
+            moduleName = variableName.substring(2, indexModuleIdentifierEnd);
             if(!isAlphaNumericWithUnderline(moduleName)) {
                 return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
             }
 
-            variableName = variableName.substring(indexModuleIdientifierEnd + 4);
+            variableName = variableName.substring(indexModuleIdentifierEnd + 4);
         }
 
         if(!isVarNameFullWithFuncsWithoutPrefix(variableName) && !isVarNamePtrAndDereferenceWithoutPrefix(variableName) &&
