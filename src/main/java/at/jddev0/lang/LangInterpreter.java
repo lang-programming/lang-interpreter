@@ -2127,11 +2127,10 @@ public final class LangInterpreter {
             case '\u25b2':
             case '\u25bc':
             case '\"':
+            case '\\':
                 return new DataObject().setChar(node.getEscapeSequenceChar());
             case '!':
                 return null;
-            case '\\':
-                return new DataObject().setChar('\\');
 
             //If no escape sequence: Remove "\" anyway
             default:
