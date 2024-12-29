@@ -294,7 +294,7 @@ public final class LangInterpreter {
                         return interpretUnicodeEscapeSequenceNode((UnicodeEscapeSequenceNode)node);
 
                     case ARGUMENT_SEPARATOR:
-                        return interpretArgumentSeparatotNode((ArgumentSeparatorNode)node);
+                        return interpretArgumentSeparatorNode((ArgumentSeparatorNode)node);
 
                     case FUNCTION_CALL:
                         return interpretFunctionCallNode(compositeType, (FunctionCallNode)node);
@@ -2151,7 +2151,7 @@ public final class LangInterpreter {
         return new DataObject().setChar(Integer.valueOf(node.getHexCodepoint().toUpperCase(Locale.ENGLISH), 16));
     }
 
-    private DataObject interpretArgumentSeparatotNode(ArgumentSeparatorNode node) {
+    private DataObject interpretArgumentSeparatorNode(ArgumentSeparatorNode node) {
         return new DataObject().setArgumentSeparator(node.getOriginalText());
     }
 
