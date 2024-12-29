@@ -2066,9 +2066,7 @@ public final class LangInterpreter {
 
         final String variableNameCopy = variableName;
         Optional<Map.Entry<String, FunctionPointerObject>> ret = funcs.entrySet().stream().filter(entry -> {
-            return entry.getValue().isLinkerFunction() == isLinkerFunction;
-        }).filter(entry -> {
-            return variableNameCopy.equals(entry.getKey());
+            return entry.getValue().isLinkerFunction() == isLinkerFunction && variableNameCopy.equals(entry.getKey());
         }).findFirst();
 
         if(!ret.isPresent())
