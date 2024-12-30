@@ -2964,6 +2964,8 @@ public final class LangInterpreter {
                     parameterInfoList.add(parameterDocComments.remove(variableName));
                     argumentPosList.add(node.getPos());
 
+                    index++;
+
                     continue;
                 }
 
