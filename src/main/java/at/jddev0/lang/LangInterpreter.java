@@ -2161,9 +2161,9 @@ public final class LangInterpreter {
 
         if(executionFlags.langTest && scopeId == langTestExpectedReturnValueScopeID) {
             if(langTestExpectedThrowValue != null) {
-                InterpretingError gotError = retTmp != null && executionState.isThrownValue?retTmp.getError().getInterprettingError():null;
-                langTestStore.addAssertResult(new LangTest.AssertResultThrow(gotError == langTestExpectedThrowValue,
-                        printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, gotError, langTestExpectedThrowValue));
+                InterpretingError error = retTmp != null && executionState.isThrownValue?retTmp.getError().getInterprettingError():null;
+                langTestStore.addAssertResult(new LangTest.AssertResultThrow(error == langTestExpectedThrowValue,
+                        printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, error, langTestExpectedThrowValue));
 
                 langTestExpectedThrowValue = null;
             }
@@ -2196,7 +2196,7 @@ public final class LangInterpreter {
                 executionState.tryBodyScopeID != scopeId))
             executionState.stopExecutionFlag = false;
 
-        return retTmp == null?retTmp:new DataObject(retTmp);
+        return retTmp == null?null:new DataObject(retTmp);
     }
     boolean isThrownValue() {
         return executionState.isThrownValue ||
