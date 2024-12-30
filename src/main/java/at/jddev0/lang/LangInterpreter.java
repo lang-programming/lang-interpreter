@@ -2250,7 +2250,6 @@ public final class LangInterpreter {
                     memberOfClass == null?null:(memberOfClass.getClassName() == null?"<class>":memberOfClass.getClassName()),
                     functionName, currentStackElement.getModule()), parentPos);
 
-
             switch(internalFunction.getFunctionPointerType()) {
                 case FunctionPointerObject.NORMAL:
                     LangNormalFunction normalFunction = internalFunction.getNormalFunction();
@@ -2289,11 +2288,10 @@ public final class LangInterpreter {
 
                         //Copies must not be final
                         callerData.var.forEach((key, val) -> {
-                            if(!val.isLangVar())
-                                getData().var.put(key, new DataObject(val).setVariableName(val.getVariableName()));
-
                             if(val.isStaticData()) //Static Lang vars should also be copied
                                 getData().var.put(key, val);
+                            else if(!val.isLangVar()) //Copy non static and non lang vars
+                                getData().var.put(key, new DataObject(val).setVariableName(val.getVariableName()));
                         });
 
                         //Set this-object and This-class
@@ -2408,9 +2406,7 @@ public final class LangInterpreter {
 
                                 argumentIndex = combinedArgumentList.size() - argCount + i + 1;
                                 continue;
-                            }
-
-                            if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER) {
+                            }else if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER) {
                                 try {
                                     DataObject newDataObject = new DataObject().
                                             setVarPointer(new VarPointerObject(combinedArgumentList.get(argumentIndex))).
@@ -2442,7 +2438,7 @@ public final class LangInterpreter {
                                                 "Invalid argument value for function parameter \"" + variableName + "\" (Must be a number)",
                                                 argumentPos);
                                 }else if(parameterAnnotation == LangBaseFunction.ParameterAnnotation.CALLABLE) {
-                                    if(!LangUtils.isCallable(combinedArgumentList.get(argumentIndex)))
+                                    if(!LangUtils.isCallable(value))
                                         return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
                                                 "Invalid argument value for function parameter \"" + variableName + "\" (Must be callable)",
                                                 argumentPos);
@@ -2498,7 +2494,6 @@ public final class LangInterpreter {
 
                     if(returnValueTypeConstraint != null && !thrownValue) {
                         //Thrown values are always allowed
-
                         if(!returnValueTypeConstraint.isTypeAllowed(retTmp.getType()))
                             return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
                                     "Invalid return value type \"" + retTmp.getType() + "\"",
