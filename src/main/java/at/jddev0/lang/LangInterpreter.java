@@ -1795,7 +1795,7 @@ public final class LangInterpreter {
                         if(funcs.entrySet().stream().anyMatch(entry -> {
                             return functionNameCopy.equals(entry.getKey());
                         })) {
-                            setErrno(InterpretingError.VAR_SHADOWING_WARNING, "\"" + variableName + "\" shadows a predefined, linker, or external function",
+                            setErrno(InterpretingError.VAR_SHADOWING_WARNING, "\"" + variableName + "\" shadows a predefined or linker function",
                                     node.getPos());
                         }
                     }
@@ -2542,7 +2542,8 @@ public final class LangInterpreter {
                 try {
                     Node ret = processFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)argument, previousDataObject);
                     if(ret.getNodeType() == NodeType.FUNCTION_CALL_PREVIOUS_NODE_VALUE) {
-                        argumentValueList.remove(argumentValueList.size() - 1); //Remove last data Object, because it is used as function pointer for a function call
+                        //Remove last data Object, because it is used as function pointer for a function call
+                        argumentValueList.remove(argumentValueList.size() - 1);
                         argumentValueList.add(interpretFunctionCallPreviousNodeValueNode((FunctionCallPreviousNodeValueNode)ret, previousDataObject));
                     }else {
                         argumentValueList.add(interpretNode(null, ret));
@@ -2564,21 +2565,21 @@ public final class LangInterpreter {
                         boolean isModuleVariable = variableName.startsWith("[[");
                         String moduleName = null;
                         if(isModuleVariable) {
-                            int indexModuleIdientifierEnd = variableName.indexOf("]]::");
-                            if(indexModuleIdientifierEnd == -1) {
+                            int indexModuleIdentifierEnd = variableName.indexOf("]]::");
+                            if(indexModuleIdentifierEnd == -1) {
                                 argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid variable name", argument.getPos()));
 
                                 continue;
                             }
 
-                            moduleName = variableName.substring(2, indexModuleIdientifierEnd);
+                            moduleName = variableName.substring(2, indexModuleIdentifierEnd);
                             if(!isAlphaNumericWithUnderline(moduleName)) {
                                 argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", argument.getPos()));
 
                                 continue;
                             }
 
-                            variableName = variableName.substring(indexModuleIdientifierEnd + 4);
+                            variableName = variableName.substring(indexModuleIdentifierEnd + 4);
                         }
 
                         if(variableName.startsWith("&")) {
@@ -2586,7 +2587,7 @@ public final class LangInterpreter {
                                             substring(0, variableName.length() - 3), false, false,
                                     false, null, argument.getPos());
                             if(dataObject == null) {
-                                argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARR_PTR, "Unpacking of undefined variable",
+                                argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Unpacking of undefined variable",
                                         argument.getPos()));
 
                                 continue;
@@ -2594,17 +2595,9 @@ public final class LangInterpreter {
 
                             if(dataObject.getType() == DataType.ARRAY) {
                                 argumentValueList.addAll(LangUtils.asListWithArgumentSeparators(dataObject.getArray()));
-
-                                continue;
-                            }
-
-                            if(dataObject.getType() == DataType.LIST) {
+                            }else if(dataObject.getType() == DataType.LIST) {
                                 argumentValueList.addAll(LangUtils.separateArgumentsWithArgumentSeparators(dataObject.getList()));
-
-                                continue;
-                            }
-
-                            if(dataObject.getType() == DataType.STRUCT) {
+                            }else if(dataObject.getType() == DataType.STRUCT) {
                                 StructObject struct = dataObject.getStruct();
 
                                 if(struct.isDefinition())
@@ -2613,12 +2606,10 @@ public final class LangInterpreter {
                                 else
                                     argumentValueList.addAll(LangUtils.separateArgumentsWithArgumentSeparators(Arrays.stream(struct.getMemberNames()).
                                             map(struct::getMember).collect(Collectors.toList())));
-
-                                continue;
+                            }else {
+                                argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Unpacking of unsupported composite type variable",
+                                        argument.getPos()));
                             }
-
-                            argumentValueList.add(setErrnoErrorObject(InterpretingError.INVALID_ARR_PTR, "Unpacking of unsupported composite type variable",
-                                    argument.getPos()));
 
                             continue;
                         }
