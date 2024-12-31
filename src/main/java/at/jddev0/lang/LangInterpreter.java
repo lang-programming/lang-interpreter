@@ -3443,16 +3443,18 @@ public final class LangInterpreter {
      * <ul>
      * <li>{@code FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE}</li>
      * <li>{@code FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS}</li>
+     * <li>{@code FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT}</li>
      * <li>{@code FORMAT_SEQUENCE_ERROR_TRANSLATION_KEY_NOT_FOUND}</li>
      * <li>{@code FORMAT_SEQUENCE_ERROR_SPECIFIED_INDEX_OUT_OF_BOUNDS}</li>
+     * <li>{@code FORMAT_SEQUENCE_ERROR_TRANSLATION_INVALID_PLURALIZATION_TEMPLATE}</li>
      * </ul>
      * for errors
      */
     private int interpretNextFormatSequence(String format, StringBuilder builder, List<DataObject> argumentList, List<DataObject> fullArgumentList) {
-        char[] posibleFormats = {'b', 'c', 'd', 'f', 'n', 'o', 's', 't', 'x', '?'};
-        int[] indices = new int[posibleFormats.length];
-        for(int i = 0;i < posibleFormats.length;i++)
-            indices[i] = format.indexOf(posibleFormats[i]);
+        char[] possibleFormats = {'b', 'c', 'd', 'f', 'n', 'o', 's', 't', 'x', '?'};
+        int[] indices = new int[possibleFormats.length];
+        for(int i = 0;i < possibleFormats.length;i++)
+            indices[i] = format.indexOf(possibleFormats[i]);
 
         int minEndIndex = Integer.MAX_VALUE;
         for(int index:indices) {
@@ -3710,8 +3712,9 @@ public final class LangInterpreter {
                 double value = number.doubleValue();
                 if(Double.isNaN(value)) {
                     output = "NaN";
-                    forceSign = false;
                     leadingZeros = false;
+                    if(forceSign || signSpace)
+                        output = " " + output;
                 }else if(Double.isInfinite(value)) {
                     output = (value == Double.NEGATIVE_INFINITY?"-":"") + "Infinity";
                     leadingZeros = false;
