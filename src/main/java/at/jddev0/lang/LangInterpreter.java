@@ -3472,26 +3472,24 @@ public final class LangInterpreter {
         char formatType = fullFormat.charAt(fullFormat.length() - 1);
 
         //Parsing format arguments
-        Integer valueSpecifiedIndex = null;
+        Integer valueSpecifiedIndex;
         if(fullFormat.charAt(0) == '[') {
             int valueSpecifiedIndexEndIndex = fullFormat.indexOf(']');
             if(valueSpecifiedIndexEndIndex < 0)
                 return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
-            String valueSpecifiedIndexString = fullFormat.substring(1, valueSpecifiedIndexEndIndex);
+            String number = fullFormat.substring(1, valueSpecifiedIndexEndIndex);
             fullFormat = fullFormat.substring(valueSpecifiedIndexEndIndex + 1);
 
-            String number = "";
-            while(!valueSpecifiedIndexString.isEmpty()) {
-                if(valueSpecifiedIndexString.charAt(0) < '0' || valueSpecifiedIndexString.charAt(0) > '9')
+            for(int i = 0;i < number.length();i++)
+                if(number.charAt(i) < '0' || number.charAt(i) > '9')
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
-                number += valueSpecifiedIndexString.charAt(0);
-                valueSpecifiedIndexString = valueSpecifiedIndexString.substring(1);
-            }
             valueSpecifiedIndex = Integer.parseInt(number);
             if(valueSpecifiedIndex >= fullArgumentList.size())
                 return FORMAT_SEQUENCE_ERROR_SPECIFIED_INDEX_OUT_OF_BOUNDS;
+        }else {
+            valueSpecifiedIndex = null;
         }
         boolean forceSign = fullFormat.charAt(0) == '+';
         if(forceSign)
@@ -3508,40 +3506,43 @@ public final class LangInterpreter {
         boolean sizeInArgument = fullFormat.charAt(0) == '*';
         if(sizeInArgument)
             fullFormat = fullFormat.substring(1);
-        Integer sizeArgumentIndex = null;
+        Integer sizeArgumentIndex;
         if(sizeInArgument && fullFormat.charAt(0) == '[') {
             int sizeArgumentIndexEndIndex = fullFormat.indexOf(']');
             if(sizeArgumentIndexEndIndex < 0)
                 return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
-            String sizeArgumentIndexString = fullFormat.substring(1, sizeArgumentIndexEndIndex);
+            String number = fullFormat.substring(1, sizeArgumentIndexEndIndex);
             fullFormat = fullFormat.substring(sizeArgumentIndexEndIndex + 1);
 
-            String number = "";
-            while(!sizeArgumentIndexString.isEmpty()) {
-                if(sizeArgumentIndexString.charAt(0) < '0' || sizeArgumentIndexString.charAt(0) > '9')
+            for(int i = 0;i < number.length();i++)
+                if(number.charAt(i) < '0' || number.charAt(i) > '9')
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
-                number += sizeArgumentIndexString.charAt(0);
-                sizeArgumentIndexString = sizeArgumentIndexString.substring(1);
-            }
             sizeArgumentIndex = Integer.parseInt(number);
             if(sizeArgumentIndex >= fullArgumentList.size())
                 return FORMAT_SEQUENCE_ERROR_SPECIFIED_INDEX_OUT_OF_BOUNDS;
+        }else {
+            sizeArgumentIndex = null;
         }
-        Integer size = null;
+        Integer size;
         if(fullFormat.charAt(0) > '0' && fullFormat.charAt(0) <= '9') {
-            String number = "";
-            while(fullFormat.charAt(0) >= '0' && fullFormat.charAt(0) <= '9') {
-                number += fullFormat.charAt(0);
-                fullFormat = fullFormat.substring(1);
+            int i = 0;
+            while(i < fullFormat.length() && fullFormat.charAt(i) >= '0' && fullFormat.charAt(i) <= '9') {
+                i++;
             }
+
+            String number = fullFormat.substring(0, i);
+            fullFormat = fullFormat.substring(i);
+
             size = Integer.parseInt(number);
+        }else {
+            size = null;
         }
         boolean decimalPlaces = fullFormat.charAt(0) == '.';
-        boolean decimalPlacesInArgument = false;
-        Integer decimalPlacesCountIndex = null;
-        Integer decimalPlacesCount = null;
+        boolean decimalPlacesInArgument;
+        Integer decimalPlacesCountIndex;
+        Integer decimalPlacesCount;
         if(decimalPlaces) {
             fullFormat = fullFormat.substring(1);
             decimalPlacesInArgument = fullFormat.charAt(0) == '*';
@@ -3552,33 +3553,40 @@ public final class LangInterpreter {
                 if(decimalPlacesCountIndexEndIndex < 0)
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
-                String decimalPlacesCountIndexString = fullFormat.substring(1, decimalPlacesCountIndexEndIndex);
+                String number = fullFormat.substring(1, decimalPlacesCountIndexEndIndex);
                 fullFormat = fullFormat.substring(decimalPlacesCountIndexEndIndex + 1);
 
-                String number = "";
-                while(!decimalPlacesCountIndexString.isEmpty()) {
-                    if(decimalPlacesCountIndexString.charAt(0) < '0' || decimalPlacesCountIndexString.charAt(0) > '9')
+                for(int i = 0;i < number.length();i++)
+                    if(number.charAt(i) < '0' || number.charAt(i) > '9')
                         return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
-                    number += decimalPlacesCountIndexString.charAt(0);
-                    decimalPlacesCountIndexString = decimalPlacesCountIndexString.substring(1);
-                }
                 decimalPlacesCountIndex = Integer.parseInt(number);
                 if(decimalPlacesCountIndex >= fullArgumentList.size())
                     return FORMAT_SEQUENCE_ERROR_SPECIFIED_INDEX_OUT_OF_BOUNDS;
+            }else {
+                decimalPlacesCountIndex = null;
             }
             if(fullFormat.charAt(0) >= '0' && fullFormat.charAt(0) <= '9') {
-                String number = "";
-                while(fullFormat.charAt(0) >= '0' && fullFormat.charAt(0) <= '9') {
-                    number += fullFormat.charAt(0);
-                    fullFormat = fullFormat.substring(1);
+                int i = 0;
+                while(i < fullFormat.length() && fullFormat.charAt(i) >= '0' && fullFormat.charAt(i) <= '9') {
+                    i++;
                 }
+
+                String number = fullFormat.substring(0, i);
+                fullFormat = fullFormat.substring(i);
+
                 boolean leadingZero = number.charAt(0) == '0';
                 if(leadingZero && number.length() > 1)
                     return FORMAT_SEQUENCE_ERROR_INVALID_FORMAT_SEQUENCE;
 
                 decimalPlacesCount = Integer.parseInt(number);
+            }else {
+                decimalPlacesCount = null;
             }
+        }else {
+            decimalPlacesInArgument = false;
+            decimalPlacesCountIndex = null;
+            decimalPlacesCount = null;
         }
 
         if(fullFormat.charAt(0) != formatType)
