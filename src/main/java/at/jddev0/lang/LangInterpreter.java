@@ -2818,8 +2818,7 @@ public final class LangInterpreter {
         if(functionName != null) {
             if(functionName.startsWith("$") || functionName.startsWith("&"))
                 functionNameWithoutPrefix = functionName.substring(1);
-
-            if(functionName.startsWith("fp."))
+            else if(functionName.startsWith("fp."))
                 functionNameWithoutPrefix = functionName.substring(3);
 
             functionPointerDataObject = getOrCreateDataObjectFromVariableName(null, null, functionName,
@@ -2904,10 +2903,11 @@ public final class LangInterpreter {
                 String rawVariableName = parameter.getVariableName();
 
                 String rawParameterTypeConstraint = parameter.getTypeConstraint();
-                LangBaseFunction.ParameterAnnotation parameterAnnotation = LangBaseFunction.ParameterAnnotation.NORMAL;
+                LangBaseFunction.ParameterAnnotation parameterAnnotation;
                 DataTypeConstraint parameterTypeConstraint;
                 if(rawParameterTypeConstraint == null) {
                     parameterTypeConstraint = null;
+                    parameterAnnotation = LangBaseFunction.ParameterAnnotation.NORMAL;
                 }else if(rawParameterTypeConstraint.equals("bool")) {
                     parameterTypeConstraint = null;
                     parameterAnnotation = LangBaseFunction.ParameterAnnotation.BOOLEAN;
@@ -2923,6 +2923,8 @@ public final class LangInterpreter {
 
                     if(errorOut.getType() == DataType.ERROR)
                         return errorOut;
+
+                    parameterAnnotation = LangBaseFunction.ParameterAnnotation.NORMAL;
                 }
 
                 if(!childrenIterator.hasNext() && !isLangVarWithoutPrefix(rawVariableName) && isFuncCallVarArgs(rawVariableName)) {
@@ -2930,7 +2932,8 @@ public final class LangInterpreter {
 
                     varArgsParameterIndex = index;
 
-                    String variableName = rawVariableName.substring(0, rawVariableName.length() - 3); //Remove "..."
+                    //Remove "..."
+                    String variableName = rawVariableName.substring(0, rawVariableName.length() - 3);
 
                     textVarArgsParameter = variableName.charAt(0) == '$';
 
@@ -2938,19 +2941,20 @@ public final class LangInterpreter {
                     parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.CONSTRAINT_NORMAL:parameterTypeConstraint);
                     parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.VAR_ARGS);
                     parameterInfoList.add(parameterDocComments.remove(variableName));
-                    argumentPosList.add(node.getPos());
+                    argumentPosList.add(parameter.getPos());
 
                     continue;
                 }
 
                 if(isFuncCallCallByPtr(rawVariableName) && !isFuncCallCallByPtrLangVar(rawVariableName)) {
-                    String variableName = "$" + rawVariableName.substring(2, rawVariableName.length() - 1); //Remove '[' and ']' from variable name;
+                    //Remove '[' and ']' from variable name;
+                    String variableName = "$" + rawVariableName.substring(2, rawVariableName.length() - 1);
 
                     parameterList.add(new DataObject().setVariableName(variableName));
                     parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
                     parameterAnnotationList.add(LangBaseFunction.ParameterAnnotation.CALL_BY_POINTER);
                     parameterInfoList.add(parameterDocComments.remove(variableName));
-                    argumentPosList.add(node.getPos());
+                    argumentPosList.add(parameter.getPos());
 
                     index++;
 
@@ -2959,15 +2963,13 @@ public final class LangInterpreter {
 
                 if(!isVarNameWithoutPrefix(rawVariableName) || isLangVarWithoutPrefix(rawVariableName))
                     return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE,
-                            "Invalid parameter: \"" + rawVariableName + "\"", node.getPos());
+                            "Invalid parameter: \"" + rawVariableName + "\"", parameter.getPos());
 
-                String variableName = rawVariableName;
-
-                parameterList.add(new DataObject().setVariableName(variableName));
-                parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(variableName):parameterTypeConstraint);
+                parameterList.add(new DataObject().setVariableName(rawVariableName));
+                parameterDataTypeConstraintList.add(parameterTypeConstraint == null?DataObject.getTypeConstraintFor(rawVariableName):parameterTypeConstraint);
                 parameterAnnotationList.add(parameterAnnotation);
-                parameterInfoList.add(parameterDocComments.remove(variableName));
-                argumentPosList.add(node.getPos());
+                parameterInfoList.add(parameterDocComments.remove(rawVariableName));
+                argumentPosList.add(parameter.getPos());
             }catch(ClassCastException e) {
                 setErrno(InterpretingError.INVALID_AST_NODE, node.getPos());
             }
@@ -3021,10 +3023,10 @@ public final class LangInterpreter {
             }
         }catch(DataTypeConstraintViolatedException e) {
             if(flags[1])
-                getData().var.remove(functionName);
+                getData().var.remove(functionPointerDataObject.getVariableName());
 
             return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Incompatible type for function definition: \"" +
-                    functionName + "\" was already defined and cannot be set to a function definition", node.getPos());
+                    functionPointerDataObject.getVariableName() + "\" was already defined and cannot be set to a function definition", node.getPos());
         }
 
         return functionPointerDataObject;
