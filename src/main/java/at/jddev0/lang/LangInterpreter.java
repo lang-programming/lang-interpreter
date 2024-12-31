@@ -2633,7 +2633,7 @@ public final class LangInterpreter {
         return argumentValueList;
     }
     /**
-     * @return Will return void data for non return value functions
+     * @return Will return void data for non-return value functions
      */
     private DataObject interpretFunctionCallNode(DataObject compositeType, FunctionCallNode node) {
         String functionName = node.getFunctionName();
@@ -2651,17 +2651,17 @@ public final class LangInterpreter {
         boolean isModuleVariable = compositeType == null && functionName.startsWith("[[");
         Map<String, DataObject> variables;
         if(isModuleVariable) {
-            int indexModuleIdientifierEnd = functionName.indexOf("]]::");
-            if(indexModuleIdientifierEnd == -1) {
+            int indexModuleIdentifierEnd = functionName.indexOf("]]::");
+            if(indexModuleIdentifierEnd == -1) {
                 return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid function name", node.getPos());
             }
 
-            String moduleName = functionName.substring(2, indexModuleIdientifierEnd);
+            String moduleName = functionName.substring(2, indexModuleIdentifierEnd);
             if(!isAlphaNumericWithUnderline(moduleName)) {
                 return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid module name", node.getPos());
             }
 
-            functionName = functionName.substring(indexModuleIdientifierEnd + 4);
+            functionName = functionName.substring(indexModuleIdentifierEnd + 4);
 
             LangModule module = modules.get(moduleName);
             if(module == null) {
@@ -2676,9 +2676,6 @@ public final class LangInterpreter {
         FunctionPointerObject fp;
         if(compositeType != null) {
             if(compositeType.getType() == DataType.STRUCT) {
-                return setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "\"" + node.getFunctionName() +
-                        "\": Function pointer is invalid", node.getPos());
-            }else if(compositeType.getType() == DataType.STRUCT) {
                 if(!functionName.startsWith("fp."))
                     functionName = "fp." + functionName;
 
@@ -2735,7 +2732,7 @@ public final class LangInterpreter {
 
                 functionName = functionName.substring(3);
             }else {
-                return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid native, predfined, or linker function name", node.getPos());
+                return setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid native, predefined, or linker function name", node.getPos());
             }
 
             final String functionNameCopy = functionName;
@@ -2745,7 +2742,7 @@ public final class LangInterpreter {
 
             if(!ret.isPresent())
                 return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
-                        "\": Native, predfined, or linker function was not found", node.getPos());
+                        "\": Native, predefined, or linker function was not found", node.getPos());
 
             fp = ret.get().getValue().withFunctionName(originalFunctionName);
         }else if(isVarNameFuncPtrWithoutPrefix(functionName)) {
@@ -2767,7 +2764,7 @@ public final class LangInterpreter {
 
                 fp = ret.getFunctionPointer();
             }else if(!isModuleVariable) {
-                //Predefined/External function
+                //Predefined function
 
                 final String functionNameCopy = functionName;
                 Optional<Map.Entry<String, FunctionPointerObject>> retPredefinedFunction = funcs.entrySet().stream().filter(entry -> {
@@ -2784,13 +2781,13 @@ public final class LangInterpreter {
 
                     if(!retPredefinedFunction.isPresent())
                         return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
-                                "\": Normal, native, predfined, linker, or external function was not found", node.getPos());
+                                "\": Normal, native, predefined, or linker function was not found", node.getPos());
 
                     fp = retPredefinedFunction.get().getValue().withFunctionName("linker." + functionName);
                 }
             }else {
                 return setErrnoErrorObject(InterpretingError.FUNCTION_NOT_FOUND, "\"" + node.getFunctionName() +
-                        "\": Normal, native, predfined, linker, or external function was not found", node.getPos());
+                        "\": Normal, native, predefined, or linker function was not found", node.getPos());
             }
         }
 
