@@ -3392,8 +3392,11 @@ public final class LangInterpreter {
     }
 
     private DataTypeConstraint interpretTypeConstraint(String typeConstraint, DataObject errorOut, CodePosition pos) {
-        if(typeConstraint.isEmpty())
+        if(typeConstraint.isEmpty()) {
             errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty type constraint is not allowed", pos));
+
+            return DataTypeConstraint.fromAllowedTypes(new ArrayList<>());
+        }
 
         boolean nullable = typeConstraint.charAt(0) == '?';
         boolean inverted = typeConstraint.charAt(0) == '!';
@@ -3408,8 +3411,11 @@ public final class LangInterpreter {
 
             String type = pipeIndex > -1?typeConstraint.substring(0, pipeIndex):typeConstraint;
 
-            if(type.isEmpty() || pipeIndex == typeConstraint.length() - 1)
+            if(type.isEmpty() || pipeIndex == typeConstraint.length() - 1) {
                 errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Empty type constraint is not allowed", pos));
+
+                return DataTypeConstraint.fromAllowedTypes(new ArrayList<>());
+            }
 
             typeConstraint = pipeIndex > -1?typeConstraint.substring(pipeIndex + 1):"";
 
@@ -3418,6 +3424,8 @@ public final class LangInterpreter {
                 typeValues.add(typeValue);
             }catch(IllegalArgumentException e) {
                 errorOut.setData(setErrnoErrorObject(InterpretingError.INVALID_AST_NODE, "Invalid type: \"" + type + "\"", pos));
+
+                return DataTypeConstraint.fromAllowedTypes(new ArrayList<>());
             }
         }while(pipeIndex > -1);
 
