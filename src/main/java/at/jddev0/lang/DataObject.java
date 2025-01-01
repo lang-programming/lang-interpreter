@@ -1698,7 +1698,7 @@ public class DataObject {
             return superLevel;
         }
 
-        public void setSuperLevel(int superLevel) {
+        public void setSuperLevel(int superLevel) throws DataTypeConstraintException {
             if(isClass())
                 throw new DataTypeConstraintException("Super level can only be modified on objects");
 
