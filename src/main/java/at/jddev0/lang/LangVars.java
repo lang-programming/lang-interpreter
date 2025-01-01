@@ -39,11 +39,11 @@ public final class LangVars {
         addTypeLangVars();
 
         //Non-final
-        addStaticLangVar("$LANG_ERRNO", new DataObject().setError(new ErrorObject(InterpretingError.NO_ERROR)));
+        addStaticLangVar("$LANG_ERRNO", new DataObject().setInt(InterpretingError.NO_ERROR.getErrorCode()));
     }
     private void addSystemLangVars() {
-        addLangVar("$LANG_VERSION", new DataObject(LangInterpreter.VERSION, true).setFinalData(true));
-        addLangVar("$LANG_NAME", new DataObject("Standard Lang", true).setFinalData(true));
+        addLangVar("$LANG_VERSION", new DataObject(LangInterpreter.VERSION).setFinalData(true));
+        addLangVar("$LANG_NAME", new DataObject("Standard Lang").setFinalData(true));
         addLangVar("$LANG_RAND_MAX", new DataObject().setInt(Integer.MAX_VALUE).setFinalData(true));
         addLangVar("$LANG_OS_NAME", new DataObject(System.getProperty("os.name")).setFinalData(true));
         addLangVar("$LANG_OS_VER", new DataObject(System.getProperty("os.version")).setFinalData(true));
@@ -86,19 +86,21 @@ public final class LangVars {
     public void addLangVars(DataObject langArgs) {
         addEssentialLangVars(langArgs);
 
-        addExecutionLangVars(interpreter.getCurrentCallStackElement());
+        addExecutionLangVars();
         addNumberLangVars();
         addStructDefinitionLangVars();
         addClassDefinitionLangVars();
     }
-    private void addExecutionLangVars(StackElement currentStackElement) {
-        addLangVar("$LANG_PATH", new DataObject(currentStackElement.getLangPath(), true).setFinalData(true));
-        addLangVar("$LANG_FILE", new DataObject(currentStackElement.getLangFile(), true).setFinalData(true));
-        addLangVar("$LANG_CURRENT_FUNCTION", new DataObject(currentStackElement.getLangFunctionName(), true).setFinalData(true));
+    private void addExecutionLangVars() {
+        StackElement currentStackElement = interpreter.getCurrentCallStackElement();
+
+        addLangVar("$LANG_PATH", new DataObject(currentStackElement.getLangPath(), true));
+        addLangVar("$LANG_FILE", new DataObject(currentStackElement.getLangFile(), true));
+        addLangVar("$LANG_CURRENT_FUNCTION", new DataObject(currentStackElement.getLangFunctionName(), true));
 
         //Module vars
         if(currentStackElement.module != null) {
-            addLangVar("$LANG_MODULE_STATE", new DataObject(currentStackElement.module.isLoad()?"load":"unload"));
+            addLangVar("$LANG_MODULE_STATE", new DataObject(currentStackElement.module.isLoad()?"load":"unload").setFinalData(true));
 
             String prefix = "<module:" + currentStackElement.module.getFile() + "[" + currentStackElement.module.getLangModuleConfiguration().getName() + "]>";
 
