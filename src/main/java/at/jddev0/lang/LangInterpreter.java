@@ -3039,6 +3039,7 @@ public final class LangInterpreter {
             DataObject argumentValue = interpretNode(null, element);
             if(argumentValue == null)
                 continue;
+
             interpretedNodes.add(new DataObject(argumentValue));
         }
 
@@ -3049,7 +3050,7 @@ public final class LangInterpreter {
 
     private DataObject interpretStructDefinitionNode(StructDefinitionNode node) {
         String structName = node.getStructName();
-        DataObject structDataObject = null;
+        DataObject structDataObject;
         boolean[] flags = new boolean[] {false, false};
         if(structName != null) {
             structDataObject = getOrCreateDataObjectFromVariableName(null, null, structName,
@@ -3057,7 +3058,7 @@ public final class LangInterpreter {
             if(flags[0])
                 return structDataObject; //Forward error from getOrCreateDataObjectFromVariableName()
 
-            if(structDataObject.getVariableName() == null) {
+            if(structDataObject == null || structDataObject.getVariableName() == null) {
                 return setErrnoErrorObject(InterpretingError.INVALID_ASSIGNMENT, "Anonymous values can not be changed", node.getPos());
             }
 
@@ -3067,6 +3068,8 @@ public final class LangInterpreter {
 
                 return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
             }
+        }else {
+            structDataObject = null;
         }
 
         List<String> memberNames = node.getMemberNames();
@@ -3128,7 +3131,7 @@ public final class LangInterpreter {
                     LangObject.DUMMY_CLASS_DEFINITION_CLASS, className == null?"<class>":className,
                     "<class-definition>", currentStackElement.getModule()), node.getPos());
 
-            DataObject classDataObject = null;
+            DataObject classDataObject;
             boolean[] flags = new boolean[] {false, false};
             if(className != null) {
                 classDataObject = getOrCreateDataObjectFromVariableName(null, null, className,
@@ -3146,6 +3149,8 @@ public final class LangInterpreter {
 
                     return setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE, node.getPos());
                 }
+            }else {
+                classDataObject = null;
             }
 
             List<AbstractSyntaxTree.Node> parentClasses = node.getParentClasses();
@@ -3341,7 +3346,7 @@ public final class LangInterpreter {
                     constructorVisibilities.add(DataObject.Visibility.fromASTNode(constructorVisibility.get(i)));
             }
 
-            //Set default constructor
+            //Set default constructor if no constructor is defined
             if(constructorDefinitions.isEmpty()) {
                 constructors = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
                     @LangFunction(value="construct", isMethod=true)
