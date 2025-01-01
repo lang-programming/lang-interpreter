@@ -3664,145 +3664,149 @@ public final class LangInterpreter {
         }
 
         //Format argument
-        String output = null;
-        if(formatType != 'n' && valueSpecifiedIndex == null && argumentList.isEmpty())
-            return FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT;
-        DataObject dataObject = formatType == 'n'?null:(valueSpecifiedIndex == null?argumentList.remove(0):fullArgumentList.get(valueSpecifiedIndex));
-        switch(formatType) {
-            case 'd':
-                Number number = conversions.toNumber(dataObject, CodePosition.EMPTY);
-                if(number == null)
-                    return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
+        String output;
+        if(formatType == 'n') {
+            output = System.lineSeparator();
+        }else {
+            if(valueSpecifiedIndex == null && argumentList.isEmpty())
+                return FORMAT_SEQUENCE_ERROR_INVALID_ARG_COUNT;
+            DataObject dataObject = valueSpecifiedIndex == null?argumentList.remove(0):fullArgumentList.get(valueSpecifiedIndex);
+            switch(formatType) {
+                case 'd':
+                    Number number = conversions.toNumber(dataObject, CodePosition.EMPTY);
+                    if(number == null)
+                        return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = number.longValue() + "";
-                if(forceSign && output.charAt(0) != '-')
-                    output = "+" + output;
-
-                if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
-                    output = " " + output;
-
-                break;
-
-            case 'b':
-                number = conversions.toNumber(dataObject, CodePosition.EMPTY);
-                if(number == null)
-                    return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
-
-                output = Long.toString(number.longValue(), 2).toUpperCase(Locale.ENGLISH);
-                if(forceSign && output.charAt(0) != '-')
-                    output = "+" + output;
-
-                if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
-                    output = " " + output;
-
-                break;
-
-            case 'o':
-                number = conversions.toNumber(dataObject, CodePosition.EMPTY);
-                if(number == null)
-                    return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
-
-                output = Long.toString(number.longValue(), 8).toUpperCase(Locale.ENGLISH);
-                if(forceSign && output.charAt(0) != '-')
-                    output = "+" + output;
-
-                if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
-                    output = " " + output;
-
-                break;
-
-            case 'x':
-                number = conversions.toNumber(dataObject, CodePosition.EMPTY);
-                if(number == null)
-                    return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
-
-                output = Long.toString(number.longValue(), 16).toUpperCase(Locale.ENGLISH);
-                if(forceSign && output.charAt(0) != '-')
-                    output = "+" + output;
-
-                if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
-                    output = " " + output;
-
-                break;
-
-            case 'f':
-                number = conversions.toNumber(dataObject, CodePosition.EMPTY);
-                if(number == null)
-                    return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
-
-                double value = number.doubleValue();
-                if(Double.isNaN(value)) {
-                    output = "NaN";
-                    leadingZeros = false;
-                    if(forceSign || signSpace)
-                        output = " " + output;
-                }else if(Double.isInfinite(value)) {
-                    output = (value == Double.NEGATIVE_INFINITY?"-":"") + "Infinity";
-                    leadingZeros = false;
+                    output = number.longValue() + "";
                     if(forceSign && output.charAt(0) != '-')
                         output = "+" + output;
 
                     if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
                         output = " " + output;
-                }else {
-                    output = String.format(Locale.ENGLISH, "%" + (decimalPlacesCount == null?"":("." + decimalPlacesCount)) + "f", value);
+
+                    break;
+
+                case 'b':
+                    number = conversions.toNumber(dataObject, CodePosition.EMPTY);
+                    if(number == null)
+                        return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
+
+                    output = Long.toString(number.longValue(), 2);
                     if(forceSign && output.charAt(0) != '-')
                         output = "+" + output;
 
                     if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
                         output = " " + output;
-                }
 
-                break;
+                    break;
 
-            case 'c':
-                number = conversions.toNumber(dataObject, CodePosition.EMPTY);
-                if(number == null)
-                    return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
+                case 'o':
+                    number = conversions.toNumber(dataObject, CodePosition.EMPTY);
+                    if(number == null)
+                        return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = new String(Character.toChars(number.intValue()));
+                    output = Long.toString(number.longValue(), 8);
+                    if(forceSign && output.charAt(0) != '-')
+                        output = "+" + output;
 
-                break;
+                    if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
+                        output = " " + output;
 
-            case 's':
-                output = conversions.toText(dataObject, CodePosition.EMPTY).toString();
+                    break;
 
-                if(decimalPlacesCount != null) {
-                    try {
-                        output = LangUtils.formatTranslationTemplatePluralization(output, decimalPlacesCount.intValue());
-                    }catch(NumberFormatException|InvalidTranslationTemplateSyntaxException e) {
-                        return FORMAT_SEQUENCE_ERROR_TRANSLATION_INVALID_PLURALIZATION_TEMPLATE;
+                case 'x':
+                    number = conversions.toNumber(dataObject, CodePosition.EMPTY);
+                    if(number == null)
+                        return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
+
+                    output = Long.toString(number.longValue(), 16).toUpperCase(Locale.ENGLISH);
+                    if(forceSign && output.charAt(0) != '-')
+                        output = "+" + output;
+
+                    if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
+                        output = " " + output;
+
+                    break;
+
+                case 'f':
+                    number = conversions.toNumber(dataObject, CodePosition.EMPTY);
+                    if(number == null)
+                        return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
+
+                    double value = number.doubleValue();
+                    if(Double.isNaN(value)) {
+                        output = "NaN";
+                        leadingZeros = false;
+                        if(forceSign || signSpace)
+                            output = " " + output;
+                    }else if(Double.isInfinite(value)) {
+                        output = (value == Double.NEGATIVE_INFINITY?"-":"") + "Infinity";
+                        leadingZeros = false;
+                        if(forceSign && output.charAt(0) != '-')
+                            output = "+" + output;
+
+                        if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
+                            output = " " + output;
+                    }else {
+                        output = String.format(Locale.ENGLISH, "%" + (decimalPlacesCount == null?"":("." + decimalPlacesCount)) + "f", value);
+                        if(forceSign && output.charAt(0) != '-')
+                            output = "+" + output;
+
+                        if(signSpace && output.charAt(0) != '+' && output.charAt(0) != '-')
+                            output = " " + output;
                     }
-                }
 
-                break;
+                    break;
 
-            case 't':
-                String translationKey = conversions.toText(dataObject, CodePosition.EMPTY).toString();
+                case 'c':
+                    number = conversions.toNumber(dataObject, CodePosition.EMPTY);
+                    if(number == null)
+                        return FORMAT_SEQUENCE_ERROR_INVALID_ARGUMENTS;
 
-                output = getData().lang.get(translationKey);
-                if(output == null)
-                    return FORMAT_SEQUENCE_ERROR_TRANSLATION_KEY_NOT_FOUND;
+                    output = new String(Character.toChars(number.intValue()));
 
-                if(decimalPlacesCount != null) {
-                    try {
-                        output = LangUtils.formatTranslationTemplatePluralization(output, decimalPlacesCount.intValue());
-                    }catch(NumberFormatException|InvalidTranslationTemplateSyntaxException e) {
-                        return FORMAT_SEQUENCE_ERROR_TRANSLATION_INVALID_PLURALIZATION_TEMPLATE;
+                    break;
+
+                case 's':
+                    output = conversions.toText(dataObject, CodePosition.EMPTY).toString();
+
+                    if(decimalPlacesCount != null) {
+                        try {
+                            output = LangUtils.formatTranslationTemplatePluralization(output, decimalPlacesCount);
+                        }catch(NumberFormatException|InvalidTranslationTemplateSyntaxException e) {
+                            return FORMAT_SEQUENCE_ERROR_TRANSLATION_INVALID_PLURALIZATION_TEMPLATE;
+                        }
                     }
-                }
 
-                break;
+                    break;
 
-            case '?':
-                output = conversions.toBool(dataObject, CodePosition.EMPTY)?"true":"false";
+                case 't':
+                    String translationKey = conversions.toText(dataObject, CodePosition.EMPTY).toString();
 
-                break;
+                    output = getData().lang.get(translationKey);
+                    if(output == null)
+                        return FORMAT_SEQUENCE_ERROR_TRANSLATION_KEY_NOT_FOUND;
 
-            case 'n':
-                output = System.lineSeparator();
+                    if(decimalPlacesCount != null) {
+                        try {
+                            output = LangUtils.formatTranslationTemplatePluralization(output, decimalPlacesCount);
+                        }catch(NumberFormatException|InvalidTranslationTemplateSyntaxException e) {
+                            return FORMAT_SEQUENCE_ERROR_TRANSLATION_INVALID_PLURALIZATION_TEMPLATE;
+                        }
+                    }
 
-                break;
+                    break;
+
+                case '?':
+                    output = conversions.toBool(dataObject, CodePosition.EMPTY)?"true":"false";
+
+                    break;
+
+                default:
+                    output = null;
+
+                    break;
+            }
         }
 
         if(output != null) {
@@ -3813,10 +3817,12 @@ public final class LangInterpreter {
                     while(output.length() < size)
                         output = output + " ";
                 }else if(leadingZeros) {
-                    char signOutput = 0;
+                    char signOutput;
                     if(output.charAt(0) == '+' || output.charAt(0) == '-' || output.charAt(0) == ' ') {
                         signOutput = output.charAt(0);
                         output = output.substring(1);
+                    }else {
+                        signOutput = 0;
                     }
 
                     int paddingSize = size - (signOutput == 0?0:1);
@@ -3848,12 +3854,16 @@ public final class LangInterpreter {
 
         int i = 0;
         while(i < format.length()) {
-            char c = format.charAt(i);
-            if(c == '%') {
-                if(++i == format.length())
+            int percent_index = format.indexOf('%', i);
+            if(percent_index >= 0) {
+                builder.append(format, i, percent_index);
+
+                i = percent_index + 1;
+
+                if(i == format.length())
                     return setErrnoErrorObject(InterpretingError.INVALID_FORMAT);
 
-                c = format.charAt(i);
+                char c = format.charAt(i);
                 if(c == '%') {
                     builder.append(c);
 
@@ -3880,13 +3890,10 @@ public final class LangInterpreter {
                 }
 
                 i += charCountUsed;
-
-                continue;
+            }else {
+                builder.append(format, i, format.length());
+                break;
             }
-
-            builder.append(c);
-
-            i++;
         }
 
         return new DataObject(builder.toString());
