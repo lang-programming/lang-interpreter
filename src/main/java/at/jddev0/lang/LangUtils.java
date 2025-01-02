@@ -15,7 +15,7 @@ import at.jddev0.lang.DataObject.DataType;
 public final class LangUtils {
     private LangUtils() {}
 
-    public static String removeDotsFromFilePath(String file) {
+    static String removeDotsFromFilePath(String file) {
         //Remove "/./"
         while(file.contains("/./"))
             file = file.replaceAll("\\/\\.\\/", "/");
