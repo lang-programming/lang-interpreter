@@ -575,7 +575,7 @@ public final class LangConversions {
                 if(!txt.isEmpty()) {
                     char lastChar = txt.charAt(txt.length() - 1);
 
-                    if(txt.trim().length() == txt.length() && lastChar != 'f' && lastChar != 'F' && lastChar != 'd' &&
+                    if(txt.trim().length() == txt.length() && lastChar != 'd' &&
                             lastChar != 'D' && !txt.contains("x") && !txt.contains("X")) {
                         //INT
                         try {
