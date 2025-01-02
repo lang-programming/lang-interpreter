@@ -3245,11 +3245,10 @@ public final class LangOperators {
         if(ret != null)
             return ret;
 
-        if(callee.getType() == DataType.FUNCTION_POINTER)
+        if(callee.getType() == DataType.FUNCTION_POINTER) {
             return interpreter.callFunctionPointer(callee.getFunctionPointer(), callee.getVariableName(), argumentList,
                     pos);
-
-        if(callee.getType() == DataType.TYPE) {
+        }else if(callee.getType() == DataType.TYPE) {
             List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
                     interpreter, pos);
 
@@ -3268,9 +3267,7 @@ public final class LangOperators {
                         arg.getType() + "\" can not be casted to \"" + callee.getTypeValue() + "\"!", pos);
 
             return output;
-        }
-
-        if(callee.getType() == DataType.STRUCT && callee.getStruct().isDefinition()) {
+        }else if(callee.getType() == DataType.STRUCT && callee.getStruct().isDefinition()) {
             List<DataObject> combinedArgumentList = LangUtils.combineArgumentsWithoutArgumentSeparators(argumentList,
                     interpreter, pos);
 
@@ -3289,9 +3286,7 @@ public final class LangOperators {
                 return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(),
                         pos);
             }
-        }
-
-        if(callee.getType() == DataType.OBJECT && callee.getObject().isClass()) {
+        }else if(callee.getType() == DataType.OBJECT && callee.getObject().isClass()) {
             DataObject createdObject = new DataObject().setObject(new DataObject.LangObject(callee.getObject()));
 
             FunctionPointerObject constructors = createdObject.getObject().getConstructors();
