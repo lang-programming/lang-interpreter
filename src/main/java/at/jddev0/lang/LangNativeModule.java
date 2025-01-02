@@ -199,7 +199,7 @@ public abstract class LangNativeModule {
     }
 
     protected final DataObject throwError(DataObject.ErrorObject errorValue) {
-        return throwError(errorValue.getInterprettingError(), errorValue.getMessage());
+        return throwError(errorValue.getInterpretingError(), errorValue.getMessage());
     }
 
     protected final DataObject throwError(LangInterpreter.InterpretingError error) {

@@ -1918,7 +1918,7 @@ public class DataObject {
             this(err, null);
         }
 
-        public InterpretingError getInterprettingError() {
+        public InterpretingError getInterpretingError() {
             return err;
         }
 

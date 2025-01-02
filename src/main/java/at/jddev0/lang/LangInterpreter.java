@@ -1157,7 +1157,7 @@ public final class LangInterpreter {
                                 continue;
                             }
 
-                            if(dataObject.getError().getInterprettingError() == executionState.tryThrownError)
+                            if(dataObject.getError().getInterpretingError() == executionState.tryThrownError)
                                 foundError = true;
                         }
 
@@ -1571,7 +1571,7 @@ public final class LangInterpreter {
             Node messageNode = node.getMessage();
             DataObject messageObject = messageNode == null?null:interpretNode(null, messageNode);
             if(messageObject != null)
-                errorObject = new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(),
+                errorObject = new DataObject().setError(new ErrorObject(errorObject.getError().getInterpretingError(),
                         conversions.toText(messageObject, node.getMessage().getPos()).toString()));
             executionState.returnedOrThrownValue = errorObject;
         }
@@ -1580,11 +1580,11 @@ public final class LangInterpreter {
         executionState.stopExecutionFlag = true;
 
         if(executionState.isThrownValue && scopeId > -1)
-            setErrno(errorObject.getError().getInterprettingError(), errorObject.getError().getMessage(),
+            setErrno(errorObject.getError().getInterpretingError(), errorObject.getError().getMessage(),
                     executionState.returnOrThrowStatementPos);
 
         if(executionState.isThrownValue && executionState.tryBlockLevel > 0 && (!executionState.isSoftTry || executionState.tryBodyScopeID == scopeId)) {
-            executionState.tryThrownError = executionState.returnedOrThrownValue.getError().getInterprettingError();
+            executionState.tryThrownError = executionState.returnedOrThrownValue.getError().getInterpretingError();
             executionState.stopExecutionFlag = true;
         }
     }
@@ -2161,7 +2161,7 @@ public final class LangInterpreter {
 
         if(executionFlags.langTest && scopeId == langTestExpectedReturnValueScopeID) {
             if(langTestExpectedThrowValue != null) {
-                InterpretingError error = retTmp != null && executionState.isThrownValue?retTmp.getError().getInterprettingError():null;
+                InterpretingError error = retTmp != null && executionState.isThrownValue?retTmp.getError().getInterpretingError():null;
                 langTestStore.addAssertResult(new LangTest.AssertResultThrow(error == langTestExpectedThrowValue,
                         printStackTrace(CodePosition.EMPTY), langTestMessageForLastTestResult, error, langTestExpectedThrowValue));
 
@@ -4039,10 +4039,8 @@ public final class LangInterpreter {
                     "The method \"" + rawMethodName + "\" is not in any super class of this object",
                     pos);
 
-        FunctionPointerObject fp = methods;
-
         //Bind "&this" on super method
-        fp = new FunctionPointerObject(fp, langObject).withMappedFunctions(internalFunction ->
+        FunctionPointerObject fp = new FunctionPointerObject(methods, langObject).withMappedFunctions(internalFunction ->
                 new FunctionPointerObject.InternalFunction(internalFunction, internalFunction.getSuperLevel() + langObject.getSuperLevel() + 1));
 
         return callFunctionPointer(fp, rawMethodName, argumentList, pos);
@@ -4455,7 +4453,7 @@ public final class LangInterpreter {
             });
         }catch(Exception e) {
             throw new IllegalStateException("Could not load lang standard implementation in lang code", e);
-        } finally {
+        }finally {
             //Cleanup of temporary scope
             popStackElement();
 

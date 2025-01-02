@@ -123,7 +123,7 @@ final class LangPredefinedFunctions {
                 @LangParameter("$error") @AllowedTypes(DataObject.DataType.ERROR) DataObject errorObject,
                 @LangParameter("$text") DataObject textObject
         ) {
-            return new DataObject().setError(new ErrorObject(errorObject.getError().getInterprettingError(),
+            return new DataObject().setError(new ErrorObject(errorObject.getError().getInterpretingError(),
                     interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString()));
         }
     }
@@ -5046,7 +5046,7 @@ final class LangPredefinedFunctions {
                 return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true");
 
             InterpretingError langErrno = interpreter.getAndClearErrnoErrorObject();
-            InterpretingError expectedError = errorObject.getError().getInterprettingError();
+            InterpretingError expectedError = errorObject.getError().getInterpretingError();
 
             interpreter.langTestStore.addAssertResult(new LangTest.AssertResultError(langErrno == expectedError,
                     interpreter.printStackTrace(CodePosition.EMPTY), messageObject == null?null:
@@ -5698,7 +5698,7 @@ final class LangPredefinedFunctions {
             if(!interpreter.executionFlags.langTest)
                 return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "langTest functions can only be used if the langTest flag is true");
 
-            InterpretingError expectedError = expectedThrownValueObject.getError().getInterprettingError();
+            InterpretingError expectedError = expectedThrownValueObject.getError().getInterpretingError();
 
             interpreter.langTestExpectedReturnValueScopeID = interpreter.getScopeId();
             interpreter.langTestExpectedThrowValue = expectedError;
@@ -5809,10 +5809,11 @@ final class LangPredefinedFunctions {
 
         private static DataObject executeLinkerFunction(LangInterpreter interpreter, String langFileName,
                                                         List<DataObject> args, Consumer<LangInterpreter.Data> function) {
-            String[] langArgs = args.stream().map(ele ->
-                    interpreter.conversions.toText(ele, CodePosition.EMPTY).toString()).toArray(String[]::new);
             if(!langFileName.endsWith(".lang"))
                 return interpreter.setErrnoErrorObject(InterpretingError.NO_LANG_FILE);
+
+            String[] langArgs = args.stream().map(ele ->
+                    interpreter.conversions.toText(ele, CodePosition.EMPTY).toString()).toArray(String[]::new);
 
             String absolutePath;
 
@@ -5825,14 +5826,13 @@ final class LangPredefinedFunctions {
                         interpreter.getCurrentCallStackElement().getLangPath().substring(10) + "/" + langFileName);
             }else if(insideModule) {
                 absolutePath = LangModuleManager.getModuleFilePath(module, interpreter.getCurrentCallStackElement().getLangPath(), langFileName);
+            }else if(new File(langFileName).isAbsolute()) {
+                absolutePath = langFileName;
             }else {
-                if(new File(langFileName).isAbsolute())
-                    absolutePath = langFileName;
-                else
-                    absolutePath = interpreter.getCurrentCallStackElement().getLangPath() + File.separator + langFileName;
+                absolutePath = interpreter.getCurrentCallStackElement().getLangPath() + "/" + langFileName;
             }
 
-            String langPathTmp = absolutePath;
+            String langPathTmp;
             if(insideLangStandardImplementation) {
                 langPathTmp = absolutePath.substring(4, absolutePath.lastIndexOf('/'));
 
@@ -5846,7 +5846,7 @@ final class LangPredefinedFunctions {
                 interpreter.pushStackElement(new StackElement("<module:" + module.getFile() + "[" + module.getLangModuleConfiguration().getName() + "]>" + langPathTmp,
                         langFileName.substring(langFileName.lastIndexOf('/') + 1), null, null, null, module), CodePosition.EMPTY);
             }else {
-                langPathTmp = interpreter.langPlatformAPI.getLangPath(langPathTmp);
+                langPathTmp = interpreter.langPlatformAPI.getLangPath(absolutePath);
 
                 //Update call stack
                 interpreter.pushStackElement(new StackElement(langPathTmp, interpreter.langPlatformAPI.getLangFileName(langFileName),
@@ -5904,7 +5904,8 @@ final class LangPredefinedFunctions {
                         //Copy all vars
                         interpreter.getData().var.forEach((name, val) -> {
                             DataObject oldData = callerData.var.get(name);
-                            if(oldData == null || (!oldData.isFinalData() && !oldData.isLangVar())) { //No LANG data vars nor final data
+                            if(oldData == null || (!oldData.isFinalData() && !oldData.isLangVar())) {
+                                //No LANG data vars nor final data
                                 callerData.var.put(name, val);
                             }
                         });
@@ -5956,7 +5957,8 @@ final class LangPredefinedFunctions {
                         //Copy all vars
                         interpreter.getData().var.forEach((name, val) -> {
                             DataObject oldData = callerData.var.get(name);
-                            if(oldData == null || (!oldData.isFinalData() && !oldData.isLangVar())) { //No LANG data vars nor final data
+                            if(oldData == null || (!oldData.isFinalData() && !oldData.isLangVar())) {
+                                //No LANG data vars nor final data
                                 callerData.var.put(name, val);
                             }
                         });
@@ -5975,7 +5977,7 @@ final class LangPredefinedFunctions {
                 return interpreter.setErrnoErrorObject(InterpretingError.NO_LANG_FILE, "Modules must have a file extension of\".lm\"");
 
             if(!new File(moduleFile).isAbsolute())
-                moduleFile = interpreter.getCurrentCallStackElement().getLangPath() + File.separator + moduleFile;
+                moduleFile = interpreter.getCurrentCallStackElement().getLangPath() + "/" + moduleFile;
 
             return interpreter.moduleManager.load(moduleFile, LangUtils.separateArgumentsWithArgumentSeparators(args));
         }
