@@ -4071,6 +4071,10 @@ public final class LangInterpreter {
      * LangPatterns: LANG_VAR ((\$|&)LANG_.*)
      */
     private boolean isLangVarWithoutPrefix(String token) {
+        if(token.isEmpty()) {
+            return false;
+        }
+
         char firstChar = token.charAt(0);
         return (firstChar == '$' || firstChar == '&') && token.startsWith("LANG_",  1);
     }
@@ -4079,6 +4083,10 @@ public final class LangInterpreter {
      * LangPatterns: LANG_VAR ((\$|&)LANG_.*) || LANG_VAR_POINTER_REDIRECTION (\$\[+LANG_.*\]+)
      */
     private boolean isLangVarOrLangVarPointerRedirectionWithoutPrefix(String token) {
+        if(token.isEmpty()) {
+            return false;
+        }
+
         char firstChar = token.charAt(0);
         return (firstChar == '$' || firstChar == '&') && (token.startsWith("LANG_",  1) || token.contains("[LANG_"));
     }
@@ -4087,6 +4095,10 @@ public final class LangInterpreter {
      * LangPatterns: FUNC_CALL_VAR_ARGS ((\$|&)\w+\.\.\.)
      */
     private boolean isFuncCallVarArgs(String token) {
+        if(token.isEmpty()) {
+            return false;
+        }
+
         char firstChar = token.charAt(0);
         if(!((firstChar == '$' || firstChar == '&') && token.endsWith("...")))
             return false;
@@ -4133,6 +4145,10 @@ public final class LangInterpreter {
      * LangPatterns: VAR_NAME_WITHOUT_PREFIX ((\$|&|fp\.)\w+)
      */
     private boolean isVarNameWithoutPrefix(String token) {
+        if(token.isEmpty()) {
+            return false;
+        }
+
         boolean funcPtr = token.startsWith("fp.");
 
         char firstChar = token.charAt(0);
@@ -4170,11 +4186,6 @@ public final class LangInterpreter {
         return hasVarName;
     }
 
-    /**
-     * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|
-     * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
-     * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))</code>
-     */
     private static final String[] OPERATOR_METHOD_NAMES = new String[] {
             "op:len",
             "op:deepCopy",
@@ -4215,6 +4226,11 @@ public final class LangInterpreter {
 
             "op:call"
     };
+    /**
+     * LangPatterns: OPERATOR_METHOD_NAME <code>op:((len|deepCopy|inc|dec|pos|inv|not|abs|iter|hasNext|next)|
+     * ((r-)?(concat|add|sub|mul|pow|div|truncDiv|floorDiv|ceilDiv|mod|and|or|xor|lshift|rshift|rzshift|
+     * isEquals|isStrictEquals|isLessThan|isGreaterThan))|(getItem|setItem|slice)|(call)))</code>
+     */
     private boolean isOperatorMethodName(String token) {
         for(String operator:OPERATOR_METHOD_NAMES)
             if(operator.equals(token))
@@ -4223,9 +4239,6 @@ public final class LangInterpreter {
         return false;
     }
 
-    /**
-     * LangPatterns: CONVERSION_METHOD_NAME <code>to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number)</code>
-     */
     private static final String[] CONVERSION_METHOD_NAMES = new String[] {
             "to:text",
             "to:char",
@@ -4240,6 +4253,9 @@ public final class LangInterpreter {
             "to:bool",
             "to:number"
     };
+    /**
+     * LangPatterns: CONVERSION_METHOD_NAME <code>to:(text|char|int|long|float|double|byteBuffer|array|list|bool|number)</code>
+     */
     private boolean isConversionMethodName(String token) {
         for(String operator:CONVERSION_METHOD_NAMES)
             if(operator.equals(token))
@@ -4578,6 +4594,7 @@ public final class LangInterpreter {
 
         return new DataObject().setError(new ErrorObject(error, message));
     }
+
     InterpretingError getAndClearErrnoErrorObject() {
         int errno = getData().var.get("$LANG_ERRNO").getInt();
 
