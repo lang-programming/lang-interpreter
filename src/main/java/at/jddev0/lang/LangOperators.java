@@ -138,11 +138,13 @@ public final class LangOperators {
                     if(struct.isDefinition()) {
                         return new DataObject().setStruct(new StructObject(struct.getMemberNames(), struct.getTypeConstraints()));
                     }else {
-                        StructObject structCopy = new StructObject(struct.getStructBaseDefinition());
-                        for(String memberName:struct.getMemberNames())
-                            structCopy.setMember(memberName, opDeepCopy(struct.getMember(memberName), pos));
+                        DataObject[] memberValuesCopy = new DataObject[struct.getMemberNames().length];
+                        int i = 0;
+                        for(String memberName:struct.getMemberNames()) {
+                            memberValuesCopy[i++] = opDeepCopy(struct.getMember(memberName), pos);
+                        }
 
-                        return new DataObject().setStruct(structCopy);
+                        return new DataObject().setStruct(new StructObject(struct.getStructBaseDefinition(), memberValuesCopy));
                     }
                 }catch(DataTypeConstraintException e) {
                     return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
