@@ -34,13 +34,11 @@ public final class LangOperators {
 
     private DataObject callOperatorMethod(String operatorName, boolean hasReverse, DataObject leftSideOperand,
                                           DataObject rightSideOperand, CodePosition pos) {
-        DataObject ret = callOperatorMethod(leftSideOperand, "op:" + operatorName, Arrays.asList(rightSideOperand),
-                pos);
-        if(ret != null)
+        DataObject ret = callOperatorMethod(leftSideOperand, "op:" + operatorName, Arrays.asList(rightSideOperand), pos);
+        if(ret != null || !hasReverse)
             return ret;
 
-        return hasReverse?callOperatorMethod(rightSideOperand, "op:r-" + operatorName, Arrays.asList(leftSideOperand),
-                pos):null;
+        return callOperatorMethod(rightSideOperand, "op:r-" + operatorName, Arrays.asList(leftSideOperand), pos);
     }
 
     private DataObject callOperatorMethod(String operatorName, DataObject leftSideOperand, DataObject middleOperand,
