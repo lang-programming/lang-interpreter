@@ -178,52 +178,6 @@ public final class LangUtils {
     }
 
     /**
-     * @param functions Function signatures will be extracted from the FunctionPointerObject
-     * @param argumentList The combined argument list
-     *
-     * @return Returns the most restrictive function for the provided arguments or null if no function signature matches the arguments
-     */
-    public static DataObject.FunctionPointerObject getMostRestrictiveFunction(DataObject.FunctionPointerObject[] functions,
-                                                                              List<DataObject> argumentList) {
-        int functionIndex = getMostRestrictiveFunctionIndex(functions, argumentList);
-
-        return functionIndex == -1?null:functions[functionIndex];
-    }
-
-    /**
-     * @param functions Function signatures will be extracted from the FunctionPointerObject
-     * @param argumentList The combined argument list
-     *
-     * @return Returns the index of the most restrictive function for the provided arguments or -1 if no function signature matches the arguments
-     */
-    public static int getMostRestrictiveFunctionIndex(DataObject.FunctionPointerObject[] functions, List<DataObject> argumentList) {
-        int[] langBaseFunctionCounts = new int[functions.length];
-
-        List<LangBaseFunction> functionSignatures = new LinkedList<>();
-        for(int i = 0;i < functions.length;i++) {
-            DataObject.FunctionPointerObject function = functions[i];
-            function.getFunctions().stream().map(DataObject.FunctionPointerObject.InternalFunction::getFunction).
-                    forEach(functionSignatures::add);
-            langBaseFunctionCounts[i] = function.getOverloadedFunctionCount();
-        }
-
-        int index = getMostRestrictiveFunctionSignatureIndex(functionSignatures.stream().
-                        map(LangBaseFunction::getParameterDataTypeConstraintList).collect(Collectors.toList()),
-                functionSignatures.stream().map(LangBaseFunction::getVarArgsParameterIndex).
-                        collect(Collectors.toList()), argumentList);
-        if(index == -1)
-            return -1;
-
-        int functionIndex = 0;
-        while(index > 0 && functionIndex < functions.length - 1) {
-            index -= langBaseFunctionCounts[functionIndex];
-            functionIndex++;
-        }
-
-        return functionIndex;
-    }
-
-    /**
      * @param functionSignatures Function signatures will be extracted from the LangBaseFunctions
      * @param argumentList The combined argument list
      *
