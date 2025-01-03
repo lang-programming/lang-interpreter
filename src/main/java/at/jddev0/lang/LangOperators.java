@@ -310,6 +310,7 @@ public final class LangOperators {
                 final FunctionPointerObject func = operand.getFunctionPointer();
                 return new DataObject().setFunctionPointer(LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
                     @LangFunction("auto-unpack-func")
+                    @SuppressWarnings("unused")
                     public DataObject autoUnpackFuncFunction(
                             LangInterpreter interpreter,
                             @LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
@@ -611,9 +612,7 @@ public final class LangOperators {
                 return new DataObject(leftSideOperand.getText() + interpreter.conversions.toText(rightSideOperand, pos).toString());
             case ARRAY:
                 DataObject[] arrNew = new DataObject[leftSideOperand.getArray().length + 1];
-                for(int i = 0;i < leftSideOperand.getArray().length;i++)
-                    arrNew[i] = leftSideOperand.getArray()[i];
-
+                System.arraycopy(leftSideOperand.getArray(), 0, arrNew, 0, leftSideOperand.getArray().length);
                 arrNew[leftSideOperand.getArray().length] = new DataObject(rightSideOperand);
                 return new DataObject().setArray(arrNew);
             case LIST:
@@ -1142,14 +1141,16 @@ public final class LangOperators {
                             LangInterpreter interpreter,
                             @LangParameter("&args") @RawVarArgs List<DataObject> args
                     ) {
-                        DataObject retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), args);
-                        DataObject ret = LangUtils.nullToLangVoid(retN);
+                        DataObject ret = LangUtils.nullToLangVoid(
+                                interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), args)
+                        );
 
                         for(int i = 1;i < count;i++) {
-                            retN = interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), Arrays.asList(
-                                    ret
-                            ));
-                            ret = LangUtils.nullToLangVoid(retN);
+                            ret = LangUtils.nullToLangVoid(
+                                    interpreter.callFunctionPointer(func, leftSideOperand.getVariableName(), Arrays.asList(
+                                            ret
+                                    ))
+                            );
                         }
 
                         return ret;
@@ -2225,7 +2226,7 @@ public final class LangOperators {
 
             return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), Arrays.asList(
                     leftSideOperand
-            ));
+            ), pos);
         }
 
         switch(leftSideOperand.getType()) {
@@ -2516,7 +2517,7 @@ public final class LangOperators {
 
             return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), Arrays.asList(
                     leftSideOperand
-            ));
+            ), pos);
         }
 
         switch(leftSideOperand.getType()) {
@@ -2607,7 +2608,7 @@ public final class LangOperators {
 
             return interpreter.callFunctionPointer(func, rightSideOperand.getVariableName(), LangUtils.asListWithArgumentSeparators(
                     leftSideOperand.getArray()
-            ));
+            ), pos);
         }
 
         switch(leftSideOperand.getType()) {
@@ -3488,7 +3489,7 @@ public final class LangOperators {
                 switch(rightSideOperand.getType()) {
                     case TEXT:
                         if(number == null)
-                            return leftSideOperand.getError().getErrtxt().equals(rightSideOperand.getText());
+                            return leftSideOperand.getError().getErrtxt().equals(rightSideOperand.getText().toString());
                         return leftSideOperand.getError().getErrno() == number.intValue();
 
                     case CHAR:
