@@ -137,6 +137,10 @@ public final class LangInterpreter {
         return interpretAST(parseLines(lines));
     }
 
+    public LangTest getLangTestStore() {
+        return langTestStore;
+    }
+
     public Data getData() {
         return data.get(scopeId);
     }
