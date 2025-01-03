@@ -439,7 +439,7 @@ final class LangPredefinedFunctions {
             StructObject typeStruct = typeObject.getStruct();
 
             if(!typeStruct.isDefinition())
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a definition struct");
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") must be a definition struct");
 
             if(valueStruct.isDefinition())
                 return new DataObject().setBoolean(false);
@@ -456,7 +456,7 @@ final class LangPredefinedFunctions {
             StructObject typeStruct = typeObject.getStruct();
 
             if(!typeStruct.isDefinition())
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a definition struct");
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") must be a definition struct");
 
             return new DataObject().setBoolean(false);
         }
@@ -471,7 +471,7 @@ final class LangPredefinedFunctions {
             DataObject.LangObject typeClass = typeObject.getObject();
 
             if(!typeClass.isClass())
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a class");
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") must be a class");
 
             if(langObject.isClass())
                 return new DataObject().setBoolean(false);
@@ -488,7 +488,7 @@ final class LangPredefinedFunctions {
             DataObject.LangObject typeClass = typeObject.getObject();
 
             if(!typeClass.isClass())
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") be a class");
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 2 (\"$type\") must be a class");
 
             return new DataObject().setBoolean(false);
         }
@@ -1416,6 +1416,45 @@ final class LangPredefinedFunctions {
     public static final class LangPredefinedOperationFunctions {
         private LangPredefinedOperationFunctions() {}
 
+        @LangFunction("iter")
+        public static DataObject iterFunction(
+                LangInterpreter interpreter,
+                @LangParameter("$operand") DataObject operand
+        ) {
+            DataObject ret = interpreter.operators.opIter(operand, CodePosition.EMPTY);
+            if(ret == null)
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+                        "The iter operator is not defined for " + operand.getType());
+
+            return ret;
+        }
+
+        @LangFunction("hasNext")
+        public static DataObject hasNextFunction(
+                LangInterpreter interpreter,
+                @LangParameter("$operand") DataObject operand
+        ) {
+            DataObject ret = interpreter.operators.opHasNext(operand, CodePosition.EMPTY);
+            if(ret == null)
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+                        "The hasNext operator is not defined for " + operand.getType());
+
+            return ret;
+        }
+
+        @LangFunction("next")
+        public static DataObject nextFunction(
+                LangInterpreter interpreter,
+                @LangParameter("$operand") DataObject operand
+        ) {
+            DataObject ret = interpreter.operators.opNext(operand, CodePosition.EMPTY);
+            if(ret == null)
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
+                        "The next operator is not defined for " + operand.getType());
+
+            return ret;
+        }
+
         @LangFunction("cast")
         public static DataObject castFunction(
                 LangInterpreter interpreter,
@@ -1928,45 +1967,6 @@ final class LangPredefinedFunctions {
             if(ret == null)
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                         "The abs operator is not defined for " + operand.getType());
-
-            return ret;
-        }
-
-        @LangFunction("iter")
-        public static DataObject iterFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$operand") DataObject operand
-        ) {
-            DataObject ret = interpreter.operators.opIter(operand, CodePosition.EMPTY);
-            if(ret == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "The iter operator is not defined for " + operand.getType());
-
-            return ret;
-        }
-
-        @LangFunction("hasNext")
-        public static DataObject hasNextFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$operand") DataObject operand
-        ) {
-            DataObject ret = interpreter.operators.opHasNext(operand, CodePosition.EMPTY);
-            if(ret == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "The hasNext operator is not defined for " + operand.getType());
-
-            return ret;
-        }
-
-        @LangFunction("next")
-        public static DataObject nextFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$operand") DataObject operand
-        ) {
-            DataObject ret = interpreter.operators.opNext(operand, CodePosition.EMPTY);
-            if(ret == null)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                        "The next operator is not defined for " + operand.getType());
 
             return ret;
         }
