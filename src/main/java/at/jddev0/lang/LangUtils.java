@@ -496,24 +496,28 @@ public final class LangUtils {
      * @return Will return a formatted template translation ("{" can be escaped with "{{")
      */
     public static String formatTranslationTemplate(String translationValue, Map<String, String> templateMap) throws InvalidTranslationTemplateSyntaxException {
+        if(translationValue.isEmpty()) {
+            return translationValue;
+        }
+
         StringBuilder builder = new StringBuilder();
 
         int i;
         int startIndex = 0;
-        do {
+        while(true) {
             i = translationValue.indexOf('{', startIndex);
 
             if(i == -1) {
                 builder.append(translationValue.substring(startIndex));
 
                 break;
-            }else {
-                builder.append(translationValue.substring(startIndex, i));
-                startIndex = i;
             }
 
-            if(translationValue.charAt(i) == '{' && i < translationValue.length() - 1 && translationValue.charAt(i + 1) == '{') {
-                builder.append(translationValue.substring(startIndex, i + 1)); //Ignore second '{'
+            builder.append(translationValue, startIndex, i);
+            startIndex = i;
+
+            if(i < translationValue.length() - 1 && translationValue.charAt(i + 1) == '{') {
+                builder.append(translationValue, startIndex, i + 1); //Ignore second '{'
                 startIndex = i + 2;
 
                 continue;
@@ -530,7 +534,7 @@ public final class LangUtils {
                 throw new InvalidTranslationTemplateSyntaxException("Template with the name \"" + templateName + "\" was not defined");
 
             builder.append(templateMap.get(templateName));
-        }while(i < translationValue.length());
+        }
 
         return builder.toString();
     }
@@ -576,13 +580,13 @@ public final class LangUtils {
         List<TranslationPluralizationTemplate> templates = new LinkedList<>();
         for(i = 0;i < templateTokens.size();i++) {
             String templateToken = templateTokens.get(i);
+            if(templateToken.isEmpty() || templateToken.charAt(0) != '[')
+                throw new InvalidTranslationTemplateSyntaxException("Pluralization template token must start with \"[\"");
+
             if(templateToken.charAt(templateToken.length() - 1) == ';')
                 templateToken = templateToken.substring(0, templateToken.length() - 1);
             else if(i != templateTokens.size() - 1)
                 throw new InvalidTranslationTemplateSyntaxException("Pluralization template token must end with \";\"");
-
-            if(templateToken.charAt(0) != '[')
-                throw new InvalidTranslationTemplateSyntaxException("Pluralization template token must start with \"[\"");
 
             int matchingBracketIndex = templateToken.indexOf(']');
             if(matchingBracketIndex == -1)
