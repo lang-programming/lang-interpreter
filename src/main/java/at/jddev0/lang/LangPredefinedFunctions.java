@@ -1123,12 +1123,15 @@ final class LangPredefinedFunctions {
                 @LangParameter("$len") @NumberValue Number lenNum
         ) {
             int len = lenNum.intValue();
+            if(len < 0) {
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 3 \"$len\" must be >= 0");
+            }
 
-            String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
             String paddingText = interpreter.conversions.toText(paddingTextObject, CodePosition.EMPTY).toString();
-
             if(paddingText.isEmpty())
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The padding text must not be empty");
+
+            String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
 
             if(text.length() >= len)
                 return new DataObject(textObject);
@@ -1153,12 +1156,15 @@ final class LangPredefinedFunctions {
                 @LangParameter("$len") @NumberValue Number lenNum
         ) {
             int len = lenNum.intValue();
+            if(len < 0) {
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 3 \"$len\" must be >= 0");
+            }
 
-            String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
             String paddingText = interpreter.conversions.toText(paddingTextObject, CodePosition.EMPTY).toString();
-
             if(paddingText.isEmpty())
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The padding text must not be empty");
+
+            String text = interpreter.conversions.toText(textObject, CodePosition.EMPTY).toString();
 
             if(text.length() >= len)
                 return new DataObject(textObject);
