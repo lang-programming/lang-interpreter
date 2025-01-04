@@ -705,20 +705,21 @@ final class LangPredefinedFunctions {
         @AllowedTypes(DataObject.DataType.TEXT)
         public static DataObject inputFunction(
                 LangInterpreter interpreter,
-                @LangParameter("$maxCharCount") @NumberValue Number maxCharCount
+                @LangParameter("$maxByteCount") @NumberValue Number maxByteCount
         ) {
-            if(maxCharCount != null && maxCharCount.intValue() < 0)
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$maxCharCount\") must be >= 0");
+            if(maxByteCount != null && maxByteCount.intValue() < 0)
+                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$maxByteCount\") must be >= 0");
 
             try {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-                if(maxCharCount == null) {
+                if(maxByteCount == null) {
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
                     String line = reader.readLine();
                     if(line == null)
                         return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR);
                     return new DataObject(line);
                 }else {
-                    char[] buf = new char[maxCharCount.intValue()];
+                    InputStream reader = System.in;
+                    byte[] buf = new byte[maxByteCount.intValue()];
                     int count = reader.read(buf);
                     if(count == -1)
                         return interpreter.setErrnoErrorObject(InterpretingError.SYSTEM_ERROR);
@@ -871,11 +872,11 @@ final class LangPredefinedFunctions {
                 @LangParameter("$number") DataObject numberObject,
                 @LangParameter("$base") @NumberValue Number base
         ) {
-            String numberString = interpreter.conversions.toText(numberObject, CodePosition.EMPTY).toString();
-
             if(base.intValue() < 2 || base.intValue() > 36)
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_NUMBER_BASE,
                         "Argument 2 (\"$base\") must be between 2 (inclusive) and 36 (inclusive)");
+
+            String numberString = interpreter.conversions.toText(numberObject, CodePosition.EMPTY).toString();
 
             try {
                 return new DataObject().setInt(Integer.parseInt(numberString, base.intValue()));
@@ -902,14 +903,10 @@ final class LangPredefinedFunctions {
 
             int numberInt = number.intValue();
             long numberLong = number.longValue();
-            try {
-                if(numberLong < 0?(numberLong < numberInt):(numberLong > numberInt))
-                    return new DataObject().setText(Long.toString(number.longValue(), base.intValue()).toUpperCase(Locale.ENGLISH));
-                else
-                    return new DataObject().setText(Integer.toString(number.intValue(), base.intValue()).toUpperCase(Locale.ENGLISH));
-            }catch(NumberFormatException e) {
-                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Argument 1 (\"$number\") is invalid: " + e.getMessage());
-            }
+            if(numberLong == (long)(numberInt))
+                return new DataObject().setText(Integer.toString(number.intValue(), base.intValue()).toUpperCase(Locale.ENGLISH));
+            else
+                return new DataObject().setText(Long.toString(number.longValue(), base.intValue()).toUpperCase(Locale.ENGLISH));
         }
 
         @LangFunction("toIntBits")
@@ -1484,7 +1481,6 @@ final class LangPredefinedFunctions {
             return ret;
         }
     }
-
 
     @SuppressWarnings("unused")
     public static final class LangPredefinedMathFunctions {
