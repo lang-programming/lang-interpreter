@@ -650,11 +650,11 @@ public class DataObject {
         }
 
         public Text toLowerCase() {
-            return Text.fromString(cachedStr.toLowerCase());
+            return Text.fromString(cachedStr.toLowerCase(Locale.ENGLISH));
         }
 
         public Text toUpperCase() {
-            return Text.fromString(cachedStr.toUpperCase());
+            return Text.fromString(cachedStr.toUpperCase(Locale.ENGLISH));
         }
 
         public int indexOf(Text txt) {
