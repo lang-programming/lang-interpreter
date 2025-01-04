@@ -1,9 +1,0 @@
-lang.version = v1.0.0
-lang.name = Lang Standard Implementation
-
-lang.nativeStackTraces = 1
-
-linker.include(compositeTypes/types.lang)
-linker.include(predefinedFunctions/functions.lang)
-
-lang.nativeStackTraces = 0

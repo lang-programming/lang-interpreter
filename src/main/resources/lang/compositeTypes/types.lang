@@ -1,9 +1,0 @@
-lang.version = v1.0.0
-lang.name = Lang Standard Implementation (Composite Types)
-
-linker.include(pair.lang)
-linker.include(basicIterator.lang)
-linker.include(codePosition.lang)
-linker.include(stackTraceElement.lang)
-linker.include(maybe.lang)
-linker.include(complex.lang)

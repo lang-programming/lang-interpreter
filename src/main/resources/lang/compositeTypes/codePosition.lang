@@ -1,9 +1,0 @@
-lang.version = v1.0.0
-lang.name = Lang Standard Implementation (&CodePosition)
-
-struct &CodePosition {
-    $lineNumberFrom{INT}
-    $lineNumberTo{INT}
-    $columnFrom{INT}
-    $columnTo{INT}
-}
