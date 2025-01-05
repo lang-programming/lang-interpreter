@@ -1845,25 +1845,36 @@ public final class LangInterpreter {
             final boolean[] flags,
             CodePosition pos
     ) {
-        Map<String, DataObject> variables;
+        DataObject ret = null;
         if(compositeType != null) {
             if(compositeType.getType() == DataType.ERROR) {
-                variables = new HashMap<>();
-                variables.put("$text", new DataObject(compositeType.getError().getErrtxt()).setVariableName("$text").
-                        setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.TEXT)).setFinalData(true));
-                variables.put("$code", new DataObject().setInt(compositeType.getError().getErrno()).setVariableName("$code").
-                        setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.INT)).setFinalData(true));
+                switch(variableName) {
+                    case "$text":
+                        ret = new DataObject(compositeType.getError().getErrtxt()).setVariableName("$text").
+                                setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.TEXT)).setFinalData(true);
+                        break;
 
-                String msg = compositeType.getError().getMessage();
-                variables.put("$message", (msg == null?new DataObject().setNull():new DataObject().setText(msg)).setVariableName("$message").
-                        setTypeConstraint(DataTypeConstraint.fromAllowedTypes(Arrays.asList(
-                                DataType.NULL, DataType.TEXT
-                        ))).setFinalData(true));
+                    case "$code":
+                        ret = new DataObject().setInt(compositeType.getError().getErrno()).setVariableName("$code").
+                                setTypeConstraint(DataTypeConstraint.fromSingleAllowedType(DataType.INT)).setFinalData(true);
+                        break;
+
+                    case "$message":
+                        String msg = compositeType.getError().getMessage();
+                        ret = (msg == null?new DataObject().setNull():new DataObject().setText(msg)).setVariableName("$message").
+                                setTypeConstraint(DataTypeConstraint.fromAllowedTypes(Arrays.asList(
+                                        DataType.NULL, DataType.TEXT
+                                ))).setFinalData(true);
+                        break;
+                }
             }else if(compositeType.getType() == DataType.STRUCT) {
-                variables = new HashMap<>();
                 try {
-                    for(String memberName:compositeType.getStruct().getMemberNames())
-                        variables.put(memberName, compositeType.getStruct().getMember(memberName));
+                    for(String memberName:compositeType.getStruct().getMemberNames()) {
+                        if(memberName.equals(variableName)) {
+                            ret = compositeType.getStruct().getMember(memberName);
+                            break;
+                        }
+                    }
                 }catch(DataTypeConstraintException e) {
                     if(flags != null && flags.length == 2)
                         flags[0] = true;
@@ -1871,40 +1882,37 @@ public final class LangInterpreter {
                     return setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, e.getMessage(), pos);
                 }
             }else if(compositeType.getType() == DataType.OBJECT) {
-                variables = new HashMap<>();
                 try {
-                    if(variableName.startsWith("mp.")) {
-                        compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("mp.")).forEach(entry -> {
-                            String functionName = entry.getKey();
-                            FunctionPointerObject functions = entry.getValue();
+                    if(variableName.startsWith("mp.") || variableName.startsWith("op:") || variableName.startsWith("to:")) {
+                        ret = compositeType.getObject().getMethods().entrySet().stream().
+                                filter(entry -> entry.getKey().equals(variableName)).
+                                findFirst().
+                                map(entry -> {
+                                    String functionName = entry.getKey();
+                                    FunctionPointerObject functions = entry.getValue();
 
-                            variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
-                                    setVariableName(functionName).setFinalData(true));
-                        });
-                    }else if(variableName.startsWith("op:")) {
-                        compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("op:")).forEach(entry -> {
-                            String functionName = entry.getKey();
-                            FunctionPointerObject functions = entry.getValue();
-
-                            variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
-                                    setVariableName(functionName).setFinalData(true));
-                        });
-                    }else if(variableName.startsWith("to:")) {
-                        compositeType.getObject().getMethods().entrySet().stream().filter(entry -> entry.getKey().startsWith("to:")).forEach(entry -> {
-                            String functionName = entry.getKey();
-                            FunctionPointerObject functions = entry.getValue();
-
-                            variables.put(functionName, new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
-                                    setVariableName(functionName).setFinalData(true));
-                        });
+                                    return new DataObject().setFunctionPointer(functions.withFunctionName(functionName)).
+                                            setVariableName(functionName).setFinalData(true);
+                                }).orElse(null);
                     }else {
-                        for(DataObject staticMember:compositeType.getObject().getStaticMembers())
-                            variables.put(staticMember.getVariableName(), staticMember);
+                        boolean hasValue = false;
 
-                        if(!compositeType.getObject().isClass()) {
+                        for(DataObject staticMember:compositeType.getObject().getStaticMembers()) {
+                            if(staticMember.getVariableName().equals(variableName)) {
+                                ret = staticMember;
+                                hasValue = true;
+                                break;
+                            }
+                        }
+
+                        if(!hasValue && !compositeType.getObject().isClass()) {
                             //If a static member and a member have the same variable name, the static member will be shadowed
-                            for(String memberName:compositeType.getObject().getMemberNames())
-                                variables.put(memberName, compositeType.getObject().getMember(memberName));
+                            for(String memberName:compositeType.getObject().getMemberNames()) {
+                                if(memberName.equals(variableName)) {
+                                    ret = compositeType.getObject().getMember(memberName);
+                                    break;
+                                }
+                            }
                         }
                     }
                 }catch(DataTypeConstraintException e) {
@@ -1920,7 +1928,7 @@ public final class LangInterpreter {
                 return setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "Invalid composite type", pos);
             }
         }else if(moduleName == null) {
-            variables = getData().var;
+            ret = getData().var.get(variableName);
         }else {
             LangModule module = modules.get(moduleName);
             if(module == null) {
@@ -1930,10 +1938,9 @@ public final class LangInterpreter {
                 return setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The module \"" + moduleName + "\" is not loaded!", pos);
             }
 
-            variables = module.getExportedVariables();
+            ret = module.getExportedVariables().get(variableName);
         }
 
-        DataObject ret = variables.get(variableName);
         if(ret != null) {
             if(!ret.isAccessible(currentCallStackElement.getLangClass())) {
                 if(flags != null && flags.length == 2)
