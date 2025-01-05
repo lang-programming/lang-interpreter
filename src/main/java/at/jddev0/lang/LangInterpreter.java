@@ -61,7 +61,7 @@ public final class LangInterpreter {
     final ExecutionFlags executionFlags = new ExecutionFlags();
 
     //DATA
-    private final Map<Integer, Data> data = new HashMap<>();
+    private final List<Data> data = new ArrayList<>();
 
     //Lang Standard implementation data
     final Map<String, DataObject> standardTypes = new HashMap<>();
@@ -4475,7 +4475,7 @@ public final class LangInterpreter {
     void enterScope(String[] langArgs) {
         scopeId++;
 
-        data.put(scopeId, new Data());
+        data.add(new Data());
 
         if(langArgs != null) {
             DataObject[] langArgsArray = new DataObject[langArgs.length];

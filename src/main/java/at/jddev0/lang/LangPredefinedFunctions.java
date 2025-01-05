@@ -2565,6 +2565,9 @@ final class LangPredefinedFunctions {
                 @LangParameter("fp.func") @AllowedTypes(DataObject.DataType.FUNCTION_POINTER) DataObject funcPointerObject,
                 @LangParameter("$count") @NumberValue Number countNumber
         ) {
+            if(countNumber.intValue() < 0)
+                return interpreter.setErrnoErrorObject(InterpretingError.NEGATIVE_ARRAY_LEN);
+
             return new DataObject().setArray(IntStream.range(0, countNumber.intValue()).mapToObj(i -> {
                 return interpreter.callFunctionPointer(funcPointerObject.getFunctionPointer(), funcPointerObject.getVariableName(), Arrays.asList(
                         new DataObject().setInt(i)
