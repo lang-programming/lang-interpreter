@@ -1377,7 +1377,7 @@ final class LangPredefinedFunctions {
         ) {
             DataObject.Text[] arrTmp;
             try {
-                if(maxSplitCount == null) {
+                if(maxSplitCount == null || maxSplitCount.intValue() <= 0) {
                     arrTmp = LangRegEx.split(interpreter.conversions.toText(textObject, CodePosition.EMPTY),
                             interpreter.conversions.toText(regexObject, CodePosition.EMPTY));
                 }else {
