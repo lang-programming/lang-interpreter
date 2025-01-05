@@ -2337,61 +2337,6 @@ final class LangPredefinedFunctions {
 
             return ret;
         }
-
-        @LangFunction("combY")
-        @CombinatorFunction
-        @LangInfo("Combinator execution: (x -> f(x(x)))(x -> f(x(x)))")
-        public static DataObject combYFunction(
-                LangInterpreter interpreter,
-                @LangParameter("$f") @CallableValue DataObject f
-        ) {
-            LangNativeFunction anonFunc = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
-                @LangFunction("combY:anon")
-                @CombinatorFunction
-                public DataObject combYAnonFunction(
-                        @LangParameter("$x") @CallableValue DataObject x
-                ) {
-                    LangNativeFunction func = LangNativeFunction.getSingleLangFunctionFromObject(new Object() {
-                        @LangFunction("combY:anon:inner")
-                        public DataObject combYAnonInnerFunction(
-                                @LangParameter("&args") @VarArgs List<DataObject> args
-                        ) {
-                            DataObject retX = interpreter.operators.opCall(x, Arrays.asList(
-                                    x
-                            ), CodePosition.EMPTY);
-
-                            DataObject retF = interpreter.operators.opCall(f, Arrays.asList(
-                                    LangUtils.nullToLangVoid(retX)
-                            ), CodePosition.EMPTY);
-                            if(retF == null || !LangUtils.isCallable(retF))
-                                return interpreter.setErrnoErrorObject(InterpretingError.INVALID_FUNC_PTR, "The value returned by $f() must be callable" +
-                                        "\nThe implementation of the function provided to \"func.combY\" is incorrect!");
-
-                            return interpreter.operators.opCall(retF, LangUtils.separateArgumentsWithArgumentSeparators(
-                                    args.stream().map(DataObject::new).collect(Collectors.toList())
-                            ), CodePosition.EMPTY);
-                        }
-                    }, f, x).getFunction(0).getNativeFunction();
-
-                    String functionName;
-                    if(x.getType() == DataObject.DataType.FUNCTION_POINTER) {
-                        functionName = x.getFunctionPointer().getFunctionName();
-                        functionName = functionName == null?x.getVariableName():functionName;
-                    }else {
-                        functionName = "<arg>";
-                    }
-
-                    return new DataObject().setFunctionPointer(new FunctionPointerObject("<combY:anon:inner-func(" + functionName + ")>", func));
-                }
-            }, f).getFunction(0).getNativeFunction();
-
-            DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
-            DataObject retAnonFunc2 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
-
-            return interpreter.operators.opCall(retAnonFunc1, Arrays.asList(
-                    retAnonFunc2
-            ), CodePosition.EMPTY);
-        }
     }
 
     @SuppressWarnings("unused")
