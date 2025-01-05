@@ -2102,7 +2102,7 @@ final class LangPredefinedFunctions {
                 DataObject n = args.get(i);
 
                 if(!LangUtils.isCallable(ret))
-                    return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The return value after iteration " + (i + 1) + " must be callable");
+                    return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The return value after iteration " + (args.size() - i) + " must be callable");
 
                 ret = interpreter.operators.opCall(ret, Arrays.asList(
                         n
@@ -2386,7 +2386,6 @@ final class LangPredefinedFunctions {
             }, f).getFunction(0).getNativeFunction();
 
             DataObject retAnonFunc1 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
-
             DataObject retAnonFunc2 = anonFunc.callFunc(interpreter, null, -1, new LinkedList<>(), new LinkedList<>());
 
             return interpreter.operators.opCall(retAnonFunc1, Arrays.asList(
