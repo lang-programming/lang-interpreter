@@ -4470,9 +4470,9 @@ final class LangPredefinedFunctions {
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                         "The var args argument count is not equals to the count of the member names (" + memberNames.length + ")");
 
-            int i = -1;
+            int i = 0;
             try {
-                for(i = 0;i < memberNames.length;i++)
+                for(;i < memberNames.length;i++)
                     struct.setMember(memberNames[i], args.get(i));
             }catch(DataTypeConstraintException e) {
                 return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE, "Argument " + (i + 2) + ": " + e.getMessage());
@@ -4583,6 +4583,7 @@ final class LangPredefinedFunctions {
         }
 
         @LangFunction("structDefinitionTypeOf")
+        @AllowedTypes(DataObject.DataType.STRUCT)
         public static DataObject structDefinitionTypeOfFunction(
                 LangInterpreter interpreter,
                 @LangParameter("&struct") @AllowedTypes(DataObject.DataType.STRUCT) DataObject structObject
