@@ -2581,10 +2581,10 @@ final class LangPredefinedFunctions {
                 LangInterpreter interpreter,
                 @LangParameter("&arrays") @AllowedTypes(DataObject.DataType.ARRAY) @VarArgs List<DataObject> arrays
         ) {
-            int len = -1;
+            int len = 0;
             for(int i = 0;i < arrays.size();i++) {
                 int lenTest = arrays.get(i).getArray().length;
-                if(len == -1) {
+                if(i == 0) {
                     len = lenTest;
 
                     continue;
@@ -2594,9 +2594,6 @@ final class LangPredefinedFunctions {
                     return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
                             "The size of argument " + (i + 1) + " (for var args parameter \"&arrays\") must be " + len);
             }
-
-            if(len == -1)
-                len = 0;
 
             DataObject[] zippedArray = new DataObject[len];
             for(int i = 0;i < len;i++) {
@@ -2719,6 +2716,11 @@ final class LangPredefinedFunctions {
 
             for(int i = 0;i < pointers.size();i++) {
                 DataObject dereferencedPointer = pointers.get(i).getVarPointer().getVar();
+                if(dereferencedPointer.isFinalData() || dereferencedPointer.isLangVar())
+                    return interpreter.setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE,
+                            "For the dereferenced pointer (argument " + (i + 1) +
+                                    " for var args parameter (\"&pointers\"))");
+
                 if(!dereferencedPointer.getTypeConstraint().isTypeAllowed(arr[i].getType()))
                     return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
                             "The dereferenced pointer (argument " + (i + 1) +
