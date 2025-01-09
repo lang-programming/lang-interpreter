@@ -2719,12 +2719,12 @@ final class LangPredefinedFunctions {
                 if(dereferencedPointer.isFinalData() || dereferencedPointer.isLangVar())
                     return interpreter.setErrnoErrorObject(InterpretingError.FINAL_VAR_CHANGE,
                             "For the dereferenced pointer (argument " + (i + 1) +
-                                    " for var args parameter (\"&pointers\"))");
+                                    ") for var args parameter (\"&pointers\")");
 
                 if(!dereferencedPointer.getTypeConstraint().isTypeAllowed(arr[i].getType()))
                     return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
                             "The dereferenced pointer (argument " + (i + 1) +
-                                    " for var args parameter (\"&pointers\")) does not allow the type " + arr[i].getType());
+                                    ") for var args parameter (\"&pointers\")) does not allow the type " + arr[i].getType());
 
                 dereferencedPointer.setData(arr[i]);
             }
