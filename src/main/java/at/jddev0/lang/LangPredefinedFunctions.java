@@ -2724,7 +2724,7 @@ final class LangPredefinedFunctions {
                 if(!dereferencedPointer.getTypeConstraint().isTypeAllowed(arr[i].getType()))
                     return interpreter.setErrnoErrorObject(InterpretingError.INCOMPATIBLE_DATA_TYPE,
                             "The dereferenced pointer (argument " + (i + 1) +
-                                    ") for var args parameter (\"&pointers\")) does not allow the type " + arr[i].getType());
+                                    ") for var args parameter (\"&pointers\") does not allow the type " + arr[i].getType());
 
                 dereferencedPointer.setData(arr[i]);
             }

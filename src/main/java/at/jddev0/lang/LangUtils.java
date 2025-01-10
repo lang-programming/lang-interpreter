@@ -18,11 +18,11 @@ public final class LangUtils {
     static String removeDotsFromFilePath(String file) {
         //Remove "/./"
         while(file.contains("/./"))
-            file = file.replaceAll("\\/\\.\\/", "/");
+            file = file.replace("/./", "/");
 
         //Remove "/../" and go to parent
-        while(file.matches(".*\\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\\/\\.\\.\\/.*"))
-            file = file.replaceAll("\\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\\/\\.\\.\\/", "/");
+        while(LangPatterns.matches(file, LangPatterns.UTILS_CONTAINS_PARENT_FOLDER))
+            file = LangPatterns.replaceAll(file, "/", LangPatterns.UTILS_PARENT_FOLDER);
 
         return file;
     }

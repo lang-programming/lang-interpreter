@@ -117,6 +117,16 @@ final class LangPatterns {
      */
     public static final Pattern PARSING_SIMPLE_TRANSLATION_KEY = Pattern.compile("[\\w\\-\\.\\:]+");
 
+    //LangUtil specific
+    /**
+     * RegEx: "<code>.*\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\/\.\.\/.*</code>"
+     */
+    public static final Pattern UTILS_CONTAINS_PARENT_FOLDER = Pattern.compile(".*\\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\\/\\.\\.\\/.*");
+    /**
+     * RegEx: "<code>\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\/\.\.\/</code>"
+     */
+    public static final Pattern UTILS_PARENT_FOLDER = Pattern.compile("\\/([^/]|[^/.][^/]|[^/][^/.]|[^/]{3,})\\/\\.\\.\\/");
+
     public static boolean matches(String str, Pattern pattern) {
         return pattern.matcher(str).matches();
     }
