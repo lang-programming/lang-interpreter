@@ -2607,30 +2607,6 @@ final class LangPredefinedFunctions {
             return new DataObject().setArray(zippedArray);
         }
 
-        @LangFunction("arraySet")
-        @AllowedTypes(DataObject.DataType.VOID)
-        public static DataObject arraySetFunction(
-                LangInterpreter interpreter,
-                @LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-                @LangParameter("$index") @NumberValue Number indexNumber,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            int index = indexNumber.intValue();
-
-            DataObject[] arr = arrayObject.getArray();
-            if(index < 0)
-                index += arr.length;
-
-            if(index < 0)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-            else if(index >= arr.length)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-
-            arr[index] = new DataObject(valueObject);
-
-            return null;
-        }
-
         @LangFunction(value="arraySetAll", hasInfo=true)
         @AllowedTypes(DataObject.DataType.VOID)
         public static DataObject arraySetAllFunction(
@@ -2666,26 +2642,6 @@ final class LangPredefinedFunctions {
                 arr[i] = new DataObject(valueIterator.next());
 
             return null;
-        }
-
-        @LangFunction("arrayGet")
-        public static DataObject arrayGetFunction(
-                LangInterpreter interpreter,
-                @LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject,
-                @LangParameter("$index") @NumberValue Number indexNumber
-        ) {
-            int index = indexNumber.intValue();
-
-            DataObject[] arr = arrayObject.getArray();
-            if(index < 0)
-                index += arr.length;
-
-            if(index < 0)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-            else if(index >= arr.length)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-
-            return arr[index];
         }
 
         @LangFunction("arrayGetAll")
@@ -2878,15 +2834,6 @@ final class LangPredefinedFunctions {
                     return new DataObject().setInt(i);
 
             return new DataObject().setInt(-1);
-        }
-
-        @LangFunction("arrayLength")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject arrayLengthFunction(
-                LangInterpreter interpreter,
-                @LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
-        ) {
-            return new DataObject().setInt(arrayObject.getArray().length);
         }
 
         @LangFunction("arrayDistinctValuesOf")
