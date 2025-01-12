@@ -3030,14 +3030,14 @@ final class LangPredefinedFunctions {
                     continue;
                 }
 
-                currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
+                currentValueObject = LangUtils.nullToLangVoid(interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
                         LangUtils.asListWithArgumentSeparators(
                                 currentValueObject,
                                 ele
-                        ));
+                        )));
             }
 
-            return currentValueObject;
+            return LangUtils.nullToLangVoid(currentValueObject);
         }
 
         @LangFunction(value="arrayReduceColumn", hasInfo=true)
@@ -3098,11 +3098,11 @@ final class LangPredefinedFunctions {
                         continue;
                     }
 
-                    currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
+                    currentValueObject = LangUtils.nullToLangVoid(interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
                             LangUtils.asListWithArgumentSeparators(
                                     currentValueObject,
                                     ele
-                            ));
+                            )));
                 }
 
                 reducedArrays[i] = LangUtils.nullToLangVoid(currentValueObject);
