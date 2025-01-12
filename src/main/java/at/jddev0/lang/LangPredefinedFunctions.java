@@ -3229,7 +3229,7 @@ final class LangPredefinedFunctions {
         ) {
             DataObject[] arr = arrayObject.getArray();
 
-            return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).allMatch(ele -> {
+            return new DataObject().setBoolean(Arrays.stream(arr).allMatch(ele -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
                         predicateFunction.getVariableName(), Arrays.asList(
                                 ele
@@ -3246,7 +3246,7 @@ final class LangPredefinedFunctions {
         ) {
             DataObject[] arr = arrayObject.getArray();
 
-            return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).anyMatch(ele -> {
+            return new DataObject().setBoolean(Arrays.stream(arr).anyMatch(ele -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
                         predicateFunction.getVariableName(), Arrays.asList(
                                 ele
@@ -3263,7 +3263,7 @@ final class LangPredefinedFunctions {
         ) {
             DataObject[] arr = arrayObject.getArray();
 
-            return new DataObject().setBoolean(Arrays.stream(arr).map(DataObject::new).noneMatch(ele -> {
+            return new DataObject().setBoolean(Arrays.stream(arr).noneMatch(ele -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
                         predicateFunction.getVariableName(), Arrays.asList(
                                 ele
