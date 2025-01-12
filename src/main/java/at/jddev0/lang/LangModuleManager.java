@@ -99,15 +99,17 @@ final class LangModuleManager {
             lmc = lmcArray[0];
             module = new LangModule(moduleFileOrName, load, zipEntries, zipData, lmc);
 
-            if(interpreter.modules.get(lmc.getName()) != null)
+            if(interpreter.modules.containsKey(lmc.getName()))
                 return interpreter.setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The Lang module \"" + lmc.getName() + "\" was already loaded");
 
             interpreter.modules.put(lmc.getName(), module);
         }else {
-            if(interpreter.modules.get(moduleFileOrName) == null)
+            module = interpreter.modules.remove(moduleFileOrName);
+            if(module == null)
                 return interpreter.setErrnoErrorObject(InterpretingError.MODULE_LOAD_UNLOAD_ERR, "The Lang module \"" + moduleFileOrName + "\" was not loaded");
 
-            module = interpreter.modules.remove(moduleFileOrName);
+            module.setLoad(false);
+
             zipEntries = module.getZipEntries();
             zipData = module.getZipData();
             lmc = module.getLangModuleConfiguration();
@@ -117,7 +119,7 @@ final class LangModuleManager {
 
         try {
             //Update call stack (Path inside module archive)
-            interpreter.pushStackElement(new StackElement("<module:" + module.getFile()  + "[" + lmc.getName() + "]>",
+            interpreter.pushStackElement(new StackElement("<module:" + module.getFile() + "[" + lmc.getName() + "]>",
                     "<entryPoint>", null, null, null, module), CodePosition.EMPTY);
 
             String[] langArgs = LangUtils.combineArgumentsWithoutArgumentSeparators(args, interpreter, CodePosition.EMPTY).stream().map(ele ->
@@ -197,7 +199,7 @@ final class LangModuleManager {
 
             interpreter.exitScope();
 
-            if(!load && module != null) {
+            if(!load) {
                 //Remove exported functions and variables
                 module.getExportedFunctions().forEach(interpreter.funcs::remove);
             }
@@ -243,10 +245,10 @@ final class LangModuleManager {
         try(ZipInputStream zipIn = new ZipInputStream(in)) {
             ZipEntry zipEntry;
             while((zipEntry = zipIn.getNextEntry()) != null) {
-                zipEntries.put(zipEntry.getName(), zipEntry);
-
                 if(zipEntry.getSize() > maxModuleFileSize)
                     return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "\"/" + zipEntry.getName() + "\" is larger than " + maxModuleFileSize);
+
+                zipEntries.put(zipEntry.getName(), zipEntry);
 
                 ByteArrayOutputStream bufOut = new ByteArrayOutputStream();
 
@@ -287,7 +289,7 @@ final class LangModuleManager {
 
             String minSupportedVersion = lmc.getMinSupportedVersion();
             Integer minCompVer = LangUtils.compareVersions(minSupportedVersion, LangInterpreter.VERSION);
-            if(minCompVer == null)
+            if(minSupportedVersion != null && minCompVer == null)
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "The min supported version has an invalid format!");
             if(minSupportedVersion != null && minCompVer > 0)
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "The minimal supported version of the module is higher than " + LangInterpreter.VERSION +
@@ -295,7 +297,7 @@ final class LangModuleManager {
 
             String maxSupportedVersion = lmc.getMaxSupportedVersion();
             Integer maxCompVer = LangUtils.compareVersions(maxSupportedVersion, LangInterpreter.VERSION);
-            if(maxCompVer == null)
+            if(maxSupportedVersion != null && maxCompVer == null)
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "The max supported version has an invalid format!");
             if(maxSupportedVersion != null && maxCompVer < 0)
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "The maximal supported version of the module is lower than " + LangInterpreter.VERSION +

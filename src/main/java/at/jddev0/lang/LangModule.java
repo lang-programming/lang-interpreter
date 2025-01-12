@@ -16,7 +16,7 @@ import java.util.zip.ZipEntry;
 public final class LangModule {
     private final String file;
 
-    private final boolean load;
+    private boolean load;
 
     private final Map<String, ZipEntry> zipEntries;
     private final Map<String, byte[]> zipData;
@@ -66,5 +66,9 @@ public final class LangModule {
 
     public LangModuleConfiguration getLangModuleConfiguration() {
         return lmc;
+    }
+
+    void setLoad(boolean load) {
+        this.load = load;
     }
 }
