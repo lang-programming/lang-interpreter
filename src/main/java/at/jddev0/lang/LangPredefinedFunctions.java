@@ -4257,7 +4257,7 @@ final class LangPredefinedFunctions {
         ) {
             List<DataObject> list = listObject.getList();
 
-            return new DataObject().setBoolean(list.stream().map(DataObject::new).allMatch(ele -> {
+            return new DataObject().setBoolean(list.stream().allMatch(ele -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
                         predicateFunction.getVariableName(), Arrays.asList(
                                 ele
@@ -4274,7 +4274,7 @@ final class LangPredefinedFunctions {
         ) {
             List<DataObject> list = listObject.getList();
 
-            return new DataObject().setBoolean(list.stream().map(DataObject::new).anyMatch(ele -> {
+            return new DataObject().setBoolean(list.stream().anyMatch(ele -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
                         predicateFunction.getVariableName(), Arrays.asList(
                                 ele
@@ -4291,7 +4291,7 @@ final class LangPredefinedFunctions {
         ) {
             List<DataObject> list = listObject.getList();
 
-            return new DataObject().setBoolean(list.stream().map(DataObject::new).noneMatch(ele -> {
+            return new DataObject().setBoolean(list.stream().noneMatch(ele -> {
                 return interpreter.conversions.toBool(interpreter.callFunctionPointer(predicateFunction.getFunctionPointer(),
                         predicateFunction.getVariableName(), Arrays.asList(
                                 ele
