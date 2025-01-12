@@ -387,11 +387,13 @@ public final class LangInterpreter {
                     int indexMatchingBracket = LangUtils.getIndexOfMatchingBracket(modifiedVariableName, indexOpeningBracket, Integer.MAX_VALUE, '[', ']');
                     if(indexMatchingBracket != -1) {
                         //Remove all "[" "]" pairs
-                        int currentIndex = indexOpeningBracket;
-                        int currentIndexMatchingBracket = indexMatchingBracket;
+                        int currentIndex = indexOpeningBracket + 1;
+                        int currentIndexMatchingBracket = indexMatchingBracket - 1;
 
-                        //"&" both "++" and "--" must be executed
-                        while(modifiedVariableName.charAt(++currentIndex) == '[' & modifiedVariableName.charAt(--currentIndexMatchingBracket) == ']');
+                        while(modifiedVariableName.charAt(currentIndex) == '[' && modifiedVariableName.charAt(currentIndexMatchingBracket) == ']') {
+                            currentIndex++;
+                            currentIndexMatchingBracket--;
+                        }
 
                         if(indexMatchingBracket != modifiedVariableName.length() - 1) {
                             text = modifiedVariableName.substring(indexMatchingBracket + 1);
@@ -435,16 +437,16 @@ public final class LangInterpreter {
             return new TextValueNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
         }
 
-        String returendVariableName = optionalReturnedVariableName.get();
-        if(returendVariableName.length() == variableName.length())
+        String returnedVariableName = optionalReturnedVariableName.get();
+        if(returnedVariableName.length() == variableName.length())
             return new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + variableName);
 
         //Variable composition
         List<Node> nodes = new ArrayList<>();
         //Add matching part of variable as VariableNameNode
-        nodes.add(new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + returendVariableName));
+        nodes.add(new VariableNameNode(pos, (moduleName == null?"":("[[" + moduleName + "]]::")) + variablePrefixAppendAfterSearch + returnedVariableName));
         //Add composition part as TextValueNode
-        nodes.add(new TextValueNode(pos, variableName.substring(returendVariableName.length())));
+        nodes.add(new TextValueNode(pos, variableName.substring(returnedVariableName.length())));
         return new ListNode(nodes);
     }
     private Node processUnprocessedVariableNameNode(DataObject compositeType, UnprocessedVariableNameNode node) {

@@ -3547,30 +3547,6 @@ final class LangPredefinedFunctions {
             return null;
         }
 
-        @LangFunction("listSet")
-        @AllowedTypes(DataObject.DataType.VOID)
-        public static DataObject listSetFunction(
-                LangInterpreter interpreter,
-                @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-                @LangParameter("$index") @NumberValue Number indexNumber,
-                @LangParameter("$value") DataObject valueObject
-        ) {
-            int index = indexNumber.intValue();
-
-            List<DataObject> list = listObject.getList();
-            if(index < 0)
-                index += list.size();
-
-            if(index < 0)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-            else if(index >= list.size())
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-
-            list.set(index, new DataObject(valueObject));
-
-            return null;
-        }
-
         @LangFunction("listShift")
         public static DataObject listShiftFunction(
                 LangInterpreter interpreter,
@@ -3699,26 +3675,6 @@ final class LangPredefinedFunctions {
                 return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
 
             return list.remove(index);
-        }
-
-        @LangFunction("listGet")
-        public static DataObject listGetFunction(
-                LangInterpreter interpreter,
-                @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject,
-                @LangParameter("$index") @NumberValue Number indexNumber
-        ) {
-            int index = indexNumber.intValue();
-
-            List<DataObject> list = listObject.getList();
-            if(index < 0)
-                index += list.size();
-
-            if(index < 0)
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-            else if(index >= list.size())
-                return interpreter.setErrnoErrorObject(InterpretingError.INDEX_OUT_OF_BOUNDS);
-
-            return list.get(index);
         }
 
         @LangFunction("listGetAll")
@@ -3876,15 +3832,6 @@ final class LangPredefinedFunctions {
                     return new DataObject().setInt(i);
 
             return new DataObject().setInt(-1);
-        }
-
-        @LangFunction("listLength")
-        @AllowedTypes(DataObject.DataType.INT)
-        public static DataObject listLengthFunction(
-                LangInterpreter interpreter,
-                @LangParameter("&list") @AllowedTypes(DataObject.DataType.LIST) DataObject listObject
-        ) {
-            return new DataObject().setInt(listObject.getList().size());
         }
 
         @LangFunction("listDistinctValuesOf")
