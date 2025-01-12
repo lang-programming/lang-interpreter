@@ -3454,8 +3454,9 @@ final class LangPredefinedFunctions {
                 @LangParameter("&array") @AllowedTypes(DataObject.DataType.ARRAY) DataObject arrayObject
         ) {
             DataObject[] arr = arrayObject.getArray();
-            for(DataObject ele:arr)
-                ele.setNull();
+            for(int i = 0;i < arr.length;i++) {
+                arr[i] = new DataObject();
+            }
 
             return null;
         }
@@ -4057,14 +4058,14 @@ final class LangPredefinedFunctions {
                     continue;
                 }
 
-                currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
+                currentValueObject = LangUtils.nullToLangVoid(interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
                         LangUtils.asListWithArgumentSeparators(
                                 currentValueObject,
                                 ele
-                        ));
+                        )));
             }
 
-            return currentValueObject;
+            return LangUtils.nullToLangVoid(currentValueObject);
         }
 
         @LangFunction(value="listReduceColumn", hasInfo=true)
@@ -4105,7 +4106,7 @@ final class LangPredefinedFunctions {
 
                 if(len != lenTest)
                     return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS,
-                            "The length of the array at index " + i + " of argument 1 (\"&lists\") must be " + len);
+                            "The length of the list at index " + i + " of argument 1 (\"&lists\") must be " + len);
             }
 
             if(lists.isEmpty())
@@ -4125,11 +4126,11 @@ final class LangPredefinedFunctions {
                         continue;
                     }
 
-                    currentValueObject = interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
+                    currentValueObject = LangUtils.nullToLangVoid(interpreter.callFunctionPointer(combineFunction.getFunctionPointer(), combineFunction.getVariableName(),
                             LangUtils.asListWithArgumentSeparators(
                                     currentValueObject,
                                     ele
-                            ));
+                            )));
                 }
 
                 reduceedLists.add(LangUtils.nullToLangVoid(currentValueObject));
