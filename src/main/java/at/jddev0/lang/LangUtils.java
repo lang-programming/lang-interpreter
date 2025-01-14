@@ -256,7 +256,7 @@ public final class LangUtils {
      * @return Returns the version as an integer array of length 3 or null if the version is invalid
      */
     public static int[] getVersionComponents(String version) {
-        if(version.isEmpty())
+        if(version == null || version.isEmpty())
             return null;
 
         if(version.charAt(0) != 'v')
