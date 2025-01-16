@@ -325,7 +325,7 @@ final class LangModuleManager {
         int colonIndex = nativeEntryPoint.lastIndexOf(':');
         if(colonIndex == -1)
             return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "\"/data.lmc\" is invalid: \"nativeEntryPoint\" must be of format"
-                    + " \"path/file.jar:tld.pacakge.Class\"");
+                    + " \"path/file.jar:tld.package.Class\"");
 
         String file = "native/" + nativeEntryPoint.substring(0, colonIndex);
         String classPath = nativeEntryPoint.substring(colonIndex + 1);

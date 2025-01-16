@@ -600,6 +600,10 @@ public final class LangLexer {
                     continue;
                 }
 
+                if(c == '#') {
+                    break;
+                }
+
                 if(c != ' ' && c != '\t') {
                     isLastCodeTokenInLine = false;
 
