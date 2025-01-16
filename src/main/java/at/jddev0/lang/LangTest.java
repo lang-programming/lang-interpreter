@@ -84,11 +84,11 @@ public class LangTest {
         currentSubUnit.addAssertResult(assertResult);
     }
 
-    private int getTestCount() {
+    public int getTestCount() {
         return units.stream().mapToInt(Unit::getTestCount).sum();
     }
 
-    private int getTestPassedCount() {
+    public int getTestPassedCount() {
         return units.stream().mapToInt(Unit::getTestPassedCount).sum();
     }
 
