@@ -27,7 +27,7 @@ public class InterpreterTest {
         int passedTestCount = interpreter.langTestStore.getTestPassedCount();
 
 
-        assertTrue(testCount > 0, "Lang spec tests where not initialized correctly");
+        assertTrue(testCount > 0, "Lang spec tests were not initialized correctly");
         assertEquals(testCount, passedTestCount, String.format("Some Lang spec test failed: There are %d tests but only %d tests passed.", testCount, passedTestCount));
     }
 }
