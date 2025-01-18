@@ -4821,7 +4821,7 @@ final class LangPredefinedFunctions {
         ) {
             LangModule module = interpreter.getCurrentCallStackElement().getModule();
             if(module == null || !module.isLoad())
-                return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportNormalVariable\" can only be used inside a module which "
+                return interpreter.setErrnoErrorObject(InterpretingError.FUNCTION_NOT_SUPPORTED, "\"func.moduleExportFunctionPointerVariable\" can only be used inside a module which "
                         + "is in the \"load\" state");
 
             String variableName = interpreter.conversions.toText(variableNameObject, CodePosition.EMPTY).toString();
