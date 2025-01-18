@@ -5031,9 +5031,9 @@ public final class LangInterpreter {
             return interpreter.parseLines(lines);
         }
 
-        public void interpretAST(AbstractSyntaxTree ast) throws StoppedException {
+        public DataObject interpretAST(AbstractSyntaxTree ast) throws StoppedException {
             getAndResetReturnValue(); //Reset returned value else the interpreter would stop immediately
-            interpreter.interpretAST(ast);
+            return interpreter.interpretAST(ast);
         }
         public DataObject interpretNode(Node node) throws StoppedException {
             return interpreter.interpretNode(null, node);
