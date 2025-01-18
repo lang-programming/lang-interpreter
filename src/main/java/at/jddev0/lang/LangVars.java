@@ -99,7 +99,7 @@ public final class LangVars {
         addLangVar("$LANG_CURRENT_FUNCTION", new DataObject(currentStackElement.getLangFunctionName(), true));
 
         //Module vars
-        if(currentStackElement.module != null) {
+        if(currentStackElement.module != null && currentStackElement.getLangPath().startsWith("<module:")) {
             addLangVar("$LANG_MODULE_STATE", new DataObject(currentStackElement.module.isLoad()?"load":"unload").setFinalData(true));
 
             String prefix = "<module:" + currentStackElement.module.getFile() + "[" + currentStackElement.module.getLangModuleConfiguration().getName() + "]>";

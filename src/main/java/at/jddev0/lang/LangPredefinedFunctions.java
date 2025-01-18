@@ -511,7 +511,7 @@ final class LangPredefinedFunctions {
 
             String modulePath = null;
             String moduleFile = null;
-            if(currentStackElement.module != null) {
+            if(currentStackElement.module != null && currentStackElement.getLangPath().startsWith("<module:")) {
                 String prefix = "<module:" + currentStackElement.module.getFile() + "[" + currentStackElement.module.getLangModuleConfiguration().getName() + "]>";
 
                 modulePath = currentStackElement.getLangPath().substring(prefix.length());
@@ -547,7 +547,7 @@ final class LangPredefinedFunctions {
             return new DataObject().setArray(stackTraceElements.stream().map(ele -> {
                 String modulePath = null;
                 String moduleFile = null;
-                if(ele.module != null) {
+                if(ele.module != null && ele.getLangPath().startsWith("<module:")) {
                     String prefix = "<module:" + ele.module.getFile() + "[" + ele.module.getLangModuleConfiguration().getName() + "]>";
 
                     modulePath = ele.getLangPath().substring(prefix.length());
@@ -5667,7 +5667,7 @@ final class LangPredefinedFunctions {
             boolean insideLangStandardImplementation = interpreter.getCurrentCallStackElement().getLangPath().startsWith("<standard>");
 
             LangModule module = interpreter.getCurrentCallStackElement().getModule();
-            boolean insideModule = module != null;
+            boolean insideModule = module != null && interpreter.getCurrentCallStackElement().getLangPath().startsWith("<module:");
             if(insideLangStandardImplementation) {
                 absolutePath = "lang" + LangUtils.removeDotsFromFilePath(
                         interpreter.getCurrentCallStackElement().getLangPath().substring(10) + "/" + langFileName);
