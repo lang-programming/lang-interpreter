@@ -4773,7 +4773,7 @@ final class LangPredefinedFunctions {
         public static DataObject moduleExportCompositeVariableFunction(
                 LangInterpreter interpreter,
                 @LangParameter("$variableName") DataObject variableNameObject,
-                @LangParameter("$variable") DataObject variableObject
+                @LangParameter("&variable") DataObject variableObject
         ) {
             return moduleExportCompositeVariableFunction(interpreter, variableNameObject, variableObject, false);
         }
@@ -4782,7 +4782,7 @@ final class LangPredefinedFunctions {
         public static DataObject moduleExportCompositeVariableFunction(
                 LangInterpreter interpreter,
                 @LangParameter("$variableName") DataObject variableNameObject,
-                @LangParameter("$variable") DataObject variableObject,
+                @LangParameter("&variable") DataObject variableObject,
                 @LangParameter("$final") @BooleanValue boolean finalData
         ) {
             LangModule module = interpreter.getCurrentCallStackElement().getModule();
@@ -4807,7 +4807,7 @@ final class LangPredefinedFunctions {
         public static DataObject moduleExportFunctionPointerVariableFunction(
                 LangInterpreter interpreter,
                 @LangParameter("$variableName") DataObject variableNameObject,
-                @LangParameter("$variable") DataObject variableObject
+                @LangParameter("fp.variable") DataObject variableObject
         ) {
             return moduleExportFunctionPointerVariableFunction(interpreter, variableNameObject, variableObject, false);
         }
@@ -4816,7 +4816,7 @@ final class LangPredefinedFunctions {
         public static DataObject moduleExportFunctionPointerVariableFunction(
                 LangInterpreter interpreter,
                 @LangParameter("$variableName") DataObject variableNameObject,
-                @LangParameter("$variable") DataObject variableObject,
+                @LangParameter("fp.variable") DataObject variableObject,
                 @LangParameter("$final") @BooleanValue boolean finalData
         ) {
             LangModule module = interpreter.getCurrentCallStackElement().getModule();
