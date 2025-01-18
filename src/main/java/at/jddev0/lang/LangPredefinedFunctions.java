@@ -4504,6 +4504,10 @@ final class LangPredefinedFunctions {
         private LangPredefinedModuleFunctions() {}
 
         private static boolean containsNonWordChars(String moduleName) {
+            if(moduleName.isEmpty()) {
+                return true;
+            }
+
             for(int i = 0;i < moduleName.length();i++) {
                 char c = moduleName.charAt(i);
                 if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
@@ -4576,13 +4580,8 @@ final class LangPredefinedFunctions {
 
             int variablePrefixLen = (variableName.charAt(0) == '$' || variableName.charAt(0) == '&')?1:3;
 
-            for(int i = variablePrefixLen;i < variableName.length();i++) {
-                char c = variableName.charAt(i);
-                if((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_')
-                    continue;
-
+            if(containsNonWordChars(variableName.substring(variablePrefixLen)))
                 return interpreter.setErrnoErrorObject(InterpretingError.INVALID_ARGUMENTS, "The variable name may only contain alphanumeric characters and underscore (_)");
-            }
 
             LangModule module = interpreter.modules.get(moduleName);
             if(module == null)
