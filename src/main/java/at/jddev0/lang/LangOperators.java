@@ -1795,12 +1795,12 @@ public final class LangOperators {
                         if(rightSideOperand.getInt() == 0)
                             return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
 
-                        return new DataObject().setInt(-Math.floorDiv(-leftSideOperand.getInt(), rightSideOperand.getInt()));
+                        return new DataObject().setInt(LangUtils.ceilDiv(leftSideOperand.getInt(), rightSideOperand.getInt()));
                     case LONG:
                         if(rightSideOperand.getLong() == 0)
                             return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
 
-                        return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getInt(), rightSideOperand.getLong()));
+                        return new DataObject().setLong(LangUtils.ceilDiv(leftSideOperand.getInt(), rightSideOperand.getLong()));
                     case FLOAT:
                         if(rightSideOperand.getFloat() == 0)
                             return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
@@ -1835,12 +1835,12 @@ public final class LangOperators {
                         if(rightSideOperand.getInt() == 0)
                             return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
 
-                        return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getLong(), (long)rightSideOperand.getInt()));
+                        return new DataObject().setLong(LangUtils.ceilDiv(leftSideOperand.getLong(), (long)rightSideOperand.getInt()));
                     case LONG:
                         if(rightSideOperand.getLong() == 0)
                             return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);
 
-                        return new DataObject().setLong(-Math.floorDiv(-leftSideOperand.getLong(), rightSideOperand.getLong()));
+                        return new DataObject().setLong(LangUtils.ceilDiv(leftSideOperand.getLong(), rightSideOperand.getLong()));
                     case FLOAT:
                         if(rightSideOperand.getFloat() == 0)
                             return interpreter.setErrnoErrorObject(InterpretingError.DIV_BY_ZERO, pos);

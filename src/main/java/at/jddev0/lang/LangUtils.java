@@ -15,6 +15,28 @@ import at.jddev0.lang.DataObject.DataType;
 public final class LangUtils {
     private LangUtils() {}
 
+    static int ceilDiv(int x, int y) {
+        int ret = x / y;
+
+        //Round up if signs are equals and modulo != 0
+        if((x ^ y) >= 0 && ret * y != x) {
+            ret += 1;
+        }
+
+        return ret;
+    }
+
+    static long ceilDiv(long x, long y) {
+        long ret = x / y;
+
+        //Round up if signs are equals and modulo != 0
+        if((x ^ y) >= 0 && ret * y != x) {
+            ret += 1;
+        }
+
+        return ret;
+    }
+
     static String removeDotsFromFilePath(String file) {
         //Remove "/./"
         while(file.contains("/./"))
