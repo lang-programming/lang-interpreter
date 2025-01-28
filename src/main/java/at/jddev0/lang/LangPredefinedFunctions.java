@@ -5675,7 +5675,13 @@ final class LangPredefinedFunctions {
             }else if(new File(langFileName).isAbsolute()) {
                 absolutePath = langFileName;
             }else {
-                absolutePath = interpreter.getCurrentCallStackElement().getLangPath() + "/" + langFileName;
+                String originalPath = interpreter.getCurrentCallStackElement().getLangPath();
+
+                if(originalPath.endsWith("/")) {
+                    originalPath = originalPath.substring(0, originalPath.length() - 1);
+                }
+
+                absolutePath = originalPath + "/" + langFileName;
             }
 
             String langPathTmp;
