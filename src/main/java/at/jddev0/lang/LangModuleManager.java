@@ -31,7 +31,7 @@ import at.jddev0.lang.LangModuleConfiguration.ModuleType;
  * @version v1.0.0
  */
 final class LangModuleManager {
-    private final static int maxModuleFileSize = 1024 * 1024 * 1024; //1 GiB
+    private final static int MAX_MODULE_FILE_SIZE = 1024 * 1024 * 1024; //1 GiB
 
     private final LangInterpreter interpreter;
 
@@ -245,8 +245,8 @@ final class LangModuleManager {
         try(ZipInputStream zipIn = new ZipInputStream(in)) {
             ZipEntry zipEntry;
             while((zipEntry = zipIn.getNextEntry()) != null) {
-                if(zipEntry.getSize() > maxModuleFileSize)
-                    return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "\"/" + zipEntry.getName() + "\" is larger than " + maxModuleFileSize);
+                if(zipEntry.getSize() > MAX_MODULE_FILE_SIZE)
+                    return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "\"/" + zipEntry.getName() + "\" is larger than " + MAX_MODULE_FILE_SIZE);
 
                 zipEntries.put(zipEntry.getName(), zipEntry);
 
@@ -351,8 +351,8 @@ final class LangModuleManager {
             while((jarEntry = entryPointJarIn.getNextJarEntry()) != null) {
                 jarEntries.put(jarEntry.getName(), jarEntry);
 
-                if(jarEntry.getSize() > maxModuleFileSize)
-                    return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "\"/" + jarEntry.getName() + "\" is larger than " + maxModuleFileSize);
+                if(jarEntry.getSize() > MAX_MODULE_FILE_SIZE)
+                    return interpreter.setErrnoErrorObject(InterpretingError.INVALID_MODULE, "\"/" + jarEntry.getName() + "\" is larger than " + MAX_MODULE_FILE_SIZE);
 
                 ByteArrayOutputStream bufOut = new ByteArrayOutputStream();
 
