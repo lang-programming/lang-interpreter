@@ -33,7 +33,7 @@ import at.jddev0.lang.LangModuleConfiguration.ModuleType;
 final class LangModuleManager {
     private final static int maxModuleFileSize = 1024 * 1024 * 1024; //1 GiB
 
-    private LangInterpreter interpreter;
+    private final LangInterpreter interpreter;
 
     public LangModuleManager(LangInterpreter interpreter) {
         this.interpreter = interpreter;
